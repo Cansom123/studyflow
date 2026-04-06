@@ -1,1 +1,248 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyFlow</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2f7; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
+  .app { width: 100%; max-width: 420px; background: #f2f2f7; min-height: 100vh; }
+  .topbar { background: #ffffff; padding: 16px 20px 12px; border-bottom: 0.5px solid #e0e0e0; }
+  .topbar-title { font-size: 22px; font-weight: 600; color: #1c1c1e; }
+  .topbar-sub { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+  .tabs { display: flex; background: #ffffff; border-bottom: 0.5px solid #e0e0e0; }
+  .tab { flex: 1; padding: 11px 0; text-align: center; font-size: 13px; color: #8e8e93; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tab.active { color: #007aff; border-bottom: 2px solid #007aff; font-weight: 500; }
+  .content { padding: 16px; }
+  .section-label { font-size: 11px; font-weight: 600; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; margin-top: 16px; }
+  .section-label:first-child { margin-top: 0; }
+  .card { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 12px 14px; margin-bottom: 8px; }
+  .card-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-title { font-size: 14px; font-weight: 500; color: #1c1c1e; }
+  .card-sub { font-size: 12px; color: #8e8e93; margin-top: 3px; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 99px; white-space: nowrap; font-weight: 500; }
+  .badge-test { background: #faece7; color: #993c1d; }
+  .badge-hw { background: #e6f1fb; color: #185fa5; }
+  .badge-quiz { background: #faeeda; color: #854f0b; }
+  .badge-essay { background: #eaf3de; color: #3b6d11; }
+  .due-soon { color: #d85a30; font-size: 12px; font-weight: 500; margin-top: 6px; }
+  .due-ok { color: #8e8e93; font-size: 12px; margin-top: 6px; }
+  .priority-card { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .priority-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .p1 { background: #fcebeb; color: #a32d2d; }
+  .p2 { background: #faece7; color: #993c1d; }
+  .p3 { background: #faeeda; color: #854f0b; }
+  .p4 { background: #e6f1fb; color: #185fa5; }
+  .p5 { background: #eaf3de; color: #3b6d11; }
+  .priority-info { flex: 1; }
+  .ai-box { background: #e6f1fb; border-radius: 12px; border: 0.5px solid #b5d4f4; padding: 12px 14px; margin-bottom: 16px; }
+  .ai-label { font-size: 11px; font-weight: 600; color: #185fa5; margin-bottom: 4px; }
+  .ai-text { font-size: 13px; color: #0c447c; line-height: 1.5; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .stat-card { background: #ffffff; border-radius: 10px; padding: 12px 14px; border: 0.5px solid #e0e0e0; }
+  .stat-label { font-size: 11px; color: #8e8e93; margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 600; color: #1c1c1e; }
+  .goal-card { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 14px; margin-bottom: 8px; }
+  .goal-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .goal-row:last-child { margin-bottom: 0; }
+  .goal-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .goal-text { font-size: 13px; color: #1c1c1e; }
+  .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 0.5px solid #f2f2f7; }
+  .grade-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .grade-name { font-size: 13px; color: #1c1c1e; }
+  .grade-f { font-size: 13px; font-weight: 600; color: #d85a30; }
+  .grade-c { font-size: 13px; font-weight: 600; color: #854f0b; }
+  .grade-b { font-size: 13px; font-weight: 600; color: #185fa5; }
+  .grade-a { font-size: 13px; font-weight: 600; color: #3b6d11; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-title">StudyFlow</div>
+    <div class="topbar-sub">Monday, April 6 · 4 assignments due this week</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="showPage('assignments', this)">Assignments</div>
+    <div class="tab" onclick="showPage('priority', this)">Priority</div>
+    <div class="tab" onclick="showPage('goals', this)">Goals</div>
+  </div>
+  <div class="content">
+    <div class="page active" id="page-assignments">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Due this week</div>
+          <div class="stat-val">4</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Overdue</div>
+          <div class="stat-val" style="color:#d85a30;">1</div>
+        </div>
+      </div>
+      <div class="section-label">Overdue</div>
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="card-title">Chapter 7 Reading Quiz</div>
+            <div class="card-sub">AP English · was due Apr 3</div>
+          </div>
+          <span class="badge badge-quiz">Quiz</span>
+        </div>
+        <div class="due-soon">2 days overdue</div>
+      </div>
+      <div class="section-label">Due soon</div>
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="card-title">Cell Division Unit Test</div>
+            <div class="card-sub">Biology · tomorrow</div>
+          </div>
+          <span class="badge badge-test">Test</span>
+        </div>
+        <div class="due-soon">Due Apr 7</div>
+      </div>
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="card-title">Polynomial Functions HW</div>
+            <div class="card-sub">Algebra II · 2 days</div>
+          </div>
+          <span class="badge badge-hw">Homework</span>
+        </div>
+        <div class="due-ok">Due Apr 8</div>
+      </div>
+      <div class="section-label">Later this week</div>
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="card-title">WW2 Essay Draft</div>
+            <div class="card-sub">US History · 4 days</div>
+          </div>
+          <span class="badge badge-essay">Essay</span>
+        </div>
+        <div class="due-ok">Due Apr 10</div>
+      </div>
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="card-title">Spanish Vocab Test</div>
+            <div class="card-sub">Spanish III · 5 days</div>
+          </div>
+          <span class="badge badge-test">Test</span>
+        </div>
+        <div class="due-ok">Due Apr 11</div>
+      </div>
+    </div>
+    <div class="page" id="page-priority">
+      <div class="ai-box">
+        <div class="ai-label">AI suggestion</div>
+        <div class="ai-text">You're failing Biology (58%) and your test is tomorrow. Focus there first — it's your most urgent grade issue.</div>
+      </div>
+      <div class="section-label">Do these first</div>
+      <div class="priority-card">
+        <div class="priority-num p1">1</div>
+        <div class="priority-info">
+          <div class="card-row">
+            <div class="card-title">Cell Division Unit Test</div>
+            <span class="badge badge-test">Test</span>
+          </div>
+          <div class="card-sub" style="margin-top:3px;">Biology · due tomorrow · <span style="color:#d85a30;">grade: 58%</span></div>
+        </div>
+      </div>
+      <div class="priority-card">
+        <div class="priority-num p2">2</div>
+        <div class="priority-info">
+          <div class="card-row">
+            <div class="card-title">Chapter 7 Reading Quiz</div>
+            <span class="badge badge-quiz">Quiz</span>
+          </div>
+          <div class="card-sub" style="margin-top:3px;">AP English · overdue · <span style="color:#d85a30;">2 days late</span></div>
+        </div>
+      </div>
+      <div class="section-label">Then these</div>
+      <div class="priority-card">
+        <div class="priority-num p3">3</div>
+        <div class="priority-info">
+          <div class="card-row">
+            <div class="card-title">Spanish Vocab Test</div>
+            <span class="badge badge-test">Test</span>
+          </div>
+          <div class="card-sub" style="margin-top:3px;">Spanish III · due Apr 11 · grade: 71%</div>
+        </div>
+      </div>
+      <div class="priority-card">
+        <div class="priority-num p4">4</div>
+        <div class="priority-info">
+          <div class="card-row">
+            <div class="card-title">WW2 Essay Draft</div>
+            <span class="badge badge-essay">Essay</span>
+          </div>
+          <div class="card-sub" style="margin-top:3px;">US History · due Apr 10 · grade: 82%</div>
+        </div>
+      </div>
+      <div class="priority-card">
+        <div class="priority-num p5">5</div>
+        <div class="priority-info">
+          <div class="card-row">
+            <div class="card-title">Polynomial Functions HW</div>
+            <span class="badge badge-hw">Homework</span>
+          </div>
+          <div class="card-sub" style="margin-top:3px;">Algebra II · due Apr 8 · grade: 89%</div>
+        </div>
+      </div>
+    </div>
+    <div class="page" id="page-goals">
+      <div class="section-label">Your goals</div>
+      <div class="goal-card">
+        <div class="goal-row">
+          <div class="goal-dot" style="background:#d85a30;"></div>
+          <div class="goal-text">Raise Biology grade above 70%</div>
+        </div>
+        <div class="goal-row">
+          <div class="goal-dot" style="background:#007aff;"></div>
+          <div class="goal-text">Stay eligible for sports (no grade below 60%)</div>
+        </div>
+        <div class="goal-row">
+          <div class="goal-dot" style="background:#3b6d11;"></div>
+          <div class="goal-text">Keep Algebra II above 85%</div>
+        </div>
+      </div>
+      <div class="section-label">Your classes</div>
+      <div class="card">
+        <div class="grade-row">
+          <span class="grade-name">Biology</span>
+          <span class="grade-f">58% · F</span>
+        </div>
+        <div class="grade-row">
+          <span class="grade-name">AP English</span>
+          <span class="grade-c">74% · C</span>
+        </div>
+        <div class="grade-row">
+          <span class="grade-name">Spanish III</span>
+          <span class="grade-c">71% · C</span>
+        </div>
+        <div class="grade-row">
+          <span class="grade-name">US History</span>
+          <span class="grade-b">82% · B</span>
+        </div>
+        <div class="grade-row">
+          <span class="grade-name">Algebra II</span>
+          <span class="grade-a">89% · B+</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+</script>
+</body>
+</html>

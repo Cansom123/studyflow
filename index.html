@@ -4,13 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StudyFlow</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2f7; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
-  .app { width: 100%; max-width: 420px; background: #f2f2f7; min-height: 100vh; }
-  .topbar { background: #ffffff; padding: 16px 20px 12px; border-bottom: 0.5px solid #e0e0e0; }
-  .topbar-title { font-size: 22px; font-weight: 600; color: #1c1c1e; }
-  .topbar-sub { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+  .app { width: 100%; max-width: 420px; min-height: 100vh; }
+
+  /* Auth screens */
+  .auth-screen { background: #ffffff; border-radius: 16px; padding: 32px 24px; margin-top: 40px; border: 0.5px solid #e0e0e0; }
+  .auth-logo { font-size: 26px; font-weight: 700; color: #1c1c1e; margin-bottom: 4px; }
+  .auth-sub { font-size: 14px; color: #8e8e93; margin-bottom: 28px; }
+  .auth-label { font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .auth-input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 0.5px solid #e0e0e0; font-size: 15px; color: #1c1c1e; background: #f9f9f9; margin-bottom: 16px; outline: none; }
+  .auth-input:focus { border-color: #007aff; background: #fff; }
+  .auth-btn { width: 100%; padding: 13px; border-radius: 10px; background: #007aff; color: #fff; font-size: 15px; font-weight: 600; border: none; cursor: pointer; margin-top: 4px; }
+  .auth-btn:hover { background: #0066cc; }
+  .auth-switch { text-align: center; margin-top: 20px; font-size: 14px; color: #8e8e93; }
+  .auth-switch a { color: #007aff; cursor: pointer; text-decoration: none; font-weight: 500; }
+  .auth-error { background: #fcebeb; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #a32d2d; margin-bottom: 14px; display: none; }
+  .auth-success { background: #eaf3de; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #3b6d11; margin-bottom: 14px; display: none; }
+
+  /* Main app */
+  .main-app { display: none; }
+  .topbar { background: #ffffff; padding: 16px 20px 12px; border-bottom: 0.5px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+  .topbar-left .topbar-title { font-size: 22px; font-weight: 600; color: #1c1c1e; }
+  .topbar-left .topbar-sub { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+  .signout-btn { font-size: 13px; color: #007aff; cursor: pointer; background: none; border: none; font-weight: 500; }
   .tabs { display: flex; background: #ffffff; border-bottom: 0.5px solid #e0e0e0; }
   .tab { flex: 1; padding: 11px 0; text-align: center; font-size: 13px; color: #8e8e93; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
   .tab.active { color: #007aff; border-bottom: 2px solid #007aff; font-weight: 500; }
@@ -57,186 +76,288 @@
   .grade-c { font-size: 13px; font-weight: 600; color: #854f0b; }
   .grade-b { font-size: 13px; font-weight: 600; color: #185fa5; }
   .grade-a { font-size: 13px; font-weight: 600; color: #3b6d11; }
+  .user-badge { background: #e6f1fb; border-radius: 8px; padding: 4px 10px; font-size: 12px; color: #185fa5; font-weight: 500; }
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <div class="topbar-title">StudyFlow</div>
-    <div class="topbar-sub">Monday, April 6 · 4 assignments due this week</div>
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="auth-screen">
+    <div class="auth-logo">StudyFlow</div>
+    <div class="auth-sub">Sign in to your account</div>
+    <div id="login-error" class="auth-error"></div>
+    <div class="auth-label">Email</div>
+    <input class="auth-input" type="email" id="login-email" placeholder="you@email.com" />
+    <div class="auth-label">Password</div>
+    <input class="auth-input" type="password" id="login-password" placeholder="••••••••" />
+    <button class="auth-btn" onclick="handleLogin()">Sign in</button>
+    <div class="auth-switch">Don't have an account? <a onclick="showSignup()">Sign up</a></div>
   </div>
-  <div class="tabs">
-    <div class="tab active" onclick="showPage('assignments', this)">Assignments</div>
-    <div class="tab" onclick="showPage('priority', this)">Priority</div>
-    <div class="tab" onclick="showPage('goals', this)">Goals</div>
+
+  <!-- Signup Screen -->
+  <div id="signup-screen" class="auth-screen" style="display:none;">
+    <div class="auth-logo">StudyFlow</div>
+    <div class="auth-sub">Create your account</div>
+    <div id="signup-error" class="auth-error"></div>
+    <div id="signup-success" class="auth-success"></div>
+    <div class="auth-label">Email</div>
+    <input class="auth-input" type="email" id="signup-email" placeholder="you@email.com" />
+    <div class="auth-label">Password</div>
+    <input class="auth-input" type="password" id="signup-password" placeholder="At least 6 characters" />
+    <button class="auth-btn" onclick="handleSignup()">Create account</button>
+    <div class="auth-switch">Already have an account? <a onclick="showLogin()">Sign in</a></div>
   </div>
-  <div class="content">
-    <div class="page active" id="page-assignments">
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-label">Due this week</div>
-          <div class="stat-val">4</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Overdue</div>
-          <div class="stat-val" style="color:#d85a30;">1</div>
-        </div>
+
+  <!-- Main App -->
+  <div id="main-app" class="main-app">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">StudyFlow</div>
+        <div class="topbar-sub" id="topbar-date">Loading...</div>
       </div>
-      <div class="section-label">Overdue</div>
-      <div class="card">
-        <div class="card-row">
-          <div>
-            <div class="card-title">Chapter 7 Reading Quiz</div>
-            <div class="card-sub">AP English · was due Apr 3</div>
-          </div>
-          <span class="badge badge-quiz">Quiz</span>
-        </div>
-        <div class="due-soon">2 days overdue</div>
-      </div>
-      <div class="section-label">Due soon</div>
-      <div class="card">
-        <div class="card-row">
-          <div>
-            <div class="card-title">Cell Division Unit Test</div>
-            <div class="card-sub">Biology · tomorrow</div>
-          </div>
-          <span class="badge badge-test">Test</span>
-        </div>
-        <div class="due-soon">Due Apr 7</div>
-      </div>
-      <div class="card">
-        <div class="card-row">
-          <div>
-            <div class="card-title">Polynomial Functions HW</div>
-            <div class="card-sub">Algebra II · 2 days</div>
-          </div>
-          <span class="badge badge-hw">Homework</span>
-        </div>
-        <div class="due-ok">Due Apr 8</div>
-      </div>
-      <div class="section-label">Later this week</div>
-      <div class="card">
-        <div class="card-row">
-          <div>
-            <div class="card-title">WW2 Essay Draft</div>
-            <div class="card-sub">US History · 4 days</div>
-          </div>
-          <span class="badge badge-essay">Essay</span>
-        </div>
-        <div class="due-ok">Due Apr 10</div>
-      </div>
-      <div class="card">
-        <div class="card-row">
-          <div>
-            <div class="card-title">Spanish Vocab Test</div>
-            <div class="card-sub">Spanish III · 5 days</div>
-          </div>
-          <span class="badge badge-test">Test</span>
-        </div>
-        <div class="due-ok">Due Apr 11</div>
-      </div>
+      <button class="signout-btn" onclick="handleSignout()">Sign out</button>
     </div>
-    <div class="page" id="page-priority">
-      <div class="ai-box">
-        <div class="ai-label">AI suggestion</div>
-        <div class="ai-text">You're failing Biology (58%) and your test is tomorrow. Focus there first — it's your most urgent grade issue.</div>
-      </div>
-      <div class="section-label">Do these first</div>
-      <div class="priority-card">
-        <div class="priority-num p1">1</div>
-        <div class="priority-info">
-          <div class="card-row">
-            <div class="card-title">Cell Division Unit Test</div>
-            <span class="badge badge-test">Test</span>
+    <div class="tabs">
+      <div class="tab active" onclick="showPage('assignments', this)">Assignments</div>
+      <div class="tab" onclick="showPage('priority', this)">Priority</div>
+      <div class="tab" onclick="showPage('goals', this)">Goals</div>
+    </div>
+    <div class="content">
+
+      <div class="page active" id="page-assignments">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Due this week</div>
+            <div class="stat-val">4</div>
           </div>
-          <div class="card-sub" style="margin-top:3px;">Biology · due tomorrow · <span style="color:#d85a30;">grade: 58%</span></div>
+          <div class="stat-card">
+            <div class="stat-label">Overdue</div>
+            <div class="stat-val" style="color:#d85a30;">1</div>
+          </div>
         </div>
-      </div>
-      <div class="priority-card">
-        <div class="priority-num p2">2</div>
-        <div class="priority-info">
+        <div class="section-label">Overdue</div>
+        <div class="card">
           <div class="card-row">
-            <div class="card-title">Chapter 7 Reading Quiz</div>
+            <div>
+              <div class="card-title">Chapter 7 Reading Quiz</div>
+              <div class="card-sub">AP English · was due Apr 3</div>
+            </div>
             <span class="badge badge-quiz">Quiz</span>
           </div>
-          <div class="card-sub" style="margin-top:3px;">AP English · overdue · <span style="color:#d85a30;">2 days late</span></div>
+          <div class="due-soon">2 days overdue</div>
         </div>
-      </div>
-      <div class="section-label">Then these</div>
-      <div class="priority-card">
-        <div class="priority-num p3">3</div>
-        <div class="priority-info">
+        <div class="section-label">Due soon</div>
+        <div class="card">
           <div class="card-row">
-            <div class="card-title">Spanish Vocab Test</div>
+            <div>
+              <div class="card-title">Cell Division Unit Test</div>
+              <div class="card-sub">Biology · tomorrow</div>
+            </div>
             <span class="badge badge-test">Test</span>
           </div>
-          <div class="card-sub" style="margin-top:3px;">Spanish III · due Apr 11 · grade: 71%</div>
+          <div class="due-soon">Due Apr 7</div>
         </div>
-      </div>
-      <div class="priority-card">
-        <div class="priority-num p4">4</div>
-        <div class="priority-info">
+        <div class="card">
           <div class="card-row">
-            <div class="card-title">WW2 Essay Draft</div>
-            <span class="badge badge-essay">Essay</span>
-          </div>
-          <div class="card-sub" style="margin-top:3px;">US History · due Apr 10 · grade: 82%</div>
-        </div>
-      </div>
-      <div class="priority-card">
-        <div class="priority-num p5">5</div>
-        <div class="priority-info">
-          <div class="card-row">
-            <div class="card-title">Polynomial Functions HW</div>
+            <div>
+              <div class="card-title">Polynomial Functions HW</div>
+              <div class="card-sub">Algebra II · 2 days</div>
+            </div>
             <span class="badge badge-hw">Homework</span>
           </div>
-          <div class="card-sub" style="margin-top:3px;">Algebra II · due Apr 8 · grade: 89%</div>
+          <div class="due-ok">Due Apr 8</div>
+        </div>
+        <div class="section-label">Later this week</div>
+        <div class="card">
+          <div class="card-row">
+            <div>
+              <div class="card-title">WW2 Essay Draft</div>
+              <div class="card-sub">US History · 4 days</div>
+            </div>
+            <span class="badge badge-essay">Essay</span>
+          </div>
+          <div class="due-ok">Due Apr 10</div>
+        </div>
+        <div class="card">
+          <div class="card-row">
+            <div>
+              <div class="card-title">Spanish Vocab Test</div>
+              <div class="card-sub">Spanish III · 5 days</div>
+            </div>
+            <span class="badge badge-test">Test</span>
+          </div>
+          <div class="due-ok">Due Apr 11</div>
         </div>
       </div>
-    </div>
-    <div class="page" id="page-goals">
-      <div class="section-label">Your goals</div>
-      <div class="goal-card">
-        <div class="goal-row">
-          <div class="goal-dot" style="background:#d85a30;"></div>
-          <div class="goal-text">Raise Biology grade above 70%</div>
+
+      <div class="page" id="page-priority">
+        <div class="ai-box">
+          <div class="ai-label">AI suggestion</div>
+          <div class="ai-text">You're failing Biology (58%) and your test is tomorrow. Focus there first — it's your most urgent grade issue.</div>
         </div>
-        <div class="goal-row">
-          <div class="goal-dot" style="background:#007aff;"></div>
-          <div class="goal-text">Stay eligible for sports (no grade below 60%)</div>
+        <div class="section-label">Do these first</div>
+        <div class="priority-card">
+          <div class="priority-num p1">1</div>
+          <div class="priority-info">
+            <div class="card-row">
+              <div class="card-title">Cell Division Unit Test</div>
+              <span class="badge badge-test">Test</span>
+            </div>
+            <div class="card-sub" style="margin-top:3px;">Biology · due tomorrow · <span style="color:#d85a30;">grade: 58%</span></div>
+          </div>
         </div>
-        <div class="goal-row">
-          <div class="goal-dot" style="background:#3b6d11;"></div>
-          <div class="goal-text">Keep Algebra II above 85%</div>
+        <div class="priority-card">
+          <div class="priority-num p2">2</div>
+          <div class="priority-info">
+            <div class="card-row">
+              <div class="card-title">Chapter 7 Reading Quiz</div>
+              <span class="badge badge-quiz">Quiz</span>
+            </div>
+            <div class="card-sub" style="margin-top:3px;">AP English · overdue · <span style="color:#d85a30;">2 days late</span></div>
+          </div>
+        </div>
+        <div class="section-label">Then these</div>
+        <div class="priority-card">
+          <div class="priority-num p3">3</div>
+          <div class="priority-info">
+            <div class="card-row">
+              <div class="card-title">Spanish Vocab Test</div>
+              <span class="badge badge-test">Test</span>
+            </div>
+            <div class="card-sub" style="margin-top:3px;">Spanish III · due Apr 11 · grade: 71%</div>
+          </div>
+        </div>
+        <div class="priority-card">
+          <div class="priority-num p4">4</div>
+          <div class="priority-info">
+            <div class="card-row">
+              <div class="card-title">WW2 Essay Draft</div>
+              <span class="badge badge-essay">Essay</span>
+            </div>
+            <div class="card-sub" style="margin-top:3px;">US History · due Apr 10 · grade: 82%</div>
+          </div>
+        </div>
+        <div class="priority-card">
+          <div class="priority-num p5">5</div>
+          <div class="priority-info">
+            <div class="card-row">
+              <div class="card-title">Polynomial Functions HW</div>
+              <span class="badge badge-hw">Homework</span>
+            </div>
+            <div class="card-sub" style="margin-top:3px;">Algebra II · due Apr 8 · grade: 89%</div>
+          </div>
         </div>
       </div>
-      <div class="section-label">Your classes</div>
-      <div class="card">
-        <div class="grade-row">
-          <span class="grade-name">Biology</span>
-          <span class="grade-f">58% · F</span>
+
+      <div class="page" id="page-goals">
+        <div class="section-label">Your goals</div>
+        <div class="goal-card">
+          <div class="goal-row">
+            <div class="goal-dot" style="background:#d85a30;"></div>
+            <div class="goal-text">Raise Biology grade above 70%</div>
+          </div>
+          <div class="goal-row">
+            <div class="goal-dot" style="background:#007aff;"></div>
+            <div class="goal-text">Stay eligible for sports (no grade below 60%)</div>
+          </div>
+          <div class="goal-row">
+            <div class="goal-dot" style="background:#3b6d11;"></div>
+            <div class="goal-text">Keep Algebra II above 85%</div>
+          </div>
         </div>
-        <div class="grade-row">
-          <span class="grade-name">AP English</span>
-          <span class="grade-c">74% · C</span>
-        </div>
-        <div class="grade-row">
-          <span class="grade-name">Spanish III</span>
-          <span class="grade-c">71% · C</span>
-        </div>
-        <div class="grade-row">
-          <span class="grade-name">US History</span>
-          <span class="grade-b">82% · B</span>
-        </div>
-        <div class="grade-row">
-          <span class="grade-name">Algebra II</span>
-          <span class="grade-a">89% · B+</span>
+        <div class="section-label">Your classes</div>
+        <div class="card">
+          <div class="grade-row">
+            <span class="grade-name">Biology</span>
+            <span class="grade-f">58% · F</span>
+          </div>
+          <div class="grade-row">
+            <span class="grade-name">AP English</span>
+            <span class="grade-c">74% · C</span>
+          </div>
+          <div class="grade-row">
+            <span class="grade-name">Spanish III</span>
+            <span class="grade-c">71% · C</span>
+          </div>
+          <div class="grade-row">
+            <span class="grade-name">US History</span>
+            <span class="grade-b">82% · B</span>
+          </div>
+          <div class="grade-row">
+            <span class="grade-name">Algebra II</span>
+            <span class="grade-a">89% · B+</span>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
+
 <script>
+  const SUPABASE_URL = 'https://xbcvztaeslmbcgzamrvi.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiY3Z6dGFlc2xtYmNnemFtcnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTc4MjgsImV4cCI6MjA5MTA5MzgyOH0.I8x8yOxJmEXsl1c8ybrt3uyoPLm9RlR4usB3jnwKRUE';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const now = new Date();
+  document.getElementById('topbar-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} · 4 assignments due this week`;
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (session) {
+      showApp(session.user.email);
+    } else {
+      showLogin();
+    }
+  });
+
+  function showApp(email) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('signup-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+  }
+
+  function showLogin() {
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('signup-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'none';
+  }
+
+  function showSignup() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('signup-screen').style.display = 'block';
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; errEl.style.display = 'block'; return; }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
+  }
+
+  async function handleSignup() {
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const errEl = document.getElementById('signup-error');
+    const sucEl = document.getElementById('signup-success');
+    errEl.style.display = 'none';
+    sucEl.style.display = 'none';
+    if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; errEl.style.display = 'block'; return; }
+    if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = 'block'; return; }
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
+    else { sucEl.textContent = 'Account created! Check your email to confirm then sign in.'; sucEl.style.display = 'block'; }
+  }
+
+  async function handleSignout() {
+    await supabase.auth.signOut();
+  }
+
   function showPage(name, el) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));

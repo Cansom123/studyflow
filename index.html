@@ -81,6 +81,7 @@
   .connected-badge { display: inline-flex; align-items: center; gap: 6px; background: #eaf3de; border-radius: 8px; padding: 6px 12px; font-size: 13px; color: #3b6d11; font-weight: 500; margin-bottom: 12px; }
   .sync-btn { width: 100%; padding: 12px; border-radius: 10px; background: #eaf3de; color: #3b6d11; font-size: 14px; font-weight: 600; border: 0.5px solid #c0dd97; cursor: pointer; margin-bottom: 8px; }
   .sync-btn:hover { background: #c0dd97; }
+  .sync-btn:disabled { background: #f2f2f7; color: #8e8e93; cursor: not-allowed; border-color: #e0e0e0; }
   .disconnect-btn { width: 100%; padding: 12px; border-radius: 10px; background: #fcebeb; color: #a32d2d; font-size: 14px; font-weight: 600; border: 0.5px solid #f7c1c1; cursor: pointer; }
   .loading-box { text-align: center; padding: 32px 0; color: #8e8e93; font-size: 14px; }
   .empty-box { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 24px; text-align: center; }
@@ -142,30 +143,15 @@
             <div class="stat-card"><div class="stat-label">Due this week</div><div class="stat-val" id="stat-week">0</div></div>
             <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" id="stat-overdue" style="color:#d85a30;">0</div></div>
           </div>
-          <div id="overdue-section" style="display:none;">
-            <div class="section-label">Overdue</div>
-            <div id="overdue-list"></div>
-          </div>
-          <div id="soon-section" style="display:none;">
-            <div class="section-label">Due soon</div>
-            <div id="soon-list"></div>
-          </div>
-          <div id="later-section" style="display:none;">
-            <div class="section-label">Later</div>
-            <div id="later-list"></div>
-          </div>
+          <div id="overdue-section" style="display:none;"><div class="section-label">Overdue</div><div id="overdue-list"></div></div>
+          <div id="soon-section" style="display:none;"><div class="section-label">Due soon</div><div id="soon-list"></div></div>
+          <div id="later-section" style="display:none;"><div class="section-label">Later</div><div id="later-list"></div></div>
         </div>
       </div>
 
       <div class="page" id="page-priority">
-        <div class="ai-box"><div class="ai-label">AI suggestion</div><div class="ai-text">Connect your Canvas account in Settings to get personalized priority suggestions based on your real grades and assignments.</div></div>
-        <div class="section-label">Do these first</div>
-        <div class="priority-card"><div class="priority-num p1">1</div><div class="priority-info"><div class="card-row"><div class="card-title">Cell Division Unit Test</div><span class="badge badge-test">Test</span></div><div class="card-sub" style="margin-top:3px;">Biology · due tomorrow · <span style="color:#d85a30;">grade: 58%</span></div></div></div>
-        <div class="priority-card"><div class="priority-num p2">2</div><div class="priority-info"><div class="card-row"><div class="card-title">Chapter 7 Reading Quiz</div><span class="badge badge-quiz">Quiz</span></div><div class="card-sub" style="margin-top:3px;">AP English · overdue · <span style="color:#d85a30;">2 days late</span></div></div></div>
-        <div class="section-label">Then these</div>
-        <div class="priority-card"><div class="priority-num p3">3</div><div class="priority-info"><div class="card-row"><div class="card-title">Spanish Vocab Test</div><span class="badge badge-test">Test</span></div><div class="card-sub" style="margin-top:3px;">Spanish III · due Apr 11 · grade: 71%</div></div></div>
-        <div class="priority-card"><div class="priority-num p4">4</div><div class="priority-info"><div class="card-row"><div class="card-title">WW2 Essay Draft</div><span class="badge badge-essay">Essay</span></div><div class="card-sub" style="margin-top:3px;">US History · due Apr 10 · grade: 82%</div></div></div>
-        <div class="priority-card"><div class="priority-num p5">5</div><div class="priority-info"><div class="card-row"><div class="card-title">Polynomial Functions HW</div><span class="badge badge-hw">Homework</span></div><div class="card-sub" style="margin-top:3px;">Algebra II · due Apr 8 · grade: 89%</div></div></div>
+        <div class="ai-box"><div class="ai-label">AI suggestion</div><div class="ai-text" id="priority-ai-text">Connect your Canvas account in Settings to get personalized priority suggestions.</div></div>
+        <div id="priority-list"></div>
       </div>
 
       <div class="page" id="page-goals">
@@ -210,7 +196,6 @@
             <div class="settings-note">1. Log into Canvas<br>2. Click your profile picture<br>3. Go to Settings<br>4. Scroll to "Approved Integrations"<br>5. Click "+ New Access Token"<br>6. Name it "StudyFlow" and generate it<br>7. Copy and paste it above</div>
           </div>
         </div>
-
         <div class="section-label" style="margin-top:20px;">Account</div>
         <div class="card">
           <div class="card-sub" id="account-email" style="margin-bottom:12px;"></div>
@@ -225,12 +210,12 @@
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  const supabase = createClient(
-    'https://xbcvztaeslmbcgzamrvi.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiY3Z6dGFlc2xtYmNnemFtcnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTc4MjgsImV4cCI6MjA5MTA5MzgyOH0.I8x8yOxJmEXsl1c8ybrt3uyoPLm9RlR4usB3jnwKRUE'
-  );
+  const SUPABASE_URL = 'https://xbcvztaeslmbcgzamrvi.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiY3Z6dGFlc2xtYmNnemFtcnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTc4MjgsImV4cCI6MjA5MTA5MzgyOH0.I8x8yOxJmEXsl1c8ybrt3uyoPLm9RlR4usB3jnwKRUE';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let currentUser = null;
+  let currentSession = null;
 
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -240,6 +225,7 @@
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (session) {
       currentUser = session.user;
+      currentSession = session;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('signup-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'block';
@@ -248,6 +234,7 @@
       await loadAssignments();
     } else {
       currentUser = null;
+      currentSession = null;
       document.getElementById('login-screen').style.display = 'block';
       document.getElementById('signup-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'none';
@@ -280,10 +267,12 @@
       return;
     }
     renderAssignments(assignments);
+    renderPriority(assignments);
   }
 
   function renderAssignments(assignments) {
     document.getElementById('assignments-list').style.display = 'block';
+    document.getElementById('assignments-empty').style.display = 'none';
     const today = new Date(); today.setHours(0,0,0,0);
     const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate() + 7);
     let overdue = [], soon = [], later = [];
@@ -301,6 +290,38 @@
     if (later.length > 0) { document.getElementById('later-section').style.display = 'block'; document.getElementById('later-list').innerHTML = later.map(a => assignmentCard(a, false)).join(''); }
   }
 
+  function renderPriority(assignments) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const sorted = [...assignments].filter(a => a.due_date).sort((a, b) => {
+      const dueA = new Date(a.due_date), dueB = new Date(b.due_date);
+      const overdueA = dueA < today ? 1 : 0, overdueB = dueB < today ? 1 : 0;
+      if (overdueA !== overdueB) return overdueB - overdueA;
+      return dueA - dueB;
+    });
+    const colors = ['p1','p2','p3','p4','p5'];
+    document.getElementById('priority-list').innerHTML = sorted.slice(0, 5).map((a, i) => {
+      const due = new Date(a.due_date); due.setHours(0,0,0,0);
+      const diffDays = Math.round((due - today) / (1000*60*60*24));
+      let dueText = diffDays < 0 ? `<span style="color:#d85a30;">${Math.abs(diffDays)} days overdue</span>` : diffDays === 0 ? `<span style="color:#d85a30;">due today</span>` : diffDays === 1 ? `<span style="color:#d85a30;">due tomorrow</span>` : `due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+      const type = (a.assignment_type||'homework').toLowerCase();
+      let badgeClass = 'badge-hw', badgeLabel = 'Homework';
+      if (type.includes('test')||type.includes('exam')) { badgeClass='badge-test'; badgeLabel='Test'; }
+      else if (type.includes('quiz')) { badgeClass='badge-quiz'; badgeLabel='Quiz'; }
+      else if (type.includes('essay')||type.includes('paper')) { badgeClass='badge-essay'; badgeLabel='Essay'; }
+      return `<div class="priority-card"><div class="priority-num ${colors[i]||'p5'}">${i+1}</div><div class="priority-info"><div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${badgeClass}">${badgeLabel}</span></div><div class="card-sub" style="margin-top:3px;">${a.course||''} · ${dueText}</div></div></div>`;
+    }).join('');
+    if (sorted.length > 0) {
+      const top = sorted[0];
+      const due = new Date(top.due_date);
+      const diffDays = Math.round((due - today) / (1000*60*60*24));
+      let msg = '';
+      if (diffDays < 0) msg = `"${top.title}" for ${top.course||'a class'} is overdue — take care of that first.`;
+      else if (diffDays <= 1) msg = `"${top.title}" for ${top.course||'a class'} is due ${diffDays===0?'today':'tomorrow'} — that's your top priority right now.`;
+      else msg = `Your most urgent assignment is "${top.title}" for ${top.course||'a class'}, due in ${diffDays} days.`;
+      document.getElementById('priority-ai-text').textContent = msg;
+    }
+  }
+
   function assignmentCard(a, isOverdue) {
     const due = new Date(a.due_date);
     const today = new Date(); today.setHours(0,0,0,0);
@@ -309,13 +330,13 @@
     if (isOverdue) dueText = `<div class="due-soon">${Math.abs(diffDays)} day${Math.abs(diffDays)!==1?'s':''} overdue</div>`;
     else if (diffDays === 0) dueText = `<div class="due-soon">Due today</div>`;
     else if (diffDays === 1) dueText = `<div class="due-soon">Due tomorrow</div>`;
-    else dueText = `<div class="due-ok">Due ${due.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</div>`;
-    const type = (a.assignment_type || 'homework').toLowerCase();
+    else dueText = `<div class="due-ok">Due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
+    const type = (a.assignment_type||'homework').toLowerCase();
     let badgeClass = 'badge-hw', badgeLabel = 'Homework';
-    if (type.includes('test') || type.includes('exam')) { badgeClass = 'badge-test'; badgeLabel = 'Test'; }
-    else if (type.includes('quiz')) { badgeClass = 'badge-quiz'; badgeLabel = 'Quiz'; }
-    else if (type.includes('essay') || type.includes('paper')) { badgeClass = 'badge-essay'; badgeLabel = 'Essay'; }
-    return `<div class="card"><div class="card-row"><div><div class="card-title">${a.title}</div><div class="card-sub">${a.course || ''}</div></div><span class="badge ${badgeClass}">${badgeLabel}</span></div>${dueText}</div>`;
+    if (type.includes('test')||type.includes('exam')) { badgeClass='badge-test'; badgeLabel='Test'; }
+    else if (type.includes('quiz')) { badgeClass='badge-quiz'; badgeLabel='Quiz'; }
+    else if (type.includes('essay')||type.includes('paper')) { badgeClass='badge-essay'; badgeLabel='Essay'; }
+    return `<div class="card"><div class="card-row"><div><div class="card-title">${a.title}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${badgeClass}">${badgeLabel}</span></div>${dueText}</div>`;
   }
 
   window.saveCanvasSettings = async () => {
@@ -327,65 +348,42 @@
     const btn = document.getElementById('canvas-save-btn');
     btn.disabled = true; btn.textContent = 'Saving...';
     const { error } = await supabase.from('user_settings').upsert({ user_id: currentUser.id, canvas_url: url, canvas_token: token }, { onConflict: 'user_id' });
+    if (error) { btn.disabled = false; btn.textContent = 'Save & connect'; msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`; return; }
+    msgEl.innerHTML = '<div class="auth-success">Saved! Syncing your assignments now...</div>';
     btn.disabled = false; btn.textContent = 'Save & connect';
-    if (error) { msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`; return; }
-    msgEl.innerHTML = '<div class="auth-success">Canvas connected! Syncing your assignments...</div>';
     await loadCanvasSettings();
     await syncCanvas();
-  };
-
-  window.disconnectCanvas = async () => {
-    await supabase.from('user_settings').update({ canvas_token: null }).eq('user_id', currentUser.id);
-    await loadCanvasSettings();
-    document.getElementById('assignments-list').style.display = 'none';
-    document.getElementById('assignments-empty').style.display = 'block';
   };
 
   window.syncCanvas = async () => {
     const btn = document.getElementById('sync-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
-    const { data: settings } = await supabase.from('user_settings').select('*').eq('user_id', currentUser.id).single();
-    if (!settings || !settings.canvas_token) return;
     try {
-      const corsProxy = 'https://corsproxy.io/?';
-      const canvasUrl = `https://${settings.canvas_url}`;
-      const resp = await fetch(`${corsProxy}${encodeURIComponent(`${canvasUrl}/api/v1/courses?enrollment_state=active&per_page=50`)}`, {
-        headers: { 'Authorization': `Bearer ${settings.canvas_token}` }
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/canvas-sync`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
       });
-      if (!resp.ok) throw new Error('Could not connect to Canvas. Check your token.');
-      const courses = await resp.json();
-      let allAssignments = [];
-      for (const course of courses.slice(0, 10)) {
-        try {
-          const ar = await fetch(`${corsProxy}${encodeURIComponent(`${canvasUrl}/api/v1/courses/${course.id}/assignments?order_by=due_at&per_page=50`)}`, {
-            headers: { 'Authorization': `Bearer ${settings.canvas_token}` }
-          });
-          if (!ar.ok) continue;
-          const courseAssignments = await ar.json();
-          courseAssignments.forEach(a => {
-            if (a.due_at) {
-              allAssignments.push({
-                user_id: currentUser.id,
-                title: a.name,
-                course: course.name,
-                due_date: a.due_at,
-                assignment_type: a.submission_types ? a.submission_types[0] : 'homework',
-                points_possible: a.points_possible
-              });
-            }
-          });
-        } catch(e) { continue; }
-      }
-      if (allAssignments.length > 0) {
-        await supabase.from('assignments').delete().eq('user_id', currentUser.id);
-        await supabase.from('assignments').insert(allAssignments);
-      }
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || 'Sync failed');
       await loadAssignments();
       if (btn) { btn.disabled = false; btn.textContent = 'Sync assignments now'; }
     } catch(err) {
       if (btn) { btn.disabled = false; btn.textContent = 'Sync assignments now'; }
-      document.getElementById('canvas-msg') && (document.getElementById('canvas-msg').innerHTML = `<div class="auth-error">${err.message}</div>`);
+      const msgEl = document.getElementById('canvas-msg');
+      if (msgEl) msgEl.innerHTML = `<div class="auth-error">${err.message}</div>`;
     }
+  };
+
+  window.disconnectCanvas = async () => {
+    await supabase.from('user_settings').update({ canvas_token: null }).eq('user_id', currentUser.id);
+    await supabase.from('assignments').delete().eq('user_id', currentUser.id);
+    await loadCanvasSettings();
+    document.getElementById('assignments-list').style.display = 'none';
+    document.getElementById('assignments-empty').style.display = 'block';
   };
 
   window.showSignup = () => { document.getElementById('login-screen').style.display = 'none'; document.getElementById('signup-screen').style.display = 'block'; };

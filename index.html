@@ -72,6 +72,20 @@
   .grade-c { font-size: 13px; font-weight: 600; color: #854f0b; }
   .grade-b { font-size: 13px; font-weight: 600; color: #185fa5; }
   .grade-a { font-size: 13px; font-weight: 600; color: #3b6d11; }
+  .settings-input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 0.5px solid #e0e0e0; font-size: 14px; color: #1c1c1e; background: #f9f9f9; margin-bottom: 16px; outline: none; }
+  .settings-input:focus { border-color: #007aff; background: #fff; }
+  .settings-btn { width: 100%; padding: 12px; border-radius: 10px; background: #007aff; color: #fff; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
+  .settings-btn:hover { background: #0066cc; }
+  .settings-btn:disabled { background: #8e8e93; cursor: not-allowed; }
+  .settings-note { font-size: 12px; color: #8e8e93; line-height: 1.5; margin-bottom: 16px; }
+  .connected-badge { display: inline-flex; align-items: center; gap: 6px; background: #eaf3de; border-radius: 8px; padding: 6px 12px; font-size: 13px; color: #3b6d11; font-weight: 500; margin-bottom: 12px; }
+  .sync-btn { width: 100%; padding: 12px; border-radius: 10px; background: #eaf3de; color: #3b6d11; font-size: 14px; font-weight: 600; border: 0.5px solid #c0dd97; cursor: pointer; margin-bottom: 8px; }
+  .sync-btn:hover { background: #c0dd97; }
+  .disconnect-btn { width: 100%; padding: 12px; border-radius: 10px; background: #fcebeb; color: #a32d2d; font-size: 14px; font-weight: 600; border: 0.5px solid #f7c1c1; cursor: pointer; }
+  .loading-box { text-align: center; padding: 32px 0; color: #8e8e93; font-size: 14px; }
+  .empty-box { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 24px; text-align: center; }
+  .empty-title { font-size: 15px; font-weight: 500; color: #1c1c1e; margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; color: #8e8e93; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -113,39 +127,38 @@
       <div class="tab active" onclick="showPage('assignments', this)">Assignments</div>
       <div class="tab" onclick="showPage('priority', this)">Priority</div>
       <div class="tab" onclick="showPage('goals', this)">Goals</div>
+      <div class="tab" onclick="showPage('settings', this)">Settings</div>
     </div>
     <div class="content">
+
       <div class="page active" id="page-assignments">
-        <div class="stats-row">
-          <div class="stat-card"><div class="stat-label">Due this week</div><div class="stat-val">4</div></div>
-          <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" style="color:#d85a30;">1</div></div>
+        <div id="assignments-loading" class="loading-box">Loading your assignments...</div>
+        <div id="assignments-empty" class="empty-box" style="display:none;">
+          <div class="empty-title">No assignments yet</div>
+          <div class="empty-sub">Connect your Canvas account in Settings to see your real assignments here automatically.</div>
         </div>
-        <div class="section-label">Overdue</div>
-        <div class="card">
-          <div class="card-row"><div><div class="card-title">Chapter 7 Reading Quiz</div><div class="card-sub">AP English · was due Apr 3</div></div><span class="badge badge-quiz">Quiz</span></div>
-          <div class="due-soon">2 days overdue</div>
-        </div>
-        <div class="section-label">Due soon</div>
-        <div class="card">
-          <div class="card-row"><div><div class="card-title">Cell Division Unit Test</div><div class="card-sub">Biology · tomorrow</div></div><span class="badge badge-test">Test</span></div>
-          <div class="due-soon">Due Apr 7</div>
-        </div>
-        <div class="card">
-          <div class="card-row"><div><div class="card-title">Polynomial Functions HW</div><div class="card-sub">Algebra II · 2 days</div></div><span class="badge badge-hw">Homework</span></div>
-          <div class="due-ok">Due Apr 8</div>
-        </div>
-        <div class="section-label">Later this week</div>
-        <div class="card">
-          <div class="card-row"><div><div class="card-title">WW2 Essay Draft</div><div class="card-sub">US History · 4 days</div></div><span class="badge badge-essay">Essay</span></div>
-          <div class="due-ok">Due Apr 10</div>
-        </div>
-        <div class="card">
-          <div class="card-row"><div><div class="card-title">Spanish Vocab Test</div><div class="card-sub">Spanish III · 5 days</div></div><span class="badge badge-test">Test</span></div>
-          <div class="due-ok">Due Apr 11</div>
+        <div id="assignments-list" style="display:none;">
+          <div class="stats-row">
+            <div class="stat-card"><div class="stat-label">Due this week</div><div class="stat-val" id="stat-week">0</div></div>
+            <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" id="stat-overdue" style="color:#d85a30;">0</div></div>
+          </div>
+          <div id="overdue-section" style="display:none;">
+            <div class="section-label">Overdue</div>
+            <div id="overdue-list"></div>
+          </div>
+          <div id="soon-section" style="display:none;">
+            <div class="section-label">Due soon</div>
+            <div id="soon-list"></div>
+          </div>
+          <div id="later-section" style="display:none;">
+            <div class="section-label">Later</div>
+            <div id="later-list"></div>
+          </div>
         </div>
       </div>
+
       <div class="page" id="page-priority">
-        <div class="ai-box"><div class="ai-label">AI suggestion</div><div class="ai-text">You're failing Biology (58%) and your test is tomorrow. Focus there first — it's your most urgent grade issue.</div></div>
+        <div class="ai-box"><div class="ai-label">AI suggestion</div><div class="ai-text">Connect your Canvas account in Settings to get personalized priority suggestions based on your real grades and assignments.</div></div>
         <div class="section-label">Do these first</div>
         <div class="priority-card"><div class="priority-num p1">1</div><div class="priority-info"><div class="card-row"><div class="card-title">Cell Division Unit Test</div><span class="badge badge-test">Test</span></div><div class="card-sub" style="margin-top:3px;">Biology · due tomorrow · <span style="color:#d85a30;">grade: 58%</span></div></div></div>
         <div class="priority-card"><div class="priority-num p2">2</div><div class="priority-info"><div class="card-row"><div class="card-title">Chapter 7 Reading Quiz</div><span class="badge badge-quiz">Quiz</span></div><div class="card-sub" style="margin-top:3px;">AP English · overdue · <span style="color:#d85a30;">2 days late</span></div></div></div>
@@ -154,6 +167,7 @@
         <div class="priority-card"><div class="priority-num p4">4</div><div class="priority-info"><div class="card-row"><div class="card-title">WW2 Essay Draft</div><span class="badge badge-essay">Essay</span></div><div class="card-sub" style="margin-top:3px;">US History · due Apr 10 · grade: 82%</div></div></div>
         <div class="priority-card"><div class="priority-num p5">5</div><div class="priority-info"><div class="card-row"><div class="card-title">Polynomial Functions HW</div><span class="badge badge-hw">Homework</span></div><div class="card-sub" style="margin-top:3px;">Algebra II · due Apr 8 · grade: 89%</div></div></div>
       </div>
+
       <div class="page" id="page-goals">
         <div class="section-label">Your goals</div>
         <div class="goal-card">
@@ -170,6 +184,40 @@
           <div class="grade-row"><span class="grade-name">Algebra II</span><span class="grade-a">89% · B+</span></div>
         </div>
       </div>
+
+      <div class="page" id="page-settings">
+        <div class="section-label">Canvas connection</div>
+        <div id="canvas-connected" style="display:none;">
+          <div class="card" style="margin-bottom:8px;">
+            <div class="connected-badge">✓ Canvas connected</div>
+            <div class="card-sub" id="canvas-url-display" style="margin-bottom:12px;"></div>
+            <button class="sync-btn" id="sync-btn" onclick="syncCanvas()">Sync assignments now</button>
+            <button class="disconnect-btn" onclick="disconnectCanvas()">Disconnect Canvas</button>
+          </div>
+        </div>
+        <div id="canvas-form">
+          <div class="card">
+            <div class="settings-note">Enter your Canvas details below. Your token is stored privately and only you can see it.</div>
+            <div class="auth-label">Canvas URL</div>
+            <input class="settings-input" type="text" id="canvas-url" placeholder="ccsd.instructure.com" />
+            <div class="auth-label">Canvas API Token</div>
+            <input class="settings-input" type="password" id="canvas-token" placeholder="Paste your token here" />
+            <div id="canvas-msg" style="margin-bottom:8px;"></div>
+            <button class="settings-btn" id="canvas-save-btn" onclick="saveCanvasSettings()">Save & connect</button>
+          </div>
+          <div class="card" style="margin-top:8px;">
+            <div class="card-title" style="margin-bottom:6px;">How to get your Canvas token</div>
+            <div class="settings-note">1. Log into Canvas<br>2. Click your profile picture<br>3. Go to Settings<br>4. Scroll to "Approved Integrations"<br>5. Click "+ New Access Token"<br>6. Name it "StudyFlow" and generate it<br>7. Copy and paste it above</div>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">Account</div>
+        <div class="card">
+          <div class="card-sub" id="account-email" style="margin-bottom:12px;"></div>
+          <button class="disconnect-btn" onclick="handleSignout()">Sign out</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -182,32 +230,166 @@
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiY3Z6dGFlc2xtYmNnemFtcnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTc4MjgsImV4cCI6MjA5MTA5MzgyOH0.I8x8yOxJmEXsl1c8ybrt3uyoPLm9RlR4usB3jnwKRUE'
   );
 
+  let currentUser = null;
+
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const now = new Date();
-  document.getElementById('topbar-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} · 4 assignments due this week`;
+  document.getElementById('topbar-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
 
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
     if (session) {
+      currentUser = session.user;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('signup-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'block';
+      document.getElementById('account-email').textContent = currentUser.email;
+      await loadCanvasSettings();
+      await loadAssignments();
     } else {
+      currentUser = null;
       document.getElementById('login-screen').style.display = 'block';
       document.getElementById('signup-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'none';
     }
   });
 
-  window.showSignup = () => {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('signup-screen').style.display = 'block';
+  async function loadCanvasSettings() {
+    const { data } = await supabase.from('user_settings').select('*').eq('user_id', currentUser.id).single();
+    if (data && data.canvas_token) {
+      document.getElementById('canvas-connected').style.display = 'block';
+      document.getElementById('canvas-form').style.display = 'none';
+      document.getElementById('canvas-url-display').textContent = data.canvas_url;
+    } else {
+      document.getElementById('canvas-connected').style.display = 'none';
+      document.getElementById('canvas-form').style.display = 'block';
+    }
+  }
+
+  async function loadAssignments() {
+    const { data: settings } = await supabase.from('user_settings').select('*').eq('user_id', currentUser.id).single();
+    if (!settings || !settings.canvas_token) {
+      document.getElementById('assignments-loading').style.display = 'none';
+      document.getElementById('assignments-empty').style.display = 'block';
+      return;
+    }
+    const { data: assignments } = await supabase.from('assignments').select('*').eq('user_id', currentUser.id).order('due_date', { ascending: true });
+    document.getElementById('assignments-loading').style.display = 'none';
+    if (!assignments || assignments.length === 0) {
+      document.getElementById('assignments-empty').style.display = 'block';
+      return;
+    }
+    renderAssignments(assignments);
+  }
+
+  function renderAssignments(assignments) {
+    document.getElementById('assignments-list').style.display = 'block';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate() + 7);
+    let overdue = [], soon = [], later = [];
+    assignments.forEach(a => {
+      if (!a.due_date) return;
+      const due = new Date(a.due_date); due.setHours(0,0,0,0);
+      if (due < today) overdue.push(a);
+      else if (due <= weekFromNow) soon.push(a);
+      else later.push(a);
+    });
+    document.getElementById('stat-week').textContent = soon.length;
+    document.getElementById('stat-overdue').textContent = overdue.length;
+    if (overdue.length > 0) { document.getElementById('overdue-section').style.display = 'block'; document.getElementById('overdue-list').innerHTML = overdue.map(a => assignmentCard(a, true)).join(''); }
+    if (soon.length > 0) { document.getElementById('soon-section').style.display = 'block'; document.getElementById('soon-list').innerHTML = soon.map(a => assignmentCard(a, false)).join(''); }
+    if (later.length > 0) { document.getElementById('later-section').style.display = 'block'; document.getElementById('later-list').innerHTML = later.map(a => assignmentCard(a, false)).join(''); }
+  }
+
+  function assignmentCard(a, isOverdue) {
+    const due = new Date(a.due_date);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diffDays = Math.round((due - today) / (1000*60*60*24));
+    let dueText = '';
+    if (isOverdue) dueText = `<div class="due-soon">${Math.abs(diffDays)} day${Math.abs(diffDays)!==1?'s':''} overdue</div>`;
+    else if (diffDays === 0) dueText = `<div class="due-soon">Due today</div>`;
+    else if (diffDays === 1) dueText = `<div class="due-soon">Due tomorrow</div>`;
+    else dueText = `<div class="due-ok">Due ${due.toLocaleDateString('en-US', {month:'short', day:'numeric'})}</div>`;
+    const type = (a.assignment_type || 'homework').toLowerCase();
+    let badgeClass = 'badge-hw', badgeLabel = 'Homework';
+    if (type.includes('test') || type.includes('exam')) { badgeClass = 'badge-test'; badgeLabel = 'Test'; }
+    else if (type.includes('quiz')) { badgeClass = 'badge-quiz'; badgeLabel = 'Quiz'; }
+    else if (type.includes('essay') || type.includes('paper')) { badgeClass = 'badge-essay'; badgeLabel = 'Essay'; }
+    return `<div class="card"><div class="card-row"><div><div class="card-title">${a.title}</div><div class="card-sub">${a.course || ''}</div></div><span class="badge ${badgeClass}">${badgeLabel}</span></div>${dueText}</div>`;
+  }
+
+  window.saveCanvasSettings = async () => {
+    const url = document.getElementById('canvas-url').value.trim().replace('https://','').replace('http://','').replace(/\/$/,'');
+    const token = document.getElementById('canvas-token').value.trim();
+    const msgEl = document.getElementById('canvas-msg');
+    msgEl.innerHTML = '';
+    if (!url || !token) { msgEl.innerHTML = '<div class="auth-error">Please enter both your Canvas URL and token.</div>'; return; }
+    const btn = document.getElementById('canvas-save-btn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    const { error } = await supabase.from('user_settings').upsert({ user_id: currentUser.id, canvas_url: url, canvas_token: token }, { onConflict: 'user_id' });
+    btn.disabled = false; btn.textContent = 'Save & connect';
+    if (error) { msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`; return; }
+    msgEl.innerHTML = '<div class="auth-success">Canvas connected! Syncing your assignments...</div>';
+    await loadCanvasSettings();
+    await syncCanvas();
   };
 
-  window.showLogin = () => {
-    document.getElementById('login-screen').style.display = 'block';
-    document.getElementById('signup-screen').style.display = 'none';
+  window.disconnectCanvas = async () => {
+    await supabase.from('user_settings').update({ canvas_token: null }).eq('user_id', currentUser.id);
+    await loadCanvasSettings();
+    document.getElementById('assignments-list').style.display = 'none';
+    document.getElementById('assignments-empty').style.display = 'block';
   };
+
+  window.syncCanvas = async () => {
+    const btn = document.getElementById('sync-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
+    const { data: settings } = await supabase.from('user_settings').select('*').eq('user_id', currentUser.id).single();
+    if (!settings || !settings.canvas_token) return;
+    try {
+      const corsProxy = 'https://corsproxy.io/?';
+      const canvasUrl = `https://${settings.canvas_url}`;
+      const resp = await fetch(`${corsProxy}${encodeURIComponent(`${canvasUrl}/api/v1/courses?enrollment_state=active&per_page=50`)}`, {
+        headers: { 'Authorization': `Bearer ${settings.canvas_token}` }
+      });
+      if (!resp.ok) throw new Error('Could not connect to Canvas. Check your token.');
+      const courses = await resp.json();
+      let allAssignments = [];
+      for (const course of courses.slice(0, 10)) {
+        try {
+          const ar = await fetch(`${corsProxy}${encodeURIComponent(`${canvasUrl}/api/v1/courses/${course.id}/assignments?order_by=due_at&per_page=50`)}`, {
+            headers: { 'Authorization': `Bearer ${settings.canvas_token}` }
+          });
+          if (!ar.ok) continue;
+          const courseAssignments = await ar.json();
+          courseAssignments.forEach(a => {
+            if (a.due_at) {
+              allAssignments.push({
+                user_id: currentUser.id,
+                title: a.name,
+                course: course.name,
+                due_date: a.due_at,
+                assignment_type: a.submission_types ? a.submission_types[0] : 'homework',
+                points_possible: a.points_possible
+              });
+            }
+          });
+        } catch(e) { continue; }
+      }
+      if (allAssignments.length > 0) {
+        await supabase.from('assignments').delete().eq('user_id', currentUser.id);
+        await supabase.from('assignments').insert(allAssignments);
+      }
+      await loadAssignments();
+      if (btn) { btn.disabled = false; btn.textContent = 'Sync assignments now'; }
+    } catch(err) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Sync assignments now'; }
+      document.getElementById('canvas-msg') && (document.getElementById('canvas-msg').innerHTML = `<div class="auth-error">${err.message}</div>`);
+    }
+  };
+
+  window.showSignup = () => { document.getElementById('login-screen').style.display = 'none'; document.getElementById('signup-screen').style.display = 'block'; };
+  window.showLogin = () => { document.getElementById('login-screen').style.display = 'block'; document.getElementById('signup-screen').style.display = 'none'; };
 
   window.handleLogin = async () => {
     const email = document.getElementById('login-email').value.trim();
@@ -215,11 +397,10 @@
     const msgEl = document.getElementById('login-msg');
     msgEl.innerHTML = '';
     if (!email || !password) { msgEl.innerHTML = '<div class="auth-error">Please enter your email and password.</div>'; return; }
-    document.getElementById('login-btn').disabled = true;
-    document.getElementById('login-btn').textContent = 'Signing in...';
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true; btn.textContent = 'Signing in...';
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    document.getElementById('login-btn').disabled = false;
-    document.getElementById('login-btn').textContent = 'Sign in';
+    btn.disabled = false; btn.textContent = 'Sign in';
     if (error) msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`;
   };
 
@@ -230,18 +411,15 @@
     msgEl.innerHTML = '';
     if (!email || !password) { msgEl.innerHTML = '<div class="auth-error">Please enter your email and password.</div>'; return; }
     if (password.length < 6) { msgEl.innerHTML = '<div class="auth-error">Password must be at least 6 characters.</div>'; return; }
-    document.getElementById('signup-btn').disabled = true;
-    document.getElementById('signup-btn').textContent = 'Creating account...';
+    const btn = document.getElementById('signup-btn');
+    btn.disabled = true; btn.textContent = 'Creating account...';
     const { error } = await supabase.auth.signUp({ email, password });
-    document.getElementById('signup-btn').disabled = false;
-    document.getElementById('signup-btn').textContent = 'Create account';
+    btn.disabled = false; btn.textContent = 'Create account';
     if (error) msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`;
     else msgEl.innerHTML = '<div class="auth-success">Account created! Check your email to confirm, then sign in.</div>';
   };
 
-  window.handleSignout = async () => {
-    await supabase.auth.signOut();
-  };
+  window.handleSignout = async () => { await supabase.auth.signOut(); };
 
   window.showPage = (name, el) => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));

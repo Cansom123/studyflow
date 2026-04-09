@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StudyFlow</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2f7; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
@@ -80,7 +81,6 @@
   .settings-note { font-size: 12px; color: #8e8e93; line-height: 1.5; margin-bottom: 16px; }
   .connected-badge { display: inline-flex; align-items: center; gap: 6px; background: #eaf3de; border-radius: 8px; padding: 6px 12px; font-size: 13px; color: #3b6d11; font-weight: 500; margin-bottom: 12px; }
   .sync-btn { width: 100%; padding: 12px; border-radius: 10px; background: #eaf3de; color: #3b6d11; font-size: 14px; font-weight: 600; border: 0.5px solid #c0dd97; cursor: pointer; margin-bottom: 8px; }
-  .sync-btn:hover { background: #c0dd97; }
   .sync-btn:disabled { background: #f2f2f7; color: #8e8e93; cursor: not-allowed; border-color: #e0e0e0; }
   .disconnect-btn { width: 100%; padding: 12px; border-radius: 10px; background: #fcebeb; color: #a32d2d; font-size: 14px; font-weight: 600; border: 0.5px solid #f7c1c1; cursor: pointer; }
   .loading-box { text-align: center; padding: 32px 0; color: #8e8e93; font-size: 14px; }
@@ -91,7 +91,6 @@
 </head>
 <body>
 <div class="app">
-
   <div id="login-screen" class="auth-screen">
     <div class="auth-logo">StudyFlow</div>
     <div class="auth-sub">Sign in to your account</div>
@@ -178,7 +177,7 @@
             <div class="connected-badge">✓ Canvas connected</div>
             <div class="card-sub" id="canvas-url-display" style="margin-bottom:12px;"></div>
             <button class="sync-btn" id="sync-btn" onclick="syncCanvas()">Sync assignments now</button>
-            <button class="disconnect-btn" onclick="disconnectCanvas()">Disconnect Canvas</button>
+            <button class="disconnect-btn" style="margin-top:8px;" onclick="disconnectCanvas()">Disconnect Canvas</button>
           </div>
         </div>
         <div id="canvas-form">
@@ -207,25 +206,21 @@
   </div>
 </div>
 
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
+<script>
   const SUPABASE_URL = 'https://xbcvztaeslmbcgzamrvi.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiY3Z6dGFlc2xtYmNnemFtcnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTc4MjgsImV4cCI6MjA5MTA5MzgyOH0.I8x8yOxJmEXsl1c8ybrt3uyoPLm9RlR4usB3jnwKRUE';
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiY3Z6dGFlc2xtYmNnemFtcnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTc4MjgsImV4cCI6MjA5MTA5MzgyOH0.I8x8yOxJmEXsl1c8ybrt3uyoPLm9RlR4usB3jnwKRUE';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let currentUser = null;
-  let currentSession = null;
 
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const now = new Date();
   document.getElementById('topbar-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
 
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  sb.auth.onAuthStateChange(async (event, session) => {
     if (session) {
       currentUser = session.user;
-      currentSession = session;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('signup-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'block';
@@ -234,7 +229,6 @@
       await loadAssignments();
     } else {
       currentUser = null;
-      currentSession = null;
       document.getElementById('login-screen').style.display = 'block';
       document.getElementById('signup-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'none';
@@ -242,7 +236,7 @@
   });
 
   async function loadCanvasSettings() {
-    const { data } = await supabase.from('user_settings').select('*').eq('user_id', currentUser.id).single();
+    const { data, error } = await sb.from('user_settings').select('*').eq('user_id', currentUser.id).maybeSingle();
     if (data && data.canvas_token) {
       document.getElementById('canvas-connected').style.display = 'block';
       document.getElementById('canvas-form').style.display = 'none';
@@ -254,13 +248,13 @@
   }
 
   async function loadAssignments() {
-    const { data: settings } = await supabase.from('user_settings').select('*').eq('user_id', currentUser.id).single();
+    const { data: settings } = await sb.from('user_settings').select('*').eq('user_id', currentUser.id).maybeSingle();
     if (!settings || !settings.canvas_token) {
       document.getElementById('assignments-loading').style.display = 'none';
       document.getElementById('assignments-empty').style.display = 'block';
       return;
     }
-    const { data: assignments } = await supabase.from('assignments').select('*').eq('user_id', currentUser.id).order('due_date', { ascending: true });
+    const { data: assignments } = await sb.from('assignments').select('*').eq('user_id', currentUser.id).order('due_date', { ascending: true });
     document.getElementById('assignments-loading').style.display = 'none';
     if (!assignments || assignments.length === 0) {
       document.getElementById('assignments-empty').style.display = 'block';
@@ -292,32 +286,24 @@
 
   function renderPriority(assignments) {
     const today = new Date(); today.setHours(0,0,0,0);
-    const sorted = [...assignments].filter(a => a.due_date).sort((a, b) => {
-      const dueA = new Date(a.due_date), dueB = new Date(b.due_date);
-      const overdueA = dueA < today ? 1 : 0, overdueB = dueB < today ? 1 : 0;
-      if (overdueA !== overdueB) return overdueB - overdueA;
-      return dueA - dueB;
-    });
+    const sorted = [...assignments].filter(a => a.due_date).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
     const colors = ['p1','p2','p3','p4','p5'];
     document.getElementById('priority-list').innerHTML = sorted.slice(0, 5).map((a, i) => {
-      const due = new Date(a.due_date); due.setHours(0,0,0,0);
+      const due = new Date(a.due_date);
       const diffDays = Math.round((due - today) / (1000*60*60*24));
       let dueText = diffDays < 0 ? `<span style="color:#d85a30;">${Math.abs(diffDays)} days overdue</span>` : diffDays === 0 ? `<span style="color:#d85a30;">due today</span>` : diffDays === 1 ? `<span style="color:#d85a30;">due tomorrow</span>` : `due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
       const type = (a.assignment_type||'homework').toLowerCase();
-      let badgeClass = 'badge-hw', badgeLabel = 'Homework';
-      if (type.includes('test')||type.includes('exam')) { badgeClass='badge-test'; badgeLabel='Test'; }
-      else if (type.includes('quiz')) { badgeClass='badge-quiz'; badgeLabel='Quiz'; }
-      else if (type.includes('essay')||type.includes('paper')) { badgeClass='badge-essay'; badgeLabel='Essay'; }
-      return `<div class="priority-card"><div class="priority-num ${colors[i]||'p5'}">${i+1}</div><div class="priority-info"><div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${badgeClass}">${badgeLabel}</span></div><div class="card-sub" style="margin-top:3px;">${a.course||''} · ${dueText}</div></div></div>`;
+      let bc = 'badge-hw', bl = 'Homework';
+      if (type.includes('test')||type.includes('exam')) { bc='badge-test'; bl='Test'; }
+      else if (type.includes('quiz')) { bc='badge-quiz'; bl='Quiz'; }
+      else if (type.includes('essay')||type.includes('paper')) { bc='badge-essay'; bl='Essay'; }
+      return `<div class="priority-card"><div class="priority-num ${colors[i]||'p5'}">${i+1}</div><div class="priority-info"><div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div><div class="card-sub" style="margin-top:3px;">${a.course||''} · ${dueText}</div></div></div>`;
     }).join('');
     if (sorted.length > 0) {
       const top = sorted[0];
       const due = new Date(top.due_date);
       const diffDays = Math.round((due - today) / (1000*60*60*24));
-      let msg = '';
-      if (diffDays < 0) msg = `"${top.title}" for ${top.course||'a class'} is overdue — take care of that first.`;
-      else if (diffDays <= 1) msg = `"${top.title}" for ${top.course||'a class'} is due ${diffDays===0?'today':'tomorrow'} — that's your top priority right now.`;
-      else msg = `Your most urgent assignment is "${top.title}" for ${top.course||'a class'}, due in ${diffDays} days.`;
+      let msg = diffDays < 0 ? `"${top.title}" for ${top.course||'a class'} is overdue — take care of that first.` : diffDays <= 1 ? `"${top.title}" for ${top.course||'a class'} is due ${diffDays===0?'today':'tomorrow'} — that's your top priority.` : `Your most urgent assignment is "${top.title}" for ${top.course||'a class'}, due in ${diffDays} days.`;
       document.getElementById('priority-ai-text').textContent = msg;
     }
   }
@@ -326,20 +312,16 @@
     const due = new Date(a.due_date);
     const today = new Date(); today.setHours(0,0,0,0);
     const diffDays = Math.round((due - today) / (1000*60*60*24));
-    let dueText = '';
-    if (isOverdue) dueText = `<div class="due-soon">${Math.abs(diffDays)} day${Math.abs(diffDays)!==1?'s':''} overdue</div>`;
-    else if (diffDays === 0) dueText = `<div class="due-soon">Due today</div>`;
-    else if (diffDays === 1) dueText = `<div class="due-soon">Due tomorrow</div>`;
-    else dueText = `<div class="due-ok">Due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
+    let dueText = isOverdue ? `<div class="due-soon">${Math.abs(diffDays)} day${Math.abs(diffDays)!==1?'s':''} overdue</div>` : diffDays === 0 ? `<div class="due-soon">Due today</div>` : diffDays === 1 ? `<div class="due-soon">Due tomorrow</div>` : `<div class="due-ok">Due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
     const type = (a.assignment_type||'homework').toLowerCase();
-    let badgeClass = 'badge-hw', badgeLabel = 'Homework';
-    if (type.includes('test')||type.includes('exam')) { badgeClass='badge-test'; badgeLabel='Test'; }
-    else if (type.includes('quiz')) { badgeClass='badge-quiz'; badgeLabel='Quiz'; }
-    else if (type.includes('essay')||type.includes('paper')) { badgeClass='badge-essay'; badgeLabel='Essay'; }
-    return `<div class="card"><div class="card-row"><div><div class="card-title">${a.title}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${badgeClass}">${badgeLabel}</span></div>${dueText}</div>`;
+    let bc = 'badge-hw', bl = 'Homework';
+    if (type.includes('test')||type.includes('exam')) { bc='badge-test'; bl='Test'; }
+    else if (type.includes('quiz')) { bc='badge-quiz'; bl='Quiz'; }
+    else if (type.includes('essay')||type.includes('paper')) { bc='badge-essay'; bl='Essay'; }
+    return `<div class="card"><div class="card-row"><div><div class="card-title">${a.title}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>${dueText}</div>`;
   }
 
-  window.saveCanvasSettings = async () => {
+  async function saveCanvasSettings() {
     const url = document.getElementById('canvas-url').value.trim().replace('https://','').replace('http://','').replace(/\/$/,'');
     const token = document.getElementById('canvas-token').value.trim();
     const msgEl = document.getElementById('canvas-msg');
@@ -347,25 +329,27 @@
     if (!url || !token) { msgEl.innerHTML = '<div class="auth-error">Please enter both your Canvas URL and token.</div>'; return; }
     const btn = document.getElementById('canvas-save-btn');
     btn.disabled = true; btn.textContent = 'Saving...';
-    const { error } = await supabase.from('user_settings').upsert({ user_id: currentUser.id, canvas_url: url, canvas_token: token }, { onConflict: 'user_id' });
-    if (error) { btn.disabled = false; btn.textContent = 'Save & connect'; msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`; return; }
-    msgEl.innerHTML = '<div class="auth-success">Saved! Syncing your assignments now...</div>';
-    btn.disabled = false; btn.textContent = 'Save & connect';
-    await loadCanvasSettings();
-    await syncCanvas();
-  };
+    try {
+      const { error } = await sb.from('user_settings').upsert({ user_id: currentUser.id, canvas_url: url, canvas_token: token }, { onConflict: 'user_id' });
+      if (error) throw new Error(error.message);
+      msgEl.innerHTML = '<div class="auth-success">Saved! Syncing your assignments now...</div>';
+      btn.disabled = false; btn.textContent = 'Save & connect';
+      await loadCanvasSettings();
+      await syncCanvas();
+    } catch(err) {
+      btn.disabled = false; btn.textContent = 'Save & connect';
+      msgEl.innerHTML = `<div class="auth-error">Error: ${err.message}</div>`;
+    }
+  }
 
-  window.syncCanvas = async () => {
+  async function syncCanvas() {
     const btn = document.getElementById('sync-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await sb.auth.getSession();
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/canvas-sync`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
       });
       const result = await resp.json();
       if (!resp.ok) throw new Error(result.error || 'Sync failed');
@@ -376,20 +360,20 @@
       const msgEl = document.getElementById('canvas-msg');
       if (msgEl) msgEl.innerHTML = `<div class="auth-error">${err.message}</div>`;
     }
-  };
+  }
 
-  window.disconnectCanvas = async () => {
-    await supabase.from('user_settings').update({ canvas_token: null }).eq('user_id', currentUser.id);
-    await supabase.from('assignments').delete().eq('user_id', currentUser.id);
+  async function disconnectCanvas() {
+    await sb.from('user_settings').update({ canvas_token: null }).eq('user_id', currentUser.id);
+    await sb.from('assignments').delete().eq('user_id', currentUser.id);
     await loadCanvasSettings();
     document.getElementById('assignments-list').style.display = 'none';
     document.getElementById('assignments-empty').style.display = 'block';
-  };
+  }
 
-  window.showSignup = () => { document.getElementById('login-screen').style.display = 'none'; document.getElementById('signup-screen').style.display = 'block'; };
-  window.showLogin = () => { document.getElementById('login-screen').style.display = 'block'; document.getElementById('signup-screen').style.display = 'none'; };
+  function showSignup() { document.getElementById('login-screen').style.display = 'none'; document.getElementById('signup-screen').style.display = 'block'; }
+  function showLogin() { document.getElementById('login-screen').style.display = 'block'; document.getElementById('signup-screen').style.display = 'none'; }
 
-  window.handleLogin = async () => {
+  async function handleLogin() {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     const msgEl = document.getElementById('login-msg');
@@ -397,12 +381,12 @@
     if (!email || !password) { msgEl.innerHTML = '<div class="auth-error">Please enter your email and password.</div>'; return; }
     const btn = document.getElementById('login-btn');
     btn.disabled = true; btn.textContent = 'Signing in...';
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await sb.auth.signInWithPassword({ email, password });
     btn.disabled = false; btn.textContent = 'Sign in';
     if (error) msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`;
-  };
+  }
 
-  window.handleSignup = async () => {
+  async function handleSignup() {
     const email = document.getElementById('signup-email').value.trim();
     const password = document.getElementById('signup-password').value;
     const msgEl = document.getElementById('signup-msg');
@@ -411,20 +395,20 @@
     if (password.length < 6) { msgEl.innerHTML = '<div class="auth-error">Password must be at least 6 characters.</div>'; return; }
     const btn = document.getElementById('signup-btn');
     btn.disabled = true; btn.textContent = 'Creating account...';
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await sb.auth.signUp({ email, password });
     btn.disabled = false; btn.textContent = 'Create account';
     if (error) msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`;
     else msgEl.innerHTML = '<div class="auth-success">Account created! Check your email to confirm, then sign in.</div>';
-  };
+  }
 
-  window.handleSignout = async () => { await supabase.auth.signOut(); };
+  async function handleSignout() { await sb.auth.signOut(); }
 
-  window.showPage = (name, el) => {
+  function showPage(name, el) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
     el.classList.add('active');
-  };
+  }
 </script>
 </body>
 </html>

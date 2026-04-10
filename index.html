@@ -4,36 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StudyFlow</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2f7; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
   .app { width: 100%; max-width: 420px; min-height: 100vh; }
-  .auth-screen { background: #ffffff; border-radius: 16px; padding: 32px 24px; margin-top: 40px; border: 0.5px solid #e0e0e0; }
+  .auth-screen { background: #fff; border-radius: 16px; padding: 32px 24px; margin-top: 40px; border: 0.5px solid #e0e0e0; }
   .auth-logo { font-size: 26px; font-weight: 700; color: #1c1c1e; margin-bottom: 4px; }
   .auth-sub { font-size: 14px; color: #8e8e93; margin-bottom: 28px; }
   .auth-label { font-size: 12px; font-weight: 600; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
   .auth-input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 0.5px solid #e0e0e0; font-size: 15px; color: #1c1c1e; background: #f9f9f9; margin-bottom: 16px; outline: none; }
   .auth-input:focus { border-color: #007aff; background: #fff; }
   .auth-btn { width: 100%; padding: 13px; border-radius: 10px; background: #007aff; color: #fff; font-size: 15px; font-weight: 600; border: none; cursor: pointer; margin-top: 4px; }
-  .auth-btn:hover { background: #0066cc; }
   .auth-btn:disabled { background: #8e8e93; cursor: not-allowed; }
   .auth-switch { text-align: center; margin-top: 20px; font-size: 14px; color: #8e8e93; }
-  .auth-switch a { color: #007aff; cursor: pointer; text-decoration: none; font-weight: 500; }
-  .auth-error { background: #fcebeb; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #a32d2d; margin-bottom: 14px; }
-  .auth-success { background: #eaf3de; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #3b6d11; margin-bottom: 14px; }
+  .auth-switch a { color: #007aff; cursor: pointer; font-weight: 500; }
+  .msg-error { background: #fcebeb; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #a32d2d; margin-bottom: 14px; }
+  .msg-success { background: #eaf3de; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #3b6d11; margin-bottom: 14px; }
   .main-app { display: none; }
-  .topbar { background: #ffffff; padding: 16px 20px 12px; border-bottom: 0.5px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
-  .topbar-left .topbar-title { font-size: 22px; font-weight: 600; color: #1c1c1e; }
-  .topbar-left .topbar-sub { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+  .topbar { background: #fff; padding: 16px 20px 12px; border-bottom: 0.5px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+  .topbar-title { font-size: 22px; font-weight: 600; color: #1c1c1e; }
+  .topbar-sub { font-size: 13px; color: #8e8e93; margin-top: 2px; }
   .signout-btn { font-size: 13px; color: #007aff; cursor: pointer; background: none; border: none; font-weight: 500; }
-  .tabs { display: flex; background: #ffffff; border-bottom: 0.5px solid #e0e0e0; }
-  .tab { flex: 1; padding: 11px 0; text-align: center; font-size: 13px; color: #8e8e93; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tabs { display: flex; background: #fff; border-bottom: 0.5px solid #e0e0e0; }
+  .tab { flex: 1; padding: 11px 0; text-align: center; font-size: 13px; color: #8e8e93; cursor: pointer; border-bottom: 2px solid transparent; }
   .tab.active { color: #007aff; border-bottom: 2px solid #007aff; font-weight: 500; }
   .content { padding: 16px; }
   .section-label { font-size: 11px; font-weight: 600; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; margin-top: 16px; }
   .section-label:first-child { margin-top: 0; }
-  .card { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 12px 14px; margin-bottom: 8px; }
+  .card { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 12px 14px; margin-bottom: 8px; }
   .card-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .card-title { font-size: 14px; font-weight: 500; color: #1c1c1e; }
   .card-sub { font-size: 12px; color: #8e8e93; margin-top: 3px; }
@@ -44,13 +42,9 @@
   .badge-essay { background: #eaf3de; color: #3b6d11; }
   .due-soon { color: #d85a30; font-size: 12px; font-weight: 500; margin-top: 6px; }
   .due-ok { color: #8e8e93; font-size: 12px; margin-top: 6px; }
-  .priority-card { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .priority-card { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
   .priority-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
-  .p1 { background: #fcebeb; color: #a32d2d; }
-  .p2 { background: #faece7; color: #993c1d; }
-  .p3 { background: #faeeda; color: #854f0b; }
-  .p4 { background: #e6f1fb; color: #185fa5; }
-  .p5 { background: #eaf3de; color: #3b6d11; }
+  .p1{background:#fcebeb;color:#a32d2d;} .p2{background:#faece7;color:#993c1d;} .p3{background:#faeeda;color:#854f0b;} .p4{background:#e6f1fb;color:#185fa5;} .p5{background:#eaf3de;color:#3b6d11;}
   .priority-info { flex: 1; }
   .ai-box { background: #e6f1fb; border-radius: 12px; border: 0.5px solid #b5d4f4; padding: 12px 14px; margin-bottom: 16px; }
   .ai-label { font-size: 11px; font-weight: 600; color: #185fa5; margin-bottom: 4px; }
@@ -58,25 +52,21 @@
   .page { display: none; }
   .page.active { display: block; }
   .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-  .stat-card { background: #ffffff; border-radius: 10px; padding: 12px 14px; border: 0.5px solid #e0e0e0; }
+  .stat-card { background: #fff; border-radius: 10px; padding: 12px 14px; border: 0.5px solid #e0e0e0; }
   .stat-label { font-size: 11px; color: #8e8e93; margin-bottom: 4px; }
   .stat-val { font-size: 22px; font-weight: 600; color: #1c1c1e; }
-  .goal-card { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 14px; margin-bottom: 8px; }
+  .goal-card { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 14px; margin-bottom: 8px; }
   .goal-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .goal-row:last-child { margin-bottom: 0; }
   .goal-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .goal-text { font-size: 13px; color: #1c1c1e; }
   .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 0.5px solid #f2f2f7; }
-  .grade-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .grade-row:last-child { border-bottom: none; }
   .grade-name { font-size: 13px; color: #1c1c1e; }
-  .grade-f { font-size: 13px; font-weight: 600; color: #d85a30; }
-  .grade-c { font-size: 13px; font-weight: 600; color: #854f0b; }
-  .grade-b { font-size: 13px; font-weight: 600; color: #185fa5; }
-  .grade-a { font-size: 13px; font-weight: 600; color: #3b6d11; }
+  .grade-f{font-size:13px;font-weight:600;color:#d85a30;} .grade-c{font-size:13px;font-weight:600;color:#854f0b;} .grade-b{font-size:13px;font-weight:600;color:#185fa5;} .grade-a{font-size:13px;font-weight:600;color:#3b6d11;}
   .settings-input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 0.5px solid #e0e0e0; font-size: 14px; color: #1c1c1e; background: #f9f9f9; margin-bottom: 16px; outline: none; }
   .settings-input:focus { border-color: #007aff; background: #fff; }
   .settings-btn { width: 100%; padding: 12px; border-radius: 10px; background: #007aff; color: #fff; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
-  .settings-btn:hover { background: #0066cc; }
   .settings-btn:disabled { background: #8e8e93; cursor: not-allowed; }
   .settings-note { font-size: 12px; color: #8e8e93; line-height: 1.5; margin-bottom: 16px; }
   .connected-badge { display: inline-flex; align-items: center; gap: 6px; background: #eaf3de; border-radius: 8px; padding: 6px 12px; font-size: 13px; color: #3b6d11; font-weight: 500; margin-bottom: 12px; }
@@ -84,7 +74,7 @@
   .sync-btn:disabled { background: #f2f2f7; color: #8e8e93; cursor: not-allowed; border-color: #e0e0e0; }
   .disconnect-btn { width: 100%; padding: 12px; border-radius: 10px; background: #fcebeb; color: #a32d2d; font-size: 14px; font-weight: 600; border: 0.5px solid #f7c1c1; cursor: pointer; }
   .loading-box { text-align: center; padding: 32px 0; color: #8e8e93; font-size: 14px; }
-  .empty-box { background: #ffffff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 24px; text-align: center; }
+  .empty-box { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 24px; text-align: center; }
   .empty-title { font-size: 15px; font-weight: 500; color: #1c1c1e; margin-bottom: 6px; }
   .empty-sub { font-size: 13px; color: #8e8e93; line-height: 1.5; }
 </style>
@@ -117,25 +107,24 @@
 
   <div id="main-app" class="main-app">
     <div class="topbar">
-      <div class="topbar-left">
+      <div>
         <div class="topbar-title">StudyFlow</div>
         <div class="topbar-sub" id="topbar-date"></div>
       </div>
-      <button class="signout-btn" onclick="handleSignout()">Sign out</button>
+      <button class="signout-btn" id="signout-btn">Sign out</button>
     </div>
     <div class="tabs">
-      <div class="tab active" onclick="showPage('assignments', this)">Assignments</div>
-      <div class="tab" onclick="showPage('priority', this)">Priority</div>
-      <div class="tab" onclick="showPage('goals', this)">Goals</div>
-      <div class="tab" onclick="showPage('settings', this)">Settings</div>
+      <div class="tab active" onclick="showPage('assignments',this)">Assignments</div>
+      <div class="tab" onclick="showPage('priority',this)">Priority</div>
+      <div class="tab" onclick="showPage('goals',this)">Goals</div>
+      <div class="tab" onclick="showPage('settings',this)">Settings</div>
     </div>
     <div class="content">
-
       <div class="page active" id="page-assignments">
         <div id="assignments-loading" class="loading-box">Loading your assignments...</div>
         <div id="assignments-empty" class="empty-box" style="display:none;">
           <div class="empty-title">No assignments yet</div>
-          <div class="empty-sub">Connect your Canvas account in Settings to see your real assignments here automatically.</div>
+          <div class="empty-sub">Connect your Canvas account in Settings to see your real assignments here.</div>
         </div>
         <div id="assignments-list" style="display:none;">
           <div class="stats-row">
@@ -173,11 +162,11 @@
       <div class="page" id="page-settings">
         <div class="section-label">Canvas connection</div>
         <div id="canvas-connected" style="display:none;">
-          <div class="card" style="margin-bottom:8px;">
+          <div class="card">
             <div class="connected-badge">✓ Canvas connected</div>
             <div class="card-sub" id="canvas-url-display" style="margin-bottom:12px;"></div>
-            <button class="sync-btn" id="sync-btn" onclick="syncCanvas()">Sync assignments now</button>
-            <button class="disconnect-btn" style="margin-top:8px;" onclick="disconnectCanvas()">Disconnect Canvas</button>
+            <button class="sync-btn" id="sync-btn">Sync assignments now</button>
+            <button class="disconnect-btn" style="margin-top:8px;" id="disconnect-btn">Disconnect Canvas</button>
           </div>
         </div>
         <div id="canvas-form">
@@ -187,8 +176,8 @@
             <input class="settings-input" type="text" id="canvas-url" placeholder="ccsd.instructure.com" />
             <div class="auth-label">Canvas API Token</div>
             <input class="settings-input" type="password" id="canvas-token" placeholder="Paste your token here" />
-            <div id="canvas-msg" style="margin-bottom:8px;"></div>
-            <button class="settings-btn" id="canvas-save-btn" onclick="saveCanvasSettings()">Save & connect</button>
+            <div id="canvas-msg"></div>
+            <button class="settings-btn" id="canvas-save-btn">Save & connect</button>
           </div>
           <div class="card" style="margin-top:8px;">
             <div class="card-title" style="margin-bottom:6px;">How to get your Canvas token</div>
@@ -198,217 +187,255 @@
         <div class="section-label" style="margin-top:20px;">Account</div>
         <div class="card">
           <div class="card-sub" id="account-email" style="margin-bottom:12px;"></div>
-          <button class="disconnect-btn" onclick="handleSignout()">Sign out</button>
+          <button class="disconnect-btn" id="signout-btn-2">Sign out</button>
         </div>
       </div>
-
     </div>
   </div>
 </div>
 
 <script>
-  const SUPABASE_URL = 'https://xbcvztaeslmbcgzamrvi.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiY3Z6dGFlc2xtYmNnemFtcnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTc4MjgsImV4cCI6MjA5MTA5MzgyOH0.I8x8yOxJmEXsl1c8ybrt3uyoPLm9RlR4usB3jnwKRUE';
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+const SB_URL = 'https://xbcvztaeslmbcgzamrvi.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiY3Z6dGFlc2xtYmNnemFtcnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MTc4MjgsImV4cCI6MjA5MTA5MzgyOH0.I8x8yOxJmEXsl1c8ybrt3uyoPLm9RlR4usB3jnwKRUE';
+let ACCESS_TOKEN = localStorage.getItem('sf_access_token') || '';
+let REFRESH_TOKEN = localStorage.getItem('sf_refresh_token') || '';
+let USER_ID = localStorage.getItem('sf_user_id') || '';
+let USER_EMAIL = localStorage.getItem('sf_user_email') || '';
 
-  let currentUser = null;
+const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const now = new Date();
+document.getElementById('topbar-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
 
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const now = new Date();
-  document.getElementById('topbar-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+async function sbFetch(path, method='GET', body=null, useAuth=true) {
+  const headers = { 'Content-Type': 'application/json', 'apikey': SB_KEY };
+  if (useAuth && ACCESS_TOKEN) headers['Authorization'] = `Bearer ${ACCESS_TOKEN}`;
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`${SB_URL}${path}`, opts);
+  const text = await res.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch(e) { data = text; }
+  return { ok: res.ok, status: res.status, data };
+}
 
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (session) {
-      currentUser = session.user;
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('signup-screen').style.display = 'none';
-      document.getElementById('main-app').style.display = 'block';
-      document.getElementById('account-email').textContent = currentUser.email;
-      await loadCanvasSettings();
-      await loadAssignments();
-    } else {
-      currentUser = null;
-      document.getElementById('login-screen').style.display = 'block';
-      document.getElementById('signup-screen').style.display = 'none';
-      document.getElementById('main-app').style.display = 'none';
-    }
-  });
+function saveSession(session) {
+  ACCESS_TOKEN = session.access_token;
+  REFRESH_TOKEN = session.refresh_token;
+  USER_ID = session.user.id;
+  USER_EMAIL = session.user.email;
+  localStorage.setItem('sf_access_token', ACCESS_TOKEN);
+  localStorage.setItem('sf_refresh_token', REFRESH_TOKEN);
+  localStorage.setItem('sf_user_id', USER_ID);
+  localStorage.setItem('sf_user_email', USER_EMAIL);
+}
 
-  async function loadCanvasSettings() {
-    const { data, error } = await sb.from('user_settings').select('*').eq('user_id', currentUser.id).maybeSingle();
-    if (data && data.canvas_token) {
-      document.getElementById('canvas-connected').style.display = 'block';
-      document.getElementById('canvas-form').style.display = 'none';
-      document.getElementById('canvas-url-display').textContent = data.canvas_url;
-    } else {
-      document.getElementById('canvas-connected').style.display = 'none';
-      document.getElementById('canvas-form').style.display = 'block';
-    }
+function clearSession() {
+  ACCESS_TOKEN = REFRESH_TOKEN = USER_ID = USER_EMAIL = '';
+  localStorage.removeItem('sf_access_token');
+  localStorage.removeItem('sf_refresh_token');
+  localStorage.removeItem('sf_user_id');
+  localStorage.removeItem('sf_user_email');
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('account-email').textContent = USER_EMAIL;
+  loadCanvasSettings();
+  loadAssignments();
+}
+
+function showLoginScreen() {
+  document.getElementById('login-screen').style.display = 'block';
+  document.getElementById('signup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+if (ACCESS_TOKEN && USER_ID) { showApp(); } else { showLoginScreen(); }
+
+document.getElementById('signout-btn').onclick = signOut;
+document.getElementById('signout-btn-2').onclick = signOut;
+document.getElementById('canvas-save-btn').onclick = saveCanvasSettings;
+document.getElementById('sync-btn').onclick = syncCanvas;
+document.getElementById('disconnect-btn').onclick = disconnectCanvas;
+
+function signOut() {
+  clearSession();
+  showLoginScreen();
+}
+
+function showSignup() { document.getElementById('login-screen').style.display='none'; document.getElementById('signup-screen').style.display='block'; }
+function showLogin() { document.getElementById('login-screen').style.display='block'; document.getElementById('signup-screen').style.display='none'; }
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const msgEl = document.getElementById('login-msg');
+  msgEl.innerHTML = '';
+  if (!email || !password) { msgEl.innerHTML = '<div class="msg-error">Please enter your email and password.</div>'; return; }
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const { ok, data } = await sbFetch('/auth/v1/token?grant_type=password', 'POST', { email, password }, false);
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if (!ok) { msgEl.innerHTML = `<div class="msg-error">${data.error_description || data.msg || 'Login failed'}</div>`; return; }
+  saveSession(data);
+  showApp();
+}
+
+async function handleSignup() {
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const msgEl = document.getElementById('signup-msg');
+  msgEl.innerHTML = '';
+  if (!email || !password) { msgEl.innerHTML = '<div class="msg-error">Please enter your email and password.</div>'; return; }
+  if (password.length < 6) { msgEl.innerHTML = '<div class="msg-error">Password must be at least 6 characters.</div>'; return; }
+  const btn = document.getElementById('signup-btn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  const { ok, data } = await sbFetch('/auth/v1/signup', 'POST', { email, password }, false);
+  btn.disabled = false; btn.textContent = 'Create account';
+  if (!ok) { msgEl.innerHTML = `<div class="msg-error">${data.error_description || data.msg || 'Signup failed'}</div>`; return; }
+  msgEl.innerHTML = '<div class="msg-success">Account created! Check your email to confirm, then sign in.</div>';
+}
+
+async function loadCanvasSettings() {
+  const { ok, data } = await sbFetch(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token`);
+  if (ok && data && data.length > 0 && data[0].canvas_token) {
+    document.getElementById('canvas-connected').style.display = 'block';
+    document.getElementById('canvas-form').style.display = 'none';
+    document.getElementById('canvas-url-display').textContent = data[0].canvas_url;
+  } else {
+    document.getElementById('canvas-connected').style.display = 'none';
+    document.getElementById('canvas-form').style.display = 'block';
   }
+}
 
-  async function loadAssignments() {
-    const { data: settings } = await sb.from('user_settings').select('*').eq('user_id', currentUser.id).maybeSingle();
-    if (!settings || !settings.canvas_token) {
-      document.getElementById('assignments-loading').style.display = 'none';
-      document.getElementById('assignments-empty').style.display = 'block';
-      return;
-    }
-    const { data: assignments } = await sb.from('assignments').select('*').eq('user_id', currentUser.id).order('due_date', { ascending: true });
+async function loadAssignments() {
+  const { ok, data: settings } = await sbFetch(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_token`);
+  if (!ok || !settings || settings.length === 0 || !settings[0].canvas_token) {
     document.getElementById('assignments-loading').style.display = 'none';
-    if (!assignments || assignments.length === 0) {
-      document.getElementById('assignments-empty').style.display = 'block';
-      return;
-    }
-    renderAssignments(assignments);
-    renderPriority(assignments);
-  }
-
-  function renderAssignments(assignments) {
-    document.getElementById('assignments-list').style.display = 'block';
-    document.getElementById('assignments-empty').style.display = 'none';
-    const today = new Date(); today.setHours(0,0,0,0);
-    const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate() + 7);
-    let overdue = [], soon = [], later = [];
-    assignments.forEach(a => {
-      if (!a.due_date) return;
-      const due = new Date(a.due_date); due.setHours(0,0,0,0);
-      if (due < today) overdue.push(a);
-      else if (due <= weekFromNow) soon.push(a);
-      else later.push(a);
-    });
-    document.getElementById('stat-week').textContent = soon.length;
-    document.getElementById('stat-overdue').textContent = overdue.length;
-    if (overdue.length > 0) { document.getElementById('overdue-section').style.display = 'block'; document.getElementById('overdue-list').innerHTML = overdue.map(a => assignmentCard(a, true)).join(''); }
-    if (soon.length > 0) { document.getElementById('soon-section').style.display = 'block'; document.getElementById('soon-list').innerHTML = soon.map(a => assignmentCard(a, false)).join(''); }
-    if (later.length > 0) { document.getElementById('later-section').style.display = 'block'; document.getElementById('later-list').innerHTML = later.map(a => assignmentCard(a, false)).join(''); }
-  }
-
-  function renderPriority(assignments) {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const sorted = [...assignments].filter(a => a.due_date).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
-    const colors = ['p1','p2','p3','p4','p5'];
-    document.getElementById('priority-list').innerHTML = sorted.slice(0, 5).map((a, i) => {
-      const due = new Date(a.due_date);
-      const diffDays = Math.round((due - today) / (1000*60*60*24));
-      let dueText = diffDays < 0 ? `<span style="color:#d85a30;">${Math.abs(diffDays)} days overdue</span>` : diffDays === 0 ? `<span style="color:#d85a30;">due today</span>` : diffDays === 1 ? `<span style="color:#d85a30;">due tomorrow</span>` : `due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
-      const type = (a.assignment_type||'homework').toLowerCase();
-      let bc = 'badge-hw', bl = 'Homework';
-      if (type.includes('test')||type.includes('exam')) { bc='badge-test'; bl='Test'; }
-      else if (type.includes('quiz')) { bc='badge-quiz'; bl='Quiz'; }
-      else if (type.includes('essay')||type.includes('paper')) { bc='badge-essay'; bl='Essay'; }
-      return `<div class="priority-card"><div class="priority-num ${colors[i]||'p5'}">${i+1}</div><div class="priority-info"><div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div><div class="card-sub" style="margin-top:3px;">${a.course||''} · ${dueText}</div></div></div>`;
-    }).join('');
-    if (sorted.length > 0) {
-      const top = sorted[0];
-      const due = new Date(top.due_date);
-      const diffDays = Math.round((due - today) / (1000*60*60*24));
-      let msg = diffDays < 0 ? `"${top.title}" for ${top.course||'a class'} is overdue — take care of that first.` : diffDays <= 1 ? `"${top.title}" for ${top.course||'a class'} is due ${diffDays===0?'today':'tomorrow'} — that's your top priority.` : `Your most urgent assignment is "${top.title}" for ${top.course||'a class'}, due in ${diffDays} days.`;
-      document.getElementById('priority-ai-text').textContent = msg;
-    }
-  }
-
-  function assignmentCard(a, isOverdue) {
-    const due = new Date(a.due_date);
-    const today = new Date(); today.setHours(0,0,0,0);
-    const diffDays = Math.round((due - today) / (1000*60*60*24));
-    let dueText = isOverdue ? `<div class="due-soon">${Math.abs(diffDays)} day${Math.abs(diffDays)!==1?'s':''} overdue</div>` : diffDays === 0 ? `<div class="due-soon">Due today</div>` : diffDays === 1 ? `<div class="due-soon">Due tomorrow</div>` : `<div class="due-ok">Due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
-    const type = (a.assignment_type||'homework').toLowerCase();
-    let bc = 'badge-hw', bl = 'Homework';
-    if (type.includes('test')||type.includes('exam')) { bc='badge-test'; bl='Test'; }
-    else if (type.includes('quiz')) { bc='badge-quiz'; bl='Quiz'; }
-    else if (type.includes('essay')||type.includes('paper')) { bc='badge-essay'; bl='Essay'; }
-    return `<div class="card"><div class="card-row"><div><div class="card-title">${a.title}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>${dueText}</div>`;
-  }
-
-  async function saveCanvasSettings() {
-    const url = document.getElementById('canvas-url').value.trim().replace('https://','').replace('http://','').replace(/\/$/,'');
-    const token = document.getElementById('canvas-token').value.trim();
-    const msgEl = document.getElementById('canvas-msg');
-    msgEl.innerHTML = '';
-    if (!url || !token) { msgEl.innerHTML = '<div class="auth-error">Please enter both your Canvas URL and token.</div>'; return; }
-    const btn = document.getElementById('canvas-save-btn');
-    btn.disabled = true; btn.textContent = 'Saving...';
-    try {
-      const { error } = await sb.from('user_settings').upsert({ user_id: currentUser.id, canvas_url: url, canvas_token: token }, { onConflict: 'user_id' });
-      if (error) throw new Error(error.message);
-      msgEl.innerHTML = '<div class="auth-success">Saved! Syncing your assignments now...</div>';
-      btn.disabled = false; btn.textContent = 'Save & connect';
-      await loadCanvasSettings();
-      await syncCanvas();
-    } catch(err) {
-      btn.disabled = false; btn.textContent = 'Save & connect';
-      msgEl.innerHTML = `<div class="auth-error">Error: ${err.message}</div>`;
-    }
-  }
-
-  async function syncCanvas() {
-    const btn = document.getElementById('sync-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/canvas-sync`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
-      });
-      const result = await resp.json();
-      if (!resp.ok) throw new Error(result.error || 'Sync failed');
-      await loadAssignments();
-      if (btn) { btn.disabled = false; btn.textContent = 'Sync assignments now'; }
-    } catch(err) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Sync assignments now'; }
-      const msgEl = document.getElementById('canvas-msg');
-      if (msgEl) msgEl.innerHTML = `<div class="auth-error">${err.message}</div>`;
-    }
-  }
-
-  async function disconnectCanvas() {
-    await sb.from('user_settings').update({ canvas_token: null }).eq('user_id', currentUser.id);
-    await sb.from('assignments').delete().eq('user_id', currentUser.id);
-    await loadCanvasSettings();
-    document.getElementById('assignments-list').style.display = 'none';
     document.getElementById('assignments-empty').style.display = 'block';
+    return;
   }
+  const { ok: ok2, data: assignments } = await sbFetch(`/rest/v1/assignments?user_id=eq.${USER_ID}&order=due_date.asc`);
+  document.getElementById('assignments-loading').style.display = 'none';
+  if (!ok2 || !assignments || assignments.length === 0) { document.getElementById('assignments-empty').style.display = 'block'; return; }
+  renderAssignments(assignments);
+  renderPriority(assignments);
+}
 
-  function showSignup() { document.getElementById('login-screen').style.display = 'none'; document.getElementById('signup-screen').style.display = 'block'; }
-  function showLogin() { document.getElementById('login-screen').style.display = 'block'; document.getElementById('signup-screen').style.display = 'none'; }
+function renderAssignments(assignments) {
+  document.getElementById('assignments-list').style.display = 'block';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate()+7);
+  let overdue=[], soon=[], later=[];
+  assignments.forEach(a => {
+    if (!a.due_date) return;
+    const due = new Date(a.due_date); due.setHours(0,0,0,0);
+    if (due < today) overdue.push(a);
+    else if (due <= weekFromNow) soon.push(a);
+    else later.push(a);
+  });
+  document.getElementById('stat-week').textContent = soon.length;
+  document.getElementById('stat-overdue').textContent = overdue.length;
+  if (overdue.length) { document.getElementById('overdue-section').style.display='block'; document.getElementById('overdue-list').innerHTML=overdue.map(a=>aCard(a,true)).join(''); }
+  if (soon.length) { document.getElementById('soon-section').style.display='block'; document.getElementById('soon-list').innerHTML=soon.map(a=>aCard(a,false)).join(''); }
+  if (later.length) { document.getElementById('later-section').style.display='block'; document.getElementById('later-list').innerHTML=later.map(a=>aCard(a,false)).join(''); }
+}
 
-  async function handleLogin() {
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-    const msgEl = document.getElementById('login-msg');
-    msgEl.innerHTML = '';
-    if (!email || !password) { msgEl.innerHTML = '<div class="auth-error">Please enter your email and password.</div>'; return; }
-    const btn = document.getElementById('login-btn');
-    btn.disabled = true; btn.textContent = 'Signing in...';
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    btn.disabled = false; btn.textContent = 'Sign in';
-    if (error) msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`;
+function getBadge(type) {
+  const t = (type||'').toLowerCase();
+  if (t.includes('test')||t.includes('exam')) return ['badge-test','Test'];
+  if (t.includes('quiz')) return ['badge-quiz','Quiz'];
+  if (t.includes('essay')||t.includes('paper')) return ['badge-essay','Essay'];
+  return ['badge-hw','Homework'];
+}
+
+function aCard(a, isOverdue) {
+  const due = new Date(a.due_date);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = Math.round((due-today)/(1000*60*60*24));
+  const dueText = isOverdue ? `<div class="due-soon">${Math.abs(d)} day${Math.abs(d)!==1?'s':''} overdue</div>` : d===0 ? `<div class="due-soon">Due today</div>` : d===1 ? `<div class="due-soon">Due tomorrow</div>` : `<div class="due-ok">Due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
+  const [bc,bl] = getBadge(a.assignment_type);
+  return `<div class="card"><div class="card-row"><div><div class="card-title">${a.title}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>${dueText}</div>`;
+}
+
+function renderPriority(assignments) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const sorted = [...assignments].filter(a=>a.due_date).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date));
+  const colors = ['p1','p2','p3','p4','p5'];
+  document.getElementById('priority-list').innerHTML = sorted.slice(0,5).map((a,i)=>{
+    const due = new Date(a.due_date);
+    const d = Math.round((due-today)/(1000*60*60*24));
+    const dueText = d<0?`<span style="color:#d85a30;">${Math.abs(d)} days overdue</span>`:d===0?`<span style="color:#d85a30;">due today</span>`:d===1?`<span style="color:#d85a30;">due tomorrow</span>`:`due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+    const [bc,bl] = getBadge(a.assignment_type);
+    return `<div class="priority-card"><div class="priority-num ${colors[i]||'p5'}">${i+1}</div><div class="priority-info"><div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div><div class="card-sub" style="margin-top:3px;">${a.course||''} · ${dueText}</div></div></div>`;
+  }).join('');
+  if (sorted.length > 0) {
+    const top = sorted[0];
+    const d = Math.round((new Date(top.due_date)-today)/(1000*60*60*24));
+    document.getElementById('priority-ai-text').textContent = d<0?`"${top.title}" is overdue — take care of that first.`:d<=1?`"${top.title}" is due ${d===0?'today':'tomorrow'} — that's your top priority.`:`Your most urgent assignment is "${top.title}", due in ${d} days.`;
   }
+}
 
-  async function handleSignup() {
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const msgEl = document.getElementById('signup-msg');
-    msgEl.innerHTML = '';
-    if (!email || !password) { msgEl.innerHTML = '<div class="auth-error">Please enter your email and password.</div>'; return; }
-    if (password.length < 6) { msgEl.innerHTML = '<div class="auth-error">Password must be at least 6 characters.</div>'; return; }
-    const btn = document.getElementById('signup-btn');
-    btn.disabled = true; btn.textContent = 'Creating account...';
-    const { error } = await sb.auth.signUp({ email, password });
-    btn.disabled = false; btn.textContent = 'Create account';
-    if (error) msgEl.innerHTML = `<div class="auth-error">${error.message}</div>`;
-    else msgEl.innerHTML = '<div class="auth-success">Account created! Check your email to confirm, then sign in.</div>';
+async function saveCanvasSettings() {
+  const url = document.getElementById('canvas-url').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
+  const token = document.getElementById('canvas-token').value.trim();
+  const msgEl = document.getElementById('canvas-msg');
+  msgEl.innerHTML = '';
+  if (!url || !token) { msgEl.innerHTML = '<div class="msg-error">Please enter both fields.</div>'; return; }
+  const btn = document.getElementById('canvas-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { ok, data } = await sbFetch('/rest/v1/user_settings', 'POST', { user_id: USER_ID, canvas_url: url, canvas_token: token }, true);
+  if (!ok) {
+    if (data && JSON.stringify(data).includes('duplicate') || data && JSON.stringify(data).includes('unique')) {
+      const { ok: ok2 } = await sbFetch(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_url: url, canvas_token: token }, true);
+      if (!ok2) { btn.disabled=false; btn.textContent='Save & connect'; msgEl.innerHTML='<div class="msg-error">Failed to save. Please try again.</div>'; return; }
+    } else {
+      btn.disabled=false; btn.textContent='Save & connect';
+      msgEl.innerHTML=`<div class="msg-error">Error: ${JSON.stringify(data)}</div>`; return;
+    }
   }
+  btn.disabled=false; btn.textContent='Save & connect';
+  msgEl.innerHTML='<div class="msg-success">Saved! Syncing your assignments now...</div>';
+  await loadCanvasSettings();
+  await syncCanvas();
+}
 
-  async function handleSignout() { await sb.auth.signOut(); }
-
-  function showPage(name, el) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('page-' + name).classList.add('active');
-    el.classList.add('active');
+async function syncCanvas() {
+  const btn = document.getElementById('sync-btn');
+  if (btn) { btn.disabled=true; btn.textContent='Syncing...'; }
+  try {
+    const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json' }
+    });
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Sync failed');
+    await loadAssignments();
+    if (btn) { btn.disabled=false; btn.textContent='Sync assignments now'; }
+  } catch(err) {
+    if (btn) { btn.disabled=false; btn.textContent='Sync assignments now'; }
+    const msgEl = document.getElementById('canvas-msg');
+    if (msgEl) msgEl.innerHTML=`<div class="msg-error">${err.message}</div>`;
   }
+}
+
+async function disconnectCanvas() {
+  await sbFetch(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_token: null });
+  await sbFetch(`/rest/v1/assignments?user_id=eq.${USER_ID}`, 'DELETE');
+  loadCanvasSettings();
+  document.getElementById('assignments-list').style.display='none';
+  document.getElementById('assignments-empty').style.display='block';
+}
+
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+}
 </script>
 </body>
 </html>

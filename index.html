@@ -206,6 +206,37 @@
   [data-theme="dark"] .grade-score.warn { color: #ffb347; }
   [data-theme="dark"] .grade-score.bad { color: #ff6b6b; }
   .grade-letter { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--grade-letter-bg); color: var(--text2); margin-left: 6px; }
+
+  /* Bottom nav (mobile only) */
+  .bottom-nav { display: none; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 4px 6px; background: none; border: none; cursor: pointer; color: var(--text2); gap: 3px; transition: color 0.15s; }
+  .nav-item.active { color: #007aff; }
+  .nav-icon { font-size: 21px; line-height: 1; }
+  .nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.01em; }
+
+  /* Sticky topbar always */
+  .topbar { position: sticky; top: 0; z-index: 100; }
+
+  @media (max-width: 600px) {
+    body { padding: 0; align-items: stretch; }
+    .app { max-width: 100%; }
+    .auth-screen { margin: 16px; margin-top: 32px; }
+    .onboard-screen { margin: 16px; margin-top: 16px; }
+    .main-app { display: flex; flex-direction: column; height: 100dvh; }
+    .tabs { display: none; }
+    .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+    .bottom-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 0.5px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      z-index: 100;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+  }
 </style>
 </head>
 <body>
@@ -413,6 +444,34 @@
       </div>
 
     </div>
+
+    <!-- BOTTOM NAV (mobile only) -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" id="nav-due" onclick="showPage('due',this,true)">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Due</span>
+      </button>
+      <button class="nav-item" id="nav-allwork" onclick="showPage('allwork',this,true)">
+        <span class="nav-icon">📚</span>
+        <span class="nav-label">All Work</span>
+      </button>
+      <button class="nav-item" id="nav-priority" onclick="showPage('priority',this,true)">
+        <span class="nav-icon">⭐</span>
+        <span class="nav-label">Priority</span>
+      </button>
+      <button class="nav-item" id="nav-grades" onclick="showPage('grades',this,true)">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Grades</span>
+      </button>
+      <button class="nav-item" id="nav-goals" onclick="showPage('goals',this,true)">
+        <span class="nav-icon">🎯</span>
+        <span class="nav-label">Goals</span>
+      </button>
+      <button class="nav-item" id="nav-settings" onclick="showPage('settings',this,true)">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
   </div>
 </div>
 
@@ -896,11 +955,15 @@ function renderPriority(assignments) {
   document.getElementById('priority-ai-text').textContent = aiText;
 }
 
-function showPage(name, el) {
+function showPage(name, el, fromNav) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  el.classList.add('active');
+  if (el) el.classList.add('active');
+  // Keep both nav and tab in sync
+  const navEl = document.getElementById('nav-'+name);
+  if (navEl) navEl.classList.add('active');
 }
 
 function applyTheme(dark) {

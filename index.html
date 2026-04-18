@@ -207,6 +207,45 @@
   [data-theme="dark"] .grade-score.bad { color: #ff6b6b; }
   .grade-letter { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--grade-letter-bg); color: var(--text2); margin-left: 6px; }
 
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-box { position: relative; }
+  .loading-box::before {
+    content: '';
+    display: block;
+    width: 28px; height: 28px;
+    border: 2.5px solid var(--border);
+    border-top-color: #007aff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 10px;
+  }
+  .course-loading::before {
+    content: '';
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: #007aff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  /* Button spinner — shown when btn has .btn-loading class */
+  .btn-loading { position: relative; color: transparent !important; pointer-events: none; }
+  .btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 18px; height: 18px;
+    margin: -9px 0 0 -9px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  .btn-loading.sync-btn::after, .btn-loading.onboard-btn::after { border-top-color: #007aff; border-color: var(--border); }
+
   /* Done state */
   .done-check { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; background: none; transition: all 0.18s; padding: 0; }
   .done-check.checked { background: #34c759; border-color: #34c759; }
@@ -593,9 +632,9 @@ async function handleLogin() {
   msgEl.innerHTML = '';
   if (!email || !password) { msgEl.innerHTML = '<div class="msg-error">Please fill in all fields.</div>'; return; }
   const btn = document.getElementById('login-btn');
-  btn.disabled = true; btn.textContent = 'Signing in...';
+  btn.disabled = true; btn.classList.add('btn-loading');
   const { ok, data } = await sbFetch('/auth/v1/token?grant_type=password', 'POST', { email, password }, false);
-  btn.disabled = false; btn.textContent = 'Sign in';
+  btn.disabled = false; btn.classList.remove('btn-loading');
   if (!ok) { msgEl.innerHTML = `<div class="msg-error">${data.error_description || 'Login failed.'}</div>`; return; }
   saveSession(data); routeUser();
 }
@@ -608,9 +647,9 @@ async function handleSignup() {
   if (!email || !password) { msgEl.innerHTML = '<div class="msg-error">Please fill in all fields.</div>'; return; }
   if (password.length < 6) { msgEl.innerHTML = '<div class="msg-error">Password must be at least 6 characters.</div>'; return; }
   const btn = document.getElementById('signup-btn');
-  btn.disabled = true; btn.textContent = 'Creating account...';
+  btn.disabled = true; btn.classList.add('btn-loading');
   const { ok, data } = await sbFetch('/auth/v1/signup', 'POST', { email, password }, false);
-  btn.disabled = false; btn.textContent = 'Create account';
+  btn.disabled = false; btn.classList.remove('btn-loading');
   if (!ok) { msgEl.innerHTML = `<div class="msg-error">${data.error_description || 'Signup failed.'}</div>`; return; }
   msgEl.innerHTML = '<div class="msg-success">Account created! Check your email to confirm, then sign in.</div>';
 }
@@ -702,7 +741,7 @@ function removeGoalOnboard(i) { onboardGoals.splice(i, 1); renderGoalsOnboard();
 
 async function finishOnboarding() {
   const btn = document.getElementById('ob-goals-btn');
-  btn.disabled = true; btn.textContent = 'Syncing assignments...';
+  btn.disabled = true; btn.classList.add('btn-loading');
   if (onboardGoals.length > 0) {
     userGoals = onboardGoals;
     localStorage.setItem('sf_goals', JSON.stringify(userGoals));
@@ -711,7 +750,7 @@ async function finishOnboarding() {
     }
   }
   await syncCanvas();
-  btn.disabled = false;
+  btn.disabled = false; btn.classList.remove('btn-loading');
   showApp();
 }
 
@@ -786,7 +825,7 @@ async function showCourseSelection() {
 async function syncCanvas() {
   const btn = document.getElementById('sync-btn');
   const statusEl = document.getElementById('sync-status');
-  if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
+  if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); }
   if (statusEl) { statusEl.className = 'sync-status'; statusEl.textContent = ''; }
   try {
     const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync`, {
@@ -796,7 +835,7 @@ async function syncCanvas() {
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.message || result.error || 'Sync failed');
     await Promise.all([loadAssignments(), loadGrades()]);
-    if (btn) { btn.disabled = false; btn.textContent = 'Sync assignments now'; }
+    if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (statusEl) {
       statusEl.className = 'sync-status success';
       statusEl.textContent = result.assignments > 0
@@ -804,7 +843,7 @@ async function syncCanvas() {
         : 'Sync complete. No assignments found.';
     }
   } catch(err) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Sync assignments now'; }
+    if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (statusEl) { statusEl.className = 'sync-status error'; statusEl.textContent = `Sync failed: ${err.message}`; }
   }
 }

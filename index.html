@@ -417,11 +417,8 @@ function showOnboardGoals() { hideAll(); document.getElementById('onboard-goals'
 
 async function routeUser() {
   if (!ACCESS_TOKEN || !USER_ID) { showLoginScreen(); return; }
-  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token,selected_courses`);
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token`);
   if (!ok || !data || data.length === 0 || !data[0].canvas_token) { showOnboardCanvas(); return; }
-  if (!data[0].selected_courses || data[0].selected_courses.length === 0) {
-    await loadCoursesForSelection(); showOnboardCourses(); return;
-  }
   showApp();
 }
 

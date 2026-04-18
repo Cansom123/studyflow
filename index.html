@@ -583,8 +583,7 @@ let doneSet = new Set();
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const now = new Date();
-document.getElementById('topbar-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+updateLastSyncedLabel();
 
 async function sbFetch(path, method='GET', body=null, useAuth=true) {
   const headers = { 'Content-Type': 'application/json', 'apikey': SB_KEY };
@@ -667,6 +666,8 @@ function showApp() {
   loadGrades();
   renderGoalsTab();
   renderSelectedCoursesTab();
+  updateLastSyncedLabel();
+  autoSync();
 }
 
 function signOut() { clearSession(); showLoginScreen(); }
@@ -881,6 +882,8 @@ async function syncCanvas() {
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.message || result.error || 'Sync failed');
     await Promise.all([loadAssignments(), loadGrades()]);
+    localStorage.setItem('sf_last_sync', Date.now());
+    updateLastSyncedLabel();
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (statusEl) {
       statusEl.className = 'sync-status success';
@@ -1134,6 +1137,28 @@ function calculateFinal() {
     labelEl.textContent = 'You need';
     scoreEl.textContent = `${needed.toFixed(1)}%`;
     msgEl.textContent = needed < 60 ? "You're in great shape — very achievable." : "Totally doable. You've got this.";
+  }
+}
+
+function updateLastSyncedLabel() {
+  const dateEl = document.getElementById('topbar-date');
+  if (!dateEl) return;
+  const n = new Date();
+  const dateStr = `${days[n.getDay()]}, ${months[n.getMonth()]} ${n.getDate()}`;
+  const lastSync = parseInt(localStorage.getItem('sf_last_sync') || '0');
+  if (!lastSync) { dateEl.textContent = dateStr; return; }
+  const mins = Math.round((Date.now() - lastSync) / 60000);
+  let syncStr;
+  if (mins < 1) syncStr = 'Synced just now';
+  else if (mins < 60) syncStr = `Synced ${mins}m ago`;
+  else { const h = Math.floor(mins / 60); syncStr = `Synced ${h}h ago`; }
+  dateEl.textContent = `${dateStr} · ${syncStr}`;
+}
+
+async function autoSync() {
+  const lastSync = parseInt(localStorage.getItem('sf_last_sync') || '0');
+  if (Date.now() - lastSync > 24 * 60 * 60 * 1000) {
+    await syncCanvas();
   }
 }
 

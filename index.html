@@ -207,6 +207,19 @@
   [data-theme="dark"] .grade-score.bad { color: #ff6b6b; }
   .grade-letter { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--grade-letter-bg); color: var(--text2); margin-left: 6px; }
 
+  /* Grade calculator */
+  .calc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+  .calc-label { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+  .calc-input-wrap { position: relative; }
+  .calc-input { width: 100%; padding: 10px 22px 10px 8px; border-radius: 10px; border: 0.5px solid var(--border); font-size: 18px; font-weight: 600; color: var(--text1); background: var(--input-bg); outline: none; text-align: center; -moz-appearance: textfield; }
+  .calc-input::-webkit-outer-spin-button, .calc-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .calc-input:focus { border-color: #007aff; background: var(--input-focus-bg); }
+  .calc-unit { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text2); pointer-events: none; font-weight: 500; }
+  .calc-result { border-radius: 10px; padding: 16px; text-align: center; margin-top: 12px; display: none; }
+  .calc-result-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .calc-result-score { font-size: 40px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .calc-result-msg { font-size: 13px; line-height: 1.4; }
+
   /* Spinner */
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-box { position: relative; }
@@ -453,6 +466,39 @@
           <input class="add-goal-input" type="text" id="main-goal-input" placeholder="Add a goal..." />
           <button class="add-goal-btn" onclick="addGoalMain()">Add</button>
         </div>
+        <div class="section-label" style="margin-top:20px;">Final exam calculator</div>
+        <div class="card">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">What score do you need on your final to hit your target grade?</div>
+          <div class="calc-row">
+            <div>
+              <div class="calc-label">Current grade</div>
+              <div class="calc-input-wrap">
+                <input class="calc-input" type="number" id="calc-current" min="0" max="100" placeholder="85" oninput="calculateFinal()" />
+                <span class="calc-unit">%</span>
+              </div>
+            </div>
+            <div>
+              <div class="calc-label">Final weight</div>
+              <div class="calc-input-wrap">
+                <input class="calc-input" type="number" id="calc-weight" min="1" max="100" placeholder="30" oninput="calculateFinal()" />
+                <span class="calc-unit">%</span>
+              </div>
+            </div>
+            <div>
+              <div class="calc-label">Target grade</div>
+              <div class="calc-input-wrap">
+                <input class="calc-input" type="number" id="calc-target" min="0" max="100" placeholder="90" oninput="calculateFinal()" />
+                <span class="calc-unit">%</span>
+              </div>
+            </div>
+          </div>
+          <div class="calc-result" id="calc-result">
+            <div class="calc-result-label" id="calc-result-label"></div>
+            <div class="calc-result-score" id="calc-result-score"></div>
+            <div class="calc-result-msg" id="calc-result-msg"></div>
+          </div>
+        </div>
+
         <div class="section-label" style="margin-top:20px;">Your selected classes</div>
         <div class="card" id="selected-courses-display">
           <div style="color:#8e8e93;font-size:13px;">No classes selected yet.</div>
@@ -1044,6 +1090,51 @@ function showPage(name, el, fromNav) {
   // Keep both nav and tab in sync
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
+}
+
+function calculateFinal() {
+  const current = parseFloat(document.getElementById('calc-current').value);
+  const weight  = parseFloat(document.getElementById('calc-weight').value) / 100;
+  const target  = parseFloat(document.getElementById('calc-target').value);
+  const resultEl = document.getElementById('calc-result');
+  const labelEl  = document.getElementById('calc-result-label');
+  const scoreEl  = document.getElementById('calc-result-score');
+  const msgEl    = document.getElementById('calc-result-msg');
+
+  if (isNaN(current) || isNaN(weight) || isNaN(target) || weight <= 0) {
+    resultEl.style.display = 'none'; return;
+  }
+
+  const needed = (target - (1 - weight) * current) / weight;
+  resultEl.style.display = 'block';
+
+  if (needed < 0) {
+    resultEl.style.background = 'var(--connected-bg)';
+    labelEl.style.color = scoreEl.style.color = msgEl.style.color = 'var(--connected-color)';
+    labelEl.textContent = 'Already secured';
+    scoreEl.textContent = '🎉';
+    msgEl.textContent = "You've already hit your target — even a 0% on the final keeps you there.";
+  } else if (needed > 100) {
+    resultEl.style.background = 'var(--error-bg)';
+    labelEl.style.color = scoreEl.style.color = msgEl.style.color = 'var(--error-color)';
+    labelEl.textContent = 'Not possible';
+    scoreEl.textContent = `${needed.toFixed(1)}%`;
+    msgEl.textContent = "Even a perfect score won't get you there. Aim as high as you can.";
+  } else if (needed >= 90) {
+    resultEl.style.background = 'var(--ai-bg)';
+    labelEl.style.color = 'var(--ai-label)';
+    scoreEl.style.color = 'var(--ai-label)';
+    msgEl.style.color = 'var(--ai-text)';
+    labelEl.textContent = 'You need';
+    scoreEl.textContent = `${needed.toFixed(1)}%`;
+    msgEl.textContent = "Challenging — you'll need to bring your A-game.";
+  } else {
+    resultEl.style.background = 'var(--connected-bg)';
+    labelEl.style.color = scoreEl.style.color = msgEl.style.color = 'var(--connected-color)';
+    labelEl.textContent = 'You need';
+    scoreEl.textContent = `${needed.toFixed(1)}%`;
+    msgEl.textContent = needed < 60 ? "You're in great shape — very achievable." : "Totally doable. You've got this.";
+  }
 }
 
 function applyTheme(dark) {

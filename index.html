@@ -207,6 +207,14 @@
   [data-theme="dark"] .grade-score.bad { color: #ff6b6b; }
   .grade-letter { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--grade-letter-bg); color: var(--text2); margin-left: 6px; }
 
+  /* Done state */
+  .done-check { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; background: none; transition: all 0.18s; padding: 0; }
+  .done-check.checked { background: #34c759; border-color: #34c759; }
+  .done-check-icon { font-size: 13px; color: #fff; display: none; line-height: 1; }
+  .done-check.checked .done-check-icon { display: block; }
+  .card.done { opacity: 0.4; }
+  .card.done .card-title { text-decoration: line-through; }
+
   /* Bottom nav (mobile only) */
   .bottom-nav { display: none; }
   .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 4px 6px; background: none; border: none; cursor: pointer; color: var(--text2); gap: 3px; transition: color 0.15s; }
@@ -486,6 +494,7 @@ let USER_EMAIL = localStorage.getItem('sf_user_email') || '';
 let userGoals = JSON.parse(localStorage.getItem('sf_goals') || '[]');
 let selectedCoursesTemp = [];
 let onboardGoals = [];
+let doneSet = new Set();
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -567,6 +576,7 @@ function showApp() {
   hideAll();
   document.getElementById('main-app').style.display = 'block';
   document.getElementById('account-email').textContent = USER_EMAIL;
+  doneSet = new Set(JSON.parse(localStorage.getItem('sf_done_' + USER_ID) || '[]'));
   loadCanvasSettings();
   loadAssignments();
   loadGrades();
@@ -870,12 +880,36 @@ function getDueText(due_date, isOverdue) {
   return `<div class="due-ok">Due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
 }
 
+function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`); }
+
 function aCard(a, isOverdue) {
   const [bc, bl] = getBadge(a.assignment_type);
-  return `<div class="card">
-    <div class="card-row"><div><div class="card-title">${a.title}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>
-    ${getDueText(a.due_date, isOverdue)}
+  const key = doneKey(a);
+  const isDone = doneSet.has(decodeURIComponent(key));
+  return `<div class="card${isDone ? ' done' : ''}">
+    <div class="card-row" style="gap:10px;align-items:center;">
+      <button class="done-check${isDone ? ' checked' : ''}" onclick="toggleDone('${key}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
+      <div style="flex:1;min-width:0;">
+        <div class="card-row"><div style="flex:1;min-width:0;"><div class="card-title">${a.title}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>
+        ${getDueText(a.due_date, isOverdue)}
+      </div>
+    </div>
   </div>`;
+}
+
+function toggleDone(encodedKey, btn) {
+  const key = decodeURIComponent(encodedKey);
+  const card = btn.closest('.card');
+  if (doneSet.has(key)) {
+    doneSet.delete(key);
+    btn.classList.remove('checked');
+    card.classList.remove('done');
+  } else {
+    doneSet.add(key);
+    btn.classList.add('checked');
+    card.classList.add('done');
+  }
+  localStorage.setItem('sf_done_' + USER_ID, JSON.stringify([...doneSet]));
 }
 
 function renderDueSoon(assignments) {
@@ -884,6 +918,7 @@ function renderDueSoon(assignments) {
   let overdue=[], soon=[], later=[];
   assignments.forEach(a => {
     if (!a.due_date) return;
+    if (doneSet.has(decodeURIComponent(doneKey(a)))) return; // hide done items
     const due = new Date(a.due_date); due.setHours(0,0,0,0);
     if (due < today) overdue.push(a);
     else if (due <= weekFromNow) soon.push(a);
@@ -908,15 +943,21 @@ function renderAllWork(assignments) {
   });
   let html = '';
   for (const [course, items] of Object.entries(byCourse)) {
+    // Sort: undone first, done last
+    const sorted = [...items].sort((a, b) => {
+      const aDone = doneSet.has(decodeURIComponent(doneKey(a))) ? 1 : 0;
+      const bDone = doneSet.has(decodeURIComponent(doneKey(b))) ? 1 : 0;
+      return aDone - bDone;
+    });
     html += `<div class="section-label">${course}</div>`;
-    html += items.map(a => aCard(a, false)).join('');
+    html += sorted.map(a => aCard(a, false)).join('');
   }
   document.getElementById('allwork-list').innerHTML = html;
 }
 
 function renderPriority(assignments) {
   const today = new Date(); today.setHours(0,0,0,0);
-  const withDate = assignments.filter(a => a.due_date);
+  const withDate = assignments.filter(a => a.due_date && !doneSet.has(decodeURIComponent(doneKey(a))));
   if (withDate.length === 0) { document.getElementById('priority-empty').style.display='block'; return; }
   const scored = withDate.map(a => {
     const due = new Date(a.due_date);

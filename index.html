@@ -277,6 +277,17 @@
   /* Sticky topbar always */
   .topbar { position: sticky; top: 0; z-index: 100; }
 
+  /* Canvas help guide */
+  .help-toggle-btn { width: 100%; background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 500; color: #007aff; padding: 0; text-align: left; }
+  .help-toggle-arrow { font-size: 20px; line-height: 1; transition: transform 0.2s; display: inline-block; color: #007aff; }
+  .help-toggle-arrow.open { transform: rotate(90deg); }
+  .help-note { font-size: 13px; color: var(--text2); background: var(--goal-tag-bg); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; line-height: 1.5; }
+  .help-steps { display: flex; flex-direction: column; gap: 14px; }
+  .help-step { display: flex; align-items: flex-start; gap: 12px; }
+  .help-step-num { width: 26px; height: 26px; border-radius: 50%; background: #007aff; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .help-step-text { font-size: 13px; color: var(--text1); line-height: 1.55; padding-top: 4px; }
+  .help-step-text strong { font-weight: 600; }
+
   @media (max-width: 600px) {
     body { padding: 0; align-items: stretch; }
     .app { max-width: 100%; }
@@ -360,6 +371,7 @@
     <div id="course-list"></div>
     <div id="onboard-courses-msg"></div>
     <button class="onboard-btn" id="ob-courses-btn" onclick="saveSelectedCourses()">Continue</button>
+    <button class="onboard-btn-secondary" onclick="showOnboardCanvas()">Go back</button>
   </div>
 
   <!-- ONBOARDING 3: SET GOALS -->
@@ -378,6 +390,7 @@
     <div id="onboard-goals-msg"></div>
     <button class="onboard-btn" id="ob-goals-btn" onclick="finishOnboarding()">Get started</button>
     <button class="onboard-btn-secondary" onclick="finishOnboarding()">Skip for now</button>
+    <button class="onboard-btn-secondary" onclick="showOnboardCourses()">Go back</button>
   </div>
 
   <!-- MAIN APP -->
@@ -520,13 +533,75 @@
         </div>
         <div id="canvas-form" style="display:none;">
           <div class="card">
-            <div class="settings-note">Enter your Canvas details below.</div>
             <div class="auth-label">Canvas URL</div>
             <input class="settings-input" type="text" id="canvas-url" placeholder="yourschool.instructure.com" />
             <div class="auth-label">Canvas API Token</div>
             <input class="settings-input" type="password" id="canvas-token" placeholder="Paste your token here" />
             <div id="canvas-msg"></div>
             <button class="settings-btn" onclick="saveCanvasSettings()">Save & connect</button>
+          </div>
+          <div class="card" style="margin-top:8px;">
+            <button class="help-toggle-btn" onclick="toggleSettingsCanvasHelp()">
+              <span>How do I find my Canvas token?</span>
+              <span class="help-toggle-arrow" id="settings-canvas-help-arrow">›</span>
+            </button>
+            <div id="settings-canvas-help-content" style="display:none; margin-top:16px;">
+              <div class="help-note">Make sure you're already logged into your school's Canvas in a browser tab before you start.</div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <div class="help-step-num">1</div>
+                  <div class="help-step-text">In Canvas, click your <strong>profile picture</strong> or name in the top-left corner of the screen.</div>
+                </div>
+                <div class="help-step">
+                  <div class="help-step-num">2</div>
+                  <div class="help-step-text">Choose <strong>Settings</strong> from the menu that appears.</div>
+                </div>
+                <div class="help-step">
+                  <div class="help-step-num">3</div>
+                  <div class="help-step-text">Scroll all the way down to the <strong>Approved Integrations</strong> section near the bottom of the page.</div>
+                </div>
+                <div class="help-step">
+                  <div class="help-step-num">4</div>
+                  <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything — "StudyFlow" works great.</div>
+                </div>
+                <div class="help-step">
+                  <div class="help-step-num">5</div>
+                  <div class="help-step-text">Click <strong>Generate Token</strong>, copy the long token shown, and paste it into the field above. Canvas only shows it once!</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="section-label" style="margin-top:20px;">Help</div>
+        <div class="card">
+          <button class="help-toggle-btn" onclick="toggleCanvasHelp()">
+            <span>How to get your Canvas token</span>
+            <span class="help-toggle-arrow" id="canvas-help-arrow">›</span>
+          </button>
+          <div id="canvas-help-content" style="display:none; margin-top:16px;">
+            <div class="help-note">Make sure you're already logged into your school's Canvas in a browser tab before you start.</div>
+            <div class="help-steps">
+              <div class="help-step">
+                <div class="help-step-num">1</div>
+                <div class="help-step-text">In Canvas, click your <strong>profile picture</strong> or name in the top-left corner of the screen.</div>
+              </div>
+              <div class="help-step">
+                <div class="help-step-num">2</div>
+                <div class="help-step-text">Choose <strong>Settings</strong> from the menu that appears.</div>
+              </div>
+              <div class="help-step">
+                <div class="help-step-num">3</div>
+                <div class="help-step-text">Scroll all the way down to the <strong>Approved Integrations</strong> section near the bottom of the page.</div>
+              </div>
+              <div class="help-step">
+                <div class="help-step-num">4</div>
+                <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything you like — "StudyFlow" works great.</div>
+              </div>
+              <div class="help-step">
+                <div class="help-step-num">5</div>
+                <div class="help-step-text">Click <strong>Generate Token</strong>, then copy the long token shown and paste it into the Canvas API Token field above. Canvas only shows it once, so copy it right away!</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="section-label" style="margin-top:20px;">Account</div>
@@ -706,21 +781,72 @@ async function saveCanvasOnboard() {
   const token = document.getElementById('ob-canvas-token').value.trim();
   const msgEl = document.getElementById('onboard-canvas-msg');
   msgEl.innerHTML = '';
-  if (!url || !token) { msgEl.innerHTML = '<div class="msg-error">Please fill in both fields.</div>'; return; }
+  if (!url) { msgEl.innerHTML = '<div class="msg-error">Please enter your Canvas URL (e.g. yourschool.instructure.com).</div>'; return; }
+  if (!token) { msgEl.innerHTML = '<div class="msg-error">Please paste your Canvas API token.</div>'; return; }
   const btn = document.getElementById('ob-canvas-btn');
-  btn.disabled = true; btn.textContent = 'Saving...';
+  btn.disabled = true; btn.classList.add('btn-loading');
+
+  // Validate credentials against Canvas before saving anything
+  let validCourses;
+  try {
+    const resp = await fetch(`https://${url}/api/v1/courses?enrollment_type=student&per_page=50`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (resp.status === 401) {
+      btn.disabled = false; btn.classList.remove('btn-loading');
+      msgEl.innerHTML = '<div class="msg-error">That API token wasn\'t accepted by Canvas. Please go back to Canvas Settings, generate a new token, and paste the full value here.</div>'; return;
+    }
+    if (resp.status === 403) {
+      btn.disabled = false; btn.classList.remove('btn-loading');
+      msgEl.innerHTML = '<div class="msg-error">Canvas denied access. Make sure your token has permission to read courses.</div>'; return;
+    }
+    if (!resp.ok) {
+      btn.disabled = false; btn.classList.remove('btn-loading');
+      msgEl.innerHTML = `<div class="msg-error">Canvas returned an unexpected error (code ${resp.status}). Double-check your URL and token, then try again.</div>`; return;
+    }
+    const raw = await resp.json();
+    validCourses = raw.filter(c => c && c.name && c.id && c.workflow_state !== 'completed');
+  } catch (e) {
+    btn.disabled = false; btn.classList.remove('btn-loading');
+    msgEl.innerHTML = '<div class="msg-error">Couldn\'t connect to Canvas. Double-check your URL — it should look like <strong>yourschool.instructure.com</strong> — and make sure you\'re connected to the internet.</div>'; return;
+  }
+
+  // Credentials are good — save to database
   const { ok, data } = await sbFetchWithRetry('/rest/v1/user_settings', 'POST', { user_id: USER_ID, canvas_url: url, canvas_token: token, selected_courses: [] });
   if (!ok) {
     if (data && JSON.stringify(data).includes('duplicate')) {
       await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_url: url, canvas_token: token });
     } else {
-      btn.disabled = false; btn.textContent = 'Save & continue';
-      msgEl.innerHTML = '<div class="msg-error">Failed to save. Please try again.</div>'; return;
+      btn.disabled = false; btn.classList.remove('btn-loading');
+      msgEl.innerHTML = '<div class="msg-error">Failed to save your settings. Please try again.</div>'; return;
     }
   }
-  btn.disabled = false; btn.textContent = 'Save & continue';
-  await loadCoursesForSelection();
+
+  btn.disabled = false; btn.classList.remove('btn-loading');
+  renderCoursesForSelection(validCourses);
   showOnboardCourses();
+}
+
+function renderCoursesForSelection(courses) {
+  selectedCoursesTemp = [];
+  document.getElementById('course-list-loading').style.display = 'none';
+  const listEl = document.getElementById('course-list');
+  listEl.innerHTML = '';
+  if (!courses || courses.length === 0) {
+    listEl.innerHTML = '<div class="course-loading">No active courses found in Canvas.</div>';
+    return;
+  }
+  courses.forEach(course => {
+    const item = document.createElement('div');
+    item.className = 'course-item';
+    item.innerHTML = `<div class="course-check"><div class="course-check-inner"></div></div><div class="course-name">${course.name}</div>`;
+    item.onclick = () => {
+      const sel = item.classList.toggle('selected');
+      if (sel) selectedCoursesTemp.push({ id: course.id, name: course.name });
+      else selectedCoursesTemp = selectedCoursesTemp.filter(c => c.id !== course.id);
+    };
+    listEl.appendChild(item);
+  });
 }
 
 async function loadCoursesForSelection() {
@@ -735,24 +861,19 @@ async function loadCoursesForSelection() {
     const resp = await fetch(`${canvasUrl}/api/v1/courses?enrollment_type=student&per_page=50`, {
       headers: { 'Authorization': `Bearer ${canvasToken}` }
     });
-    if (!resp.ok) throw new Error('Could not load courses');
+    if (resp.status === 401) throw new Error('invalid_token');
+    if (!resp.ok) throw new Error(`http_${resp.status}`);
     const courses = await resp.json();
     const valid = courses.filter(c => c && c.name && c.id && c.workflow_state !== 'completed');
-    document.getElementById('course-list-loading').style.display = 'none';
-    const listEl = document.getElementById('course-list');
-    valid.forEach(course => {
-      const item = document.createElement('div');
-      item.className = 'course-item';
-      item.innerHTML = `<div class="course-check"><div class="course-check-inner"></div></div><div class="course-name">${course.name}</div>`;
-      item.onclick = () => {
-        const sel = item.classList.toggle('selected');
-        if (sel) selectedCoursesTemp.push({ id: course.id, name: course.name });
-        else selectedCoursesTemp = selectedCoursesTemp.filter(c => c.id !== course.id);
-      };
-      listEl.appendChild(item);
-    });
+    renderCoursesForSelection(valid);
   } catch(e) {
-    document.getElementById('course-list-loading').textContent = 'Could not load courses. Check your Canvas URL and token.';
+    const loadingEl = document.getElementById('course-list-loading');
+    if (e.message === 'invalid_token') {
+      loadingEl.textContent = 'Your Canvas token is no longer valid. Go back and generate a new one.';
+    } else {
+      loadingEl.textContent = 'Could not load courses. Check your Canvas URL and token, then go back to try again.';
+    }
+    loadingEl.style.display = 'block';
   }
 }
 
@@ -867,6 +988,22 @@ async function disconnectCanvas() {
 
 async function showCourseSelection() {
   await loadCoursesForSelection(); showOnboardCourses();
+}
+
+function toggleCanvasHelp() {
+  const content = document.getElementById('canvas-help-content');
+  const arrow = document.getElementById('canvas-help-arrow');
+  const isOpen = content.style.display !== 'none';
+  content.style.display = isOpen ? 'none' : 'block';
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function toggleSettingsCanvasHelp() {
+  const content = document.getElementById('settings-canvas-help-content');
+  const arrow = document.getElementById('settings-canvas-help-arrow');
+  const isOpen = content.style.display !== 'none';
+  content.style.display = isOpen ? 'none' : 'block';
+  arrow.classList.toggle('open', !isOpen);
 }
 
 async function syncCanvas() {

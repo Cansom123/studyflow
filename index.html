@@ -342,9 +342,9 @@
   <!-- ONBOARDING 1: CONNECT CANVAS -->
   <div id="onboard-canvas" class="onboard-screen">
     <div class="progress-dots">
-      <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+      <div class="dot active"></div><div class="dot"></div>
     </div>
-    <div class="onboard-step">Step 1 of 3</div>
+    <div class="onboard-step">Step 1 of 2</div>
     <div class="onboard-title">Connect Canvas</div>
     <div class="onboard-sub">Enter your school's Canvas URL and API token so StudyFlow can see your assignments.</div>
     <div id="onboard-canvas-msg"></div>
@@ -374,12 +374,12 @@
     <button class="onboard-btn-secondary" onclick="showOnboardCanvas()">Go back</button>
   </div>
 
-  <!-- ONBOARDING 3: SET GOALS -->
+  <!-- ONBOARDING 2: SET GOALS -->
   <div id="onboard-goals" class="onboard-screen">
     <div class="progress-dots">
-      <div class="dot active"></div><div class="dot active"></div><div class="dot active"></div>
+      <div class="dot active"></div><div class="dot active"></div>
     </div>
-    <div class="onboard-step">Step 3 of 3</div>
+    <div class="onboard-step">Step 2 of 2</div>
     <div class="onboard-title">Set your goals</div>
     <div class="onboard-sub">What do you want to achieve this semester? These help StudyFlow prioritize your work.</div>
     <div id="goals-list-onboard"></div>
@@ -390,7 +390,7 @@
     <div id="onboard-goals-msg"></div>
     <button class="onboard-btn" id="ob-goals-btn" onclick="finishOnboarding()">Get started</button>
     <button class="onboard-btn-secondary" onclick="finishOnboarding()">Skip for now</button>
-    <button class="onboard-btn-secondary" onclick="showOnboardCourses()">Go back</button>
+    <button class="onboard-btn-secondary" onclick="showOnboardCanvas()">Go back</button>
   </div>
 
   <!-- MAIN APP -->
@@ -527,7 +527,7 @@
             <div class="card-sub" id="canvas-url-display" style="margin-bottom:12px;"></div>
             <button class="sync-btn" id="sync-btn" onclick="syncCanvas()">Sync assignments now</button>
             <div id="sync-status" class="sync-status"></div>
-            <button class="change-courses-btn" style="margin-top:8px;" onclick="showCourseSelection()">Change my classes</button>
+            <button class="change-courses-btn" style="margin-top:8px;" onclick="showCourseSelection()">Did we miss a class?</button>
             <button class="disconnect-btn" style="margin-top:8px;" onclick="disconnectCanvas()">Disconnect Canvas</button>
           </div>
         </div>
@@ -817,11 +817,12 @@ async function saveCanvasOnboard() {
     msgEl.innerHTML = '<div class="msg-error">Something went wrong. Please try again.</div>'; return;
   }
 
-  // Credentials are good — save to database
-  const { ok, data } = await sbFetchWithRetry('/rest/v1/user_settings', 'POST', { user_id: USER_ID, canvas_url: url, canvas_token: token, selected_courses: [] });
+  // Credentials are good — save to database with all courses auto-selected
+  const allCourses = validCourses.map(c => ({ id: c.id, name: c.name }));
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/user_settings', 'POST', { user_id: USER_ID, canvas_url: url, canvas_token: token, selected_courses: allCourses });
   if (!ok) {
     if (data && JSON.stringify(data).includes('duplicate')) {
-      await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_url: url, canvas_token: token });
+      await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_url: url, canvas_token: token, selected_courses: allCourses });
     } else {
       btn.disabled = false; btn.classList.remove('btn-loading');
       msgEl.innerHTML = '<div class="msg-error">Failed to save your settings. Please try again.</div>'; return;
@@ -829,8 +830,7 @@ async function saveCanvasOnboard() {
   }
 
   btn.disabled = false; btn.classList.remove('btn-loading');
-  renderCoursesForSelection(validCourses);
-  showOnboardCourses();
+  showOnboardGoals();
 }
 
 function renderCoursesForSelection(courses) {

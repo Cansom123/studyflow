@@ -1032,10 +1032,8 @@ async function syncCanvas() {
     updateLastSyncedLabel();
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (statusEl) {
-      statusEl.className = result.assignments > 0 ? 'sync-status success' : 'sync-status error';
-      statusEl.textContent = result.assignments > 0
-        ? `Synced — ${result.assignments} assignments, ${result.grades} course grades loaded.`
-        : `No assignments found. Courses found: ${result.courses_found ?? '?'}. Details: ${JSON.stringify(result.debug ?? [])}`;
+      statusEl.className = 'sync-status success';
+      statusEl.textContent = `Synced — ${result.assignments} assignments, ${result.grades} grades. Courses found: ${result.courses_found ?? '?'}. ${JSON.stringify(result.debug ?? [])}`;
     }
   } catch(err) {
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }

@@ -53,17 +53,17 @@ Deno.serve(async (req) => {
 
     const canvasUrl = `https://${settings[0].canvas_url}`;
     const canvasAuth = `Bearer ${settings[0].canvas_token}`;
-    const now = new Date();
-    const cutoff = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
 
     const courses = await fetchAllPages(
       `${canvasUrl}/api/v1/courses?enrollment_type=student&per_page=50`,
       canvasAuth
     );
-    const validCourses = courses.filter((c: any) => c && typeof c === "object" && c.name);
+    const validCourses = courses.filter((c: any) => c && typeof c === "object" && c.name && c.id);
 
     const allAssignments: any[] = [];
     const allGrades: any[] = [];
+    const debug: any[] = [];
 
     await Promise.all(validCourses.map(async (course: any) => {
       try {
@@ -71,19 +71,24 @@ Deno.serve(async (req) => {
           `${canvasUrl}/api/v1/courses/${course.id}/assignments?order_by=due_at&per_page=50`,
           canvasAuth
         );
+        let kept = 0;
         for (const a of assignments) {
-          if (!a.due_at) continue;
-          if (new Date(a.due_at) < cutoff) continue;
+          // Include assignments with no due date OR due within the past 30 days or future
+          if (a.due_at && new Date(a.due_at) < cutoff) continue;
           allAssignments.push({
             user_id,
             title: a.name,
             course: course.name,
-            due_date: a.due_at,
+            due_date: a.due_at ?? null,
             assignment_type: a.submission_types?.[0] ?? "homework",
             points_possible: a.points_possible ?? null,
           });
+          kept++;
         }
-      } catch (_) {}
+        debug.push({ course: course.name, total: assignments.length, kept });
+      } catch (e: any) {
+        debug.push({ course: course.name, error: e.message });
+      }
 
       try {
         const enrollments = await fetchAllPages(
@@ -137,6 +142,8 @@ Deno.serve(async (req) => {
       success: true,
       assignments: allAssignments.length,
       grades: allGrades.length,
+      courses_found: validCourses.length,
+      debug,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err: any) {

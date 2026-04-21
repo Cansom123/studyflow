@@ -53,10 +53,8 @@ Deno.serve(async (req) => {
 
     const canvasUrl = `https://${settings[0].canvas_url}`;
     const canvasAuth = `Bearer ${settings[0].canvas_token}`;
-    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
-
     const courses = await fetchAllPages(
-      `${canvasUrl}/api/v1/courses?per_page=50&state[]=available&state[]=unpublished`,
+      `${canvasUrl}/api/v1/courses?enrollment_state=active&per_page=50`,
       canvasAuth
     );
     const validCourses = courses.filter((c: any) => c && typeof c === "object" && c.name && c.id);
@@ -74,7 +72,7 @@ Deno.serve(async (req) => {
         let kept = 0;
         for (const a of assignments) {
           // Include assignments with no due date OR due within the past 30 days or future
-          if (a.due_at && new Date(a.due_at) < cutoff) continue;
+          // no date filter — keep all assignments
           allAssignments.push({
             user_id,
             title: a.name,

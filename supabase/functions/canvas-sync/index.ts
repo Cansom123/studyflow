@@ -65,25 +65,26 @@ Deno.serve(async (req) => {
 
     await Promise.all(validCourses.map(async (course: any) => {
       try {
-        const assignments = await fetchAllPages(
-          `${canvasUrl}/api/v1/courses/${course.id}/assignments?order_by=due_at&per_page=50`,
-          canvasAuth
-        );
-        let kept = 0;
-        for (const a of assignments) {
-          // Include assignments with no due date OR due within the past 30 days or future
-          // no date filter — keep all assignments
-          allAssignments.push({
-            user_id,
-            title: a.name,
-            course: course.name,
-            due_date: a.due_at ?? null,
-            assignment_type: a.submission_types?.[0] ?? "homework",
-            points_possible: a.points_possible ?? null,
-          });
-          kept++;
+        const assignUrl = `${canvasUrl}/api/v1/courses/${course.id}/assignments?order_by=due_at&per_page=50`;
+        const firstResp = await fetch(assignUrl, { headers: { "Authorization": canvasAuth } });
+        if (!firstResp.ok) {
+          debug.push({ course: course.name, http_status: firstResp.status, total: 0, kept: 0 });
+        } else {
+          const assignments = await fetchAllPages(assignUrl, canvasAuth);
+          let kept = 0;
+          for (const a of assignments) {
+            allAssignments.push({
+              user_id,
+              title: a.name,
+              course: course.name,
+              due_date: a.due_at ?? null,
+              assignment_type: a.submission_types?.[0] ?? "homework",
+              points_possible: a.points_possible ?? null,
+            });
+            kept++;
+          }
+          debug.push({ course: course.name, total: assignments.length, kept });
         }
-        debug.push({ course: course.name, total: assignments.length, kept });
       } catch (e: any) {
         debug.push({ course: course.name, error: e.message });
       }

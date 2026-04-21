@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
     const canvasUrl = `https://${settings[0].canvas_url}`;
     const canvasAuth = `Bearer ${settings[0].canvas_token}`;
     const now = new Date();
+    const cutoff = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000); // 14 days ago
 
     // Fetch all courses with pagination
     const courses = await fetchAllPages(
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
     const allGrades: any[] = [];
 
     await Promise.all(validCourses.map(async (course: any) => {
-      // Assignments — only future due dates
+      // Assignments — past 14 days through future
       try {
         const assignments = await fetchAllPages(
           `${canvasUrl}/api/v1/courses/${course.id}/assignments?order_by=due_at&per_page=50`,
@@ -73,7 +74,7 @@ Deno.serve(async (req) => {
         );
         for (const a of assignments) {
           if (!a.due_at) continue;
-          if (new Date(a.due_at) <= now) continue; // skip past assignments
+          if (new Date(a.due_at) < cutoff) continue; // skip assignments older than 14 days
           allAssignments.push({
             user_id: user.id,
             title: a.name,

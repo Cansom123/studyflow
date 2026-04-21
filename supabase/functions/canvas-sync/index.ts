@@ -30,20 +30,21 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const serviceHeaders = {
+      "Authorization": `Bearer ${serviceKey}`,
+      "apikey": serviceKey,
+      "Content-Type": "application/json",
+    };
 
-    const userResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { "Authorization": `Bearer ${token}`, "apikey": supabaseKey }
-    });
-    if (!userResp.ok) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    const { user_id } = await req.json();
+    if (!user_id) {
+      return new Response(JSON.stringify({ error: "Missing user_id" }), { status: 400, headers: corsHeaders });
     }
-    const user = await userResp.json();
 
     const settingsResp = await fetch(
-      `${supabaseUrl}/rest/v1/user_settings?user_id=eq.${user.id}&select=canvas_url,canvas_token`,
-      { headers: { "Authorization": `Bearer ${token}`, "apikey": supabaseKey } }
+      `${supabaseUrl}/rest/v1/user_settings?user_id=eq.${user_id}&select=canvas_url,canvas_token`,
+      { headers: serviceHeaders }
     );
     const settings = await settingsResp.json();
     if (!settings?.length || !settings[0].canvas_token) {
@@ -53,9 +54,8 @@ Deno.serve(async (req) => {
     const canvasUrl = `https://${settings[0].canvas_url}`;
     const canvasAuth = `Bearer ${settings[0].canvas_token}`;
     const now = new Date();
-    const cutoff = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000); // 14 days ago
+    const cutoff = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    // Fetch all courses with pagination
     const courses = await fetchAllPages(
       `${canvasUrl}/api/v1/courses?enrollment_type=student&per_page=50`,
       canvasAuth
@@ -66,7 +66,6 @@ Deno.serve(async (req) => {
     const allGrades: any[] = [];
 
     await Promise.all(validCourses.map(async (course: any) => {
-      // Assignments — past 14 days through future
       try {
         const assignments = await fetchAllPages(
           `${canvasUrl}/api/v1/courses/${course.id}/assignments?order_by=due_at&per_page=50`,
@@ -74,9 +73,9 @@ Deno.serve(async (req) => {
         );
         for (const a of assignments) {
           if (!a.due_at) continue;
-          if (new Date(a.due_at) < cutoff) continue; // skip assignments older than 14 days
+          if (new Date(a.due_at) < cutoff) continue;
           allAssignments.push({
-            user_id: user.id,
+            user_id,
             title: a.name,
             course: course.name,
             due_date: a.due_at,
@@ -86,7 +85,6 @@ Deno.serve(async (req) => {
         }
       } catch (_) {}
 
-      // Grades
       try {
         const enrollments = await fetchAllPages(
           `${canvasUrl}/api/v1/courses/${course.id}/enrollments?user_id=self&type[]=StudentEnrollment&per_page=1`,
@@ -96,7 +94,7 @@ Deno.serve(async (req) => {
           const g = enrollments[0].grades ?? {};
           if (g.current_score != null || g.final_score != null) {
             allGrades.push({
-              user_id: user.id,
+              user_id,
               canvas_course_id: String(course.id),
               course_name: course.name,
               current_score: g.current_score ?? null,
@@ -109,35 +107,20 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }));
 
-    // Assignments — use user token (RLS allows users to manage own rows)
-    const userHeaders = {
-      "Authorization": `Bearer ${token}`,
-      "apikey": supabaseKey,
-      "Content-Type": "application/json",
-    };
-
-    await fetch(`${supabaseUrl}/rest/v1/assignments?user_id=eq.${user.id}`, {
+    await fetch(`${supabaseUrl}/rest/v1/assignments?user_id=eq.${user_id}`, {
       method: "DELETE",
-      headers: userHeaders,
+      headers: serviceHeaders,
     });
 
     if (allAssignments.length > 0) {
       await fetch(`${supabaseUrl}/rest/v1/assignments`, {
         method: "POST",
-        headers: { ...userHeaders, "Prefer": "return=minimal" },
+        headers: { ...serviceHeaders, "Prefer": "return=minimal" },
         body: JSON.stringify(allAssignments),
       });
     }
 
-    // Grades — use service role key
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const serviceHeaders = {
-      "Authorization": `Bearer ${serviceKey}`,
-      "apikey": serviceKey,
-      "Content-Type": "application/json",
-    };
-
-    await fetch(`${supabaseUrl}/rest/v1/grades?user_id=eq.${user.id}`, {
+    await fetch(`${supabaseUrl}/rest/v1/grades?user_id=eq.${user_id}`, {
       method: "DELETE",
       headers: serviceHeaders,
     });

@@ -1022,7 +1022,8 @@ async function syncCanvas() {
   try {
     const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
+      body: JSON.stringify({ user_id: USER_ID })
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.message || result.error || 'Sync failed');

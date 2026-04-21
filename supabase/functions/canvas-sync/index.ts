@@ -53,8 +53,9 @@ Deno.serve(async (req) => {
 
     const canvasUrl = `https://${settings[0].canvas_url}`;
     const canvasAuth = `Bearer ${settings[0].canvas_token}`;
+    const now = new Date();
     const courses = await fetchAllPages(
-      `${canvasUrl}/api/v1/courses?enrollment_state=active&per_page=50`,
+      `${canvasUrl}/api/v1/courses?enrollment_type=student&per_page=50`,
       canvasAuth
     );
     const validCourses = courses.filter((c: any) => c && typeof c === "object" && c.name && c.id);
@@ -73,6 +74,7 @@ Deno.serve(async (req) => {
           const assignments = await fetchAllPages(assignUrl, canvasAuth);
           let kept = 0;
           for (const a of assignments) {
+            if (a.due_at && new Date(a.due_at) < now) continue;
             allAssignments.push({
               user_id,
               title: a.name,

@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
 
     const courses = await fetchAllPages(
-      `${canvasUrl}/api/v1/courses?enrollment_type=student&per_page=50`,
+      `${canvasUrl}/api/v1/courses?per_page=50&state[]=available&state[]=unpublished`,
       canvasAuth
     );
     const validCourses = courses.filter((c: any) => c && typeof c === "object" && c.name && c.id);

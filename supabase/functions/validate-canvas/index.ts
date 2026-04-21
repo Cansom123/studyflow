@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     }
 
     const url = canvas_url.replace(/^https?:\/\//, "").replace(/\/$/, "");
-    const resp = await fetch(`https://${url}/api/v1/courses?enrollment_type=student&per_page=50`, {
+    const resp = await fetch(`https://${url}/api/v1/courses?per_page=50&state[]=available&state[]=unpublished`, {
       headers: { "Authorization": `Bearer ${canvas_token}` },
     });
 

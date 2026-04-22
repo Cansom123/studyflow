@@ -690,21 +690,28 @@ function getSchoolYear() {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  let currentFall, currentSpring;
-  if (month >= 8) {
-    currentFall = 'FAL' + String(year).slice(-2);
-    currentSpring = 'SPR' + String(year + 1).slice(-2);
-  } else {
-    currentFall = 'FAL' + String(year - 1).slice(-2);
-    currentSpring = 'SPR' + String(year).slice(-2);
-  }
-  const schoolYearShort = currentFall.slice(3) + '/' + currentSpring.slice(3);
-  return { currentFall, currentSpring, schoolYearShort };
+  const fallYear = month >= 8 ? year : year - 1;
+  const springYear = fallYear + 1;
+  const fy2 = String(fallYear).slice(-2);
+  const sy2 = String(springYear).slice(-2);
+  return {
+    fallYear, springYear, fy2, sy2,
+    currentFall: 'FAL' + fy2,
+    currentSpring: 'SPR' + sy2,
+    schoolYearShort: fy2 + '/' + sy2,
+  };
 }
 
 function isCurrentYearCourse(name, sy) {
   if (!name) return false;
-  return name.includes(sy.currentFall) || name.includes(sy.currentSpring) || name.includes(sy.schoolYearShort);
+  const n = name.toUpperCase();
+  // Match FAL/SPR/SUM/WIN abbreviations, full 4-digit years, or 2-digit year codes
+  return (
+    n.includes('FAL' + sy.fy2) || n.includes('SPR' + sy.sy2) ||
+    n.includes('SUM' + sy.sy2) || n.includes('WIN' + sy.sy2) ||
+    n.includes(String(sy.fallYear)) || n.includes(String(sy.springYear)) ||
+    n.includes(sy.fy2 + '/' + sy.sy2) || n.includes(sy.fy2 + '-' + sy.sy2)
+  );
 }
 let doneSet = new Set();
 let cachedAssignments = [];
@@ -1271,12 +1278,18 @@ async function loadAssignments() {
 }
 
 function cleanCourseName(name) {
-  // Strip teacher name, section code, semester suffix
-  // e.g. "English 12 H - S2 - DUNCAN, S | 10804002-1 -- SPR26 - P01" → "English 12 H"
+  // Strip common Canvas administrative suffixes, preserve the actual course title.
+  // Handles formats like:
+  //   "English 12 H - S2 - TEACHER, F | section -- SPR26 - P01"  → "English 12 H"
+  //   "MATH 101 - Fall 2025 | 12345"                              → "MATH 101 - Fall 2025"
+  //   "AP Calculus AB"                                            → "AP Calculus AB"
   return (name || '')
-    .replace(/\s*-\s*S[12]\s*-.*$/, '')
+    // Strip " | anything" (section/ID separator used by many schools)
     .replace(/\s*\|.*$/, '')
+    // Strip " -- anything" (double-dash separator)
     .replace(/\s*--.*$/, '')
+    // Strip " - S1/S2/Sem1/Sem2 - anything" (semester section indicator followed by teacher)
+    .replace(/\s*-\s*(?:S[12]|Sem\s*[12])\s*-.*$/i, '')
     .trim();
 }
 

@@ -43,7 +43,22 @@ Deno.serve(async (req) => {
     }
 
     const raw = await resp.json();
-    const courses = raw.filter((c: any) => c && c.name && c.id && c.workflow_state !== "completed");
+    // Dynamically compute current school year so sorting works for any user, any year
+    const now = new Date();
+    const yr = now.getFullYear();
+    const fallYear = now.getMonth() >= 7 ? yr : yr - 1; // Aug onwards = new fall
+    const springYear = fallYear + 1;
+    const fy2 = String(fallYear).slice(-2);
+    const sy2 = String(springYear).slice(-2);
+    const isRecent = (name: string) => {
+      const n = name.toUpperCase();
+      return n.includes(`FAL${fy2}`) || n.includes(`SPR${sy2}`) ||
+        n.includes(`SUM${sy2}`) || n.includes(`WIN${sy2}`) ||
+        n.includes(String(fallYear)) || n.includes(String(springYear));
+    };
+    const courses = raw
+      .filter((c: any) => c && c.name && c.id)
+      .sort((a: any, b: any) => (isRecent(b.name) ? 1 : 0) - (isRecent(a.name) ? 1 : 0));
 
     return new Response(JSON.stringify({ ok: true, courses }), {
       status: 200,

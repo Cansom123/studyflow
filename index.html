@@ -179,11 +179,13 @@
   .ai-text { font-size: 13px; color: var(--ai-text); line-height: 1.5; }
 
   .goal-card { background: var(--surface); border-radius: 12px; border: 0.5px solid var(--border); padding: 14px; margin-bottom: 8px; }
-  .goal-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .goal-row:last-child { margin-bottom: 0; }
+  .goal-row { display: flex; align-items: center; gap: 10px; }
   .goal-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .goal-text { font-size: 13px; color: var(--text1); flex: 1; }
+  .goal-text { font-size: 14px; font-weight: 500; color: var(--text1); flex: 1; }
   .goal-remove { background: none; border: none; color: var(--text2); font-size: 18px; cursor: pointer; }
+  .goal-plan { margin-top: 11px; padding-top: 10px; border-top: 0.5px solid var(--border); display: flex; flex-direction: column; gap: 5px; }
+  .goal-step { font-size: 13px; color: var(--text2); line-height: 1.45; padding-left: 2px; }
+  .goal-step-arrow { color: var(--accent); font-weight: 600; margin-right: 5px; }
   .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 0.5px solid var(--grade-sep); }
   .grade-row:last-child { border-bottom: none; }
   .grade-name { font-size: 13px; color: var(--text1); }
@@ -495,8 +497,8 @@
       <!-- GOALS -->
       <div class="page" id="page-goals">
         <div class="section-label">Your goals</div>
-        <div class="goal-card" id="goals-display">
-          <div style="color:#8e8e93;font-size:13px;">No goals set yet. Add one below!</div>
+        <div id="goals-display">
+          <div style="color:#8e8e93;font-size:13px;padding:14px 0;">No goals set yet. Add one below!</div>
         </div>
         <div class="add-goal-row">
           <input class="add-goal-input" type="text" id="main-goal-input" placeholder="Add a goal..." />
@@ -700,6 +702,7 @@ function isCurrentYearCourse(name, sy) {
 }
 let doneSet = new Set();
 let cachedAssignments = [];
+let cachedGrades = [];
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1010,16 +1013,93 @@ async function finishOnboarding() {
   showApp();
 }
 
+function buildActionPlan(goalText) {
+  const steps = [];
+  const text = goalText.toLowerCase();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Extract a subject keyword from the goal
+  const subjects = [
+    'english','math','science','history','biology','chemistry','physics',
+    'spanish','french','art','pe','health','economics','econ','data',
+    'sports','algebra','calculus','stats','statistics','writing','reading'
+  ];
+  const matchedSubject = subjects.find(s => text.includes(s));
+
+  // Match assignments to the subject keyword
+  const matchingAssignments = cachedAssignments.filter(a =>
+    !a.completed && a.due_date && matchedSubject &&
+    ((a.course||'').toLowerCase().includes(matchedSubject) || a.title.toLowerCase().includes(matchedSubject))
+  ).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+
+  // Match grade to the subject keyword
+  const matchingGrade = matchedSubject
+    ? cachedGrades.find(g => cleanCourseName(g.course_name).toLowerCase().includes(matchedSubject))
+    : null;
+
+  // Step 1: current grade if found
+  if (matchingGrade) {
+    const score = matchingGrade.current_score != null ? parseFloat(matchingGrade.current_score) : null;
+    const letter = matchingGrade.current_grade || matchingGrade.final_grade || '';
+    const cn = cleanCourseName(matchingGrade.course_name);
+    steps.push(`Currently at ${score != null ? score.toFixed(1)+'% ' : ''}${letter ? '('+letter+')' : ''} in ${cn}`);
+  }
+
+  // Step 2: overdue assignments
+  const overdue = matchingAssignments.filter(a => new Date(a.due_date) < today);
+  if (overdue.length) {
+    steps.push(`Complete ${overdue.length} overdue item${overdue.length > 1 ? 's' : ''} — start with "${overdue[0].title}"`);
+  }
+
+  // Step 3: next upcoming assignments (up to 3)
+  const upcoming = matchingAssignments.filter(a => new Date(a.due_date) >= today).slice(0, 3);
+  for (const a of upcoming) {
+    const d = Math.round((new Date(a.due_date) - today) / (1000*60*60*24));
+    const dueStr = d === 0 ? 'today' : d === 1 ? 'tomorrow'
+      : new Date(a.due_date).toLocaleDateString('en-US', {month:'short',day:'numeric'});
+    steps.push(`Prepare "${a.title}" — due ${dueStr}`);
+  }
+
+  // Fallback generic advice
+  if (steps.length === 0) {
+    if (text.includes('raise') || text.includes('improve') || text.includes('better')) {
+      steps.push('Sync Canvas to pull your latest assignments');
+      steps.push('Check All Work for any overdue items');
+      steps.push('Mark assignments done as you finish them to track progress');
+    } else if (text.includes('miss') || text.includes('deadline') || text.includes('on top')) {
+      steps.push('Check Due Soon tab daily for what\'s coming up');
+      steps.push('Use Priority tab to focus on the most urgent work first');
+    } else {
+      steps.push('Sync Canvas in Settings to see your latest assignments');
+      steps.push('Check the Priority tab for what to tackle first');
+    }
+  }
+
+  return steps;
+}
+
 function renderGoalsTab() {
   const el = document.getElementById('goals-display');
-  if (userGoals.length === 0) { el.innerHTML = '<div style="color:#8e8e93;font-size:13px;">No goals set yet. Add one below!</div>'; return; }
+  if (!el) return;
+  if (userGoals.length === 0) {
+    el.innerHTML = '<div style="color:#8e8e93;font-size:13px;padding:14px 0;">No goals set yet. Add one below!</div>';
+    return;
+  }
   const colors = ['#d85a30','#007aff','#3b6d11','#854f0b','#534ab7'];
-  el.innerHTML = userGoals.map((g, i) => `
-    <div class="goal-row">
-      <div class="goal-dot" style="background:${colors[i % colors.length]};"></div>
-      <div class="goal-text">${g}</div>
-      <button class="goal-remove" onclick="removeGoalMain(${i})">×</button>
-    </div>`).join('');
+  el.innerHTML = userGoals.map((g, i) => {
+    const plan = buildActionPlan(g);
+    const stepsHtml = plan.map(s =>
+      `<div class="goal-step"><span class="goal-step-arrow">→</span>${s}</div>`
+    ).join('');
+    return `<div class="goal-card">
+      <div class="goal-row">
+        <div class="goal-dot" style="background:${colors[i % colors.length]};"></div>
+        <div class="goal-text">${g}</div>
+        <button class="goal-remove" onclick="removeGoalMain(${i})">×</button>
+      </div>
+      ${stepsHtml ? `<div class="goal-plan">${stepsHtml}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 async function addGoalMain() {
@@ -1143,6 +1223,7 @@ async function loadAssignments() {
   renderDueSoon(assignments);
   renderAllWork(assignments);
   renderPriority(assignments);
+  renderGoalsTab();
 }
 
 function cleanCourseName(name) {
@@ -1167,6 +1248,9 @@ async function loadGrades() {
   const { ok, data: grades } = await sbFetchWithRetry(`/rest/v1/grades?user_id=eq.${USER_ID}&order=course_name.asc`);
   if (loadEl) loadEl.style.display = 'none';
   if (!ok || !grades) { if (emptyEl) emptyEl.style.display = 'block'; return; }
+
+  cachedGrades = grades;
+  renderGoalsTab(); // refresh action plans with grade data
 
   // Only show courses that actually have a grade published
   const withGrades = grades.filter(g =>

@@ -111,6 +111,8 @@ Deno.serve(async (req) => {
 
     // syncAll = true when user has no explicit selection — sync every enrolled course
     const syncAll = selectedCourses.length === 0;
+    // Match by ID (reliable) with name as fallback to handle Canvas name inconsistencies
+    const selectedIdStrings = new Set(selectedCourses.map((c) => String(c.id)));
     const selectedNameSet = new Set(selectedCourses.map((c) => c.name));
 
     console.log(`[run ${runId}] canvas_url=${canvasUrl} selected=${selectedCourses.length} syncAll=${syncAll}`);
@@ -151,28 +153,42 @@ Deno.serve(async (req) => {
     const discoveredCourses: Array<{ id: string; name: string }> = [];
 
     for (const course of allCourses) {
-      // In syncAll mode include every course; otherwise filter to selected names
-      if (!syncAll && !selectedNameSet.has(course.name)) continue;
+      if (!syncAll) {
+        // Match by ID first (more reliable), then fall back to exact name match
+        const matchedById = selectedIdStrings.has(String(course._id));
+        const matchedByName = selectedNameSet.has(course.name);
+        if (!matchedById && !matchedByName) {
+          console.log(`[run ${runId}] skipping course id=${course._id} name="${course.name}" (not selected)`);
+          continue;
+        }
+        if (!matchedById && matchedByName) {
+          console.log(`[run ${runId}] matched course "${course.name}" by name only (id mismatch)`);
+        }
+      }
 
       if (syncAll) {
         discoveredCourses.push({ id: course._id, name: course.name });
       }
 
       const nodes = course.assignmentsConnection?.nodes ?? [];
+      let skippedOld = 0;
       for (const a of nodes) {
-        if (!a.dueAt) continue;
-        const dueAt = new Date(a.dueAt);
-        if (dueAt < cutoff) continue;
+        // Include assignments with no due date — professor may not have set one yet
+        if (a.dueAt) {
+          const dueAt = new Date(a.dueAt);
+          if (dueAt < cutoff) { skippedOld++; continue; } // drop assignments due >7 days ago
+        }
 
         allAssignments.push({
           user_id: userId,
           title: a.name,
           course: course.name,
-          due_date: a.dueAt,
+          due_date: a.dueAt ?? null,
           assignment_type: a.submissionTypes?.[0] ?? "homework",
           points_possible: a.pointsPossible ?? null,
         });
       }
+      console.log(`[run ${runId}] course "${course.name}": ${nodes.length} total, ${skippedOld} old, ${nodes.length - skippedOld} kept`);
     }
 
     // If we ran in syncAll mode, save the discovered courses back to user_settings

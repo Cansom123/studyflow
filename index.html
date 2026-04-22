@@ -218,6 +218,13 @@
   [data-theme="dark"] .grade-score.warn { color: #ffb347; }
   [data-theme="dark"] .grade-score.bad { color: #ff6b6b; }
   .grade-letter { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--grade-letter-bg); color: var(--text2); margin-left: 6px; }
+  .grade-card { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; margin-bottom: 8px; }
+  .grade-card-name { font-size: 14px; font-weight: 500; color: var(--text1); flex: 1; min-width: 0; padding-right: 12px; }
+  .grade-card-right { text-align: right; flex-shrink: 0; }
+  .grade-card-letter { font-size: 20px; font-weight: 700; line-height: 1; }
+  .grade-card-pct { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .grade-a { color: #2d7a2d; } .grade-b { color: #1a6b8a; } .grade-c { color: #8a5a00; } .grade-df { color: #a32d2d; }
+  [data-theme="dark"] .grade-a { color: #6bcf6b; } [data-theme="dark"] .grade-b { color: #5aacff; } [data-theme="dark"] .grade-c { color: #ffb347; } [data-theme="dark"] .grade-df { color: #ff6b6b; }
 
   /* Grade calculator */
   .calc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 4px; }
@@ -476,12 +483,12 @@
       <div class="page" id="page-grades">
         <div id="grades-loading" class="loading-box">Loading grades...</div>
         <div id="grades-empty" class="empty-box" style="display:none;">
-          <div class="empty-title">No grades yet</div>
-          <div class="empty-sub">Sync your Canvas account in Settings to pull your current grades.</div>
+          <div class="empty-title">No grades published yet</div>
+          <div class="empty-sub">Grades will appear here once your teachers post them. Try syncing in Settings.</div>
         </div>
         <div id="grades-list" style="display:none;">
           <div class="section-label">Current grades</div>
-          <div class="card" id="grades-cards"></div>
+          <div id="grades-cards"></div>
         </div>
       </div>
 
@@ -1138,6 +1145,16 @@ async function loadAssignments() {
   renderPriority(assignments);
 }
 
+function cleanCourseName(name) {
+  // Strip teacher name, section code, semester suffix
+  // e.g. "English 12 H - S2 - DUNCAN, S | 10804002-1 -- SPR26 - P01" → "English 12 H"
+  return (name || '')
+    .replace(/\s*-\s*S[12]\s*-.*$/, '')
+    .replace(/\s*\|.*$/, '')
+    .replace(/\s*--.*$/, '')
+    .trim();
+}
+
 async function loadGrades() {
   const loadEl = document.getElementById('grades-loading');
   const emptyEl = document.getElementById('grades-empty');
@@ -1149,25 +1166,31 @@ async function loadGrades() {
 
   const { ok, data: grades } = await sbFetchWithRetry(`/rest/v1/grades?user_id=eq.${USER_ID}&order=course_name.asc`);
   if (loadEl) loadEl.style.display = 'none';
-  if (!ok || !grades || grades.length === 0) {
-    if (emptyEl) emptyEl.style.display = 'block';
-    return;
-  }
+  if (!ok || !grades) { if (emptyEl) emptyEl.style.display = 'block'; return; }
+
+  // Only show courses that actually have a grade published
+  const withGrades = grades.filter(g =>
+    g.current_score != null || g.final_score != null || g.current_grade || g.final_grade
+  );
+
+  if (withGrades.length === 0) { if (emptyEl) emptyEl.style.display = 'block'; return; }
 
   if (cardsEl) {
-    cardsEl.innerHTML = grades.map(g => {
-      const score = g.current_score != null ? g.current_score : g.final_score;
+    cardsEl.innerHTML = withGrades.map(g => {
+      const score = g.current_score != null ? parseFloat(g.current_score) : parseFloat(g.final_score);
       const letter = g.current_grade || g.final_grade || '';
-      let scoreClass = '';
-      if (score != null) {
-        if (score >= 80) scoreClass = 'good';
-        else if (score >= 65) scoreClass = 'warn';
-        else scoreClass = 'bad';
-      }
-      const scoreText = score != null ? `${score.toFixed(1)}%` : 'N/A';
-      return `<div class="grade-row">
-        <span class="grade-name">${g.course_name}</span>
-        <span class="grade-score ${scoreClass}">${scoreText}${letter ? `<span class="grade-letter">${letter}</span>` : ''}</span>
+      const cleanName = cleanCourseName(g.course_name);
+      let letterClass = 'grade-df';
+      if (letter.startsWith('A')) letterClass = 'grade-a';
+      else if (letter.startsWith('B')) letterClass = 'grade-b';
+      else if (letter.startsWith('C')) letterClass = 'grade-c';
+      const scoreText = !isNaN(score) ? `${score.toFixed(1)}%` : '';
+      return `<div class="card grade-card">
+        <div class="grade-card-name">${cleanName}</div>
+        <div class="grade-card-right">
+          <div class="grade-card-letter ${letterClass}">${letter || '—'}</div>
+          ${scoreText ? `<div class="grade-card-pct">${scoreText}</div>` : ''}
+        </div>
       </div>`;
     }).join('');
   }

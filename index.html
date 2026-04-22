@@ -1381,7 +1381,8 @@ async function saveCanvasOnboard() {
   }
 
   // Credentials are good — save to database with all courses auto-selected
-  const allCourses = validCourses.map(c => ({ id: c.id, name: c.name }));
+  // IDs saved as strings to avoid JS float precision loss for large Canvas IDs
+  const allCourses = validCourses.map(c => ({ id: String(c.id), name: c.name }));
   const { ok, data } = await sbFetchWithRetry('/rest/v1/user_settings', 'POST', { user_id: USER_ID, canvas_url: url, canvas_token: token, selected_courses: allCourses });
   if (!ok) {
     if (data && JSON.stringify(data).includes('duplicate')) {
@@ -1415,12 +1416,12 @@ function renderCoursesForSelection(courses, existingIds = new Set()) {
     const item = document.createElement('div');
     const preSelected = existingIds.has(String(course.id));
     item.className = 'course-item' + (preSelected ? ' selected' : '');
-    if (preSelected) selectedCoursesTemp.push({ id: course.id, name: course.name });
+    if (preSelected) selectedCoursesTemp.push({ id: String(course.id), name: course.name });
     item.innerHTML = `<div class="course-check"><div class="course-check-inner"></div></div><div class="course-name">${course.name}</div>`;
     item.onclick = () => {
       const sel = item.classList.toggle('selected');
-      if (sel) selectedCoursesTemp.push({ id: course.id, name: course.name });
-      else selectedCoursesTemp = selectedCoursesTemp.filter(c => c.id !== course.id);
+      if (sel) selectedCoursesTemp.push({ id: String(course.id), name: course.name });
+      else selectedCoursesTemp = selectedCoursesTemp.filter(c => c.id !== String(course.id));
     };
     return item;
   };
@@ -1689,7 +1690,8 @@ async function saveCanvasSettings() {
   }
 
   // Save URL, token, and auto-select all courses atomically
-  const allCourses = validCourses.map(c => ({ id: c.id, name: c.name }));
+  // IDs saved as strings to avoid JS float precision loss for large Canvas IDs
+  const allCourses = validCourses.map(c => ({ id: String(c.id), name: c.name }));
   await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', {
     canvas_url: url, canvas_token: token, selected_courses: allCourses
   });

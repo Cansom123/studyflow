@@ -58,7 +58,8 @@ Deno.serve(async (req) => {
     };
     const courses = raw
       .filter((c: any) => c && c.name && c.id)
-      .sort((a: any, b: any) => (isRecent(b.name) ? 1 : 0) - (isRecent(a.name) ? 1 : 0));
+      .sort((a: any, b: any) => (isRecent(b.name) ? 1 : 0) - (isRecent(a.name) ? 1 : 0))
+      .map((c: any) => ({ ...c, id: String(c.id) }));
 
     return new Response(JSON.stringify({ ok: true, courses }), {
       status: 200,

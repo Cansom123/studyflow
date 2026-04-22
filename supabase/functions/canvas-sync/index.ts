@@ -3,6 +3,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Extract the course-section code between "| " and " --" in CCSD course names
+// e.g. "Debate/Trial - S1 - WRIGHT, M | 45100001-2 -- FAL25 - P01" → "45100001-2"
+function extractCode(name: string): string | null {
+  const m = name.match(/\|\s*(\S+)\s+--/);
+  return m ? m[1] : null;
+}
+
 async function fetchAllPages(url: string, authHeader: string): Promise<{ items: any[]; firstStatus: number | null; firstError: string | null }> {
   const results: any[] = [];
   let nextUrl: string | null = url;
@@ -111,11 +118,20 @@ Deno.serve(async (req) => {
 
     // syncAll = true when user has no explicit selection — sync every enrolled course
     const syncAll = selectedCourses.length === 0;
-    // Match by ID (reliable) with name as fallback to handle Canvas name inconsistencies
+
+    // Build multiple lookup structures for robust matching despite ID precision loss
     const selectedIdStrings = new Set(selectedCourses.map((c) => String(c.id)));
     const selectedNameSet = new Set(selectedCourses.map((c) => c.name));
+    const selectedNameLower = new Set(selectedCourses.map((c) => c.name.toLowerCase().trim()));
+    // Course-section codes extracted from CCSD name format "... | CODE -- TERM - Period"
+    const selectedCodeSet = new Set(
+      selectedCourses.map((c) => extractCode(c.name)).filter(Boolean) as string[]
+    );
 
     console.log(`[run ${runId}] canvas_url=${canvasUrl} selected=${selectedCourses.length} syncAll=${syncAll}`);
+    if (!syncAll) {
+      console.log(`[run ${runId}] selectedCodes=${JSON.stringify([...selectedCodeSet])}`);
+    }
 
     const now = new Date();
     const allAssignments: any[] = [];
@@ -148,21 +164,32 @@ Deno.serve(async (req) => {
     const allCourses: any[] = gqlData?.data?.allCourses ?? [];
     console.log(`[run ${runId}] graphql: status=${gqlResp.status} courses=${allCourses.length}`);
 
+    // Log all course names returned by GraphQL for diagnostics
+    if (!syncAll && allCourses.length > 0) {
+      console.log(`[run ${runId}] graphql course list: ${allCourses.map((c: any) => `"${c.name}"(${c._id})`).join(", ")}`);
+    }
+
     const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
 
     const discoveredCourses: Array<{ id: string; name: string }> = [];
 
     for (const course of allCourses) {
       if (!syncAll) {
-        // Match by ID first (more reliable), then fall back to exact name match
-        const matchedById = selectedIdStrings.has(String(course._id));
+        const idStr = String(course._id);
+        const matchedById = selectedIdStrings.has(idStr);
         const matchedByName = selectedNameSet.has(course.name);
-        if (!matchedById && !matchedByName) {
-          console.log(`[run ${runId}] skipping course id=${course._id} name="${course.name}" (not selected)`);
+        const matchedByNameLower = selectedNameLower.has(course.name.toLowerCase().trim());
+        const courseCode = extractCode(course.name);
+        const matchedByCode = courseCode !== null && selectedCodeSet.has(courseCode);
+
+        if (!matchedById && !matchedByName && !matchedByNameLower && !matchedByCode) {
+          console.log(`[run ${runId}] skip id=${idStr} name="${course.name}" code=${courseCode ?? "none"}`);
           continue;
         }
-        if (!matchedById && matchedByName) {
-          console.log(`[run ${runId}] matched course "${course.name}" by name only (id mismatch)`);
+
+        const how = matchedById ? "id" : matchedByName ? "name" : matchedByNameLower ? "name-ci" : "code";
+        if (how !== "id") {
+          console.log(`[run ${runId}] matched "${course.name}" by ${how}`);
         }
       }
 
@@ -192,6 +219,7 @@ Deno.serve(async (req) => {
     }
 
     // If we ran in syncAll mode, save the discovered courses back to user_settings
+    // IDs are stored as strings (course._id from GraphQL is already a string — exact, no precision loss)
     if (syncAll && discoveredCourses.length > 0) {
       const svcHdrs = { "Authorization": `Bearer ${serviceKey}`, "apikey": serviceKey, "Content-Type": "application/json" };
       await fetch(`${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}`, {

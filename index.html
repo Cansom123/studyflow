@@ -109,6 +109,12 @@
   .course-item.selected .course-check-inner { display: block; }
   .course-name { font-size: 14px; font-weight: 500; color: var(--text1); }
   .course-loading { text-align: center; padding: 20px; color: var(--text2); font-size: 14px; }
+  .course-section-title { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 8px; }
+  .previous-courses-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 14px; background: var(--input-bg); border-radius: 10px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text2); margin-top: 8px; }
+  .previous-courses-toggle .arrow { transition: transform 0.15s; }
+  .previous-courses-toggle.open .arrow { transform: rotate(90deg); }
+  .previous-courses-list { display: none; margin-top: 8px; }
+  .previous-courses-list.open { display: block; }
 
   .goal-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
   .goal-input { flex: 1; padding: 11px 14px; border-radius: 10px; border: 0.5px solid var(--border); font-size: 14px; color: var(--text1); background: var(--input-bg); outline: none; }
@@ -161,6 +167,12 @@
   .priority-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
   .p1{background:#fcebeb;color:#a32d2d;} .p2{background:#faece7;color:#993c1d;} .p3{background:#faeeda;color:#854f0b;} .p4{background:#e6f1fb;color:#185fa5;} .p5{background:#eaf3de;color:#3b6d11;}
   [data-theme="dark"] .p1{background:#3a1010;color:#ff6b6b;} [data-theme="dark"] .p2{background:#3a1a0a;color:#ff8c5a;} [data-theme="dark"] .p3{background:#2e1f00;color:#ffb347;} [data-theme="dark"] .p4{background:#0a1f3a;color:#5aacff;} [data-theme="dark"] .p5{background:#0a2010;color:#6bcf6b;}
+  .priority-check { width:30px;height:30px;border-radius:50%;border:2px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px;color:transparent;transition:background 0.15s,border-color 0.15s,color 0.15s; }
+  .priority-check:hover { border-color:#4caf50;color:#4caf50; }
+  .priority-completed-section { margin-top:16px; }
+  .priority-completed-label { font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px; }
+  .priority-card.completed-card { opacity:0.55; }
+  .priority-card.completed-card .card-title { text-decoration:line-through; }
   .priority-info { flex: 1; }
   .ai-box { background: var(--ai-bg); border-radius: 12px; border: 0.5px solid var(--ai-border); padding: 12px 14px; margin-bottom: 16px; }
   .ai-label { font-size: 11px; font-weight: 600; color: var(--ai-label); margin-bottom: 4px; }
@@ -654,7 +666,29 @@ let USER_EMAIL = localStorage.getItem('sf_user_email') || '';
 let userGoals = JSON.parse(localStorage.getItem('sf_goals') || '[]');
 let selectedCoursesTemp = [];
 let onboardGoals = [];
+
+function getSchoolYear() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  let currentFall, currentSpring;
+  if (month >= 8) {
+    currentFall = 'FAL' + String(year).slice(-2);
+    currentSpring = 'SPR' + String(year + 1).slice(-2);
+  } else {
+    currentFall = 'FAL' + String(year - 1).slice(-2);
+    currentSpring = 'SPR' + String(year).slice(-2);
+  }
+  const schoolYearShort = currentFall.slice(3) + '/' + currentSpring.slice(3);
+  return { currentFall, currentSpring, schoolYearShort };
+}
+
+function isCurrentYearCourse(name, sy) {
+  if (!name) return false;
+  return name.includes(sy.currentFall) || name.includes(sy.currentSpring) || name.includes(sy.schoolYearShort);
+}
 let doneSet = new Set();
+let cachedAssignments = [];
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -842,7 +876,13 @@ function renderCoursesForSelection(courses) {
     listEl.innerHTML = '<div class="course-loading">No active courses found in Canvas.</div>';
     return;
   }
-  courses.forEach(course => {
+
+  const sy = getSchoolYear();
+  const current = [];
+  const previous = [];
+  courses.forEach(c => (isCurrentYearCourse(c.name, sy) ? current : previous).push(c));
+
+  const makeItem = (course) => {
     const item = document.createElement('div');
     item.className = 'course-item';
     item.innerHTML = `<div class="course-check"><div class="course-check-inner"></div></div><div class="course-name">${course.name}</div>`;
@@ -851,8 +891,37 @@ function renderCoursesForSelection(courses) {
       if (sel) selectedCoursesTemp.push({ id: course.id, name: course.name });
       else selectedCoursesTemp = selectedCoursesTemp.filter(c => c.id !== course.id);
     };
-    listEl.appendChild(item);
-  });
+    return item;
+  };
+
+  if (current.length > 0) {
+    const title = document.createElement('div');
+    title.className = 'course-section-title';
+    title.textContent = `Current classes (${sy.schoolYearShort})`;
+    listEl.appendChild(title);
+    current.forEach(c => listEl.appendChild(makeItem(c)));
+  } else {
+    const empty = document.createElement('div');
+    empty.className = 'course-loading';
+    empty.textContent = `No ${sy.schoolYearShort} classes found. Expand "Previous classes" if you need an older one.`;
+    listEl.appendChild(empty);
+  }
+
+  if (previous.length > 0) {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'previous-courses-toggle';
+    toggle.innerHTML = `<span>Previous classes (${previous.length})</span><span class="arrow">›</span>`;
+    const prevList = document.createElement('div');
+    prevList.className = 'previous-courses-list';
+    previous.forEach(c => prevList.appendChild(makeItem(c)));
+    toggle.onclick = () => {
+      toggle.classList.toggle('open');
+      prevList.classList.toggle('open');
+    };
+    listEl.appendChild(toggle);
+    listEl.appendChild(prevList);
+  }
 }
 
 async function loadCoursesForSelection() {
@@ -1020,9 +1089,11 @@ async function syncCanvas() {
   if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); }
   if (statusEl) { statusEl.className = 'sync-status'; statusEl.textContent = ''; }
   try {
+    // Ensure we have a fresh token before calling the edge function
+    if (REFRESH_TOKEN) await refreshSession();
     const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
+      headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
       body: JSON.stringify({ user_id: USER_ID })
     });
     const result = await resp.json();
@@ -1032,8 +1103,14 @@ async function syncCanvas() {
     updateLastSyncedLabel();
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (statusEl) {
+      const blocked = result.blocked_courses || 0;
+      let msg = `Synced — ${result.assignments} assignments, ${result.grades} grades.`;
+      if (blocked > 0) {
+        msg += `\n${blocked} course${blocked > 1 ? 's' : ''} couldn't be fetched — your school has restricted Canvas API access for those courses.`;
+      }
       statusEl.className = 'sync-status success';
-      statusEl.textContent = `Synced — ${result.assignments} assignments, ${result.grades} grades. ${JSON.stringify(result.debug ?? [])}`;
+      statusEl.textContent = msg;
+      statusEl.style.whiteSpace = 'pre-wrap';
     }
   } catch(err) {
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
@@ -1042,7 +1119,7 @@ async function syncCanvas() {
 }
 
 async function loadAssignments() {
-  const { ok, data: assignments } = await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&order=due_date.asc.nullslast`);
+  const { ok, data: assignments } = await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&order=due_date.asc.nullslast&select=*`);
   document.getElementById('due-loading').style.display = 'none';
   document.getElementById('allwork-loading').style.display = 'none';
   if (!ok || !assignments || assignments.length === 0) {
@@ -1051,6 +1128,7 @@ async function loadAssignments() {
     document.getElementById('priority-empty').style.display = 'block';
     return;
   }
+  cachedAssignments = assignments;
   renderDueSoon(assignments);
   renderAllWork(assignments);
   renderPriority(assignments);
@@ -1189,11 +1267,33 @@ function renderAllWork(assignments) {
 
 function renderPriority(assignments) {
   const today = new Date(); today.setHours(0,0,0,0);
-  const withDate = assignments.filter(a => a.due_date && !doneSet.has(decodeURIComponent(doneKey(a))));
-  if (withDate.length === 0) { document.getElementById('priority-empty').style.display='block'; return; }
-  const scored = withDate.map(a => {
-    const due = new Date(a.due_date);
-    const d = Math.round((due - today) / (1000*60*60*24));
+  const todayStr = today.toDateString();
+
+  // Completed today — show at bottom with undo
+  const completedToday = assignments.filter(a =>
+    a.completed && a.completed_at && new Date(a.completed_at).toDateString() === todayStr
+  );
+
+  // Active: has due date, not completed, not more than 7 days overdue
+  const active = assignments.filter(a => {
+    if (!a.due_date || a.completed) return false;
+    const d = Math.round((new Date(a.due_date) - today) / (1000*60*60*24));
+    return d >= -7;
+  });
+
+  const listEl = document.getElementById('priority-list');
+  const emptyEl = document.getElementById('priority-empty');
+
+  if (active.length === 0 && completedToday.length === 0) {
+    emptyEl.style.display = 'block';
+    listEl.innerHTML = '';
+    document.getElementById('priority-ai-text').textContent = 'No upcoming assignments — you\'re all caught up!';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const scored = active.map(a => {
+    const d = Math.round((new Date(a.due_date) - today) / (1000*60*60*24));
     let score = d < 0 ? 1000 + Math.abs(d) : 100 - d;
     for (const goal of userGoals) {
       const g = goal.toLowerCase().split(' ')[0];
@@ -1203,13 +1303,14 @@ function renderPriority(assignments) {
   }).sort((a, b) => b.score - a.score);
 
   const colors = ['p1','p2','p3','p4','p5'];
-  document.getElementById('priority-list').innerHTML = scored.slice(0,5).map((a, i) => {
+  let html = scored.slice(0, 5).map((a, i) => {
     const [bc, bl] = getBadge(a.assignment_type);
-    const dueText = a.d < 0 ? `<span style="color:#d85a30;">${Math.abs(a.d)} days overdue</span>`
+    const dueText = a.d < 0 ? `<span style="color:#d85a30;">${Math.abs(a.d)}d overdue</span>`
       : a.d===0 ? `<span style="color:#d85a30;">due today</span>`
       : a.d===1 ? `<span style="color:#d85a30;">due tomorrow</span>`
       : `due ${new Date(a.due_date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
     return `<div class="priority-card">
+      <button class="priority-check" onclick="markPriorityDone('${a.id}')" title="Mark as done">✓</button>
       <div class="priority-num ${colors[i]||'p5'}">${i+1}</div>
       <div class="priority-info">
         <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
@@ -1218,14 +1319,60 @@ function renderPriority(assignments) {
     </div>`;
   }).join('');
 
-  const top = scored[0];
-  const matchingGoal = userGoals.find(g => (top.course||'').toLowerCase().includes(g.toLowerCase().split(' ')[0]));
-  let aiText = matchingGoal
-    ? `"${top.title}" is your top priority — and it's in a class tied to your goal: "${matchingGoal}". Start here.`
-    : top.d < 0 ? `"${top.title}" is overdue. Take care of that first.`
-    : top.d <= 1 ? `"${top.title}" is due ${top.d===0?'today':'tomorrow'} — that's your top priority.`
-    : `Your most urgent assignment is "${top.title}", due in ${top.d} days. Start there.`;
-  document.getElementById('priority-ai-text').textContent = aiText;
+  if (completedToday.length > 0) {
+    html += `<div class="priority-completed-section">
+      <div class="priority-completed-label">Completed today</div>
+      ${completedToday.map(a => {
+        const [bc, bl] = getBadge(a.assignment_type);
+        return `<div class="priority-card completed-card">
+          <button class="priority-check" style="border-color:#4caf50;color:#4caf50;" onclick="undoPriorityDone('${a.id}')" title="Undo">✓</button>
+          <div class="priority-num p5" style="opacity:0.5;">✓</div>
+          <div class="priority-info">
+            <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
+            <div class="card-sub" style="margin-top:3px;">${a.course||''}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  listEl.innerHTML = html;
+
+  if (scored.length > 0) {
+    const top = scored[0];
+    const matchingGoal = userGoals.find(g => (top.course||'').toLowerCase().includes(g.toLowerCase().split(' ')[0]));
+    let aiText = matchingGoal
+      ? `"${top.title}" is your top priority — and it's in a class tied to your goal: "${matchingGoal}". Start here.`
+      : top.d < 0 ? `"${top.title}" is overdue. Take care of that first.`
+      : top.d <= 1 ? `"${top.title}" is due ${top.d===0?'today':'tomorrow'} — that's your top priority.`
+      : `Your most urgent assignment is "${top.title}", due in ${top.d} days. Start there.`;
+    document.getElementById('priority-ai-text').textContent = aiText;
+  }
+}
+
+async function markPriorityDone(id) {
+  const now = new Date().toISOString();
+  await sbFetchWithRetry(
+    `/rest/v1/assignments?id=eq.${id}&user_id=eq.${USER_ID}`,
+    'PATCH',
+    { completed: true, completed_at: now }
+  );
+  cachedAssignments = cachedAssignments.map(a =>
+    a.id === id ? { ...a, completed: true, completed_at: now } : a
+  );
+  renderPriority(cachedAssignments);
+}
+
+async function undoPriorityDone(id) {
+  await sbFetchWithRetry(
+    `/rest/v1/assignments?id=eq.${id}&user_id=eq.${USER_ID}`,
+    'PATCH',
+    { completed: false, completed_at: null }
+  );
+  cachedAssignments = cachedAssignments.map(a =>
+    a.id === id ? { ...a, completed: false, completed_at: null } : a
+  );
+  renderPriority(cachedAssignments);
 }
 
 function showPage(name, el, fromNav) {

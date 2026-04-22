@@ -1827,8 +1827,14 @@ async function loadGrades() {
       else if (letter.startsWith('B')) letterClass = 'grade-b';
       else if (letter.startsWith('C')) letterClass = 'grade-c';
       const scoreText = !isNaN(score) ? `${score.toFixed(1)}%` : '';
+      const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
+      const barColor = barColors[letterClass] || 'var(--accent)';
+      const barWidth = !isNaN(score) ? Math.min(Math.max(score, 0), 100) : 0;
       return `<div class="card grade-card">
-        <div class="grade-card-name">${cleanName}</div>
+        <div class="grade-card-left">
+          <div class="grade-card-name">${cleanName}</div>
+          ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="width:${barWidth}%;background:${barColor}"></div></div>` : ''}
+        </div>
         <div class="grade-card-right">
           <div class="grade-card-letter ${letterClass}">${letter || '—'}</div>
           ${scoreText ? `<div class="grade-card-pct">${scoreText}</div>` : ''}

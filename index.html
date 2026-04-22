@@ -419,6 +419,11 @@
   </div>
 
   <!-- MAIN APP -->
+  <div id="welcome-toast" onclick="dismissWelcome()" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:13px 18px;box-shadow:0 4px 20px rgba(0,0,0,0.12);max-width:340px;width:calc(100% - 32px);cursor:pointer;transition:opacity 0.4s;">
+    <div style="font-size:14px;font-weight:600;color:var(--text1);margin-bottom:2px;" id="welcome-toast-title"></div>
+    <div style="font-size:12px;color:var(--text2);">Tap to dismiss</div>
+  </div>
+
   <div id="main-app" class="main-app">
     <div class="topbar">
       <div>
@@ -676,6 +681,7 @@ let ACCESS_TOKEN = localStorage.getItem('sf_access_token') || '';
 let REFRESH_TOKEN = localStorage.getItem('sf_refresh_token') || '';
 let USER_ID = localStorage.getItem('sf_user_id') || '';
 let USER_EMAIL = localStorage.getItem('sf_user_email') || '';
+let USER_NAME = localStorage.getItem('sf_user_name') || '';
 let userGoals = JSON.parse(localStorage.getItem('sf_goals') || '[]');
 let selectedCoursesTemp = [];
 let onboardGoals = [];
@@ -747,15 +753,21 @@ async function sbFetchWithRetry(path, method='GET', body=null, useAuth=true) {
 function saveSession(s) {
   ACCESS_TOKEN = s.access_token; REFRESH_TOKEN = s.refresh_token;
   USER_ID = s.user.id; USER_EMAIL = s.user.email;
+  // Extract display name from auth metadata, fall back to email prefix
+  const meta = s.user?.user_metadata || {};
+  USER_NAME = meta.full_name || meta.name || meta.display_name
+    || USER_EMAIL.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim().split(' ')[0] || '';
+  if (USER_NAME) USER_NAME = USER_NAME.charAt(0).toUpperCase() + USER_NAME.slice(1);
   localStorage.setItem('sf_access_token', ACCESS_TOKEN);
   localStorage.setItem('sf_refresh_token', REFRESH_TOKEN);
   localStorage.setItem('sf_user_id', USER_ID);
   localStorage.setItem('sf_user_email', USER_EMAIL);
+  localStorage.setItem('sf_user_name', USER_NAME);
 }
 
 function clearSession() {
   ACCESS_TOKEN = REFRESH_TOKEN = USER_ID = USER_EMAIL = '';
-  ['sf_access_token','sf_refresh_token','sf_user_id','sf_user_email','sf_goals'].forEach(k => localStorage.removeItem(k));
+  ['sf_access_token','sf_refresh_token','sf_user_id','sf_user_email','sf_user_name','sf_goals'].forEach(k => localStorage.removeItem(k));
 }
 
 function hideAll() {
@@ -779,6 +791,37 @@ async function routeUser() {
   showApp();
 }
 
+function maybeShowWelcome() {
+  const key = 'sf_last_welcome_' + USER_ID;
+  const last = parseInt(localStorage.getItem(key) || '0', 10);
+  const now = Date.now();
+  if (now - last < 24 * 60 * 60 * 1000) return; // shown within last 24h
+  localStorage.setItem(key, String(now));
+  const messages = [
+    'You\'re doing great staying on top of things!',
+    'Keep up the great work — you\'ve got this!',
+    'Stay focused, you\'re making real progress.',
+    'One assignment at a time — you\'ve got this!',
+  ];
+  const msg = messages[Math.floor(now / (24*60*60*1000)) % messages.length];
+  const name = USER_NAME ? `, ${USER_NAME}` : '';
+  document.getElementById('welcome-toast-title').textContent = `Welcome back${name}! ${msg}`;
+  const toast = document.getElementById('welcome-toast');
+  toast.style.display = 'block';
+  toast.style.opacity = '1';
+  // Auto-dismiss after 6s
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => { toast.style.display = 'none'; }, 400);
+  }, 6000);
+}
+
+function dismissWelcome() {
+  const toast = document.getElementById('welcome-toast');
+  toast.style.opacity = '0';
+  setTimeout(() => { toast.style.display = 'none'; }, 400);
+}
+
 function showApp() {
   hideAll();
   document.getElementById('main-app').style.display = 'block';
@@ -791,6 +834,7 @@ function showApp() {
   renderSelectedCoursesTab();
   updateLastSyncedLabel();
   autoSync();
+  maybeShowWelcome();
 }
 
 function signOut() { clearSession(); showLoginScreen(); }

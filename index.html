@@ -278,6 +278,10 @@
   .done-check.checked .done-check-icon { display: block; }
   .card.done { opacity: 0.4; }
   .card.done .card-title { text-decoration: line-through; }
+  .card.overdue-card { border-color: #f5c6c6; background: linear-gradient(135deg, var(--surface) 0%, #fff5f5 100%); }
+  [data-theme="dark"] .card.overdue-card { border-color: #5a2020; background: linear-gradient(135deg, var(--surface) 0%, #2a1010 100%); }
+  .overdue-pill { display:inline-block; font-size:10px; font-weight:700; color:#c0392b; background:#fde8e8; border-radius:4px; padding:1px 5px; margin-left:5px; vertical-align:middle; letter-spacing:0.03em; }
+  [data-theme="dark"] .overdue-pill { background:#3a1010; color:#ff6b6b; }
 
   /* Bottom nav (mobile only) */
   .bottom-nav { display: none; }
@@ -1192,15 +1196,17 @@ function getDueText(due_date, isOverdue) {
 
 function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`); }
 
-function aCard(a, isOverdue) {
+function aCard(a, isOverdue, redTint=false) {
   const [bc, bl] = getBadge(a.assignment_type);
   const key = doneKey(a);
   const isDone = doneSet.has(decodeURIComponent(key));
-  return `<div class="card${isDone ? ' done' : ''}">
+  const cardClass = `card${isDone ? ' done' : ''}${redTint && !isDone ? ' overdue-card' : ''}`;
+  const overdueTag = redTint && !isDone ? `<span class="overdue-pill">OVERDUE</span>` : '';
+  return `<div class="${cardClass}">
     <div class="card-row" style="gap:10px;align-items:center;">
       <button class="done-check${isDone ? ' checked' : ''}" onclick="toggleDone('${key}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
       <div style="flex:1;min-width:0;">
-        <div class="card-row"><div style="flex:1;min-width:0;"><div class="card-title">${a.title}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>
+        <div class="card-row"><div style="flex:1;min-width:0;"><div class="card-title">${a.title}${overdueTag}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>
         ${getDueText(a.due_date, isOverdue)}
       </div>
     </div>
@@ -1228,7 +1234,7 @@ function renderDueSoon(assignments) {
   let overdue=[], soon=[], later=[];
   assignments.forEach(a => {
     if (!a.due_date) return;
-    if (doneSet.has(decodeURIComponent(doneKey(a)))) return; // hide done items
+    if (doneSet.has(decodeURIComponent(doneKey(a)))) return;
     const due = new Date(a.due_date); due.setHours(0,0,0,0);
     if (due < today) overdue.push(a);
     else if (due <= weekFromNow) soon.push(a);
@@ -1236,33 +1242,55 @@ function renderDueSoon(assignments) {
   });
   document.getElementById('stat-week').textContent = soon.length;
   document.getElementById('stat-overdue').textContent = overdue.length;
-  if (overdue.length + soon.length + later.length === 0) { document.getElementById('due-empty').style.display='block'; return; }
+  // Due Soon shows ONLY upcoming — overdue lives in All Work
+  if (soon.length + later.length === 0) {
+    document.getElementById('due-empty').style.display = 'block';
+    return;
+  }
   document.getElementById('due-list').style.display = 'block';
-  if (overdue.length) { document.getElementById('overdue-section').style.display='block'; document.getElementById('overdue-list').innerHTML=overdue.map(a=>aCard(a,true)).join(''); }
+  // overdue-section intentionally hidden here
+  document.getElementById('overdue-section').style.display = 'none';
   if (soon.length) { document.getElementById('soon-section').style.display='block'; document.getElementById('soon-list').innerHTML=soon.map(a=>aCard(a,false)).join(''); }
+  else { document.getElementById('soon-section').style.display='none'; }
   if (later.length) { document.getElementById('later-section').style.display='block'; document.getElementById('later-list').innerHTML=later.map(a=>aCard(a,false)).join(''); }
+  else { document.getElementById('later-section').style.display='none'; }
 }
 
 function renderAllWork(assignments) {
   document.getElementById('allwork-list').style.display = 'block';
-  const byCourse = {};
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate()+7);
+  let overdue=[], soon=[], upcoming=[];
   assignments.forEach(a => {
-    const key = a.course || 'Other';
-    if (!byCourse[key]) byCourse[key] = [];
-    byCourse[key].push(a);
+    if (!a.due_date) { upcoming.push(a); return; }
+    const due = new Date(a.due_date); due.setHours(0,0,0,0);
+    if (due < today) overdue.push(a);
+    else if (due <= weekFromNow) soon.push(a);
+    else upcoming.push(a);
+  });
+  // Within each group: undone first, done last; overdue sorted most overdue first
+  const sortGroup = (arr, reverseDate=false) => [...arr].sort((a, b) => {
+    const aDone = doneSet.has(decodeURIComponent(doneKey(a))) ? 1 : 0;
+    const bDone = doneSet.has(decodeURIComponent(doneKey(b))) ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    const aD = a.due_date ? new Date(a.due_date) : new Date('9999');
+    const bD = b.due_date ? new Date(b.due_date) : new Date('9999');
+    return reverseDate ? aD - bD : aD - bD;
   });
   let html = '';
-  for (const [course, items] of Object.entries(byCourse)) {
-    // Sort: undone first, done last
-    const sorted = [...items].sort((a, b) => {
-      const aDone = doneSet.has(decodeURIComponent(doneKey(a))) ? 1 : 0;
-      const bDone = doneSet.has(decodeURIComponent(doneKey(b))) ? 1 : 0;
-      return aDone - bDone;
-    });
-    html += `<div class="section-label">${course}</div>`;
-    html += sorted.map(a => aCard(a, false)).join('');
+  if (overdue.length) {
+    html += `<div class="section-label" style="color:#c0392b;">Overdue</div>`;
+    html += sortGroup(overdue).map(a => aCard(a, true, true)).join('');
   }
-  document.getElementById('allwork-list').innerHTML = html;
+  if (soon.length) {
+    html += `<div class="section-label">Due Soon</div>`;
+    html += sortGroup(soon).map(a => aCard(a, false)).join('');
+  }
+  if (upcoming.length) {
+    html += `<div class="section-label">Upcoming</div>`;
+    html += sortGroup(upcoming).map(a => aCard(a, false)).join('');
+  }
+  document.getElementById('allwork-list').innerHTML = html || '<div class="empty-box"><div class="empty-title">No assignments</div></div>';
 }
 
 function renderPriority(assignments) {

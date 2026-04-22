@@ -3,14 +3,37 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function fetchAllPages(url: string, authHeader: string): Promise<any[]> {
+async function fetchAllPages(url: string, authHeader: string): Promise<{ items: any[]; firstStatus: number | null; firstError: string | null }> {
   const results: any[] = [];
   let nextUrl: string | null = url;
+  let firstStatus: number | null = null;
+  let firstError: string | null = null;
   while (nextUrl) {
-    const resp = await fetch(nextUrl, { headers: { "Authorization": authHeader } });
-    if (!resp.ok) break;
-    const data = await resp.json();
-    if (Array.isArray(data)) results.push(...data);
+    let resp: Response;
+    try {
+      resp = await fetch(nextUrl, { headers: { "Authorization": authHeader } });
+    } catch (err: any) {
+      firstError = firstError ?? `network error: ${err?.message ?? err}`;
+      break;
+    }
+    if (firstStatus === null) firstStatus = resp.status;
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "<unreadable>");
+      firstError = firstError ?? `HTTP ${resp.status}: ${body.slice(0, 200)}`;
+      break;
+    }
+    let data: any;
+    try {
+      data = await resp.json();
+    } catch (err: any) {
+      firstError = firstError ?? `JSON parse error: ${err?.message ?? err}`;
+      break;
+    }
+    if (!Array.isArray(data)) {
+      firstError = firstError ?? `non-array response`;
+      break;
+    }
+    results.push(...data);
     nextUrl = null;
     const link = resp.headers.get("Link") || "";
     for (const part of link.split(",")) {
@@ -20,7 +43,7 @@ async function fetchAllPages(url: string, authHeader: string): Promise<any[]> {
       }
     }
   }
-  return results;
+  return { items: results, firstStatus, firstError };
 }
 
 Deno.serve(async (req) => {
@@ -28,129 +51,215 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const runId = crypto.randomUUID().slice(0, 8);
+  console.log(`=== canvas-sync start (run ${runId}) ===`);
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const serviceHeaders = {
-      "Authorization": `Bearer ${serviceKey}`,
-      "apikey": serviceKey,
-      "Content-Type": "application/json",
-    };
+    const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
 
-    const { user_id } = await req.json();
-    if (!user_id) {
-      return new Response(JSON.stringify({ error: "Missing user_id" }), { status: 400, headers: corsHeaders });
+    // --- Authenticate user ---
+    let userId: string | null = null;
+    let authedViaToken = false;
+
+    if (token && token !== supabaseKey) {
+      const userResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: { "Authorization": `Bearer ${token}`, "apikey": supabaseKey },
+      });
+      if (userResp.ok) {
+        const user = await userResp.json();
+        userId = user.id;
+        authedViaToken = true;
+      } else {
+        console.warn(`[run ${runId}] token auth failed ${userResp.status} — trying body fallback`);
+      }
     }
 
+    if (!userId) {
+      let body: any = null;
+      try { body = await req.json(); } catch (_) {}
+      const bodyUserId = body?.user_id;
+      if (!bodyUserId || typeof bodyUserId !== "string") {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      }
+      userId = bodyUserId;
+    }
+
+    console.log(`[run ${runId}] user=${userId}`);
+
+    // --- Load user settings ---
+    const settingsHeaders = authedViaToken
+      ? { "Authorization": `Bearer ${token}`, "apikey": supabaseKey }
+      : { "Authorization": `Bearer ${serviceKey}`, "apikey": serviceKey };
+
     const settingsResp = await fetch(
-      `${supabaseUrl}/rest/v1/user_settings?user_id=eq.${user_id}&select=canvas_url,canvas_token`,
-      { headers: serviceHeaders }
+      `${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}&select=canvas_url,canvas_token,selected_courses`,
+      { headers: settingsHeaders },
     );
     const settings = await settingsResp.json();
+
     if (!settings?.length || !settings[0].canvas_token) {
       return new Response(JSON.stringify({ error: "No Canvas token found" }), { status: 400, headers: corsHeaders });
     }
 
     const canvasUrl = `https://${settings[0].canvas_url}`;
     const canvasAuth = `Bearer ${settings[0].canvas_token}`;
-    const now = new Date();
-    const courses = await fetchAllPages(
-      `${canvasUrl}/api/v1/courses?enrollment_type=student&per_page=50`,
-      canvasAuth
-    );
-    const validCourses = courses.filter((c: any) => c && typeof c === "object" && c.name && c.id);
+    const selectedCourses: Array<{ id: number | string; name: string }> =
+      Array.isArray(settings[0].selected_courses) ? settings[0].selected_courses : [];
 
+    // syncAll = true when user has no explicit selection — sync every enrolled course
+    const syncAll = selectedCourses.length === 0;
+    const selectedNameSet = new Set(selectedCourses.map((c) => c.name));
+
+    console.log(`[run ${runId}] canvas_url=${canvasUrl} selected=${selectedCourses.length} syncAll=${syncAll}`);
+
+    const now = new Date();
     const allAssignments: any[] = [];
     const allGrades: any[] = [];
-    const debug: any[] = [];
 
-    await Promise.all(validCourses.map(async (course: any) => {
-      try {
-        const assignUrl = `${canvasUrl}/api/v1/courses/${course.id}/assignments?order_by=due_at&per_page=50`;
-        const firstResp = await fetch(assignUrl, { headers: { "Authorization": canvasAuth } });
-        if (!firstResp.ok) {
-          debug.push({ course: course.name, http_status: firstResp.status, total: 0, kept: 0 });
-        } else {
-          const assignments = await fetchAllPages(assignUrl, canvasAuth);
-          let kept = 0;
-          for (const a of assignments) {
-            if (a.due_at && new Date(a.due_at) < now) continue;
-            allAssignments.push({
-              user_id,
-              title: a.name,
-              course: course.name,
-              due_date: a.due_at ?? null,
-              assignment_type: a.submission_types?.[0] ?? "homework",
-              points_possible: a.points_possible ?? null,
-            });
-            kept++;
+    // --- Fetch assignments via Canvas GraphQL (bypasses per-course REST API restrictions) ---
+    const gqlResp = await fetch(`${canvasUrl}/api/graphql`, {
+      method: "POST",
+      headers: { "Authorization": canvasAuth, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: `{
+          allCourses {
+            _id
+            name
+            assignmentsConnection(first: 200) {
+              nodes {
+                _id
+                name
+                dueAt
+                pointsPossible
+                submissionTypes
+              }
+            }
           }
-          debug.push({ course: course.name, total: assignments.length, kept });
-        }
-      } catch (e: any) {
-        debug.push({ course: course.name, error: e.message });
+        }`,
+      }),
+    });
+
+    const gqlData = await gqlResp.json().catch(() => null);
+    const allCourses: any[] = gqlData?.data?.allCourses ?? [];
+    console.log(`[run ${runId}] graphql: status=${gqlResp.status} courses=${allCourses.length}`);
+
+    const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+
+    const discoveredCourses: Array<{ id: string; name: string }> = [];
+
+    for (const course of allCourses) {
+      // In syncAll mode include every course; otherwise filter to selected names
+      if (!syncAll && !selectedNameSet.has(course.name)) continue;
+
+      if (syncAll) {
+        discoveredCourses.push({ id: course._id, name: course.name });
       }
 
-      try {
-        const enrollments = await fetchAllPages(
-          `${canvasUrl}/api/v1/courses/${course.id}/enrollments?user_id=self&type[]=StudentEnrollment&per_page=1`,
-          canvasAuth
-        );
-        if (enrollments.length > 0) {
-          const g = enrollments[0].grades ?? {};
-          if (g.current_score != null || g.final_score != null) {
-            allGrades.push({
-              user_id,
-              canvas_course_id: String(course.id),
-              course_name: course.name,
-              current_score: g.current_score ?? null,
-              final_score: g.final_score ?? null,
-              current_grade: g.current_grade ?? null,
-              final_grade: g.final_grade ?? null,
-            });
-          }
-        }
-      } catch (_) {}
-    }));
+      const nodes = course.assignmentsConnection?.nodes ?? [];
+      for (const a of nodes) {
+        if (!a.dueAt) continue;
+        const dueAt = new Date(a.dueAt);
+        if (dueAt < cutoff) continue;
 
-    await fetch(`${supabaseUrl}/rest/v1/assignments?user_id=eq.${user_id}`, {
+        allAssignments.push({
+          user_id: userId,
+          title: a.name,
+          course: course.name,
+          due_date: a.dueAt,
+          assignment_type: a.submissionTypes?.[0] ?? "homework",
+          points_possible: a.pointsPossible ?? null,
+        });
+      }
+    }
+
+    // If we ran in syncAll mode, save the discovered courses back to user_settings
+    if (syncAll && discoveredCourses.length > 0) {
+      const svcHdrs = { "Authorization": `Bearer ${serviceKey}`, "apikey": serviceKey, "Content-Type": "application/json" };
+      await fetch(`${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}`, {
+        method: "PATCH",
+        headers: svcHdrs,
+        body: JSON.stringify({ selected_courses: discoveredCourses }),
+      });
+      console.log(`[run ${runId}] auto-saved ${discoveredCourses.length} courses to user_settings`);
+    }
+
+    console.log(`[run ${runId}] assignments=${allAssignments.length} grades=${allGrades.length}`);
+
+    // --- Write to database ---
+    const serviceHeaders = {
+      "Authorization": `Bearer ${serviceKey}`,
+      "apikey": serviceKey,
+      "Content-Type": "application/json",
+    };
+
+    await fetch(`${supabaseUrl}/rest/v1/assignments?user_id=eq.${userId}`, {
       method: "DELETE",
       headers: serviceHeaders,
     });
 
     if (allAssignments.length > 0) {
-      await fetch(`${supabaseUrl}/rest/v1/assignments`, {
+      const insResp = await fetch(`${supabaseUrl}/rest/v1/assignments`, {
         method: "POST",
         headers: { ...serviceHeaders, "Prefer": "return=minimal" },
         body: JSON.stringify(allAssignments),
       });
+      if (!insResp.ok) {
+        const body = await insResp.text().catch(() => "<unreadable>");
+        console.error(`[run ${runId}] insert assignments failed ${insResp.status}: ${body.slice(0, 300)}`);
+      }
     }
 
-    await fetch(`${supabaseUrl}/rest/v1/grades?user_id=eq.${user_id}`, {
+    await fetch(`${supabaseUrl}/rest/v1/grades?user_id=eq.${userId}`, {
       method: "DELETE",
       headers: serviceHeaders,
     });
 
     if (allGrades.length > 0) {
-      await fetch(`${supabaseUrl}/rest/v1/grades`, {
+      const insGrades = await fetch(`${supabaseUrl}/rest/v1/grades`, {
         method: "POST",
         headers: { ...serviceHeaders, "Prefer": "return=minimal" },
         body: JSON.stringify(allGrades),
       });
+      if (!insGrades.ok) {
+        const body = await insGrades.text().catch(() => "<unreadable>");
+        console.error(`[run ${runId}] insert grades failed ${insGrades.status}: ${body.slice(0, 300)}`);
+      }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      assignments: allAssignments.length,
-      grades: allGrades.length,
-      courses_found: validCourses.length,
-      debug,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const effectiveCourses = syncAll ? discoveredCourses : selectedCourses;
+    const assignmentsByCourse = new Map<string, any[]>();
+    for (const a of allAssignments) {
+      const list = assignmentsByCourse.get(a.course) ?? [];
+      list.push(a);
+      assignmentsByCourse.set(a.course, list);
+    }
+    const courseSummaries = effectiveCourses.map((course) => {
+      const list = assignmentsByCourse.get(course.name) ?? [];
+      const future = list.filter((a) => a.due_date && new Date(a.due_date) > now).length;
+      return { id: course.id, name: course.name, assignments_total: list.length, assignments_future: future };
     });
+
+    console.log(`=== canvas-sync end (run ${runId}) — assignments=${allAssignments.length} ===`);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        run_id: runId,
+        assignments: allAssignments.length,
+        grades: allGrades.length,
+        courses: courseSummaries,
+        sync_all: syncAll,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (err: any) {
+    console.error(`[run ${runId}] fatal: ${err?.message ?? err}\n${err?.stack ?? ""}`);
+    return new Response(
+      JSON.stringify({ error: err?.message ?? "Internal error", run_id: runId }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });

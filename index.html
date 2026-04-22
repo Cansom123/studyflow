@@ -932,7 +932,7 @@ async function saveCanvasOnboard() {
   showOnboardGoals();
 }
 
-function renderCoursesForSelection(courses) {
+function renderCoursesForSelection(courses, existingIds = new Set()) {
   selectedCoursesTemp = [];
   document.getElementById('course-list-loading').style.display = 'none';
   const listEl = document.getElementById('course-list');
@@ -949,7 +949,9 @@ function renderCoursesForSelection(courses) {
 
   const makeItem = (course) => {
     const item = document.createElement('div');
-    item.className = 'course-item';
+    const preSelected = existingIds.has(String(course.id));
+    item.className = 'course-item' + (preSelected ? ' selected' : '');
+    if (preSelected) selectedCoursesTemp.push({ id: course.id, name: course.name });
     item.innerHTML = `<div class="course-check"><div class="course-check-inner"></div></div><div class="course-name">${course.name}</div>`;
     item.onclick = () => {
       const sel = item.classList.toggle('selected');
@@ -993,8 +995,10 @@ async function loadCoursesForSelection() {
   document.getElementById('course-list-loading').style.display = 'block';
   document.getElementById('course-list').innerHTML = '';
   selectedCoursesTemp = [];
-  const { ok, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token`);
+  // Fetch canvas credentials AND existing selected_courses so we can pre-check them
+  const { ok, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token,selected_courses`);
   if (!ok || !settings || settings.length === 0) return;
+  const existingIds = new Set((settings[0].selected_courses || []).map(c => String(c.id)));
   try {
     const validateResp = await fetch(`${SB_URL}/functions/v1/validate-canvas`, {
       method: 'POST',
@@ -1011,7 +1015,7 @@ async function loadCoursesForSelection() {
       loadingEl.textContent = 'Could not load courses. Check your Canvas URL and token, then go back to try again.';
       loadingEl.style.display = 'block'; return;
     }
-    renderCoursesForSelection(result.courses);
+    renderCoursesForSelection(result.courses, existingIds);
   } catch(e) {
     const loadingEl = document.getElementById('course-list-loading');
     loadingEl.textContent = 'Could not load courses. Check your Canvas URL and token, then go back to try again.';
@@ -1195,8 +1199,39 @@ async function saveCanvasSettings() {
   const token = document.getElementById('canvas-token').value.trim();
   const msgEl = document.getElementById('canvas-msg');
   if (!url || !token) { msgEl.innerHTML = '<div class="msg-error">Please enter both fields.</div>'; return; }
-  await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_url: url, canvas_token: token });
-  loadCanvasSettings(); syncCanvas();
+  msgEl.innerHTML = '<div style="color:var(--text2);font-size:13px;">Validating…</div>';
+
+  // Validate token and get courses before saving — same flow as onboarding
+  let validCourses;
+  try {
+    const validateResp = await fetch(`${SB_URL}/functions/v1/validate-canvas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
+      body: JSON.stringify({ canvas_url: url, canvas_token: token })
+    });
+    const result = await validateResp.json();
+    if (result.error === 'invalid_token') {
+      msgEl.innerHTML = '<div class="msg-error">Token not accepted by Canvas. Generate a new one and try again.</div>'; return;
+    }
+    if (result.error === 'forbidden') {
+      msgEl.innerHTML = '<div class="msg-error">Canvas denied access. Make sure your token has permission to read courses.</div>'; return;
+    }
+    if (!result.ok) {
+      msgEl.innerHTML = '<div class="msg-error">Couldn\'t reach Canvas. Check your URL and try again.</div>'; return;
+    }
+    validCourses = result.courses;
+  } catch(e) {
+    msgEl.innerHTML = '<div class="msg-error">Something went wrong. Please try again.</div>'; return;
+  }
+
+  // Save URL, token, and auto-select all courses atomically
+  const allCourses = validCourses.map(c => ({ id: c.id, name: c.name }));
+  await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', {
+    canvas_url: url, canvas_token: token, selected_courses: allCourses
+  });
+  msgEl.innerHTML = '';
+  loadCanvasSettings();
+  syncCanvas();
 }
 
 async function disconnectCanvas() {

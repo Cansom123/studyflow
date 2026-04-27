@@ -122,17 +122,36 @@ Deno.serve(async (req) => {
     const selectedCourses: Array<{ id: number | string; name: string }> =
       Array.isArray(settings[0].selected_courses) ? settings[0].selected_courses : [];
 
-    const syncAll = selectedCourses.length === 0;
+    // Filter saved selections to current school year — silently skips courses from previous
+    // years without requiring users to manually clean up their settings.
+    const nowSY = new Date();
+    const fallYearSY = nowSY.getMonth() >= 7 ? nowSY.getFullYear() : nowSY.getFullYear() - 1;
+    const springYearSY = fallYearSY + 1;
+    const fy2SY = String(fallYearSY).slice(-2);
+    const sy2SY = String(springYearSY).slice(-2);
+    const isCurrentYearCourse = (name: string): boolean => {
+      const n = (name || '').toUpperCase();
+      const hasTag = /\b(FAL|SPR|SUM|WIN)\d{2}\b/.test(n);
+      if (!hasTag) return true; // no term tag = assume active (e.g. "AP Study Hall")
+      return n.includes(`FAL${fy2SY}`) || n.includes(`SPR${sy2SY}`) ||
+        n.includes(`SUM${sy2SY}`) || n.includes(`WIN${sy2SY}`);
+    };
+    const activeSel = selectedCourses.filter((c) => isCurrentYearCourse(c.name || ""));
+    if (activeSel.length < selectedCourses.length) {
+      console.log(`[run ${runId}] skipped ${selectedCourses.length - activeSel.length} old-year course(s) from saved selection`);
+    }
+
+    const syncAll = activeSel.length === 0 && selectedCourses.length === 0;
 
     // Build match sets for id / name / section-code based matching
-    const selectedIdSet = new Set(selectedCourses.map((c) => String(c.id)));
-    const selectedNameSet = new Set(selectedCourses.map((c) => c.name));
-    const selectedNameLower = new Set(selectedCourses.map((c) => (c.name || '').toLowerCase().trim()));
+    const selectedIdSet = new Set(activeSel.map((c) => String(c.id)));
+    const selectedNameSet = new Set(activeSel.map((c) => c.name));
+    const selectedNameLower = new Set(activeSel.map((c) => (c.name || '').toLowerCase().trim()));
     const selectedCodeSet = new Set(
-      selectedCourses.map((c) => extractCode(c.name)).filter((x): x is string => x !== null)
+      activeSel.map((c) => extractCode(c.name)).filter((x): x is string => x !== null)
     );
 
-    console.log(`[run ${runId}] selected=${selectedCourses.length} syncAll=${syncAll}`);
+    console.log(`[run ${runId}] selected=${selectedCourses.length} active=${activeSel.length} syncAll=${syncAll}`);
 
     const now = new Date();
 
@@ -168,7 +187,7 @@ Deno.serve(async (req) => {
 
     // Log any selected courses that didn't match (helps diagnose name mismatches)
     if (!syncAll) {
-      for (const sc of selectedCourses) {
+      for (const sc of activeSel) {
         const found = matchedCourses.some((c: any) => {
           if (c.name === sc.name) return true;
           const code = extractCode(sc.name);
@@ -400,7 +419,7 @@ Deno.serve(async (req) => {
     // Build per-course assignment summary for the response (active courses only)
     const effectiveCourses = syncAll
       ? activeCourses.map((c: any) => ({ id: String(c.id), name: c.name }))
-      : selectedCourses.filter((sc: any) => !isTermConcluded(sc.name || "", now));
+      : activeSel;
 
     const assignmentsByCourse = new Map<string, any[]>();
     for (const a of allAssignments) {

@@ -1551,20 +1551,28 @@ function renderCoursesForSelection(courses, existingIds = new Set()) {
   document.getElementById('course-list-loading').style.display = 'none';
   const listEl = document.getElementById('course-list');
   listEl.innerHTML = '';
-  if (!courses || courses.length === 0) {
-    listEl.innerHTML = '<div class="course-loading">No active courses found in Canvas.</div>';
+
+  // Keep only courses from the current school year.
+  // Courses with no term tag (e.g. "Speech and Debate") are always shown —
+  // we can't determine their year so we assume they're active.
+  const sy = getSchoolYear();
+  const filtered = (courses || []).filter(c => {
+    const n = (c.name || '').toUpperCase();
+    const hasTag = /\b(FAL|SPR|SUM|WIN)\d{2}\b/.test(n);
+    return !hasTag || isCurrentYearCourse(c.name, sy);
+  });
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div class="course-loading">No current classes found in Canvas.</div>';
     return;
   }
 
-  const sy = getSchoolYear();
-  const current = [];
-  const previous = [];
-  // Split on concluded term status, not year-tag presence.
-  // Untagged courses ("Speech and Debate", "AP Study Hall", etc.) go to current —
-  // they are active by default because their term cannot be inferred from the name.
-  courses.forEach(c => (!isCourseTermConcluded(c.name) ? current : previous).push(c));
+  const title = document.createElement('div');
+  title.className = 'course-section-title';
+  title.textContent = `Current classes (${sy.schoolYearShort})`;
+  listEl.appendChild(title);
 
-  const makeItem = (course) => {
+  filtered.forEach(course => {
     const item = document.createElement('div');
     const preSelected = existingIds.has(String(course.id));
     item.className = 'course-item' + (preSelected ? ' selected' : '');
@@ -1575,37 +1583,8 @@ function renderCoursesForSelection(courses, existingIds = new Set()) {
       if (sel) selectedCoursesTemp.push({ id: String(course.id), name: course.name });
       else selectedCoursesTemp = selectedCoursesTemp.filter(c => c.id !== String(course.id));
     };
-    return item;
-  };
-
-  if (current.length > 0) {
-    const title = document.createElement('div');
-    title.className = 'course-section-title';
-    title.textContent = `Current classes (${sy.schoolYearShort})`;
-    listEl.appendChild(title);
-    current.forEach(c => listEl.appendChild(makeItem(c)));
-  } else {
-    const empty = document.createElement('div');
-    empty.className = 'course-loading';
-    empty.textContent = `No ${sy.schoolYearShort} classes found. Expand "Previous classes" if you need an older one.`;
-    listEl.appendChild(empty);
-  }
-
-  if (previous.length > 0) {
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'previous-courses-toggle';
-    toggle.innerHTML = `<span>Previous classes (${previous.length})</span><span class="arrow">›</span>`;
-    const prevList = document.createElement('div');
-    prevList.className = 'previous-courses-list';
-    previous.forEach(c => prevList.appendChild(makeItem(c)));
-    toggle.onclick = () => {
-      toggle.classList.toggle('open');
-      prevList.classList.toggle('open');
-    };
-    listEl.appendChild(toggle);
-    listEl.appendChild(prevList);
-  }
+    listEl.appendChild(item);
+  });
 }
 
 async function loadCoursesForSelection() {

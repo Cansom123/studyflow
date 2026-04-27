@@ -57,39 +57,31 @@ Deno.serve(async (req) => {
         }
       }
     }
-    // Dynamically compute current school year so sorting works for any user, any year
+    // Compute current school year — works automatically every semester, no code changes needed.
+    // Before August → spring semester of fallYear/springYear; August+ → fall semester.
     const now = new Date();
-    const yr = now.getFullYear();
-    const fallYear = now.getMonth() >= 7 ? yr : yr - 1; // Aug onwards = new fall
+    const fallYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
     const springYear = fallYear + 1;
     const fy2 = String(fallYear).slice(-2);
     const sy2 = String(springYear).slice(-2);
-    const isRecent = (name: string) => {
+
+    const isCurrentYear = (name: string): boolean => {
       const n = name.toUpperCase();
       return n.includes(`FAL${fy2}`) || n.includes(`SPR${sy2}`) ||
         n.includes(`SUM${sy2}`) || n.includes(`WIN${sy2}`) ||
-        n.includes(String(fallYear)) || n.includes(String(springYear));
+        n.includes(String(fallYear)) || n.includes(String(springYear)) ||
+        n.includes(`${fy2}/${sy2}`) || n.includes(`${fy2}-${sy2}`);
     };
-    // Exclude courses whose term has clearly concluded so they don't appear in the
-    // selection UI and can't be accidentally re-added to the user's active list.
-    const isTermConcluded = (name: string): boolean => {
-      const match = name.toUpperCase().match(/\b(FAL|SPR|SUM|WIN)(\d{2})\b/);
-      if (!match) return false;
-      const termType = match[1];
-      const termYear = 2000 + parseInt(match[2], 10);
-      const endMonth: Record<string, number> = { FAL: 11, SPR: 4, SUM: 7, WIN: 1 };
-      const termEnd = new Date(termYear, endMonth[termType] ?? 11, 28);
-      return termEnd < now;
-    };
-    // Show every course Canvas returns — don't hide based on term guessing.
-    // Sort: recent-term courses first, concluded ones last, so the list is useful.
+    // A course has a term tag if it contains FAL/SPR/SUM/WIN + 2-digit year.
+    // Untagged courses (e.g. "Speech and Debate") have no year info — keep them.
+    const hasTermTag = (name: string): boolean =>
+      /\b(FAL|SPR|SUM|WIN)\d{2}\b/.test(name.toUpperCase());
+
+    // Only return courses from the current school year.
+    // Old courses are hidden entirely — users should not be able to accidentally select them.
     const courses = raw
       .filter((c: any) => c && c.name && c.id)
-      .sort((a: any, b: any) => {
-        const aRecent = isRecent(a.name) ? 2 : isTermConcluded(a.name) ? 0 : 1;
-        const bRecent = isRecent(b.name) ? 2 : isTermConcluded(b.name) ? 0 : 1;
-        return bRecent - aRecent;
-      })
+      .filter((c: any) => !hasTermTag(c.name) || isCurrentYear(c.name))
       .map((c: any) => ({ ...c, id: String(c.id) }));
 
     return new Response(JSON.stringify({ ok: true, courses }), {

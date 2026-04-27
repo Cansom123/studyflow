@@ -1926,15 +1926,23 @@ async function syncCanvas() {
 }
 
 async function loadAssignments() {
-  const { ok, data: assignments } = await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&order=due_date.asc.nullslast&select=*`);
-  document.getElementById('due-loading').style.display = 'none';
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&order=due_date.asc.nullslast&select=*`);
+  // Always reset stale empty/loading states before deciding what to show
+  document.getElementById('due-loading').style.display   = 'none';
   document.getElementById('allwork-loading').style.display = 'none';
-  if (!ok || !assignments || assignments.length === 0) {
-    document.getElementById('due-empty').style.display = 'block';
+  document.getElementById('due-empty').style.display     = 'none';
+  document.getElementById('allwork-empty').style.display = 'none';
+  document.getElementById('priority-empty').style.display = 'none';
+
+  const assignments = Array.isArray(data) ? data : [];
+  if (!ok || assignments.length === 0) {
+    console.warn('[loadAssignments] no data — ok:', ok, 'data:', data);
+    document.getElementById('due-empty').style.display     = 'block';
     document.getElementById('allwork-empty').style.display = 'block';
     document.getElementById('priority-empty').style.display = 'block';
     return;
   }
+  console.log('[loadAssignments] rendering', assignments.length, 'assignments');
   cachedAssignments = assignments;
   renderDueSoon(assignments);
   renderAllWork(assignments);
@@ -2341,7 +2349,8 @@ routeUser();
 
 /* ── Welcome Screen ─────────────────────────────────────────────────────── */
 (function () {
-  const WS_KEY = 'sf_last_welcome';
+  // Per-user key so each account on the same device has its own 24h timer
+  const wsKey = () => `sf_last_welcome_${typeof USER_ID !== 'undefined' ? USER_ID : ''}`;
   const DAY_MS = 24 * 60 * 60 * 1000;
   let wsNewAssignments = [];
 
@@ -2357,7 +2366,7 @@ routeUser();
 
   // Replaces the existing maybeShowWelcome (assignment wins over hoisted declaration)
   window.maybeShowWelcome = function () {
-    const last = parseInt(localStorage.getItem(WS_KEY) || '0', 10);
+    const last = parseInt(localStorage.getItem(wsKey()) || '0', 10);
     if (Date.now() - last < DAY_MS) return;
 
     wsPopulateHeader();
@@ -2373,7 +2382,7 @@ routeUser();
   };
 
   window.wsClose = function () {
-    localStorage.setItem(WS_KEY, String(Date.now()));
+    localStorage.setItem(wsKey(), String(Date.now()));
     document.getElementById('ws-overlay').style.display      = 'none';
     document.getElementById('ws-list-overlay').style.display = 'none';
   };

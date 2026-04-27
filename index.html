@@ -2103,6 +2103,7 @@ function renderAllWork(assignments) {
   const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate()+7);
   let overdue=[], soon=[], upcoming=[];
   assignments.forEach(a => {
+    if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
     if (!a.due_date) { upcoming.push(a); return; }
     const due = new Date(a.due_date); due.setHours(0,0,0,0);
     if (due < today) overdue.push(a);

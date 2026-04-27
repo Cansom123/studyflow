@@ -168,8 +168,14 @@ Deno.serve(async (req) => {
     );
     console.log(`[run ${runId}] REST courses: ${restCourses.length}`);
 
+    // Extract the FAL/SPR/SUM/WIN term tag from a course name, or "" if none.
+    const extractTerm = (name: string) =>
+      (name || "").toUpperCase().match(/\b(FAL|SPR|SUM|WIN)\d{2}\b/)?.[0] ?? "";
+
     // Match REST courses against user's selected list.
     // ID is the most reliable key — it survives teacher renames and name-format variations.
+    // Section-code fallback handles Canvas instances where the same course gets a new ID,
+    // but we require the term tag to agree so we don't pull a different semester's section.
     const matchedCourses = syncAll
       ? restCourses
       : restCourses.filter((c: any) => {
@@ -179,7 +185,13 @@ Deno.serve(async (req) => {
           if (selectedNameSet.has(c.name)) return true;
           if (selectedNameLower.has((c.name as string).toLowerCase().trim())) return true;
           const code = extractCode(c.name);
-          return code !== null && selectedCodeSet.has(code);
+          if (code === null || !selectedCodeSet.has(code)) return false;
+          // Section code matches — also verify term tag so we don't pull FAL25 when SPR26 is selected
+          const candidateTerm = extractTerm(c.name);
+          const matchingSc = activeSel.find((sc) => extractCode(sc.name) === code);
+          if (!matchingSc) return false;
+          const selectedTerm = extractTerm(matchingSc.name);
+          return !candidateTerm || !selectedTerm || candidateTerm === selectedTerm;
         });
 
     console.log(`[run ${runId}] matched ${matchedCourses.length}/${restCourses.length} courses`);

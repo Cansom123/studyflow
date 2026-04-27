@@ -273,6 +273,7 @@ Deno.serve(async (req) => {
           points_possible: a.points_possible ?? null,
           completed: isCompleted,
           completed_at: completedAt,
+          assignment_url: a.html_url ?? null,
         });
         kept++;
       }

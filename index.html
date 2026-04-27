@@ -2364,8 +2364,24 @@ routeUser();
 
   window.wsSync = async function () {
     const btn = document.getElementById('ws-sync-btn');
-    btn.disabled    = true;
-    btn.textContent = 'Syncing…';
+    btn.disabled = true;
+
+    const wsMessages = [
+      'Checking your Canvas…',
+      'Grabbing your assignments…',
+      'Seeing what\'s due soon…',
+      'Almost there…',
+      'Calculating your priorities…',
+      'Getting you organized…',
+      'Syncing your grades…',
+      'Loading your workload…',
+    ];
+    let wsMsgIdx = 0;
+    btn.textContent = wsMessages[0];
+    const wsMsgTimer = setInterval(() => {
+      wsMsgIdx = (wsMsgIdx + 1) % wsMessages.length;
+      btn.textContent = wsMessages[wsMsgIdx];
+    }, 2000);
 
     // Snapshot current assignment keys before sync
     const beforeKeys = new Set(
@@ -2373,6 +2389,7 @@ routeUser();
     );
 
     await syncCanvas();
+    clearInterval(wsMsgTimer);
 
     // New = in the post-sync cache but not in the pre-sync snapshot, and not already completed
     wsNewAssignments = cachedAssignments.filter(

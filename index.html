@@ -1935,11 +1935,10 @@ async function loadAssignments() {
     document.getElementById('priority-empty').style.display = 'block';
     return;
   }
-  const visible = assignments.filter(a => !a.is_locked);
-  cachedAssignments = visible;
-  renderDueSoon(visible);
-  renderAllWork(visible);
-  renderPriority(visible);
+  cachedAssignments = assignments;
+  renderDueSoon(assignments);
+  renderAllWork(assignments);
+  renderPriority(assignments);
   renderGoalsTab();
 }
 

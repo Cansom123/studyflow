@@ -255,12 +255,10 @@ Deno.serve(async (req) => {
         const isNonWork = types.length > 0 &&
           types.every((t: string) => t === "none" || t === "not_graded" || t === "wiki_page");
 
-        // Use Canvas's own lock signals rather than guessing from dates.
-        // locked_for_user: Canvas says the student can no longer interact with this assignment.
-        // lock_at: the timestamp after which the assignment auto-locks (could be future).
-        const isLocked =
-          a.locked_for_user === true ||
-          (a.lock_at != null && new Date(a.lock_at) < now);
+        // Store Canvas's lock signal in the DB but do NOT use it to filter display —
+        // locked_for_user is true for any past-due assignment whose window closed, including
+        // overdue work the student still needs to see. The completed flag handles hiding done work.
+        const isLocked = a.locked_for_user === true;
 
         if (a.due_at === null || a.due_at === undefined) {
           // Undated: skip informational items and assignments created more than 30 days ago

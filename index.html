@@ -675,6 +675,83 @@ body {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Welcome Screen ── */
+#ws-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; overflow-y: auto;
+}
+#ws-card {
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  width: 100%; max-width: 380px;
+  padding: 28px 24px 24px;
+  position: relative;
+  animation: fadeUp 0.25s ease;
+}
+#ws-close {
+  position: absolute; top: 14px; right: 14px;
+  background: var(--surface2); border: none; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 50%;
+  font-size: 16px; color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit; line-height: 1;
+}
+#ws-close:hover { background: var(--border); color: var(--text1); }
+#ws-logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+#ws-logo-row .logo-mark { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; }
+#ws-logo-name { font-size: 15px; font-weight: 700; color: var(--text1); }
+#ws-logo-name em { font-style: italic; }
+#ws-heading { font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: 5px; line-height: 1.2; }
+#ws-date { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+#ws-subtitle { font-size: 14px; color: var(--text2); margin-bottom: 26px; line-height: 1.45; }
+#ws-sync-btn {
+  width: 100%; padding: 15px; background: var(--accent); color: #fff;
+  border: none; border-radius: 12px; font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+}
+#ws-sync-btn:hover { opacity: 0.88; }
+#ws-sync-btn:disabled { opacity: 0.6; cursor: default; }
+.ws-skip { background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; font-family: inherit; display: block; margin: 14px auto 0; }
+.ws-skip:hover { color: var(--text1); }
+#ws-result-count { font-size: 20px; font-weight: 700; color: var(--text1); margin-bottom: 6px; }
+#ws-result-sub { font-size: 13px; color: var(--text2); margin-bottom: 22px; line-height: 1.45; }
+#ws-view-btn {
+  width: 100%; padding: 14px; background: var(--accent-soft); color: var(--accent-text);
+  border: 1px solid var(--accent-soft); border-radius: 12px; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: opacity 0.15s; margin-bottom: 0;
+}
+#ws-view-btn:hover { opacity: 0.8; }
+#ws-list-overlay {
+  position: fixed; inset: 0; z-index: 2100;
+  background: var(--bg); overflow-y: auto;
+  animation: fadeUp 0.2s ease;
+}
+#ws-list-inner {
+  max-width: 500px; margin: 0 auto; padding: 20px 20px 40px;
+}
+#ws-list-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+#ws-list-title { font-size: 18px; font-weight: 700; color: var(--text1); }
+#ws-list-close {
+  background: var(--surface2); border: none; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 50%;
+  font-size: 16px; color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+#ws-list-close:hover { background: var(--border); color: var(--text1); }
+.ws-a-card {
+  background: var(--surface); border-radius: var(--card-radius);
+  border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 10px;
+}
+.ws-a-title { font-size: 14px; font-weight: 600; color: var(--text1); margin-bottom: 4px; }
+.ws-a-meta { font-size: 12px; color: var(--text2); }
 </style>
 </head>
 <body>
@@ -723,9 +800,9 @@ body {
   <!-- ONBOARDING 1: CONNECT CANVAS -->
   <div id="onboard-canvas" class="onboard-screen">
     <div class="progress-dots">
-      <div class="dot active"></div><div class="dot"></div>
+      <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
     </div>
-    <div class="onboard-step">Step 1 of 2</div>
+    <div class="onboard-step">Step 1 of 3</div>
     <div class="onboard-title">Connect Canvas</div>
     <div class="onboard-sub">Enter your school's Canvas URL and API token so StudyFlow can see your assignments.</div>
     <div id="onboard-canvas-msg"></div>
@@ -758,9 +835,9 @@ body {
   <!-- ONBOARDING 2: SET GOALS -->
   <div id="onboard-goals" class="onboard-screen">
     <div class="progress-dots">
-      <div class="dot active"></div><div class="dot active"></div>
+      <div class="dot active"></div><div class="dot active"></div><div class="dot active"></div>
     </div>
-    <div class="onboard-step">Step 2 of 2</div>
+    <div class="onboard-step">Step 3 of 3</div>
     <div class="onboard-title">Set your goals</div>
     <div class="onboard-sub">What do you want to achieve this semester? These help StudyFlow prioritize your work.</div>
     <div id="goals-list-onboard"></div>
@@ -771,7 +848,51 @@ body {
     <div id="onboard-goals-msg"></div>
     <button class="onboard-btn" id="ob-goals-btn" onclick="finishOnboarding()">Get started</button>
     <button class="onboard-btn-secondary" onclick="finishOnboarding()">Skip for now</button>
-    <button class="onboard-btn-secondary" onclick="showOnboardCanvas()">Go back</button>
+    <button class="onboard-btn-secondary" onclick="showOnboardCourses()">Go back</button>
+  </div>
+
+  <!-- ══ WELCOME SCREEN — shows once per 24 h ══ -->
+  <div id="ws-overlay" style="display:none;">
+    <div id="ws-card">
+      <button id="ws-close" onclick="wsClose()" title="Dismiss">✕</button>
+
+      <div id="ws-logo-row">
+        <div class="logo-mark" style="width:32px;height:32px;border-radius:8px;">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M5 7C5 5.34 6.34 4 8 4h3.5C13.43 4 15 5.57 15 7.5S13.43 11 11.5 11H8C6.34 11 5 12.34 5 14s1.34 3 3 3h5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div id="ws-logo-name">Study<em>Flow</em></div>
+      </div>
+
+      <!-- State 1: initial prompt -->
+      <div id="ws-welcome">
+        <div id="ws-heading">Welcome back</div>
+        <div id="ws-date"></div>
+        <div id="ws-subtitle">Here's what's on your plate today</div>
+        <button id="ws-sync-btn" onclick="wsSync()">Sync assignments</button>
+        <button class="ws-skip" onclick="wsClose()">Go to app →</button>
+      </div>
+
+      <!-- State 2: after sync result -->
+      <div id="ws-result" style="display:none;">
+        <div id="ws-result-count"></div>
+        <div id="ws-result-sub"></div>
+        <button id="ws-view-btn" onclick="wsViewNew()" style="display:none;">View new assignments</button>
+        <button class="ws-skip" onclick="wsClose()">Go to app →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New assignments list overlay -->
+  <div id="ws-list-overlay" style="display:none;">
+    <div id="ws-list-inner">
+      <div id="ws-list-header">
+        <div id="ws-list-title">New assignments</div>
+        <button id="ws-list-close" onclick="wsCloseList()" title="Close">✕</button>
+      </div>
+      <div id="ws-list-items"></div>
+    </div>
   </div>
 
   <!-- MAIN APP -->
@@ -1177,6 +1298,17 @@ function isCurrentYearCourse(name, sy) {
     n.includes(sy.fy2 + '/' + sy.sy2) || n.includes(sy.fy2 + '-' + sy.sy2)
   );
 }
+
+// Returns true only when a course name contains a term tag whose end date is in the past.
+// Courses without any FAL/SPR/SUM/WIN tag (e.g. "Speech and Debate") return false —
+// they are treated as active because we cannot determine their term from the name alone.
+function isCourseTermConcluded(name) {
+  const m = (name || '').toUpperCase().match(/\b(FAL|SPR|SUM|WIN)(\d{2})\b/);
+  if (!m) return false;
+  const endMonth = { FAL: 11, SPR: 4, SUM: 7, WIN: 1 };
+  const termEnd = new Date(2000 + parseInt(m[2], 10), endMonth[m[1]] ?? 11, 28);
+  return termEnd < new Date();
+}
 let doneSet = new Set();
 let cachedAssignments = [];
 let cachedGrades = [];
@@ -1252,7 +1384,11 @@ function showLoginScreen() { hideAll(); document.getElementById('login-screen').
 function showSignup() { hideAll(); document.getElementById('signup-screen').style.display = 'block'; }
 function showLogin() { hideAll(); document.getElementById('login-screen').style.display = 'block'; }
 function showOnboardCanvas() { hideAll(); document.getElementById('onboard-canvas').style.display = 'block'; }
-function showOnboardCourses() { hideAll(); document.getElementById('onboard-courses').style.display = 'block'; }
+function showOnboardCourses() {
+  hideAll();
+  document.getElementById('onboard-courses').style.display = 'block';
+  if (!courseSelectionFromSettings) document.getElementById('ob-courses-btn').textContent = 'Continue';
+}
 function showOnboardGoals() { hideAll(); document.getElementById('onboard-goals').style.display = 'block'; renderGoalsOnboard(); }
 
 async function routeUser() {
@@ -1380,13 +1516,16 @@ async function saveCanvasOnboard() {
     msgEl.innerHTML = '<div class="msg-error">Something went wrong. Please try again.</div>'; return;
   }
 
-  // Credentials are good — save to database with all courses auto-selected
-  // IDs saved as strings to avoid JS float precision loss for large Canvas IDs
-  const allCourses = validCourses.map(c => ({ id: String(c.id), name: c.name }));
-  const { ok, data } = await sbFetchWithRetry('/rest/v1/user_settings', 'POST', { user_id: USER_ID, canvas_url: url, canvas_token: token, selected_courses: allCourses });
+  // Credentials are good — pre-select only current-year courses so the user
+  // doesn't start with old concluded courses checked by default.
+  // IDs saved as strings to avoid JS float precision loss for large Canvas IDs.
+  const currentCourses = validCourses
+    .filter(c => !isCourseTermConcluded(c.name || ''))
+    .map(c => ({ id: String(c.id), name: c.name }));
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/user_settings', 'POST', { user_id: USER_ID, canvas_url: url, canvas_token: token, selected_courses: currentCourses });
   if (!ok) {
     if (data && JSON.stringify(data).includes('duplicate')) {
-      await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_url: url, canvas_token: token, selected_courses: allCourses });
+      await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_url: url, canvas_token: token, selected_courses: currentCourses });
     } else {
       btn.disabled = false; btn.classList.remove('btn-loading');
       msgEl.innerHTML = '<div class="msg-error">Failed to save your settings. Please try again.</div>'; return;
@@ -1394,7 +1533,9 @@ async function saveCanvasOnboard() {
   }
 
   btn.disabled = false; btn.classList.remove('btn-loading');
-  showOnboardGoals();
+  // Show the course selection step so users can confirm/adjust which classes they're taking.
+  await loadCoursesForSelection();
+  showOnboardCourses();
 }
 
 function renderCoursesForSelection(courses, existingIds = new Set()) {
@@ -1410,7 +1551,10 @@ function renderCoursesForSelection(courses, existingIds = new Set()) {
   const sy = getSchoolYear();
   const current = [];
   const previous = [];
-  courses.forEach(c => (isCurrentYearCourse(c.name, sy) ? current : previous).push(c));
+  // Split on concluded term status, not year-tag presence.
+  // Untagged courses ("Speech and Debate", "AP Study Hall", etc.) go to current —
+  // they are active by default because their term cannot be inferred from the name.
+  courses.forEach(c => (!isCourseTermConcluded(c.name) ? current : previous).push(c));
 
   const makeItem = (course) => {
     const item = document.createElement('div');
@@ -1495,8 +1639,16 @@ async function saveSelectedCourses() {
   const btn = document.getElementById('ob-courses-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { selected_courses: selectedCoursesTemp });
-  btn.disabled = false; btn.textContent = 'Continue';
-  showOnboardGoals();
+  if (courseSelectionFromSettings) {
+    courseSelectionFromSettings = false;
+    btn.disabled = false; btn.textContent = 'Save classes';
+    showApp();
+    showPage('settings', document.getElementById('nav-settings'));
+    syncCanvas();
+  } else {
+    btn.disabled = false; btn.textContent = 'Continue';
+    showOnboardGoals();
+  }
 }
 
 function renderGoalsOnboard() {
@@ -1706,7 +1858,11 @@ async function disconnectCanvas() {
   showOnboardCanvas();
 }
 
+let courseSelectionFromSettings = false;
+
 async function showCourseSelection() {
+  courseSelectionFromSettings = true;
+  document.getElementById('ob-courses-btn').textContent = 'Save classes';
   await loadCoursesForSelection(); showOnboardCourses();
 }
 
@@ -1870,7 +2026,7 @@ function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`); }
 function aCard(a, isOverdue, redTint=false) {
   const [bc, bl] = getBadge(a.assignment_type);
   const key = doneKey(a);
-  const isDone = doneSet.has(decodeURIComponent(key));
+  const isDone = a.completed || doneSet.has(decodeURIComponent(key));
   const cardClass = `card${isDone ? ' done' : ''}${redTint && !isDone ? ' overdue-card' : ''}`;
   const overdueTag = redTint && !isDone ? `<span class="overdue-pill">OVERDUE</span>` : '';
   return `<div class="${cardClass}">
@@ -1905,7 +2061,7 @@ function renderDueSoon(assignments) {
   let overdue=[], soon=[], later=[];
   assignments.forEach(a => {
     if (!a.due_date) return;
-    if (doneSet.has(decodeURIComponent(doneKey(a)))) return;
+    if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
     const due = new Date(a.due_date); due.setHours(0,0,0,0);
     if (due < today) overdue.push(a);
     else if (due <= weekFromNow) soon.push(a);
@@ -1913,14 +2069,13 @@ function renderDueSoon(assignments) {
   });
   document.getElementById('stat-week').textContent = soon.length;
   document.getElementById('stat-overdue').textContent = overdue.length;
-  // Due Soon shows ONLY upcoming — overdue lives in All Work
-  if (soon.length + later.length === 0) {
+  if (overdue.length + soon.length + later.length === 0) {
     document.getElementById('due-empty').style.display = 'block';
     return;
   }
   document.getElementById('due-list').style.display = 'block';
-  // overdue-section intentionally hidden here
-  document.getElementById('overdue-section').style.display = 'none';
+  if (overdue.length) { document.getElementById('overdue-section').style.display='block'; document.getElementById('overdue-list').innerHTML=overdue.map(a=>aCard(a,true,true)).join(''); }
+  else { document.getElementById('overdue-section').style.display='none'; }
   if (soon.length) { document.getElementById('soon-section').style.display='block'; document.getElementById('soon-list').innerHTML=soon.map(a=>aCard(a,false)).join(''); }
   else { document.getElementById('soon-section').style.display='none'; }
   if (later.length) { document.getElementById('later-section').style.display='block'; document.getElementById('later-list').innerHTML=later.map(a=>aCard(a,false)).join(''); }
@@ -2167,6 +2322,102 @@ function toggleTheme() {
 applyTheme(localStorage.getItem('sf_theme') === 'dark');
 
 routeUser();
+
+/* ── Welcome Screen ─────────────────────────────────────────────────────── */
+(function () {
+  const WS_KEY = 'sf_last_welcome';
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  let wsNewAssignments = [];
+
+  function wsPopulateHeader() {
+    const name = USER_NAME ? `, ${USER_NAME}` : '';
+    document.getElementById('ws-heading').textContent = `Welcome back${name}`;
+    const now = new Date();
+    const dayNames   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('ws-date').textContent =
+      `${dayNames[now.getDay()]}, ${monthNames[now.getMonth()]} ${now.getDate()}`;
+  }
+
+  // Replaces the existing maybeShowWelcome (assignment wins over hoisted declaration)
+  window.maybeShowWelcome = function () {
+    const last = parseInt(localStorage.getItem(WS_KEY) || '0', 10);
+    if (Date.now() - last < DAY_MS) return;
+
+    wsPopulateHeader();
+
+    // Reset to initial state
+    document.getElementById('ws-welcome').style.display = 'block';
+    document.getElementById('ws-result').style.display  = 'none';
+    const syncBtn = document.getElementById('ws-sync-btn');
+    syncBtn.disabled    = false;
+    syncBtn.textContent = 'Sync assignments';
+
+    document.getElementById('ws-overlay').style.display = 'flex';
+  };
+
+  window.wsClose = function () {
+    localStorage.setItem(WS_KEY, String(Date.now()));
+    document.getElementById('ws-overlay').style.display      = 'none';
+    document.getElementById('ws-list-overlay').style.display = 'none';
+  };
+
+  window.wsSync = async function () {
+    const btn = document.getElementById('ws-sync-btn');
+    btn.disabled    = true;
+    btn.textContent = 'Syncing…';
+
+    // Snapshot current assignment keys before sync
+    const beforeKeys = new Set(
+      cachedAssignments.map(a => `${a.title}||${a.course}`)
+    );
+
+    await syncCanvas();
+
+    // New = in the post-sync cache but not in the pre-sync snapshot, and not already completed
+    wsNewAssignments = cachedAssignments.filter(
+      a => !beforeKeys.has(`${a.title}||${a.course}`) && !a.completed
+    );
+
+    // Switch to result state
+    document.getElementById('ws-welcome').style.display = 'none';
+    document.getElementById('ws-result').style.display  = 'block';
+
+    const countEl   = document.getElementById('ws-result-count');
+    const subEl     = document.getElementById('ws-result-sub');
+    const viewBtn   = document.getElementById('ws-view-btn');
+
+    if (wsNewAssignments.length > 0) {
+      const n = wsNewAssignments.length;
+      countEl.textContent   = `${n} new assignment${n !== 1 ? 's' : ''} found`;
+      subEl.textContent     = 'Tap below to review what\'s new.';
+      viewBtn.style.display = 'block';
+    } else {
+      countEl.textContent   = 'All caught up!';
+      subEl.textContent     = 'No new assignments since your last sync.';
+      viewBtn.style.display = 'none';
+    }
+  };
+
+  window.wsViewNew = function () {
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('ws-list-items').innerHTML = wsNewAssignments.map(a => {
+      const due = a.due_date ? new Date(a.due_date) : null;
+      const dueStr = due
+        ? `${monthNames[due.getMonth()]} ${due.getDate()}`
+        : 'No due date';
+      return `<div class="ws-a-card">
+        <div class="ws-a-title">${a.title}</div>
+        <div class="ws-a-meta">${a.course || ''} · Due ${dueStr}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('ws-list-overlay').style.display = 'block';
+  };
+
+  window.wsCloseList = function () {
+    document.getElementById('ws-list-overlay').style.display = 'none';
+  };
+}());
 </script>
 </body>
 </html>

@@ -10,7 +10,8 @@ function preserveIds(jsonText: string): string {
 }
 
 // Extract CCSD section code: "Course - S1 - TEACHER | 45100001-2 -- FAL25 - P01" → "45100001-2"
-function extractCode(name: string): string | null {
+function extractCode(name: string | null | undefined): string | null {
+  if (!name) return null;
   const m = name.match(/\|\s*(\S+)\s+--/);
   return m ? m[1] : null;
 }
@@ -123,9 +124,10 @@ Deno.serve(async (req) => {
 
     const syncAll = selectedCourses.length === 0;
 
-    // Build match sets for name / section-code based matching
+    // Build match sets for id / name / section-code based matching
+    const selectedIdSet = new Set(selectedCourses.map((c) => String(c.id)));
     const selectedNameSet = new Set(selectedCourses.map((c) => c.name));
-    const selectedNameLower = new Set(selectedCourses.map((c) => c.name.toLowerCase().trim()));
+    const selectedNameLower = new Set(selectedCourses.map((c) => (c.name || '').toLowerCase().trim()));
     const selectedCodeSet = new Set(
       selectedCourses.map((c) => extractCode(c.name)).filter((x): x is string => x !== null)
     );
@@ -133,8 +135,6 @@ Deno.serve(async (req) => {
     console.log(`[run ${runId}] selected=${selectedCourses.length} syncAll=${syncAll}`);
 
     const now = new Date();
-    // Only include assignments due within the last 3 days or in the future
-    const cutoff = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
 
     // ── STEP 1: Get ALL enrolled courses via REST ─────────────────────────────
     // state[]=available  → active/published courses
@@ -149,10 +149,13 @@ Deno.serve(async (req) => {
     );
     console.log(`[run ${runId}] REST courses: ${restCourses.length}`);
 
-    // Match REST courses against user's selected list
+    // Match REST courses against user's selected list.
+    // ID is the most reliable key — it survives teacher renames and name-format variations.
     const matchedCourses = syncAll
       ? restCourses
       : restCourses.filter((c: any) => {
+          if (!c?.id && !c?.name) return false;
+          if (selectedIdSet.has(String(c.id))) return true;
           if (!c?.name) return false;
           if (selectedNameSet.has(c.name)) return true;
           if (selectedNameLower.has((c.name as string).toLowerCase().trim())) return true;
@@ -175,13 +178,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Only drop concluded courses when syncing everything (syncAll). When the user has
+    // explicitly selected courses, trust their choice — year-long classes can have a
+    // past-semester tag (e.g. FAL25) while still running through spring.
+    const activeCourses = syncAll
+      ? matchedCourses.filter((c: any) => !isTermConcluded(c.name || "", now))
+      : matchedCourses;
+    if (syncAll && activeCourses.length < matchedCourses.length) {
+      const dropped = matchedCourses
+        .filter((c: any) => isTermConcluded(c.name || "", now))
+        .map((c: any) => `"${c.name}"`).join(", ");
+      console.log(`[run ${runId}] skipping ${matchedCourses.length - activeCourses.length} concluded course(s): ${dropped}`);
+    }
+    console.log(`[run ${runId}] active courses: ${activeCourses.length}`);
+
     const allAssignments: any[] = [];
     const allGrades: any[] = [];
 
-    // ── STEP 2: Fetch assignments for each course in parallel ─────────────────
-    await Promise.all(matchedCourses.map(async (course: any) => {
+    // Cutoff for undated assignments: created more than 30 days ago → no longer relevant.
+    const undatedCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // ── STEP 2: Fetch assignments + submissions for each course in parallel ────
+    await Promise.all(activeCourses.map(async (course: any) => {
       const courseId = String(course.id);
-      const concluded = isTermConcluded(course.name || "", now);
 
       let rawAssignments: any[] = [];
       try {
@@ -195,22 +214,54 @@ Deno.serve(async (req) => {
         return;
       }
 
+      // Fetch submission status from the dedicated submissions endpoint.
+      // student_ids[]=self resolves to the authenticated user — works for every user.
+      // This is more reliable than include[]=submission for schools that restrict that data.
+      const submittedMap = new Map<string, string | null>(); // assignment_id → submitted_at
+      try {
+        const subs = await fetchAllPages(
+          `${canvasUrl}/api/v1/courses/${courseId}/students/submissions` +
+            `?student_ids[]=self&per_page=100`,
+          canvasAuth,
+        );
+        for (const s of subs) {
+          // submitted_at is the reliable signal that a student actually turned something in.
+          // "graded" without submitted_at is a teacher auto-zero — don't treat as completed.
+          if (s.submitted_at || s.workflow_state === "submitted" || s.workflow_state === "pending_review") {
+            submittedMap.set(String(s.assignment_id), s.submitted_at ?? null);
+          }
+        }
+        console.log(`[run ${runId}] "${course.name}": ${submittedMap.size} submitted`);
+      } catch (e: any) {
+        console.warn(`[run ${runId}] submissions fetch failed for "${course.name}": ${e?.message}`);
+      }
+
       let kept = 0;
       for (const a of rawAssignments) {
-        // Skip assignments the student has already submitted or that are graded
-        const wf = a.submission?.workflow_state;
-        if (wf === "graded" || wf === "submitted") continue;
+        const sub = a.submission;
+        const wf = sub?.workflow_state;
+        const assignmentId = String(a.id);
 
-        // Classify submission types
+        // Combine both data sources to determine if the student completed this assignment.
+        // "graded" without submitted_at = teacher auto-zero; keep it so the student sees missing work.
+        const isCompleted =
+          !!(sub?.submitted_at || wf === "submitted" || wf === "pending_review") ||
+          submittedMap.has(assignmentId);
+        const completedAt: string | null =
+          sub?.submitted_at ?? submittedMap.get(assignmentId) ?? null;
+
         const types: string[] = a.submission_types ?? [];
+        // Purely informational — no submission at all (on_paper intentionally excluded: student still turns it in)
         const isNonWork = types.length > 0 &&
-          types.every((t: string) => t === "none" || t === "not_graded" || t === "on_paper" || t === "wiki_page");
+          types.every((t: string) => t === "none" || t === "not_graded" || t === "wiki_page");
 
         if (a.due_at === null || a.due_at === undefined) {
-          // No due date: skip if from a concluded term OR non-submittable type
-          if (concluded || isNonWork) continue;
+          // Undated: skip informational items and assignments created more than 30 days ago
+          if (isNonWork) continue;
+          const createdAt = a.created_at ? new Date(a.created_at) : null;
+          if (!createdAt || createdAt < undatedCutoff) continue;
         } else {
-          if (new Date(a.due_at) < cutoff) continue; // older than 3 days → skip
+          if (isNonWork) continue;
         }
 
         allAssignments.push({
@@ -220,30 +271,45 @@ Deno.serve(async (req) => {
           due_date: a.due_at ?? null,
           assignment_type: types[0] ?? "homework",
           points_possible: a.points_possible ?? null,
+          completed: isCompleted,
+          completed_at: completedAt,
         });
         kept++;
       }
 
       console.log(
-        `[run ${runId}] "${course.name}" (${concluded ? "concluded" : "active"}): ` +
-          `${rawAssignments.length} raw → ${kept} kept`,
+        `[run ${runId}] "${course.name}": ${rawAssignments.length} raw → ${kept} kept`,
       );
     }));
 
     // ── STEP 3: Fetch grades for all enrolled courses in one call ─────────────
     console.log(`[run ${runId}] fetching grades...`);
-    const courseIdToName = new Map(matchedCourses.map((c: any) => [String(c.id), c.name as string]));
+    const courseIdToName = new Map(activeCourses.map((c: any) => [String(c.id), c.name as string]));
 
     try {
       const enrollments = await fetchAllPages(
         `${canvasUrl}/api/v1/users/self/enrollments` +
-          `?type[]=StudentEnrollment&include[]=grades&per_page=100`,
+          `?type[]=StudentEnrollment&include[]=grades&include[]=course&per_page=100`,
         canvasAuth,
       );
 
       for (const e of enrollments) {
         const courseId = String(e.course_id);
-        const courseName = courseIdToName.get(courseId);
+        let courseName = courseIdToName.get(courseId);
+
+        // Fallback: enrollment embeds the course object — match by section code or name.
+        // This handles Canvas instances where the enrollment course_id differs from the
+        // id returned by the /courses endpoint (seen on some district Canvas setups).
+        if (!courseName && e.course?.name) {
+          const eName = String(e.course.name);
+          const eCode = extractCode(eName);
+          if (eCode && selectedCodeSet.has(eCode)) {
+            courseName = eName;
+          } else if (selectedNameLower.has(eName.toLowerCase().trim())) {
+            courseName = eName;
+          }
+        }
+
         if (!courseName || !e.grades) continue;
         const { current_score, final_score, current_grade, final_grade } = e.grades;
         // Skip rows where Canvas hasn't published any grade data yet
@@ -265,8 +331,8 @@ Deno.serve(async (req) => {
     }
 
     // Save discovered courses back to settings when running in syncAll mode
-    if (syncAll && matchedCourses.length > 0) {
-      const discovered = matchedCourses.map((c: any) => ({ id: String(c.id), name: c.name }));
+    if (syncAll && activeCourses.length > 0) {
+      const discovered = activeCourses.map((c: any) => ({ id: String(c.id), name: c.name }));
       await fetch(`${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}`, {
         method: "PATCH",
         headers: {
@@ -320,10 +386,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Build per-course assignment summary for the response
+    // Build per-course assignment summary for the response (active courses only)
     const effectiveCourses = syncAll
-      ? matchedCourses.map((c: any) => ({ id: String(c.id), name: c.name }))
-      : selectedCourses;
+      ? activeCourses.map((c: any) => ({ id: String(c.id), name: c.name }))
+      : selectedCourses.filter((sc: any) => !isTermConcluded(sc.name || "", now));
 
     const assignmentsByCourse = new Map<string, any[]>();
     for (const a of allAssignments) {

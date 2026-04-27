@@ -195,8 +195,10 @@ Deno.serve(async (req) => {
     const allAssignments: any[] = [];
     const allGrades: any[] = [];
 
-    // Cutoff for undated assignments: created more than 30 days ago → no longer relevant.
-    const undatedCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    // Cutoff for undated assignments: cover the whole school year (≈180 days).
+    // A short cutoff (e.g. 30 days) silently drops semester-long assignments created in
+    // August/January that have no due date but are still graded (e.g. participation courses).
+    const undatedCutoff = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
 
     // ── STEP 2: Fetch assignments + submissions for each course in parallel ────
     await Promise.all(activeCourses.map(async (course: any) => {
@@ -251,9 +253,11 @@ Deno.serve(async (req) => {
           sub?.submitted_at ?? submittedMap.get(assignmentId) ?? null;
 
         const types: string[] = a.submission_types ?? [];
-        // Purely informational — no submission at all (on_paper intentionally excluded: student still turns it in)
+        // Skip only assignments Canvas marks as non-graded or wiki pages — purely informational.
+        // "none" is intentionally allowed: it covers in-person/performance grades (speeches,
+        // debates, participation) that the student needs to see even though nothing is uploaded.
         const isNonWork = types.length > 0 &&
-          types.every((t: string) => t === "none" || t === "not_graded" || t === "wiki_page");
+          types.every((t: string) => t === "not_graded" || t === "wiki_page");
 
         // Store Canvas's lock signal in the DB but do NOT use it to filter display —
         // locked_for_user is true for any past-due assignment whose window closed, including

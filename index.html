@@ -1934,9 +1934,16 @@ async function loadAssignments() {
   document.getElementById('allwork-empty').style.display = 'none';
   document.getElementById('priority-empty').style.display = 'none';
 
-  const assignments = Array.isArray(data) ? data : [];
+  const rawAssignments = Array.isArray(data) ? data : [];
+  // Hide assignments Canvas has locked AND that are more than 14 days past due —
+  // those are truly gone (student cannot submit). Recently-overdue locked items
+  // still show so the student can see what they missed and contact the teacher.
+  const lockCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const assignments = rawAssignments.filter(a =>
+    !(a.is_locked && a.due_date && new Date(a.due_date) < lockCutoff)
+  );
   if (!ok || assignments.length === 0) {
-    console.warn('[loadAssignments] no data — ok:', ok, 'data:', data);
+    console.warn('[loadAssignments] no data — ok:', ok, 'raw:', rawAssignments.length);
     document.getElementById('due-empty').style.display     = 'block';
     document.getElementById('allwork-empty').style.display = 'block';
     document.getElementById('priority-empty').style.display = 'block';

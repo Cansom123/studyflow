@@ -1546,20 +1546,20 @@ async function saveCanvasOnboard() {
   showOnboardCourses();
 }
 
-function renderCoursesForSelection(courses, existingIds = new Set()) {
+function renderCoursesForSelection(courses, existingIds = new Set(), concludedCodes = new Set()) {
   selectedCoursesTemp = [];
   document.getElementById('course-list-loading').style.display = 'none';
   const listEl = document.getElementById('course-list');
   listEl.innerHTML = '';
 
-  // Keep only courses from the current school year.
-  // Courses with no term tag (e.g. "Speech and Debate") are always shown —
-  // we can't determine their year so we assume they're active.
+  // Keep only courses from the current school year that are not concluded.
+  // Courses with no term tag (e.g. "Speech and Debate") are always shown.
   const sy = getSchoolYear();
   const filtered = (courses || []).filter(c => {
     const n = (c.name || '').toUpperCase();
     const hasTag = /\b(FAL|SPR|SUM|WIN)\d{2}\b/.test(n);
-    return !hasTag || isCurrentYearCourse(c.name, sy);
+    if (!hasTag) return true;
+    return isCurrentYearCourse(c.name, sy) && !isCourseTermConcluded(c.name);
   });
 
   if (filtered.length === 0) {
@@ -1574,7 +1574,11 @@ function renderCoursesForSelection(courses, existingIds = new Set()) {
 
   filtered.forEach(course => {
     const item = document.createElement('div');
-    const preSelected = existingIds.has(String(course.id));
+    const sectionCode = extractSectionCode(course.name);
+    // Pre-check if: directly in existing selection, OR is the current-semester equivalent
+    // of a concluded selection (same section code, different semester tag).
+    const preSelected = existingIds.has(String(course.id)) ||
+      (sectionCode !== null && concludedCodes.has(sectionCode));
     item.className = 'course-item' + (preSelected ? ' selected' : '');
     if (preSelected) selectedCoursesTemp.push({ id: String(course.id), name: course.name });
     item.innerHTML = `<div class="course-check"><div class="course-check-inner"></div></div><div class="course-name">${course.name}</div>`;
@@ -1587,6 +1591,12 @@ function renderCoursesForSelection(courses, existingIds = new Set()) {
   });
 }
 
+function extractSectionCode(name) {
+  if (!name) return null;
+  const m = name.match(/\|\s*(\S+)\s+--/);
+  return m ? m[1] : null;
+}
+
 async function loadCoursesForSelection() {
   document.getElementById('course-list-loading').style.display = 'block';
   document.getElementById('course-list').innerHTML = '';
@@ -1594,7 +1604,18 @@ async function loadCoursesForSelection() {
   // Fetch canvas credentials AND existing selected_courses so we can pre-check them
   const { ok, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token,selected_courses`);
   if (!ok || !settings || settings.length === 0) return;
-  const existingIds = new Set((settings[0].selected_courses || []).map(c => String(c.id)));
+  const existingSelected = settings[0].selected_courses || [];
+  // Pre-check non-concluded courses by ID; for concluded ones, pre-check their
+  // current-semester equivalents by section code (handles S1→S2 semester rollover).
+  const existingIds = new Set(
+    existingSelected.filter(c => !isCourseTermConcluded(c.name || '')).map(c => String(c.id))
+  );
+  const concludedCodes = new Set(
+    existingSelected
+      .filter(c => isCourseTermConcluded(c.name || ''))
+      .map(c => extractSectionCode(c.name))
+      .filter(Boolean)
+  );
   try {
     const validateResp = await fetch(`${SB_URL}/functions/v1/validate-canvas`, {
       method: 'POST',
@@ -1611,7 +1632,7 @@ async function loadCoursesForSelection() {
       loadingEl.textContent = 'Could not load courses. Check your Canvas URL and token, then go back to try again.';
       loadingEl.style.display = 'block'; return;
     }
-    renderCoursesForSelection(result.courses, existingIds);
+    renderCoursesForSelection(result.courses, existingIds, concludedCodes);
   } catch(e) {
     const loadingEl = document.getElementById('course-list-loading');
     loadingEl.textContent = 'Could not load courses. Check your Canvas URL and token, then go back to try again.';

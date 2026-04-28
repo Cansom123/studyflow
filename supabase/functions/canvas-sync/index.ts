@@ -122,9 +122,11 @@ Deno.serve(async (req) => {
     const selectedCourses: Array<{ id: number | string; name: string }> =
       Array.isArray(settings[0].selected_courses) ? settings[0].selected_courses : [];
 
+    const now = new Date();
+
     // Filter saved selections to current school year — silently skips courses from previous
     // years without requiring users to manually clean up their settings.
-    const nowSY = new Date();
+    const nowSY = now;
     const fallYearSY = nowSY.getMonth() >= 7 ? nowSY.getFullYear() : nowSY.getFullYear() - 1;
     const springYearSY = fallYearSY + 1;
     const fy2SY = String(fallYearSY).slice(-2);
@@ -143,17 +145,28 @@ Deno.serve(async (req) => {
 
     const syncAll = activeSel.length === 0 && selectedCourses.length === 0;
 
-    // Build match sets for id / name / section-code based matching
-    const selectedIdSet = new Set(activeSel.map((c) => String(c.id)));
-    const selectedNameSet = new Set(activeSel.map((c) => c.name));
-    const selectedNameLower = new Set(activeSel.map((c) => (c.name || '').toLowerCase().trim()));
+    // Split active selections into current (non-concluded) and concluded.
+    // Concluded selections (e.g. FAL25 courses saved during S1 setup) are used only to find
+    // their current-semester equivalents via section code — their own assignments are not pulled.
+    const currentSel = activeSel.filter((c) => !isTermConcluded(c.name || "", now));
+    const concludedSel = activeSel.filter((c) => isTermConcluded(c.name || "", now));
+
+    // Build match sets from currently-active selections only
+    const selectedIdSet = new Set(currentSel.map((c) => String(c.id)));
+    const selectedNameSet = new Set(currentSel.map((c) => c.name));
+    const selectedNameLower = new Set(currentSel.map((c) => (c.name || '').toLowerCase().trim()));
     const selectedCodeSet = new Set(
-      activeSel.map((c) => extractCode(c.name)).filter((x): x is string => x !== null)
+      currentSel.map((c) => extractCode(c.name)).filter((x): x is string => x !== null)
     );
 
-    console.log(`[run ${runId}] selected=${selectedCourses.length} active=${activeSel.length} syncAll=${syncAll}`);
+    // Section codes from concluded selections — used to find their current-semester equivalents.
+    // e.g. if the user saved a FAL25 course with code "45100001-2", we'll find the SPR26 course
+    // with the same code and pull its assignments instead.
+    const concludedCodeSet = new Set(
+      concludedSel.map((c) => extractCode(c.name)).filter((x): x is string => x !== null)
+    );
 
-    const now = new Date();
+    console.log(`[run ${runId}] selected=${selectedCourses.length} active=${activeSel.length} current=${currentSel.length} concluded=${concludedSel.length} syncAll=${syncAll}`);
 
     // ── STEP 1: Get ALL enrolled courses via REST ─────────────────────────────
     // state[]=available  → active/published courses
@@ -185,13 +198,21 @@ Deno.serve(async (req) => {
           if (selectedNameSet.has(c.name)) return true;
           if (selectedNameLower.has((c.name as string).toLowerCase().trim())) return true;
           const code = extractCode(c.name);
-          if (code === null || !selectedCodeSet.has(code)) return false;
-          // Section code matches — also verify term tag so we don't pull FAL25 when SPR26 is selected
-          const candidateTerm = extractTerm(c.name);
-          const matchingSc = activeSel.find((sc) => extractCode(sc.name) === code);
-          if (!matchingSc) return false;
-          const selectedTerm = extractTerm(matchingSc.name);
-          return !candidateTerm || !selectedTerm || candidateTerm === selectedTerm;
+          if (code === null) return false;
+          if (selectedCodeSet.has(code)) {
+            // Section code matches an active selection — verify term tags agree
+            const candidateTerm = extractTerm(c.name);
+            const matchingSc = currentSel.find((sc) => extractCode(sc.name) === code);
+            if (!matchingSc) return false;
+            const selectedTerm = extractTerm(matchingSc.name);
+            return !candidateTerm || !selectedTerm || candidateTerm === selectedTerm;
+          }
+          // Check if this is the current-semester equivalent of a concluded selection.
+          // e.g. SPR26 course with same section code as a FAL25 course the user previously selected.
+          if (concludedCodeSet.has(code) && !isTermConcluded(c.name || "", now)) {
+            return true;
+          }
+          return false;
         });
 
     console.log(`[run ${runId}] matched ${matchedCourses.length}/${restCourses.length} courses`);
@@ -209,13 +230,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Only drop concluded courses when syncing everything (syncAll). When the user has
-    // explicitly selected courses, trust their choice — year-long classes can have a
-    // past-semester tag (e.g. FAL25) while still running through spring.
-    const activeCourses = syncAll
-      ? matchedCourses.filter((c: any) => !isTermConcluded(c.name || "", now))
-      : matchedCourses;
-    if (syncAll && activeCourses.length < matchedCourses.length) {
+    // Always drop concluded courses — their assignments belong to a past semester.
+    // Current-semester equivalents are already included via the concludedCodeSet matching above.
+    const activeCourses = matchedCourses.filter((c: any) => !isTermConcluded(c.name || "", now));
+    if (activeCourses.length < matchedCourses.length) {
       const dropped = matchedCourses
         .filter((c: any) => isTermConcluded(c.name || "", now))
         .map((c: any) => `"${c.name}"`).join(", ");

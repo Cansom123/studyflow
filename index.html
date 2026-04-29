@@ -1898,7 +1898,7 @@ async function syncCanvas() {
   try {
     // Ensure we have a fresh token before calling the edge function
     if (REFRESH_TOKEN) await refreshSession();
-    const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync`, {
+    const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync-v2`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
       body: JSON.stringify({ user_id: USER_ID })
@@ -1911,7 +1911,8 @@ async function syncCanvas() {
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (statusEl) {
       const blocked = result.blocked_courses || 0;
-      let msg = `Synced — ${result.assignments} assignments, ${result.grades} grades.`;
+      const pendingCount = cachedAssignments.filter(a => !a.completed).length;
+      let msg = `Synced — ${pendingCount} assignment${pendingCount !== 1 ? 's' : ''} remaining, ${result.grades} grades.`;
       if (blocked > 0) {
         msg += `\n${blocked} course${blocked > 1 ? 's' : ''} couldn't be fetched — your school has restricted Canvas API access for those courses.`;
       }

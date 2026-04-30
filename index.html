@@ -1947,13 +1947,11 @@ async function loadAssignments() {
   document.getElementById('priority-empty').style.display = 'none';
 
   const rawAssignments = Array.isArray(data) ? data : [];
-  // Hide assignments that are locked AND due before the current semester started.
-  // Anything from a past semester is truly gone — the student cannot act on it.
-  // Everything from the current semester remains visible even if locked and overdue,
-  // so students can see what they missed and follow up with their teacher.
-  // Semester boundary: Aug 1 for Fall, Jan 1 for Spring (covers most school calendars).
-  const _semNow = new Date();
-  const lockCutoff = new Date(_semNow.getFullYear(), _semNow.getMonth() < 7 ? 0 : 7, 1);
+  // Hide assignments that are locked AND due more than 30 days ago —
+  // those are old enough that no action is realistically possible.
+  // Assignments locked within the last 30 days remain visible so students
+  // can see recent missed work and follow up with their teacher.
+  const lockCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const assignments = rawAssignments.filter(a =>
     !(a.is_locked && a.due_date && new Date(a.due_date) < lockCutoff)
   );

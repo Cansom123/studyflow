@@ -42,8 +42,7 @@ async function fetchAllPages(url: string, auth: string): Promise<any[]> {
       break;
     }
     if (!resp.ok) {
-      console.warn(`HTTP ${resp.status} for ${next}`);
-      break;
+      throw new Error(`HTTP ${resp.status} for ${next}`);
     }
     const text = await resp.text();
     let data: any;

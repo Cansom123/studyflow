@@ -140,10 +140,12 @@ Deno.serve(async (req) => {
     };
     const activeSel = selectedCourses.filter((c) => isCurrentYearCourse(c.name || ""));
     if (activeSel.length < selectedCourses.length) {
-      console.log(`[run ${runId}] skipped ${selectedCourses.length - activeSel.length} old-year course(s) from saved selection`);
+      console.log(`[run ${runId}] skipped ${selectedCourses.length - activeSel.length} concluded course(s) from saved selection`);
     }
 
-    const syncAll = activeSel.length === 0 && selectedCourses.length === 0;
+    // Fall back to syncAll only when there are no usable non-concluded selections.
+    // This handles users who haven't refreshed their list since last semester.
+    const syncAll = activeSel.length === 0;
 
     // Split active selections into current (non-concluded) and concluded.
     // Concluded selections (e.g. FAL25 courses saved during S1 setup) are used only to find
@@ -169,13 +171,15 @@ Deno.serve(async (req) => {
     console.log(`[run ${runId}] selected=${selectedCourses.length} active=${activeSel.length} current=${currentSel.length} concluded=${concludedSel.length} syncAll=${syncAll}`);
 
     // ── STEP 1: Get ALL enrolled courses via REST ─────────────────────────────
+    // Do NOT filter by enrollment_type — some districts enroll students under
+    // non-standard types (observer, designer, custom) for certain courses, and
+    // those courses would be silently skipped with enrollment_type=student.
     // state[]=available  → active/published courses
     // state[]=completed  → concluded/archived courses
     // state[]=unpublished → some schools keep courses unpublished throughout
-    // This is more reliable than GraphQL allCourses which can miss concluded courses.
     console.log(`[run ${runId}] fetching Canvas course list...`);
     const restCourses = await fetchAllPages(
-      `${canvasUrl}/api/v1/courses?per_page=100&enrollment_type=student` +
+      `${canvasUrl}/api/v1/courses?per_page=100` +
         `&state[]=available&state[]=completed&state[]=unpublished`,
       canvasAuth,
     );
@@ -218,7 +222,8 @@ Deno.serve(async (req) => {
     console.log(`[run ${runId}] matched ${matchedCourses.length}/${restCourses.length} courses`);
     console.log(`[run ${runId}] matched: ${matchedCourses.map((c: any) => `"${c.name}"`).join(", ")}`);
 
-    // Log any selected courses that didn't match (helps diagnose name mismatches)
+    // Track selected courses that couldn't be found in Canvas at all
+    const notFoundCourses: string[] = [];
     if (!syncAll) {
       for (const sc of activeSel) {
         const found = matchedCourses.some((c: any) => {
@@ -226,7 +231,10 @@ Deno.serve(async (req) => {
           const code = extractCode(sc.name);
           return code !== null && extractCode(c.name) === code;
         });
-        if (!found) console.warn(`[run ${runId}] NOT FOUND in REST: "${sc.name}"`);
+        if (!found) {
+          console.warn(`[run ${runId}] NOT FOUND in REST: "${sc.name}"`);
+          notFoundCourses.push(sc.name);
+        }
       }
     }
 
@@ -243,6 +251,7 @@ Deno.serve(async (req) => {
 
     const allAssignments: any[] = [];
     const allGrades: any[] = [];
+    let blockedCount = 0;
 
     // Cutoff for undated assignments: cover the whole school year (≈180 days).
     // A short cutoff (e.g. 30 days) silently drops semester-long assignments created in
@@ -262,6 +271,7 @@ Deno.serve(async (req) => {
         );
       } catch (e: any) {
         console.warn(`[run ${runId}] assignments fetch failed for "${course.name}": ${e?.message}`);
+        blockedCount++;
         return;
       }
 
@@ -474,6 +484,8 @@ Deno.serve(async (req) => {
         grades: allGrades.length,
         courses: courseSummaries,
         sync_all: syncAll,
+        blocked_courses: blockedCount,
+        not_found_courses: notFoundCourses,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

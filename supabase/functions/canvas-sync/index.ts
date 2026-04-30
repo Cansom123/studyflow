@@ -288,7 +288,8 @@ Deno.serve(async (req) => {
         for (const s of subs) {
           // submitted_at is the reliable signal that a student actually turned something in.
           // "graded" without submitted_at is a teacher auto-zero — don't treat as completed.
-          if (s.submitted_at || s.workflow_state === "submitted" || s.workflow_state === "pending_review") {
+          // Excused assignments are also considered done — the teacher waived the requirement.
+          if (s.submitted_at || s.workflow_state === "submitted" || s.workflow_state === "pending_review" || s.excused === true) {
             submittedMap.set(String(s.assignment_id), s.submitted_at ?? null);
           }
         }
@@ -303,14 +304,6 @@ Deno.serve(async (req) => {
         const wf = sub?.workflow_state;
         const assignmentId = String(a.id);
 
-        // Combine both data sources to determine if the student completed this assignment.
-        // "graded" without submitted_at = teacher auto-zero; keep it so the student sees missing work.
-        const isCompleted =
-          !!(sub?.submitted_at || wf === "submitted" || wf === "pending_review") ||
-          submittedMap.has(assignmentId);
-        const completedAt: string | null =
-          sub?.submitted_at ?? submittedMap.get(assignmentId) ?? null;
-
         const types: string[] = a.submission_types ?? [];
         // Skip only assignments Canvas marks as non-graded or wiki pages — purely informational.
         // "none" is intentionally allowed: it covers in-person/performance grades (speeches,
@@ -318,13 +311,27 @@ Deno.serve(async (req) => {
         const isNonWork = types.length > 0 &&
           types.every((t: string) => t === "not_graded" || t === "wiki_page");
 
+        // Combine both data sources to determine if the student completed this assignment.
+        // "graded" without submitted_at = teacher auto-zero; keep it so the student sees missing work.
+        // Exception: "none" type (in-person performance) with a positive score means the teacher
+        // graded the student's participation/performance — treat as completed so it doesn't clutter
+        // the overdue list. Score = 0 is kept visible (absent or incomplete work the student may owe).
+        const isCompleted =
+          !!(sub?.submitted_at || wf === "submitted" || wf === "pending_review") ||
+          submittedMap.has(assignmentId) ||
+          sub?.excused === true ||
+          (wf === "graded" && typeof sub?.score === "number" && sub.score > 0 &&
+           types.length > 0 && types.every((t: string) => t === "none"));
+        const completedAt: string | null =
+          sub?.submitted_at ?? submittedMap.get(assignmentId) ?? null;
+
         // Store Canvas's lock signal in the DB but do NOT use it to filter display —
         // locked_for_user is true for any past-due assignment whose window closed, including
         // overdue work the student still needs to see. The completed flag handles hiding done work.
         const isLocked = a.locked_for_user === true;
 
         if (a.due_at === null || a.due_at === undefined) {
-          // Undated: skip informational items and assignments created more than 30 days ago
+          // Undated: skip informational items and assignments created more than 180 days ago
           if (isNonWork) continue;
           const createdAt = a.created_at ? new Date(a.created_at) : null;
           if (!createdAt || createdAt < undatedCutoff) continue;

@@ -1947,10 +1947,13 @@ async function loadAssignments() {
   document.getElementById('priority-empty').style.display = 'none';
 
   const rawAssignments = Array.isArray(data) ? data : [];
-  // Hide assignments Canvas has locked AND that are more than 14 days past due —
-  // those are truly gone (student cannot submit). Recently-overdue locked items
-  // still show so the student can see what they missed and contact the teacher.
-  const lockCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  // Hide assignments that are locked AND due before the current semester started.
+  // Anything from a past semester is truly gone — the student cannot act on it.
+  // Everything from the current semester remains visible even if locked and overdue,
+  // so students can see what they missed and follow up with their teacher.
+  // Semester boundary: Aug 1 for Fall, Jan 1 for Spring (covers most school calendars).
+  const _semNow = new Date();
+  const lockCutoff = new Date(_semNow.getFullYear(), _semNow.getMonth() < 7 ? 0 : 7, 1);
   const assignments = rawAssignments.filter(a =>
     !(a.is_locked && a.due_date && new Date(a.due_date) < lockCutoff)
   );

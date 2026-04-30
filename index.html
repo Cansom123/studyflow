@@ -1849,9 +1849,13 @@ async function saveCanvasSettings() {
     msgEl.innerHTML = '<div class="msg-error">Something went wrong. Please try again.</div>'; return;
   }
 
-  // Save URL, token, and auto-select all courses atomically
-  // IDs saved as strings to avoid JS float precision loss for large Canvas IDs
-  const allCourses = validCourses.map(c => ({ id: String(c.id), name: c.name }));
+  // Save URL, token, and auto-select all non-concluded courses atomically.
+  // Filter out concluded terms to match onboarding behavior — prevents Fall courses
+  // from re-entering selected_courses when a user re-enters credentials in Spring.
+  // IDs saved as strings to avoid JS float precision loss for large Canvas IDs.
+  const allCourses = validCourses
+    .filter(c => !isCourseTermConcluded(c.name || ''))
+    .map(c => ({ id: String(c.id), name: c.name }));
   await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', {
     canvas_url: url, canvas_token: token, selected_courses: allCourses
   });
@@ -1911,12 +1915,26 @@ async function syncCanvas() {
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (statusEl) {
       const blocked = result.blocked_courses || 0;
-      const pendingCount = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a)))).length;
-      let msg = `Synced — ${pendingCount} assignment${pendingCount !== 1 ? 's' : ''} remaining, ${result.grades} grades.`;
-      if (blocked > 0) {
-        msg += `\n${blocked} course${blocked > 1 ? 's' : ''} couldn't be fetched — your school has restricted Canvas API access for those courses.`;
+      const notFound = Array.isArray(result.not_found_courses) ? result.not_found_courses : [];
+      const totalA = result.assignments || 0;
+      const activeA = result.active_assignments != null ? result.active_assignments : totalA;
+      const gradeCount = result.grades || 0;
+      let msg = totalA === 0
+        ? `Synced — no assignments found, ${gradeCount} grade${gradeCount !== 1 ? 's' : ''}.`
+        : activeA < totalA
+          ? `Synced — ${activeA} assignment${activeA !== 1 ? 's' : ''} to do (${totalA} found, ${totalA - activeA} completed), ${gradeCount} grade${gradeCount !== 1 ? 's' : ''}.`
+          : `Synced — ${activeA} assignment${activeA !== 1 ? 's' : ''}, ${gradeCount} grade${gradeCount !== 1 ? 's' : ''}.`;
+      if (notFound.length > 0) {
+        const names = notFound.map(n => {
+          // Show just the course title (strip the administrative suffix after " - S1/S2" or "|")
+          return (n || '').replace(/\s*\|.*$/, '').replace(/\s*-\s*S[12]\s*-.*$/i, '').trim();
+        }).join(', ');
+        msg += `\n⚠ ${notFound.length} course${notFound.length > 1 ? 's' : ''} not found in Canvas: ${names}. Try updating your Canvas token in Settings.`;
       }
-      statusEl.className = 'sync-status success';
+      if (blocked > 0) {
+        msg += `\n${blocked} course${blocked > 1 ? 's' : ''} couldn't be fetched — your school may have restricted Canvas API access for those courses.`;
+      }
+      statusEl.className = notFound.length > 0 || blocked > 0 ? 'sync-status warning' : 'sync-status success';
       statusEl.textContent = msg;
       statusEl.style.whiteSpace = 'pre-wrap';
     }
@@ -1936,10 +1954,11 @@ async function loadAssignments() {
   document.getElementById('priority-empty').style.display = 'none';
 
   const rawAssignments = Array.isArray(data) ? data : [];
-  // Hide assignments Canvas has locked AND that are more than 14 days past due —
-  // those are truly gone (student cannot submit). Recently-overdue locked items
-  // still show so the student can see what they missed and contact the teacher.
-  const lockCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  // Hide assignments that are locked AND due more than 30 days ago —
+  // those are old enough that no action is realistically possible.
+  // Assignments locked within the last 30 days remain visible so students
+  // can see recent missed work and follow up with their teacher.
+  const lockCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const assignments = rawAssignments.filter(a =>
     !(a.is_locked && a.due_date && new Date(a.due_date) < lockCutoff)
   );
@@ -2091,8 +2110,8 @@ function renderDueSoon(assignments) {
   const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate()+7);
   let overdue=[], soon=[], later=[];
   assignments.forEach(a => {
-    if (!a.due_date) return;
     if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
+    if (!a.due_date) { later.push(a); return; }
     const due = new Date(a.due_date); due.setHours(0,0,0,0);
     if (due < today) overdue.push(a);
     else if (due <= weekFromNow) soon.push(a);

@@ -81,11 +81,10 @@ function processRawAssignments(
     const assignmentId = String(a.id);
     const types: string[] = a.submission_types ?? [];
 
-    // Skip only assignments Canvas marks as non-graded or wiki pages — purely informational.
-    // "none" is intentionally allowed: it covers in-person/performance grades (speeches,
-    // debates, participation) that the student needs to see even though nothing is uploaded.
-    const isNonWork = types.length > 0 &&
-      types.every((t: string) => t === "not_graded" || t === "wiki_page");
+    // Only skip wiki_page assignments — purely informational navigation items.
+    // not_graded is intentionally allowed: some schools use it for real assignments
+    // (speeches, participation, performances) that still need to be tracked.
+    const isNonWork = types.length > 0 && types.every((t: string) => t === "wiki_page");
 
     // Combine both data sources to determine if the student completed this assignment.
     // "graded" without submitted_at = teacher auto-zero; keep it so the student sees missing work.
@@ -337,7 +336,7 @@ Deno.serve(async (req) => {
       try {
         rawAssignments = await fetchAllPages(
           `${canvasUrl}/api/v1/courses/${courseId}/assignments` +
-            `?per_page=100&include[]=submission&order_by=due_at`,
+            `?per_page=100&order_by=due_at`,
           canvasAuth,
         );
       } catch (e: any) {
@@ -401,7 +400,7 @@ Deno.serve(async (req) => {
             try {
               directRaw = await fetchAllPages(
                 `${canvasUrl}/api/v1/courses/${storedId}/assignments` +
-                  `?per_page=100&include[]=submission&order_by=due_at`,
+                  `?per_page=100&order_by=due_at`,
                 canvasAuth,
               );
             } catch (e: any) {

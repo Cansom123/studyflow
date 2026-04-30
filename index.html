@@ -1911,7 +1911,7 @@ async function syncCanvas() {
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (statusEl) {
       const blocked = result.blocked_courses || 0;
-      const pendingCount = cachedAssignments.filter(a => !a.completed).length;
+      const pendingCount = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a)))).length;
       let msg = `Synced — ${pendingCount} assignment${pendingCount !== 1 ? 's' : ''} remaining, ${result.grades} grades.`;
       if (blocked > 0) {
         msg += `\n${blocked} course${blocked > 1 ? 's' : ''} couldn't be fetched — your school has restricted Canvas API access for those courses.`;

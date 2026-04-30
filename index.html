@@ -1916,7 +1916,14 @@ async function syncCanvas() {
     if (statusEl) {
       const blocked = result.blocked_courses || 0;
       const notFound = Array.isArray(result.not_found_courses) ? result.not_found_courses : [];
-      let msg = `Synced — ${result.assignments} assignments, ${result.grades} grades.`;
+      const totalA = result.assignments || 0;
+      const activeA = result.active_assignments != null ? result.active_assignments : totalA;
+      const gradeCount = result.grades || 0;
+      let msg = totalA === 0
+        ? `Synced — no assignments found, ${gradeCount} grade${gradeCount !== 1 ? 's' : ''}.`
+        : activeA < totalA
+          ? `Synced — ${activeA} assignment${activeA !== 1 ? 's' : ''} to do (${totalA} found, ${totalA - activeA} completed), ${gradeCount} grade${gradeCount !== 1 ? 's' : ''}.`
+          : `Synced — ${activeA} assignment${activeA !== 1 ? 's' : ''}, ${gradeCount} grade${gradeCount !== 1 ? 's' : ''}.`;
       if (notFound.length > 0) {
         const names = notFound.map(n => {
           // Show just the course title (strip the administrative suffix after " - S1/S2" or "|")

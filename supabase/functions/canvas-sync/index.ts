@@ -60,6 +60,71 @@ async function fetchAllPages(url: string, auth: string): Promise<any[]> {
   return results;
 }
 
+// Convert raw Canvas assignments + a submission map into DB rows.
+// Extracted to avoid duplicating this logic in both the main loop and the fallback.
+function processRawAssignments(
+  rawAssignments: any[],
+  subMap: Map<string, string | null>,
+  courseName: string,
+  userId: string,
+  undatedCutoff: Date,
+): any[] {
+  const results: any[] = [];
+  for (const a of rawAssignments) {
+    const sub = a.submission;
+    const wf = sub?.workflow_state;
+    const assignmentId = String(a.id);
+    const types: string[] = a.submission_types ?? [];
+
+    // Skip only assignments Canvas marks as non-graded or wiki pages — purely informational.
+    // "none" is intentionally allowed: it covers in-person/performance grades (speeches,
+    // debates, participation) that the student needs to see even though nothing is uploaded.
+    const isNonWork = types.length > 0 &&
+      types.every((t: string) => t === "not_graded" || t === "wiki_page");
+
+    // Combine both data sources to determine if the student completed this assignment.
+    // "graded" without submitted_at = teacher auto-zero; keep it so the student sees missing work.
+    // Exception: "none" type (in-person performance) with a positive score means the teacher
+    // graded the student's participation/performance — treat as completed.
+    const isCompleted =
+      !!(sub?.submitted_at || wf === "submitted" || wf === "pending_review") ||
+      subMap.has(assignmentId) ||
+      sub?.excused === true ||
+      (wf === "graded" && typeof sub?.score === "number" && sub.score > 0 &&
+       types.length > 0 && types.every((t: string) => t === "none"));
+    const completedAt: string | null =
+      sub?.submitted_at ?? subMap.get(assignmentId) ?? null;
+
+    // Store Canvas's lock signal but don't use it to filter — locked_for_user is true
+    // for past-due assignments whose window closed, including overdue work the student
+    // still needs to see. The frontend applies its own time-based display cutoff.
+    const isLocked = a.locked_for_user === true;
+
+    if (a.due_at === null || a.due_at === undefined) {
+      // Undated: skip informational items and assignments created more than 180 days ago
+      if (isNonWork) continue;
+      const createdAt = a.created_at ? new Date(a.created_at) : null;
+      if (!createdAt || createdAt < undatedCutoff) continue;
+    } else {
+      if (isNonWork) continue;
+    }
+
+    results.push({
+      user_id: userId,
+      title: a.name,
+      course: courseName,
+      due_date: a.due_at ?? null,
+      assignment_type: types[0] ?? "homework",
+      points_possible: a.points_possible ?? null,
+      completed: isCompleted,
+      completed_at: completedAt,
+      assignment_url: a.html_url ?? null,
+      is_locked: isLocked,
+    });
+  }
+  return results;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -221,7 +286,7 @@ Deno.serve(async (req) => {
     console.log(`[run ${runId}] matched ${matchedCourses.length}/${restCourses.length} courses`);
     console.log(`[run ${runId}] matched: ${matchedCourses.map((c: any) => `"${c.name}"`).join(", ")}`);
 
-    // Track selected courses that couldn't be found in Canvas at all
+    // Track selected courses that couldn't be found in the Canvas course list
     const notFoundCourses: string[] = [];
     if (!syncAll) {
       for (const sc of activeSel) {
@@ -257,7 +322,7 @@ Deno.serve(async (req) => {
     // August/January that have no due date but are still graded (e.g. participation courses).
     const undatedCutoff = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
 
-    // ── STEP 2: Fetch assignments + submissions for each course in parallel ────
+    // ── STEP 2: Fetch assignments + submissions for each matched course in parallel ──
     await Promise.all(activeCourses.map(async (course: any) => {
       const courseId = String(course.id);
 
@@ -277,7 +342,7 @@ Deno.serve(async (req) => {
       // Fetch submission status from the dedicated submissions endpoint.
       // student_ids[]=self resolves to the authenticated user — works for every user.
       // This is more reliable than include[]=submission for schools that restrict that data.
-      const submittedMap = new Map<string, string | null>(); // assignment_id → submitted_at
+      const submittedMap = new Map<string, string | null>();
       try {
         const subs = await fetchAllPages(
           `${canvasUrl}/api/v1/courses/${courseId}/students/submissions` +
@@ -285,9 +350,6 @@ Deno.serve(async (req) => {
           canvasAuth,
         );
         for (const s of subs) {
-          // submitted_at is the reliable signal that a student actually turned something in.
-          // "graded" without submitted_at is a teacher auto-zero — don't treat as completed.
-          // Excused assignments are also considered done — the teacher waived the requirement.
           if (s.submitted_at || s.workflow_state === "submitted" || s.workflow_state === "pending_review" || s.excused === true) {
             submittedMap.set(String(s.assignment_id), s.submitted_at ?? null);
           }
@@ -297,66 +359,77 @@ Deno.serve(async (req) => {
         console.warn(`[run ${runId}] submissions fetch failed for "${course.name}": ${e?.message}`);
       }
 
-      let kept = 0;
-      for (const a of rawAssignments) {
-        const sub = a.submission;
-        const wf = sub?.workflow_state;
-        const assignmentId = String(a.id);
-
-        const types: string[] = a.submission_types ?? [];
-        // Skip only assignments Canvas marks as non-graded or wiki pages — purely informational.
-        // "none" is intentionally allowed: it covers in-person/performance grades (speeches,
-        // debates, participation) that the student needs to see even though nothing is uploaded.
-        const isNonWork = types.length > 0 &&
-          types.every((t: string) => t === "not_graded" || t === "wiki_page");
-
-        // Combine both data sources to determine if the student completed this assignment.
-        // "graded" without submitted_at = teacher auto-zero; keep it so the student sees missing work.
-        // Exception: "none" type (in-person performance) with a positive score means the teacher
-        // graded the student's participation/performance — treat as completed so it doesn't clutter
-        // the overdue list. Score = 0 is kept visible (absent or incomplete work the student may owe).
-        const isCompleted =
-          !!(sub?.submitted_at || wf === "submitted" || wf === "pending_review") ||
-          submittedMap.has(assignmentId) ||
-          sub?.excused === true ||
-          (wf === "graded" && typeof sub?.score === "number" && sub.score > 0 &&
-           types.length > 0 && types.every((t: string) => t === "none"));
-        const completedAt: string | null =
-          sub?.submitted_at ?? submittedMap.get(assignmentId) ?? null;
-
-        // Store Canvas's lock signal in the DB but do NOT use it to filter display —
-        // locked_for_user is true for any past-due assignment whose window closed, including
-        // overdue work the student still needs to see. The completed flag handles hiding done work.
-        const isLocked = a.locked_for_user === true;
-
-        if (a.due_at === null || a.due_at === undefined) {
-          // Undated: skip informational items and assignments created more than 180 days ago
-          if (isNonWork) continue;
-          const createdAt = a.created_at ? new Date(a.created_at) : null;
-          if (!createdAt || createdAt < undatedCutoff) continue;
-        } else {
-          if (isNonWork) continue;
-        }
-
-        allAssignments.push({
-          user_id: userId,
-          title: a.name,
-          course: course.name,
-          due_date: a.due_at ?? null,
-          assignment_type: types[0] ?? "homework",
-          points_possible: a.points_possible ?? null,
-          completed: isCompleted,
-          completed_at: completedAt,
-          assignment_url: a.html_url ?? null,
-          is_locked: isLocked,
-        });
-        kept++;
-      }
-
-      console.log(
-        `[run ${runId}] "${course.name}": ${rawAssignments.length} raw → ${kept} kept`,
-      );
+      const processed = processRawAssignments(rawAssignments, submittedMap, course.name, userId!, undatedCutoff);
+      allAssignments.push(...processed);
+      console.log(`[run ${runId}] "${course.name}": ${rawAssignments.length} raw → ${processed.length} kept`);
     }));
+
+    // ── STEP 2b: Fallback — directly fetch courses not found in the course list ──
+    // Some courses are accessible in Canvas but don't appear in /api/v1/courses due to
+    // cross-listing, non-standard enrollment types, or Canvas instance quirks. If we have
+    // a stored course ID, try fetching assignments for it directly. This is universal:
+    // any user whose course is missing from the list will benefit from this fallback.
+    const recoveredNames = new Set<string>();
+    if (!syncAll && notFoundCourses.length > 0) {
+      await Promise.all(
+        activeSel
+          .filter((sc) => notFoundCourses.includes(sc.name))
+          .map(async (sc) => {
+            const storedId = String(sc.id);
+            // Quick probe to verify the stored course ID is still accessible
+            try {
+              const probe = await fetch(`${canvasUrl}/api/v1/courses/${storedId}`, {
+                headers: { Authorization: canvasAuth },
+              });
+              if (!probe.ok) {
+                console.warn(`[run ${runId}] direct probe ${probe.status} for "${sc.name}" (id=${storedId})`);
+                blockedCount++;
+                return;
+              }
+            } catch (e: any) {
+              console.warn(`[run ${runId}] direct probe error for "${sc.name}": ${e?.message}`);
+              blockedCount++;
+              return;
+            }
+
+            let directRaw: any[] = [];
+            try {
+              directRaw = await fetchAllPages(
+                `${canvasUrl}/api/v1/courses/${storedId}/assignments` +
+                  `?per_page=100&include[]=submission&order_by=due_at`,
+                canvasAuth,
+              );
+            } catch (e: any) {
+              console.warn(`[run ${runId}] direct assignments failed for "${sc.name}": ${e?.message}`);
+              blockedCount++;
+              return;
+            }
+
+            const directSubMap = new Map<string, string | null>();
+            try {
+              const directSubs = await fetchAllPages(
+                `${canvasUrl}/api/v1/courses/${storedId}/students/submissions` +
+                  `?student_ids[]=self&per_page=100`,
+                canvasAuth,
+              );
+              for (const s of directSubs) {
+                if (s.submitted_at || s.workflow_state === "submitted" || s.workflow_state === "pending_review" || s.excused === true) {
+                  directSubMap.set(String(s.assignment_id), s.submitted_at ?? null);
+                }
+              }
+            } catch (_) {}
+
+            // Use the stored course name so assignments display under the expected name in the UI
+            const processed = processRawAssignments(directRaw, directSubMap, sc.name, userId!, undatedCutoff);
+            allAssignments.push(...processed);
+            console.log(`[run ${runId}] direct fallback "${sc.name}": ${directRaw.length} raw → ${processed.length} kept`);
+            recoveredNames.add(sc.name);
+          })
+      );
+    }
+
+    // Courses that were recovered via direct fetch are no longer "not found"
+    const finalNotFound = notFoundCourses.filter((n) => !recoveredNames.has(n));
 
     // ── STEP 3: Fetch grades for all enrolled courses in one call ─────────────
     console.log(`[run ${runId}] fetching grades...`);
@@ -421,7 +494,8 @@ Deno.serve(async (req) => {
       console.log(`[run ${runId}] auto-saved ${discovered.length} courses`);
     }
 
-    console.log(`[run ${runId}] assignments=${allAssignments.length} grades=${allGrades.length}`);
+    const activeAssignmentCount = allAssignments.filter((a) => !a.completed).length;
+    console.log(`[run ${runId}] assignments=${allAssignments.length} active=${activeAssignmentCount} grades=${allGrades.length}`);
 
     // ── STEP 4: Write to database ─────────────────────────────────────────────
     const svcHdr = {
@@ -480,18 +554,19 @@ Deno.serve(async (req) => {
       return { id: course.id, name: course.name, assignments_total: list.length, assignments_future: future };
     });
 
-    console.log(`=== canvas-sync end (run ${runId}) assignments=${allAssignments.length} grades=${allGrades.length} ===`);
+    console.log(`=== canvas-sync end (run ${runId}) assignments=${allAssignments.length} active=${activeAssignmentCount} grades=${allGrades.length} ===`);
 
     return new Response(
       JSON.stringify({
         success: true,
         run_id: runId,
         assignments: allAssignments.length,
+        active_assignments: activeAssignmentCount,
         grades: allGrades.length,
         courses: courseSummaries,
         sync_all: syncAll,
         blocked_courses: blockedCount,
-        not_found_courses: notFoundCourses,
+        not_found_courses: finalNotFound,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

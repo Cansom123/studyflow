@@ -9,7 +9,7 @@ function preserveIds(jsonText: string): string {
   return jsonText.replace(/:(\s*)(\d{16,})/g, ':$1"$2"');
 }
 
-// Extract CCSD section code: "Course - S1 - TEACHER | 45100001-2 -- FAL25 - P01" → "45100001-2"
+// Extract CCSD section code: "Course - S1 - TEACHER | 45100001-2 -- FAL25 - P01" â†’ "45100001-2"
 function extractCode(name: string | null | undefined): string | null {
   if (!name) return null;
   const m = name.match(/\|\s*(\S+)\s+--/);
@@ -30,21 +30,27 @@ function isTermConcluded(courseName: string, now: Date): boolean {
 }
 
 // Fetch all pages of a paginated Canvas REST endpoint, preserving large IDs as strings.
-async function fetchAllPages(url: string, auth: string): Promise<any[]> {
+// Returns null if the first request returns a non-2xx status (blocked/forbidden),
+// so callers can distinguish "access denied" from "no results".
+async function fetchAllPages(url: string, auth: string): Promise<any[] | null> {
   const results: any[] = [];
   let next: string | null = url;
+  let firstRequest = true;
   while (next) {
     let resp: Response;
     try {
       resp = await fetch(next, { headers: { Authorization: auth } });
     } catch (e: any) {
       console.warn(`fetch error: ${e?.message}`);
+      if (firstRequest) return null;
       break;
     }
     if (!resp.ok) {
       console.warn(`HTTP ${resp.status} for ${next}`);
+      if (firstRequest) return null;
       break;
     }
+    firstRequest = false;
     const text = await resp.text();
     let data: any;
     try { data = JSON.parse(preserveIds(text)); } catch (_) { break; }
@@ -124,7 +130,7 @@ Deno.serve(async (req) => {
 
     const now = new Date();
 
-    // Filter saved selections to current school year — silently skips courses from previous
+    // Filter saved selections to current school year â€” silently skips courses from previous
     // years without requiring users to manually clean up their settings.
     const nowSY = now;
     const fallYearSY = nowSY.getMonth() >= 7 ? nowSY.getFullYear() : nowSY.getFullYear() - 1;
@@ -147,7 +153,7 @@ Deno.serve(async (req) => {
 
     // Split active selections into current (non-concluded) and concluded.
     // Concluded selections (e.g. FAL25 courses saved during S1 setup) are used only to find
-    // their current-semester equivalents via section code — their own assignments are not pulled.
+    // their current-semester equivalents via section code â€” their own assignments are not pulled.
     const currentSel = activeSel.filter((c) => !isTermConcluded(c.name || "", now));
     const concludedSel = activeSel.filter((c) => isTermConcluded(c.name || "", now));
 
@@ -159,7 +165,7 @@ Deno.serve(async (req) => {
       currentSel.map((c) => extractCode(c.name)).filter((x): x is string => x !== null)
     );
 
-    // Section codes from concluded selections — used to find their current-semester equivalents.
+    // Section codes from concluded selections â€” used to find their current-semester equivalents.
     // e.g. if the user saved a FAL25 course with code "45100001-2", we'll find the SPR26 course
     // with the same code and pull its assignments instead.
     const concludedCodeSet = new Set(
@@ -168,17 +174,17 @@ Deno.serve(async (req) => {
 
     console.log(`[run ${runId}] selected=${selectedCourses.length} active=${activeSel.length} current=${currentSel.length} concluded=${concludedSel.length} syncAll=${syncAll}`);
 
-    // ── STEP 1: Get ALL enrolled courses via REST ─────────────────────────────
-    // state[]=available  → active/published courses
-    // state[]=completed  → concluded/archived courses
-    // state[]=unpublished → some schools keep courses unpublished throughout
+    // â”€â”€ STEP 1: Get ALL enrolled courses via REST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // state[]=available  â†’ active/published courses
+    // state[]=completed  â†’ concluded/archived courses
+    // state[]=unpublished â†’ some schools keep courses unpublished throughout
     // This is more reliable than GraphQL allCourses which can miss concluded courses.
     console.log(`[run ${runId}] fetching Canvas course list...`);
     const restCourses = await fetchAllPages(
       `${canvasUrl}/api/v1/courses?per_page=100&enrollment_type=student` +
         `&state[]=available&state[]=completed&state[]=unpublished`,
       canvasAuth,
-    );
+    ) ?? [];
     console.log(`[run ${runId}] REST courses: ${restCourses.length}`);
 
     // Extract the FAL/SPR/SUM/WIN term tag from a course name, or "" if none.
@@ -186,7 +192,7 @@ Deno.serve(async (req) => {
       (name || "").toUpperCase().match(/\b(FAL|SPR|SUM|WIN)\d{2}\b/)?.[0] ?? "";
 
     // Match REST courses against user's selected list.
-    // ID is the most reliable key — it survives teacher renames and name-format variations.
+    // ID is the most reliable key â€” it survives teacher renames and name-format variations.
     // Section-code fallback handles Canvas instances where the same course gets a new ID,
     // but we require the term tag to agree so we don't pull a different semester's section.
     const matchedCourses = syncAll
@@ -200,7 +206,7 @@ Deno.serve(async (req) => {
           const code = extractCode(c.name);
           if (code === null) return false;
           if (selectedCodeSet.has(code)) {
-            // Section code matches an active selection — verify term tags agree
+            // Section code matches an active selection â€” verify term tags agree
             const candidateTerm = extractTerm(c.name);
             const matchingSc = currentSel.find((sc) => extractCode(sc.name) === code);
             if (!matchingSc) return false;
@@ -230,7 +236,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Always drop concluded courses — their assignments belong to a past semester.
+    // Always drop concluded courses â€” their assignments belong to a past semester.
     // Current-semester equivalents are already included via the concludedCodeSet matching above.
     const activeCourses = matchedCourses.filter((c: any) => !isTermConcluded(c.name || "", now));
     if (activeCourses.length < matchedCourses.length) {
@@ -243,78 +249,74 @@ Deno.serve(async (req) => {
 
     const allAssignments: any[] = [];
     const allGrades: any[] = [];
+    let blockedCourseCount = 0;
 
-    // Cutoff for undated assignments: cover the whole school year (≈180 days).
-    // A short cutoff (e.g. 30 days) silently drops semester-long assignments created in
-    // August/January that have no due date but are still graded (e.g. participation courses).
-    const undatedCutoff = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+    // Cutoff for undated assignments: cover the whole school year (â‰ˆ180 days).
+    // Undated assignments are kept only if created on or after the current school year start
+    // (August 1 of the fall year). A fixed day count (e.g. 180) silently drops assignments
+    // created at the start of the year ~270 days ago (speeches, participation grades, etc.).
+    const schoolYearStart = new Date(fallYearSY, 7, 1); // August 1 of fall year
+    const undatedCutoff = schoolYearStart;
 
-    // ── STEP 2: Fetch assignments + submissions for each course in parallel ────
+    // â”€â”€ STEP 2: Fetch assignments + submissions for each course in parallel â”€â”€â”€â”€
     await Promise.all(activeCourses.map(async (course: any) => {
       const courseId = String(course.id);
 
-      let rawAssignments: any[] = [];
-      try {
-        rawAssignments = await fetchAllPages(
-          `${canvasUrl}/api/v1/courses/${courseId}/assignments` +
-            `?per_page=100&include[]=submission&order_by=due_at`,
-          canvasAuth,
-        );
-      } catch (e: any) {
-        console.warn(`[run ${runId}] assignments fetch failed for "${course.name}": ${e?.message}`);
+      // Do NOT use include[]=submission â€” some Canvas schools restrict that parameter
+      // and it causes the entire assignments endpoint to return 403, silently dropping
+      // the course. Submission status is fetched separately below.
+      const rawAssignments = await fetchAllPages(
+        `${canvasUrl}/api/v1/courses/${courseId}/assignments?per_page=100&order_by=due_at`,
+        canvasAuth,
+      );
+      if (rawAssignments === null) {
+        blockedCourseCount++;
+        console.warn(`[run ${runId}] assignments blocked for "${course.name}"`);
         return;
       }
 
       // Fetch submission status from the dedicated submissions endpoint.
-      // student_ids[]=self resolves to the authenticated user — works for every user.
-      // This is more reliable than include[]=submission for schools that restrict that data.
-      const submittedMap = new Map<string, string | null>(); // assignment_id → submitted_at
-      try {
-        const subs = await fetchAllPages(
-          `${canvasUrl}/api/v1/courses/${courseId}/students/submissions` +
-            `?student_ids[]=self&per_page=100`,
-          canvasAuth,
-        );
+      // student_ids[]=self resolves to the authenticated user â€” works for every user.
+      const submittedMap = new Map<string, string | null>(); // assignment_id â†’ submitted_at
+      const subs = await fetchAllPages(
+        `${canvasUrl}/api/v1/courses/${courseId}/students/submissions` +
+          `?student_ids[]=self&per_page=100`,
+        canvasAuth,
+      );
+      if (subs !== null) {
         for (const s of subs) {
           // submitted_at is the reliable signal that a student actually turned something in.
-          // "graded" without submitted_at is a teacher auto-zero — don't treat as completed.
+          // "graded" without submitted_at is a teacher auto-zero â€” don't treat as completed.
           if (s.submitted_at || s.workflow_state === "submitted" || s.workflow_state === "pending_review") {
             submittedMap.set(String(s.assignment_id), s.submitted_at ?? null);
           }
         }
         console.log(`[run ${runId}] "${course.name}": ${submittedMap.size} submitted`);
-      } catch (e: any) {
-        console.warn(`[run ${runId}] submissions fetch failed for "${course.name}": ${e?.message}`);
+      } else {
+        console.warn(`[run ${runId}] submissions blocked for "${course.name}" â€” completions may be inaccurate`);
       }
 
       let kept = 0;
       for (const a of rawAssignments) {
-        const sub = a.submission;
-        const wf = sub?.workflow_state;
         const assignmentId = String(a.id);
 
-        // Combine both data sources to determine if the student completed this assignment.
-        // "graded" without submitted_at = teacher auto-zero; keep it so the student sees missing work.
-        const isCompleted =
-          !!(sub?.submitted_at || wf === "submitted" || wf === "pending_review") ||
-          submittedMap.has(assignmentId);
-        const completedAt: string | null =
-          sub?.submitted_at ?? submittedMap.get(assignmentId) ?? null;
+        // Determine completion from the submissions endpoint only (include[]=submission removed).
+        const isCompleted = submittedMap.has(assignmentId);
+        const completedAt: string | null = submittedMap.get(assignmentId) ?? null;
 
         const types: string[] = a.submission_types ?? [];
-        // Skip only assignments Canvas marks as non-graded or wiki pages — purely informational.
+        // Skip only assignments Canvas marks as non-graded or wiki pages â€” purely informational.
         // "none" is intentionally allowed: it covers in-person/performance grades (speeches,
         // debates, participation) that the student needs to see even though nothing is uploaded.
         const isNonWork = types.length > 0 &&
           types.every((t: string) => t === "not_graded" || t === "wiki_page");
 
-        // Store Canvas's lock signal in the DB but do NOT use it to filter display —
+        // Store Canvas's lock signal in the DB but do NOT use it to filter display â€”
         // locked_for_user is true for any past-due assignment whose window closed, including
         // overdue work the student still needs to see. The completed flag handles hiding done work.
         const isLocked = a.locked_for_user === true;
 
         if (a.due_at === null || a.due_at === undefined) {
-          // Undated: skip informational items and assignments created more than 30 days ago
           if (isNonWork) continue;
           const createdAt = a.created_at ? new Date(a.created_at) : null;
           if (!createdAt || createdAt < undatedCutoff) continue;
@@ -338,11 +340,11 @@ Deno.serve(async (req) => {
       }
 
       console.log(
-        `[run ${runId}] "${course.name}": ${rawAssignments.length} raw → ${kept} kept`,
+        `[run ${runId}] "${course.name}": ${rawAssignments.length} raw â†’ ${kept} kept`,
       );
     }));
 
-    // ── STEP 3: Fetch grades for all enrolled courses in one call ─────────────
+    // â”€â”€ STEP 3: Fetch grades for all enrolled courses in one call â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     console.log(`[run ${runId}] fetching grades...`);
     const courseIdToName = new Map(activeCourses.map((c: any) => [String(c.id), c.name as string]));
 
@@ -351,13 +353,13 @@ Deno.serve(async (req) => {
         `${canvasUrl}/api/v1/users/self/enrollments` +
           `?type[]=StudentEnrollment&include[]=grades&include[]=course&per_page=100`,
         canvasAuth,
-      );
+      ) ?? [];
 
       for (const e of enrollments) {
         const courseId = String(e.course_id);
         let courseName = courseIdToName.get(courseId);
 
-        // Fallback: enrollment embeds the course object — match by section code or name.
+        // Fallback: enrollment embeds the course object â€” match by section code or name.
         // This handles Canvas instances where the enrollment course_id differs from the
         // id returned by the /courses endpoint (seen on some district Canvas setups).
         if (!courseName && e.course?.name) {
@@ -407,7 +409,7 @@ Deno.serve(async (req) => {
 
     console.log(`[run ${runId}] assignments=${allAssignments.length} grades=${allGrades.length}`);
 
-    // ── STEP 4: Write to database ─────────────────────────────────────────────
+    // â”€â”€ STEP 4: Write to database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const svcHdr = {
       Authorization: `Bearer ${serviceKey}`,
       apikey: serviceKey,
@@ -464,7 +466,7 @@ Deno.serve(async (req) => {
       return { id: course.id, name: course.name, assignments_total: list.length, assignments_future: future };
     });
 
-    console.log(`=== canvas-sync end (run ${runId}) assignments=${allAssignments.length} grades=${allGrades.length} ===`);
+    console.log(`=== canvas-sync end (run ${runId}) assignments=${allAssignments.length} grades=${allGrades.length} blocked=${blockedCourseCount} ===`);
 
     return new Response(
       JSON.stringify({
@@ -472,6 +474,7 @@ Deno.serve(async (req) => {
         run_id: runId,
         assignments: allAssignments.length,
         grades: allGrades.length,
+        blocked_courses: blockedCourseCount,
         courses: courseSummaries,
         sync_all: syncAll,
       }),

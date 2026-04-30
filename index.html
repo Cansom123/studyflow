@@ -1898,7 +1898,7 @@ async function syncCanvas() {
   try {
     // Ensure we have a fresh token before calling the edge function
     if (REFRESH_TOKEN) await refreshSession();
-    const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync-v2`, {
+    const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync-v3`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
       body: JSON.stringify({ user_id: USER_ID })

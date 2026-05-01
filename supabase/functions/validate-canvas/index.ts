@@ -3,6 +3,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Canvas uses 64-bit integer IDs that exceed JS float64 safe range (~9e15).
+// Quote them before JSON.parse to prevent precision loss (e.g. 179010000001170340 â†’ 179010000001170336).
+function preserveIds(jsonText: string): string {
+  return jsonText.replace(/:(\s*)(\d{16,})/g, ':$1"$2"');
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -46,7 +52,9 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const page = await resp.json();
+      const text = await resp.text();
+      let page: any;
+      try { page = JSON.parse(preserveIds(text)); } catch (_) { break; }
       if (!Array.isArray(page)) break;
       raw.push(...page);
       next = null;
@@ -57,8 +65,8 @@ Deno.serve(async (req) => {
         }
       }
     }
-    // Compute current school year — works automatically every semester, no code changes needed.
-    // Before August → spring semester of fallYear/springYear; August+ → fall semester.
+    // Compute current school year â€” works automatically every semester, no code changes needed.
+    // Before August â†’ spring semester of fallYear/springYear; August+ â†’ fall semester.
     const now = new Date();
     const fallYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
     const springYear = fallYear + 1;
@@ -73,12 +81,12 @@ Deno.serve(async (req) => {
         n.includes(`${fy2}/${sy2}`) || n.includes(`${fy2}-${sy2}`);
     };
     // A course has a term tag if it contains FAL/SPR/SUM/WIN + 2-digit year.
-    // Untagged courses (e.g. "Speech and Debate") have no year info — keep them.
+    // Untagged courses (e.g. "Speech and Debate") have no year info â€” keep them.
     const hasTermTag = (name: string): boolean =>
       /\b(FAL|SPR|SUM|WIN)\d{2}\b/.test(name.toUpperCase());
 
     // Only return courses from the current school year.
-    // Old courses are hidden entirely — users should not be able to accidentally select them.
+    // Old courses are hidden entirely â€” users should not be able to accidentally select them.
     const courses = raw
       .filter((c: any) => c && c.name && c.id)
       .filter((c: any) => !hasTermTag(c.name) || isCurrentYear(c.name))

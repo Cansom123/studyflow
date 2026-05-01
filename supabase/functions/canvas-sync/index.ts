@@ -73,6 +73,7 @@ function processRawAssignments(
   courseName: string,
   userId: string,
   undatedCutoff: Date,
+  now: Date,
 ): any[] {
   const results: any[] = [];
   for (const a of rawAssignments) {
@@ -105,12 +106,16 @@ function processRawAssignments(
     const isLocked = a.locked_for_user === true;
 
     if (a.due_at === null || a.due_at === undefined) {
-      // Undated: skip informational items and assignments created more than 180 days ago
+      // Undated: skip informational items and assignments created before this school year
       if (isNonWork) continue;
       const createdAt = a.created_at ? new Date(a.created_at) : null;
       if (!createdAt || createdAt < undatedCutoff) continue;
     } else {
       if (isNonWork) continue;
+      // Drop past-due assignments older than 90 days — stale overdue work from earlier
+      // in the year that can't realistically be turned in clutters the student's view.
+      const pastCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      if (new Date(a.due_at) < pastCutoff) continue;
     }
 
     results.push({
@@ -363,7 +368,7 @@ Deno.serve(async (req) => {
         console.log(`[run ${runId}] “${course.name}”: ${submittedMap.size} submitted`);
       } catch (_) {}
 
-      const processed = processRawAssignments(rawAssignments, submittedMap, course.name, userId!, undatedCutoff);
+      const processed = processRawAssignments(rawAssignments, submittedMap, course.name, userId!, undatedCutoff, now);
       allAssignments.push(...processed);
       console.log(`[run ${runId}] “${course.name}”: ${rawAssignments.length} raw → ${processed.length} kept`);
     }));
@@ -424,7 +429,7 @@ Deno.serve(async (req) => {
             } catch (_) {}
 
             // Use the stored course name so assignments display under the expected name in the UI
-            const processed = processRawAssignments(directRaw, directSubMap, sc.name, userId!, undatedCutoff);
+            const processed = processRawAssignments(directRaw, directSubMap, sc.name, userId!, undatedCutoff, now);
             allAssignments.push(...processed);
             console.log(`[run ${runId}] direct fallback “${sc.name}”: ${directRaw.length} raw → ${processed.length} kept`);
             recoveredNames.add(sc.name);

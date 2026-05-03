@@ -198,6 +198,7 @@ Deno.serve(async (req) => {
     const allAssignments: any[] = [];
     const allGrades: any[] = [];
     let blockedCourseCount = 0;
+    const debugStates: Record<string, number> = {}; // aggregate workflow_state counts across all courses
 
     // Undated assignments: keep anything created since school year start (Aug 1 of fall year).
     const undatedCutoff = new Date(fallYearSY, 7, 1);
@@ -205,7 +206,7 @@ Deno.serve(async (req) => {
     await Promise.all(activeCourses.map(async (course: any) => {
       const courseId = String(course.id);
       const rawAssignments = await fetchAllPages(
-        `${canvasUrl}/api/v1/courses/${courseId}/assignments?per_page=100&order_by=due_at`,
+        `${canvasUrl}/api/v1/courses/${courseId}/assignments?per_page=100&order_by=due_at&include[]=submission`,
         canvasAuth,
       );
       if (rawAssignments === null) {
@@ -214,26 +215,8 @@ Deno.serve(async (req) => {
         return;
       }
 
-      // Build map of submitted assignment IDs from Canvas submissions API
-      const submittedMap = new Map<string, string | null>();
-      const subs = await fetchAllPages(
-        `${canvasUrl}/api/v1/courses/${courseId}/students/submissions?student_ids[]=self&per_page=100`,
-        canvasAuth,
-      );
-      if (subs !== null) {
-        for (const s of subs) {
-          const state = s.workflow_state;
-          // Mark completed for any state that means the student has acted on it
-          if (s.submitted_at || state === "submitted" || state === "graded" ||
-              state === "complete" || state === "pending_review") {
-            submittedMap.set(String(s.assignment_id), s.submitted_at ?? null);
-          }
-        }
-      } else {
-        console.warn(`[run ${runId}] subs blocked: "${course.name}"`);
-      }
-
       let kept = 0;
+      let completedCount = 0;
       for (const a of rawAssignments) {
         const types: string[] = a.submission_types ?? [];
 
@@ -249,8 +232,13 @@ Deno.serve(async (req) => {
           if (!createdAt || createdAt < undatedCutoff) continue;
         }
 
-        const assignmentId = String(a.id);
-        const isSubmitted = submittedMap.has(assignmentId);
+        const sub = a.submission;
+        const state = String(sub?.workflow_state ?? "null");
+        debugStates[state] = (debugStates[state] ?? 0) + 1;
+        const isSubmitted = !!(sub?.submitted_at || state === "submitted" || state === "graded" ||
+          state === "complete" || state === "pending_review");
+
+        if (isSubmitted) completedCount++;
         allAssignments.push({
           user_id: userId,
           title: a.name,
@@ -259,13 +247,13 @@ Deno.serve(async (req) => {
           assignment_type: types[0] ?? "homework",
           points_possible: a.points_possible ?? null,
           completed: isSubmitted,
-          completed_at: isSubmitted ? (submittedMap.get(assignmentId) ?? null) : null,
+          completed_at: isSubmitted ? (sub?.submitted_at ?? null) : null,
           assignment_url: a.html_url ?? null,
           is_locked: false,
         });
         kept++;
       }
-      console.log(`[run ${runId}] "${course.name}": ${rawAssignments.length} raw -> ${kept} kept`);
+      console.log(`[run ${runId}] "${course.name}": ${rawAssignments.length} raw -> ${kept} kept (${completedCount} completed) states:${JSON.stringify(debugStates)}`);
     }));
 
     try {
@@ -354,6 +342,7 @@ Deno.serve(async (req) => {
         blocked_courses: blockedCourseCount,
         courses: courseSummaries,
         sync_all: syncAll,
+        debug_states: debugStates,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
 
     const now = new Date();
 
-    // Filter saved selections to current school year â€” silently skips courses from previous
+    // Filter saved selections to current school year â€" silently skips courses from previous
     // years without requiring users to manually clean up their settings.
     const nowSY = now;
     const fallYearSY = nowSY.getMonth() >= 7 ? nowSY.getFullYear() : nowSY.getFullYear() - 1;
@@ -222,7 +222,7 @@ Deno.serve(async (req) => {
 
     // Split active selections into current (non-concluded) and concluded.
     // Concluded selections (e.g. FAL25 courses saved during S1 setup) are used only to find
-    // their current-semester equivalents via section code â€” their own assignments are not pulled.
+    // their current-semester equivalents via section code â€" their own assignments are not pulled.
     const currentSel = activeSel.filter((c) => !isTermConcluded(c.name || "", now));
     const concludedSel = activeSel.filter((c) => isTermConcluded(c.name || "", now));
 
@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
       currentSel.map((c) => extractCode(c.name)).filter((x): x is string => x !== null)
     );
 
-    // Section codes from concluded selections â€” used to find their current-semester equivalents.
+    // Section codes from concluded selections â€" used to find their current-semester equivalents.
     // e.g. if the user saved a FAL25 course with code "45100001-2", we'll find the SPR26 course
     // with the same code and pull its assignments instead.
     const concludedCodeSet = new Set(
@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
       (name || "").toUpperCase().match(/\b(FAL|SPR|SUM|WIN)\d{2}\b/)?.[0] ?? "";
 
     // Match REST courses against user's selected list.
-    // ID is the most reliable key â€” it survives teacher renames and name-format variations.
+    // ID is the most reliable key â€" it survives teacher renames and name-format variations.
     // Section-code fallback handles Canvas instances where the same course gets a new ID,
     // but we require the term tag to agree so we don't pull a different semester's section.
     const matchedCourses = syncAll
@@ -277,12 +277,11 @@ Deno.serve(async (req) => {
           const code = extractCode(c.name);
           if (code === null) return false;
           if (selectedCodeSet.has(code)) {
-            // Section code matches an active selection â€” verify term tags agree
-            const candidateTerm = extractTerm(c.name);
-            const matchingSc = currentSel.find((sc) => extractCode(sc.name) === code);
-            if (!matchingSc) return false;
-            const selectedTerm = extractTerm(matchingSc.name);
-            return !candidateTerm || !selectedTerm || candidateTerm === selectedTerm;
+            // Section code matches a current-semester selection — trust the match.
+            // Cross-listed courses sometimes retain their parent section's term tag
+            // (e.g. Canvas returns "FAL25" for what is now a SPR26 course), so
+            // requiring term-tag agreement here causes false negatives.
+            return true;
           }
           // Check if this is the current-semester equivalent of a concluded selection.
           // e.g. SPR26 course with same section code as a FAL25 course the user previously selected.
@@ -311,9 +310,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Always drop concluded courses â€” their assignments belong to a past semester.
-    // Current-semester equivalents are already included via the concludedCodeSet matching above.
-    const activeCourses = matchedCourses.filter((c: any) => !isTermConcluded(c.name || "", now));
+    // In syncAll mode, drop concluded courses — their assignments belong to a past semester.
+    // In explicit selection mode, every matched course was deliberately chosen by the user;
+    // don't filter by term here because Canvas sometimes labels cross-listed courses with an
+    // older term tag, which would cause isTermConcluded to falsely drop current courses.
+    let activeCourses: any[];
+    if (syncAll) {
+      activeCourses = matchedCourses.filter((c: any) => !isTermConcluded(c.name || "", now));
+    } else {
+      // Explicit selection mode: every matched course was deliberately chosen by the user.
+      // Don't filter by term — Canvas sometimes labels cross-listed courses with an older
+      // term tag, which would cause isTermConcluded to falsely drop current courses.
+      activeCourses = matchedCourses;
+    }
     if (activeCourses.length < matchedCourses.length) {
       const dropped = matchedCourses
         .filter((c: any) => isTermConcluded(c.name || "", now))
@@ -343,9 +352,9 @@ Deno.serve(async (req) => {
           `${canvasUrl}/api/v1/courses/${courseId}/assignments` +
             `?per_page=100&order_by=due_at`,
           canvasAuth,
-        );
+        ) ?? [];
       } catch (e: any) {
-        console.warn(`[run ${runId}] assignments fetch failed for “${course.name}”: ${e?.message}`);
+        console.warn(`[run ${runId}] assignments fetch failed for "${course.name}": ${e?.message}`);
         blockedCount++;
         return;
       }
@@ -361,16 +370,16 @@ Deno.serve(async (req) => {
           canvasAuth,
         );
         for (const s of subs) {
-          if (s.submitted_at || s.workflow_state === “submitted” || s.workflow_state === “pending_review” || s.excused === true) {
+          if (s.submitted_at || s.workflow_state === "submitted" || s.workflow_state === "pending_review" || s.workflow_state === "graded" || s.excused === true) {
             submittedMap.set(String(s.assignment_id), s.submitted_at ?? null);
           }
         }
-        console.log(`[run ${runId}] “${course.name}”: ${submittedMap.size} submitted`);
+        console.log(`[run ${runId}] "${course.name}": ${submittedMap.size} submitted`);
       } catch (_) {}
 
       const processed = processRawAssignments(rawAssignments, submittedMap, course.name, userId!, undatedCutoff, now);
       allAssignments.push(...processed);
-      console.log(`[run ${runId}] “${course.name}”: ${rawAssignments.length} raw → ${processed.length} kept`);
+      console.log(`[run ${runId}] "${course.name}": ${rawAssignments.length} raw → ${processed.length} kept`);
     }));
 
     // ── STEP 2b: Fallback — directly fetch courses not found in the course list ──
@@ -391,12 +400,12 @@ Deno.serve(async (req) => {
                 headers: { Authorization: canvasAuth },
               });
               if (!probe.ok) {
-                console.warn(`[run ${runId}] direct probe ${probe.status} for “${sc.name}” (id=${storedId})`);
+                console.warn(`[run ${runId}] direct probe ${probe.status} for "${sc.name}" (id=${storedId})`);
                 blockedCount++;
                 return;
               }
             } catch (e: any) {
-              console.warn(`[run ${runId}] direct probe error for “${sc.name}”: ${e?.message}`);
+              console.warn(`[run ${runId}] direct probe error for "${sc.name}": ${e?.message}`);
               blockedCount++;
               return;
             }
@@ -409,7 +418,7 @@ Deno.serve(async (req) => {
                 canvasAuth,
               );
             } catch (e: any) {
-              console.warn(`[run ${runId}] direct assignments failed for “${sc.name}”: ${e?.message}`);
+              console.warn(`[run ${runId}] direct assignments failed for "${sc.name}": ${e?.message}`);
               blockedCount++;
               return;
             }
@@ -422,7 +431,7 @@ Deno.serve(async (req) => {
                 canvasAuth,
               );
               for (const s of directSubs) {
-                if (s.submitted_at || s.workflow_state === “submitted” || s.workflow_state === “pending_review” || s.excused === true) {
+                if (s.submitted_at || s.workflow_state === "submitted" || s.workflow_state === "pending_review" || s.workflow_state === "graded" || s.excused === true) {
                   directSubMap.set(String(s.assignment_id), s.submitted_at ?? null);
                 }
               }
@@ -431,13 +440,13 @@ Deno.serve(async (req) => {
             // Use the stored course name so assignments display under the expected name in the UI
             const processed = processRawAssignments(directRaw, directSubMap, sc.name, userId!, undatedCutoff, now);
             allAssignments.push(...processed);
-            console.log(`[run ${runId}] direct fallback “${sc.name}”: ${directRaw.length} raw → ${processed.length} kept`);
+            console.log(`[run ${runId}] direct fallback "${sc.name}": ${directRaw.length} raw → ${processed.length} kept`);
             recoveredNames.add(sc.name);
           })
       );
     }
 
-    // Courses that were recovered via direct fetch are no longer “not found”
+    // Courses that were recovered via direct fetch are no longer "not found"
     const finalNotFound = notFoundCourses.filter((n) => !recoveredNames.has(n));
 
     // ── STEP 3: Fetch grades for all enrolled courses in one call ─────────────
@@ -455,7 +464,7 @@ Deno.serve(async (req) => {
         const courseId = String(e.course_id);
         let courseName = courseIdToName.get(courseId);
 
-        // Fallback: enrollment embeds the course object â€” match by section code or name.
+        // Fallback: enrollment embeds the course object â€" match by section code or name.
         // This handles Canvas instances where the enrollment course_id differs from the
         // id returned by the /courses endpoint (seen on some district Canvas setups).
         if (!courseName && e.course?.name) {
@@ -506,7 +515,7 @@ Deno.serve(async (req) => {
     const activeAssignmentCount = allAssignments.filter((a) => !a.completed).length;
     console.log(`[run ${runId}] assignments=${allAssignments.length} active=${activeAssignmentCount} grades=${allGrades.length}`);
 
-    // â”€â”€ STEP 4: Write to database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â"€â"€ STEP 4: Write to database â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
     const svcHdr = {
       Authorization: `Bearer ${serviceKey}`,
       apikey: serviceKey,

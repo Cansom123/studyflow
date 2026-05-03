@@ -1945,7 +1945,7 @@ async function syncCanvas() {
 }
 
 async function loadAssignments() {
-  const { ok, data } = await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&order=due_date.asc.nullslast&select=*`);
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&completed=eq.false&order=due_date.asc.nullslast&select=*`);
   // Always reset stale empty/loading states before deciding what to show
   document.getElementById('due-loading').style.display   = 'none';
   document.getElementById('allwork-loading').style.display = 'none';

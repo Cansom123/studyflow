@@ -1098,6 +1098,26 @@ body {
             </div>
           </div>
         </div>
+        <div class="section-label" style="margin-top:20px;">Calendar</div>
+        <div class="card">
+          <div class="card-sub" style="margin-bottom:12px;">Subscribe to your assignments in Google Calendar or Apple Calendar. Updates automatically when you sync Canvas.</div>
+          <div id="cal-link-loading" style="color:var(--text2);font-size:13px;">Loading…</div>
+          <div id="cal-link-wrap" style="display:none;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+              <button class="sync-btn" onclick="addToAppleCalendar()">Add to Apple Calendar</button>
+              <button class="sync-btn" onclick="addToGoogleCalendar()">Add to Google Calendar</button>
+            </div>
+            <button class="help-toggle-btn" onclick="toggleCalendarCopyHelp()" style="margin-top:4px;">
+              <span style="font-size:13px;color:var(--text2);">Add manually instead</span>
+              <span class="help-toggle-arrow" id="cal-copy-arrow">›</span>
+            </button>
+            <div id="cal-copy-wrap" style="display:none;margin-top:10px;">
+              <input class="settings-input" type="text" id="cal-link-input" readonly style="font-size:12px;font-family:monospace;color:var(--text2);margin-bottom:8px;" />
+              <button class="sync-btn" onclick="copyCalendarLink()">Copy link</button>
+              <div id="cal-copy-msg" style="font-size:13px;color:var(--accent);margin-top:6px;display:none;">Copied to clipboard!</div>
+            </div>
+          </div>
+        </div>
         <div class="section-label" style="margin-top:20px;">Help</div>
         <div class="card">
           <button class="help-toggle-btn" onclick="toggleCanvasHelp()">
@@ -1320,6 +1340,7 @@ function isCourseTermConcluded(name) {
 let doneSet = new Set();
 let cachedAssignments = [];
 let cachedGrades = [];
+let syncInProgress = false;
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1437,18 +1458,19 @@ function dismissWelcome() {
   setTimeout(() => { toast.style.display = 'none'; }, 400);
 }
 
-function showApp() {
+async function showApp() {
   hideAll();
   document.getElementById('main-app').style.display = 'block';
   document.getElementById('account-email').textContent = USER_EMAIL;
   doneSet = new Set(JSON.parse(localStorage.getItem('sf_done_' + USER_ID) || '[]'));
   loadCanvasSettings();
+  loadCalendarToken();
   loadAssignments();
   loadGrades();
   renderGoalsTab();
   renderSelectedCoursesTab();
   updateLastSyncedLabel();
-  autoSync();
+  await autoSync();
   maybeShowWelcome();
 }
 
@@ -1864,6 +1886,53 @@ async function saveCanvasSettings() {
   syncCanvas();
 }
 
+async function loadCalendarToken() {
+  const loadingEl = document.getElementById('cal-link-loading');
+  const wrapEl = document.getElementById('cal-link-wrap');
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=calendar_token`);
+  let token = ok && data && data.length > 0 ? data[0].calendar_token : null;
+  if (!token) {
+    token = crypto.randomUUID();
+    await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { calendar_token: token });
+  }
+  document.getElementById('cal-link-input').value = `${SB_URL}/functions/v1/calendar-feed?token=${token}`;
+  if (loadingEl) loadingEl.style.display = 'none';
+  if (wrapEl) wrapEl.style.display = 'block';
+}
+
+function toggleCalendarCopyHelp() {
+  const wrap = document.getElementById('cal-copy-wrap');
+  const arrow = document.getElementById('cal-copy-arrow');
+  const isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : 'block';
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function addToAppleCalendar() {
+  const url = document.getElementById('cal-link-input').value.replace(/^https?:/, 'webcal:');
+  window.location.href = url;
+}
+
+function addToGoogleCalendar() {
+  const url = document.getElementById('cal-link-input').value.replace(/^https?:/, 'webcal:');
+  window.open('https://www.google.com/calendar/render?cid=' + encodeURIComponent(url), '_blank');
+}
+
+function copyCalendarLink() {
+  const input = document.getElementById('cal-link-input');
+  const msg = document.getElementById('cal-copy-msg');
+  const showCopied = () => { msg.style.display = 'block'; setTimeout(() => { msg.style.display = 'none'; }, 2500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(showCopied).catch(() => {
+      input.select(); input.setSelectionRange(0, 99999);
+      document.execCommand('copy'); showCopied();
+    });
+  } else {
+    input.select(); input.setSelectionRange(0, 99999);
+    document.execCommand('copy'); showCopied();
+  }
+}
+
 async function disconnectCanvas() {
   await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_token: null, selected_courses: [] });
   await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}`, 'DELETE');
@@ -1895,9 +1964,13 @@ function toggleSettingsCanvasHelp() {
 }
 
 async function syncCanvas() {
+  if (syncInProgress) return;
+  syncInProgress = true;
   const btn = document.getElementById('sync-btn');
   const statusEl = document.getElementById('sync-status');
+  const wsBtn = document.getElementById('ws-sync-btn');
   if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); }
+  if (wsBtn) { wsBtn.disabled = true; }
   if (statusEl) { statusEl.className = 'sync-status'; statusEl.textContent = ''; }
   try {
     // Ensure we have a fresh token before calling the edge function
@@ -1912,7 +1985,9 @@ async function syncCanvas() {
     await Promise.all([loadAssignments(), loadGrades()]);
     localStorage.setItem('sf_last_sync', Date.now());
     updateLastSyncedLabel();
+    syncInProgress = false;
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
+    if (wsBtn) { wsBtn.disabled = false; }
     if (statusEl) {
       const blocked = result.blocked_courses || 0;
       const notFound = Array.isArray(result.not_found_courses) ? result.not_found_courses : [];
@@ -1939,7 +2014,9 @@ async function syncCanvas() {
       statusEl.style.whiteSpace = 'pre-wrap';
     }
   } catch(err) {
+    syncInProgress = false;
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
+    if (wsBtn) { wsBtn.disabled = false; }
     if (statusEl) { statusEl.className = 'sync-status error'; statusEl.textContent = `Sync failed: ${err.message}`; }
   }
 }

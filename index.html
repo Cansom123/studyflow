@@ -12,6 +12,7 @@
 /* ===== TOKENS ===== */
 :root {
   --accent-h: 275;
+  --bg-h: var(--accent-h);
   --accent:        oklch(0.56 0.2  var(--accent-h));
   --accent-mid:    oklch(0.62 0.18 var(--accent-h));
   --accent-soft:   oklch(0.56 0.2  var(--accent-h) / 0.11);
@@ -26,22 +27,22 @@
   --purple:        oklch(0.52 0.17 305);
   --purple-soft:   oklch(0.52 0.17 305 / 0.12);
 
-  --bg:            oklch(0.975 0.008 var(--accent-h));
+  --bg:            oklch(0.975 0.008 var(--bg-h));
   --surface:       #ffffff;
-  --surface2:      oklch(0.965 0.008 var(--accent-h));
-  --border:        oklch(0.91 0.012 var(--accent-h));
-  --border2:       oklch(0.945 0.008 var(--accent-h));
-  --text1:         oklch(0.14 0.02  var(--accent-h));
-  --text2:         oklch(0.52 0.02  var(--accent-h));
-  --input-bg:      oklch(0.97 0.007 var(--accent-h));
+  --surface2:      oklch(0.965 0.008 var(--bg-h));
+  --border:        oklch(0.91 0.012 var(--bg-h));
+  --border2:       oklch(0.945 0.008 var(--bg-h));
+  --text1:         oklch(0.14 0.02  var(--bg-h));
+  --text2:         oklch(0.52 0.02  var(--bg-h));
+  --input-bg:      oklch(0.97 0.007 var(--bg-h));
   --input-focus-bg:#fff;
 
-  --shadow-sm:     0 1px 2px oklch(0.14 0.02 var(--accent-h) / 0.05),
-                   0 2px 6px oklch(0.14 0.02 var(--accent-h) / 0.04);
-  --shadow-md:     0 2px 8px oklch(0.14 0.02 var(--accent-h) / 0.07),
-                   0 6px 20px oklch(0.14 0.02 var(--accent-h) / 0.05);
+  --shadow-sm:     0 1px 2px oklch(0.14 0.02 var(--bg-h) / 0.05),
+                   0 2px 6px oklch(0.14 0.02 var(--bg-h) / 0.04);
+  --shadow-md:     0 2px 8px oklch(0.14 0.02 var(--bg-h) / 0.07),
+                   0 6px 20px oklch(0.14 0.02 var(--bg-h) / 0.05);
 
-  --btn-secondary-bg:   oklch(0.95 0.01 var(--accent-h));
+  --btn-secondary-bg:   oklch(0.95 0.01 var(--bg-h));
   --btn-secondary-color:var(--text1);
   --ai-bg:              oklch(0.95 0.03 var(--accent-h));
   --ai-border:          oklch(0.84 0.07 var(--accent-h));
@@ -69,15 +70,15 @@
 }
 
 [data-theme="dark"] {
-  --bg:            oklch(0.10 0.015 var(--accent-h));
-  --surface:       oklch(0.15 0.015 var(--accent-h));
-  --surface2:      oklch(0.20 0.015 var(--accent-h));
-  --border:        oklch(0.26 0.018 var(--accent-h));
-  --border2:       oklch(0.22 0.015 var(--accent-h));
-  --text1:         oklch(0.95 0.008 var(--accent-h));
-  --text2:         oklch(0.58 0.022 var(--accent-h));
-  --input-bg:      oklch(0.19 0.015 var(--accent-h));
-  --input-focus-bg:oklch(0.23 0.016 var(--accent-h));
+  --bg:            oklch(0.10 0.015 var(--bg-h));
+  --surface:       oklch(0.15 0.015 var(--bg-h));
+  --surface2:      oklch(0.20 0.015 var(--bg-h));
+  --border:        oklch(0.26 0.018 var(--bg-h));
+  --border2:       oklch(0.22 0.015 var(--bg-h));
+  --text1:         oklch(0.95 0.008 var(--bg-h));
+  --text2:         oklch(0.58 0.022 var(--bg-h));
+  --input-bg:      oklch(0.19 0.015 var(--bg-h));
+  --input-focus-bg:oklch(0.23 0.016 var(--bg-h));
   --shadow-sm:     0 1px 2px #0006, 0 2px 6px #0004;
   --shadow-md:     0 2px 8px #0008, 0 6px 20px #0005;
 
@@ -94,7 +95,7 @@
   --purple:        oklch(0.68 0.15 305);
   --purple-soft:   oklch(0.68 0.15 305 / 0.16);
 
-  --btn-secondary-bg:    oklch(0.22 0.016 var(--accent-h));
+  --btn-secondary-bg:    oklch(0.22 0.016 var(--bg-h));
   --btn-secondary-color: var(--text1);
   --ai-bg:               oklch(0.68 0.18 var(--accent-h) / 0.14);
   --ai-border:           oklch(0.68 0.18 var(--accent-h) / 0.3);
@@ -132,7 +133,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
-.app { width: 100%; max-width: 430px; min-height: 100vh; }
+.app { width: 100%; min-height: 100vh; }
 
 /* ===== LOGO ===== */
 .logo { display: flex; align-items: center; gap: 9px; }
@@ -156,7 +157,8 @@ body {
   background: var(--surface);
   border-radius: 20px;
   padding: 36px 28px;
-  margin-top: 48px;
+  margin: 48px auto 0;
+  max-width: 430px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-md);
 }
@@ -207,7 +209,8 @@ body {
 /* ===== ONBOARDING ===== */
 .onboard-screen {
   background: var(--surface); border-radius: 20px;
-  padding: 28px 24px; margin-top: 20px;
+  padding: 28px 24px; margin: 20px auto 0;
+  max-width: 430px;
   border: 1px solid var(--border); box-shadow: var(--shadow-md); display: none;
 }
 .onboard-step { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
@@ -282,7 +285,8 @@ body {
 .goal-tag-remove { font-size: 20px; color: var(--text2); cursor: pointer; background: none; border: none; line-height: 1; opacity: 0.6; }
 
 /* ===== MAIN APP ===== */
-.main-app { display: none; }
+.main-app { display: none; flex-direction: row; align-items: stretch; min-height: 100vh; }
+.main-col { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 
 .topbar {
   background: var(--surface);
@@ -295,6 +299,50 @@ body {
 }
 .topbar-right { display: flex; align-items: center; gap: 6px; }
 .topbar-sub { font-size: 10.5px; color: var(--text2); margin-top: 1.5px; letter-spacing: 0.01em; }
+
+/* ===== SIDEBAR (laptop/desktop) ===== */
+.sidebar-logo { display: none; }
+@media (min-width: 601px) {
+  .app { max-width: none; }
+  .main-app { display: flex; }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 10px 22px;
+  }
+  .tabs {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 232px; flex: 0 0 232px; height: 100vh;
+    flex-direction: column; align-items: stretch;
+    border-bottom: none; border-right: 1px solid var(--border);
+    overflow-x: visible; overflow-y: auto;
+    padding: 22px 14px; gap: 2px;
+  }
+  .tab {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; border-radius: 10px;
+    border-bottom: none !important; font-size: 13.5px; font-weight: 500;
+    justify-content: flex-start;
+  }
+  .tab:hover { background: var(--surface2); color: var(--text1); }
+  .tab.active { background: var(--accent-soft); color: var(--accent-text); }
+  .tab-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; }
+  .tab-icon svg { width: 100%; height: 100%; }
+  .topbar-logo { display: none; }
+  .content { width: 100%; max-width: 1440px; margin: 0 auto; padding: 28px 40px 40px; box-sizing: border-box; }
+  .bottom-nav { display: none !important; }
+  #tab-settings { margin-top: auto; }
+}
+@media (min-width: 900px) {
+  .home-columns { display: flex; gap: 24px; align-items: flex-start; }
+  .home-col-main { flex: 1.6; min-width: 0; }
+  .home-col-side { flex: 1; min-width: 0; }
+
+  #allwork-list, #priority-list, #grades-cards, #goals-display, #syllabus-list,
+  #overdue-list, #due-cal-selected-list, #nodate-list {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px;
+  }
+  #allwork-list > .section-label { grid-column: 1 / -1; }
+}
 
 .theme-btn {
   width: 30px; height: 30px; border-radius: 50%;
@@ -609,9 +657,10 @@ body {
 .btn-loading.onboard-btn::after { border-top-color: #fff; }
 
 /* ===== BOTTOM NAV ===== */
-.bottom-nav { display: none; }
+.bottom-nav { display: none; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.bottom-nav::-webkit-scrollbar { display: none; }
 .nav-item {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
+  flex: 1 0 auto; min-width: 58px; display: flex; flex-direction: column; align-items: center;
   padding: 7px 2px 4px; background: none; border: none; cursor: pointer;
   color: var(--text2); gap: 3px; transition: color 0.18s; font-family: inherit;
   position: relative;
@@ -627,16 +676,7 @@ body {
 .nav-icon svg { position: relative; z-index: 1; width: 20px; height: 20px; }
 .nav-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em; }
 
-/* ===== TWEAKS PANEL ===== */
-.tweaks-panel {
-  display: none;
-  position: fixed; bottom: 80px; right: 16px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 18px; box-shadow: var(--shadow-md);
-  padding: 18px 20px; width: 240px; z-index: 200;
-}
-.tweaks-panel.open { display: block; }
-.tweaks-title { font-size: 13px; font-weight: 700; color: var(--text1); margin-bottom: 16px; letter-spacing: -0.1px; }
+/* ===== APPEARANCE SWATCHES (Settings) ===== */
 .tweak-row { margin-bottom: 14px; }
 .tweak-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
 .tweak-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -666,7 +706,6 @@ body {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     z-index: 100; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
   }
-  .tweaks-panel { bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 8px); }
 }
 
 /* Animate page entry */
@@ -760,9 +799,242 @@ body {
   text-decoration: none; letter-spacing: 0.01em;
 }
 .canvas-link:hover { color: var(--accent); }
+
+/* ===== AUTH BACKDROP ===== */
+.auth-bg-glow {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+}
+.auth-bg-glow::before, .auth-bg-glow::after {
+  content: ''; position: absolute; border-radius: 50%; filter: blur(60px);
+}
+.auth-bg-glow::before {
+  width: 340px; height: 340px; top: -120px; left: -100px;
+  background: oklch(0.56 0.2 var(--accent-h) / 0.22);
+}
+.auth-bg-glow::after {
+  width: 300px; height: 300px; bottom: -100px; right: -100px;
+  background: oklch(0.6 0.16 calc(var(--accent-h) + 60) / 0.16);
+}
+
+/* ===== HOME ===== */
+.home-greeting-text { font-size: 21px; font-weight: 700; color: var(--text1); letter-spacing: -0.4px; }
+.home-greeting-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.home-quicklinks { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.home-qlink {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius);
+  padding: 13px 14px; cursor: pointer; box-shadow: var(--shadow-sm);
+  font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text1);
+  transition: border-color 0.15s, transform 0.1s;
+}
+.home-qlink:active { transform: scale(0.98); }
+.home-qlink-icon {
+  width: 30px; height: 30px; border-radius: 9px; background: var(--accent-soft);
+  color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.home-qlink-icon svg { width: 16px; height: 16px; }
+
+/* ===== SYLLABUS ===== */
+.syllabus-card { cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+.syllabus-card:active { transform: scale(0.99); }
+.syllabus-preview { margin-top: 6px; line-height: 1.5; }
+.syllabus-text {
+  font-size: 13px; color: var(--text1); line-height: 1.6; white-space: pre-wrap;
+  background: var(--surface2); border-radius: 12px; padding: 14px;
+}
+.syllabus-textarea {
+  width: 100%; min-height: 200px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--border); font-size: 13px; color: var(--text1);
+  background: var(--input-bg); outline: none; font-family: inherit; line-height: 1.55;
+  resize: vertical; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.syllabus-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.detail-overlay {
+  display: none; position: fixed; inset: 0; z-index: 2100;
+  background: var(--bg); overflow-y: auto; animation: fadeUp 0.2s ease;
+}
+.detail-inner { max-width: 1440px; margin: 0 auto; padding: 20px 20px 40px; }
+.detail-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 18px; position: sticky; top: 0; background: var(--bg);
+  padding-top: 2px; padding-bottom: 4px; z-index: 1;
+}
+.detail-title { font-size: 19px; font-weight: 700; color: var(--text1); letter-spacing: -0.3px; }
+.detail-close {
+  background: var(--surface2); border: none; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 50%; font-size: 16px; color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-family: inherit; flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.detail-close:hover { background: var(--border); color: var(--text1); }
+@media (min-width: 601px) {
+  .detail-overlay { left: 232px; }
+  .detail-inner { max-width: 1440px; padding: 32px 40px 56px; }
+  .syllabus-text { font-size: 14px; line-height: 1.75; padding: 24px 28px; }
+}
+mark { background: var(--accent-soft); color: var(--accent-text); padding: 0 2px; border-radius: 3px; }
+mark.syl-mark-active { background: var(--accent); color: #fff; }
+.syl-inline-search-row { display: flex; gap: 8px; align-items: center; }
+
+/* ===== DUE CALENDAR ===== */
+.due-cal-card { padding: 14px 12px; }
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; }
+.cal-title { font-size: 14px; font-weight: 700; color: var(--text1); letter-spacing: -0.2px; }
+.cal-nav-btn {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--surface2);
+  border: 1px solid var(--border); cursor: pointer; font-size: 14px; color: var(--text2);
+  display: flex; align-items: center; justify-content: center; transition: background 0.15s; font-family: inherit;
+}
+.cal-nav-btn:hover { background: var(--btn-secondary-bg); }
+.cal-today-btn {
+  font-size: 11.5px; font-weight: 700; color: var(--accent-text); background: var(--accent-soft);
+  border: none; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-family: inherit;
+}
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow-row { margin-bottom: 4px; }
+.cal-dow { font-size: 10px; font-weight: 700; color: var(--text2); text-align: center; text-transform: uppercase; letter-spacing: 0.04em; }
+.cal-day {
+  aspect-ratio: 1; border-radius: 9px; border: 1.5px solid transparent;
+  background: var(--surface2); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; cursor: pointer; transition: background 0.15s, border-color 0.15s; min-height: 0;
+}
+.cal-day:hover { background: var(--btn-secondary-bg); }
+.cal-day.other-month { opacity: 0.35; }
+.cal-day.today { border-color: var(--accent); }
+.cal-day.selected { background: var(--accent-soft); border-color: var(--accent); }
+.cal-day-num { font-size: 12px; font-weight: 600; color: var(--text1); line-height: 1; }
+.cal-day-count {
+  font-size: 9.5px; font-weight: 700; color: #fff; background: var(--accent);
+  border-radius: 99px; min-width: 15px; height: 15px; padding: 0 3px;
+  display: flex; align-items: center; justify-content: center; line-height: 1;
+}
+@media (min-width: 601px) {
+  .due-cal-card { max-width: 480px; }
+  .cal-day-num { font-size: 13px; }
+}
+
+/* ===== SETTINGS CONTROLS ===== */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; }
+.toggle-row + .toggle-row { border-top: 1px solid var(--border); }
+.toggle-row-label { font-size: 13.5px; font-weight: 500; color: var(--text1); }
+.toggle-row-sub { font-size: 11.5px; color: var(--text2); margin-top: 2px; line-height: 1.4; }
+.switch { position: relative; display: inline-block; width: 40px; height: 23px; flex-shrink: 0; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.switch-track { position: absolute; inset: 0; background: var(--border); border-radius: 99px; transition: background 0.15s; pointer-events: none; }
+.switch-thumb {
+  position: absolute; width: 19px; height: 19px; border-radius: 50%; background: #fff; top: 2px; left: 2px;
+  transition: transform 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.25); pointer-events: none;
+}
+.switch input:checked ~ .switch-track { background: var(--accent); }
+.switch input:checked ~ .switch-thumb { transform: translateX(17px); }
+.seg-control { display: flex; background: var(--surface2); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg-btn {
+  flex: 1; padding: 8px 6px; border-radius: 8px; border: none; background: none;
+  font-size: 12.5px; font-weight: 600; color: var(--text2); cursor: pointer; font-family: inherit; transition: background 0.15s, color 0.15s;
+}
+.seg-btn.active { background: var(--surface); color: var(--text1); box-shadow: var(--shadow-sm); }
+.settings-select {
+  width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--input-bg); color: var(--text1); font-size: 14px; font-family: inherit; outline: none;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.settings-select:focus { border-color: var(--accent); }
+.num-input-row { display: flex; align-items: center; gap: 10px; }
+.num-input {
+  width: 64px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--input-bg); color: var(--text1); font-size: 14px; font-family: inherit; outline: none; text-align: center;
+}
+.num-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.settings-subsection-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 8px; }
+.settings-subsection-label:first-child { margin-top: 0; }
+
+/* density */
+body.density-compact .card { padding: 8px 11px; margin-bottom: 6px; }
+body.density-compact .content { padding-top: 14px; }
+body.density-compact .section-label { margin-top: 12px; margin-bottom: 6px; }
+body.density-compact .stat-card { padding: 10px 11px; }
+body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
+
+/* ===== SIDEBAR / MOBILE SYNC ===== */
+.sidebar-sync {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 12px; margin: 0 0 16px; cursor: pointer; transition: background 0.15s;
+  font-family: inherit; text-align: left;
+}
+.sidebar-sync:hover { background: var(--btn-secondary-bg); }
+.sidebar-sync:disabled { opacity: 0.7; cursor: default; }
+.sidebar-sync-icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--accent); display: flex; }
+.sidebar-sync-icon svg { width: 100%; height: 100%; }
+.sidebar-sync-icon.spinning svg { animation: spin 0.8s linear infinite; }
+.sidebar-sync-text { min-width: 0; }
+.sidebar-sync-label { font-size: 12.5px; font-weight: 700; color: var(--text1); }
+.sidebar-sync-sub { font-size: 10.5px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.mobile-sync-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.mobile-sync-btn:hover { background: var(--btn-secondary-bg); }
+.mobile-sync-icon { width: 15px; height: 15px; color: var(--accent); display: flex; }
+.mobile-sync-icon svg { width: 100%; height: 100%; }
+.mobile-sync-icon.spinning svg { animation: spin 0.8s linear infinite; }
+@media (min-width: 601px) {
+  .mobile-sync-btn { display: none; }
+}
+
+/* ===== ASK CITATIONS ===== */
+.ask-answer-text { font-size: 13.5px; color: var(--text1); line-height: 1.6; margin-bottom: 10px; }
+.ask-source-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface); border: 1px solid var(--accent-soft); border-radius: 99px;
+  padding: 7px 13px; font-size: 12px; font-weight: 600; color: var(--accent-text);
+  cursor: pointer; font-family: inherit; transition: background 0.15s, border-color 0.15s;
+}
+.ask-source-chip:hover { background: var(--accent-soft); }
+.ask-source-icon { font-size: 12px; }
+.ask-source-arrow { opacity: 0.7; }
+.ask-more-label { font-size: 10.5px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 8px; }
+.ask-source-chip-secondary {
+  display: flex; width: 100%; text-align: left; flex-direction: column; align-items: flex-start; gap: 3px;
+  border-radius: 10px; margin-bottom: 6px; border: 1px solid var(--border); background: var(--surface);
+  padding: 8px 12px; cursor: pointer; font-family: inherit; transition: border-color 0.15s, background 0.15s;
+}
+.ask-source-chip-secondary:hover { border-color: var(--accent-soft); background: var(--surface2); }
+.ask-source-chip-course { font-size: 11.5px; font-weight: 700; color: var(--text1); }
+.ask-source-snippet { font-size: 11.5px; color: var(--text2); font-weight: 400; line-height: 1.4; }
+
+/* ===== SCHOOL AI ===== */
+.school-ai-banner {
+  background: var(--ai-bg); border: 1px solid var(--ai-border); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.school-ai-banner-text { flex: 1; min-width: 160px; }
+.school-ai-banner-title { font-size: 12.5px; font-weight: 700; color: var(--ai-label); }
+.school-ai-banner-sub { font-size: 11.5px; color: var(--ai-text); margin-top: 2px; line-height: 1.4; }
+.school-ai-enable-btn {
+  flex-shrink: 0; background: var(--accent); color: #fff; border: none; border-radius: 10px;
+  padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: opacity 0.15s;
+}
+.school-ai-enable-btn:hover { opacity: 0.9; }
+.school-ai-enable-btn:disabled { opacity: 0.6; cursor: default; }
+.school-ai-progress-wrap { margin-top: 8px; width: 100%; }
+.school-ai-progress-bar { height: 6px; border-radius: 99px; background: var(--border); overflow: hidden; }
+.school-ai-progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s ease; width: 0%; }
+.school-ai-progress-label { font-size: 10.5px; color: var(--ai-text); margin-top: 5px; }
+.school-ai-badge {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700;
+  color: var(--ai-label); background: var(--ai-bg); border: 1px solid var(--ai-border);
+  border-radius: 99px; padding: 3px 9px; margin-bottom: 8px;
+}
+.school-ai-disclaimer { font-size: 10.5px; color: var(--text2); line-height: 1.4; margin: 4px 0 10px; }
 </style>
 </head>
 <body>
+<div class="auth-bg-glow" id="auth-bg-glow"></div>
 <div class="app">
 
   <!-- LOGIN -->
@@ -903,6 +1175,17 @@ body {
     </div>
   </div>
 
+  <!-- SYLLABUS DETAIL -->
+  <div id="syllabus-detail-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title" id="syl-detail-title"></div>
+        <button class="detail-close" onclick="closeSyllabusDetail()" title="Close">✕</button>
+      </div>
+      <div id="syl-detail-body"></div>
+    </div>
+  </div>
+
   <!-- MAIN APP -->
   <div id="welcome-toast" onclick="dismissWelcome()" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:13px 18px;box-shadow:0 4px 20px rgba(0,0,0,0.12);max-width:340px;width:calc(100% - 32px);cursor:pointer;transition:opacity 0.4s;">
     <div style="font-size:14px;font-weight:600;color:var(--text1);margin-bottom:2px;" id="welcome-toast-title"></div>
@@ -910,6 +1193,63 @@ body {
   </div>
 
   <div id="main-app" class="main-app">
+    <div class="tabs">
+      <div class="sidebar-logo logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M5 7C5 5.34 6.34 4 8 4h3.5C13.43 4 15 5.57 15 7.5S13.43 11 11.5 11H8C6.34 11 5 12.34 5 14s1.34 3 3 3h5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="logo-word">Study<em>Flow</em></span>
+      </div>
+      <button class="sidebar-sync" id="sidebar-sync-btn" onclick="syncCanvas()" title="Sync assignments now">
+        <span class="sidebar-sync-icon">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 10a6 6 0 0 1 10.24-4.24L16 7.5"/>
+            <path d="M16 4v3.5h-3.5"/>
+            <path d="M16 10a6 6 0 0 1-10.24 4.24L4 12.5"/>
+            <path d="M4 16v-3.5h3.5"/>
+          </svg>
+        </span>
+        <span class="sidebar-sync-text">
+          <div class="sidebar-sync-label">Sync now</div>
+          <div class="sidebar-sync-sub" id="sidebar-sync-sub">Not synced yet</div>
+        </span>
+      </button>
+      <button class="tab active" id="tab-home" onclick="showPage('home',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 3l7 6.5"/><path d="M5 8.5V17h10V8.5"/></svg></span>
+        <span>Home</span>
+      </button>
+      <button class="tab" id="tab-due" onclick="showPage('due',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><polyline points="10 5.5 10 10 12.5 12.5"/></svg></span>
+        <span>Due Soon</span>
+      </button>
+      <button class="tab" id="tab-allwork" onclick="showPage('allwork',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14" x2="11" y2="14"/></svg></span>
+        <span>All Work</span>
+      </button>
+      <button class="tab" id="tab-priority" onclick="showPage('priority',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="10 2.5 12 7.5 17.5 7.5 13 11 14.5 17 10 13.5 5.5 17 7 11 2.5 7.5 8 7.5"/></svg></span>
+        <span>Priority</span>
+      </button>
+      <button class="tab" id="tab-grades" onclick="showPage('grades',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="11" width="3" height="6" rx="1"/><rect x="8.5" y="7" width="3" height="10" rx="1"/><rect x="14" y="3" width="3" height="14" rx="1"/></svg></span>
+        <span>Grades</span>
+      </button>
+      <button class="tab" id="tab-syllabus" onclick="showPage('syllabus',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h7l3 3v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M12 4v3h3"/><line x1="6.5" y1="10.5" x2="13.5" y2="10.5"/><line x1="6.5" y1="13.5" x2="13.5" y2="13.5"/></svg></span>
+        <span>Syllabus</span>
+      </button>
+      <button class="tab" id="tab-goals" onclick="showPage('goals',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="2.5" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="17.5"/></svg></span>
+        <span>Goals</span>
+      </button>
+      <button class="tab" id="tab-settings" onclick="showPage('settings',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v1.5m0 13V18m8-8h-1.5M3.5 10H2m11.66-5.66-1.06 1.06M7.4 12.6l-1.06 1.06M17.66 15.66l-1.06-1.06M3.4 7.4 2.34 6.34M13.66 13.66l1.06 1.06M5.46 5.46 4.4 4.4"/></svg></span>
+        <span>Settings</span>
+      </button>
+    </div>
+    <div class="main-col">
     <div class="topbar">
       <div class="topbar-logo logo">
         <div class="logo-mark">
@@ -923,22 +1263,67 @@ body {
         </div>
       </div>
       <div class="topbar-right">
+        <button class="mobile-sync-btn" onclick="syncCanvas()" title="Sync assignments now">
+          <span class="mobile-sync-icon">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 10a6 6 0 0 1 10.24-4.24L16 7.5"/>
+              <path d="M16 4v3.5h-3.5"/>
+              <path d="M16 10a6 6 0 0 1-10.24 4.24L4 12.5"/>
+              <path d="M4 16v-3.5h3.5"/>
+            </svg>
+          </span>
+        </button>
         <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
         <button class="signout-btn" onclick="signOut()">Sign out</button>
       </div>
     </div>
-    <div class="tabs">
-      <button class="tab active" onclick="showPage('due',this)">Due Soon</button>
-      <button class="tab" onclick="showPage('allwork',this)">All Work</button>
-      <button class="tab" onclick="showPage('priority',this)">Priority</button>
-      <button class="tab" onclick="showPage('grades',this)">Grades</button>
-      <button class="tab" onclick="showPage('goals',this)">Goals</button>
-      <button class="tab" onclick="showPage('settings',this)">Settings</button>
-    </div>
     <div class="content">
 
+      <!-- HOME -->
+      <div class="page active" id="page-home">
+        <div id="home-greeting">
+          <div class="home-greeting-text" id="home-greeting-text">Welcome</div>
+          <div class="home-greeting-sub" id="home-greeting-sub"></div>
+        </div>
+        <div class="stats-row" style="margin-top:18px;">
+          <div class="stat-card"><div class="stat-label">Due this week</div><div class="stat-val" id="home-stat-week">0</div></div>
+          <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" id="home-stat-overdue" style="color:var(--red);">0</div></div>
+        </div>
+        <div class="home-columns">
+          <div class="home-col-main">
+            <div class="section-label">Up next</div>
+            <div id="home-upnext"></div>
+            <div class="section-label">This week</div>
+            <div id="home-thisweek"></div>
+          </div>
+          <div class="home-col-side">
+            <div class="section-label">Grades at a glance</div>
+            <div class="card" id="home-grades"><div style="color:var(--text2);font-size:13px;">No grades published yet.</div></div>
+            <div class="section-label">Quick links</div>
+            <div class="home-quicklinks">
+              <button class="home-qlink" onclick="jumpTo('allwork')">
+                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14" x2="11" y2="14"/></svg></div>
+                <span>All Work</span>
+              </button>
+              <button class="home-qlink" id="home-ql-syllabus" onclick="jumpTo('syllabus')">
+                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h7l3 3v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M12 4v3h3"/><line x1="6.5" y1="10.5" x2="13.5" y2="10.5"/><line x1="6.5" y1="13.5" x2="13.5" y2="13.5"/></svg></div>
+                <span>Syllabus</span>
+              </button>
+              <button class="home-qlink" id="home-ql-goals" onclick="jumpTo('goals')">
+                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="2.5" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="17.5"/></svg></div>
+                <span>Goals</span>
+              </button>
+              <button class="home-qlink" onclick="jumpTo('settings')">
+                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v1.5m0 13V18m8-8h-1.5M3.5 10H2m11.66-5.66-1.06 1.06M7.4 12.6l-1.06 1.06M17.66 15.66l-1.06-1.06M3.4 7.4 2.34 6.34M13.66 13.66l1.06 1.06M5.46 5.46 4.4 4.4"/></svg></div>
+                <span>Settings</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- DUE SOON -->
-      <div class="page active" id="page-due">
+      <div class="page" id="page-due">
         <div id="due-loading" class="loading-box">Loading assignments...</div>
         <div id="due-empty" class="empty-box" style="display:none;">
           <div class="empty-icon">📋</div>
@@ -951,8 +1336,26 @@ body {
             <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" id="stat-overdue" style="color:#d85a30;">0</div></div>
           </div>
           <div id="overdue-section" style="display:none;"><div class="section-label">Overdue</div><div id="overdue-list"></div></div>
-          <div id="soon-section" style="display:none;"><div class="section-label">Due soon</div><div id="soon-list"></div></div>
-          <div id="later-section" style="display:none;"><div class="section-label">Later this week</div><div id="later-list"></div></div>
+          <div id="due-cal-section">
+            <div class="section-label">Calendar</div>
+            <div class="card due-cal-card">
+              <div class="cal-header">
+                <button class="cal-nav-btn" onclick="shiftDueCalMonth(-1)" title="Previous month">‹</button>
+                <div class="cal-title" id="due-cal-title"></div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button class="cal-today-btn" onclick="dueCalToday()">Today</button>
+                  <button class="cal-nav-btn" onclick="shiftDueCalMonth(1)" title="Next month">›</button>
+                </div>
+              </div>
+              <div class="cal-grid cal-dow-row">
+                <div class="cal-dow">S</div><div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
+              </div>
+              <div class="cal-grid" id="due-cal-grid"></div>
+            </div>
+            <div class="section-label" id="due-cal-selected-label">Today</div>
+            <div id="due-cal-selected-list"></div>
+          </div>
+          <div id="nodate-section" style="display:none;"><div class="section-label">No due date</div><div id="nodate-list"></div></div>
         </div>
       </div>
 
@@ -1044,9 +1447,165 @@ body {
         </div>
       </div>
 
+      <!-- SYLLABUS -->
+      <div class="page" id="page-syllabus">
+        <div class="ai-box" style="margin-bottom:16px;">
+          <div class="ai-label"><span class="ai-dot"></span>Ask about your syllabi</div>
+          <div id="list-ai-banner-host" style="margin-top:10px;"></div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <input class="auth-input" id="syllabus-ask-input" placeholder='e.g. "what is the grading policy?"' style="margin-bottom:0;flex:1;background:var(--surface);" onkeydown="if(event.key==='Enter'){askSyllabi();}" />
+            <button class="goal-add-btn" style="flex-shrink:0;" onclick="askSyllabi()">Ask</button>
+          </div>
+          <div id="syllabus-ask-result" style="display:none;margin-top:14px;"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <input class="settings-input" id="syllabus-search" oninput="searchSyllabi()" placeholder="Or search literally — office hours, grading, late policy…" style="margin-bottom:0;flex:1;" />
+          <button class="change-courses-btn" style="width:auto;margin-bottom:0;white-space:nowrap;" onclick="downloadAllSyllabi()" title="Download all syllabi as one text file">Download all</button>
+        </div>
+        <div id="syllabus-loading" class="loading-box">Loading syllabi...</div>
+        <div id="syllabus-empty" class="empty-box" style="display:none;">
+          <div class="empty-icon">📄</div>
+          <div class="empty-title">No classes selected yet</div>
+          <div class="empty-sub">Pick your classes in Settings first — StudyFlow will try to pull each syllabus from Canvas automatically.</div>
+        </div>
+        <div id="syllabus-search-results" style="display:none;"></div>
+        <div id="syllabus-list" style="display:none;"></div>
+      </div>
+
       <!-- SETTINGS -->
       <div class="page" id="page-settings">
-        <div class="section-label">Canvas connection</div>
+        <div class="section-label">Appearance</div>
+        <div class="card">
+          <div class="tweak-row">
+            <div class="tweak-label">Theme</div>
+            <div class="seg-control" id="theme-seg">
+              <button class="seg-btn" data-mode="light" onclick="setThemeMode('light')">Light</button>
+              <button class="seg-btn" data-mode="dark" onclick="setThemeMode('dark')">Dark</button>
+              <button class="seg-btn" data-mode="system" onclick="setThemeMode('system')">System</button>
+            </div>
+          </div>
+          <div class="tweak-row">
+            <div class="tweak-label">Accent color</div>
+            <div class="tweak-swatches" id="tweak-swatches-accent">
+              <div class="swatch active" data-h="275" style="background:oklch(0.56 0.2 275);" onclick="setAccent(275,this)" title="Violet"></div>
+              <div class="swatch" data-h="220" style="background:oklch(0.56 0.2 220);" onclick="setAccent(220,this)" title="Blue"></div>
+              <div class="swatch" data-h="170" style="background:oklch(0.52 0.18 170);" onclick="setAccent(170,this)" title="Teal"></div>
+              <div class="swatch" data-h="145" style="background:oklch(0.52 0.16 145);" onclick="setAccent(145,this)" title="Green"></div>
+              <div class="swatch" data-h="30"  style="background:oklch(0.58 0.2 30);"  onclick="setAccent(30,this)"  title="Orange"></div>
+              <div class="swatch" data-h="330" style="background:oklch(0.55 0.2 330);" onclick="setAccent(330,this)" title="Pink"></div>
+            </div>
+          </div>
+          <div class="tweak-row">
+            <div class="tweak-label">Background color</div>
+            <div class="tweak-swatches" id="tweak-swatches-bg">
+              <div class="swatch active" data-h="match" style="background:conic-gradient(from 0deg,#a78bfa,#60a5fa,#34d399,#fbbf24,#f472b6,#a78bfa);" onclick="setBgHue('match',this)" title="Match accent"></div>
+              <div class="swatch" data-h="275" style="background:oklch(0.9 0.03 275);" onclick="setBgHue(275,this)" title="Violet"></div>
+              <div class="swatch" data-h="220" style="background:oklch(0.9 0.03 220);" onclick="setBgHue(220,this)" title="Blue"></div>
+              <div class="swatch" data-h="170" style="background:oklch(0.88 0.035 170);" onclick="setBgHue(170,this)" title="Teal"></div>
+              <div class="swatch" data-h="145" style="background:oklch(0.88 0.03 145);" onclick="setBgHue(145,this)" title="Green"></div>
+              <div class="swatch" data-h="30"  style="background:oklch(0.9 0.03 30);"  onclick="setBgHue(30,this)"  title="Warm"></div>
+              <div class="swatch" data-h="330" style="background:oklch(0.9 0.03 330);" onclick="setBgHue(330,this)" title="Pink"></div>
+              <div class="swatch" data-h="0"   style="background:oklch(0.92 0 0);" onclick="setBgHue(0,this)" title="Neutral gray"></div>
+            </div>
+          </div>
+          <div class="tweak-row">
+            <div class="tweak-label">Card corners</div>
+            <div class="tweak-swatches" id="tweak-swatches-radius">
+              <div class="swatch" data-r="8" style="background:var(--surface);border:1.5px solid var(--border);border-radius:4px;width:32px;height:32px;" onclick="setRadius(8,this)" title="Sharp"></div>
+              <div class="swatch active" data-r="14" style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;width:32px;height:32px;" onclick="setRadius(14,this)" title="Rounded"></div>
+              <div class="swatch" data-r="20" style="background:var(--surface);border:1.5px solid var(--border);border-radius:18px;width:32px;height:32px;" onclick="setRadius(20,this)" title="Pill"></div>
+            </div>
+          </div>
+          <div class="tweak-row">
+            <div class="tweak-label">Text size</div>
+            <input type="range" class="tweak-slider" min="0.85" max="1.15" step="0.05" value="1" id="tweak-font-size" oninput="setFontScale(this.value)">
+          </div>
+          <div class="tweak-row" style="margin-bottom:0;">
+            <div class="tweak-label">Density</div>
+            <div class="seg-control" id="tweak-density">
+              <button class="seg-btn active" data-density="comfortable" onclick="setDensity('comfortable',this)">Comfortable</button>
+              <button class="seg-btn" data-density="compact" onclick="setDensity('compact',this)">Compact</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">Layout</div>
+        <div class="card">
+          <div class="tweak-row">
+            <div class="tweak-label">Default landing tab</div>
+            <select class="settings-select" id="pref-default-tab" onchange="onPrefInput('defaultLandingTab', this.value)">
+              <option value="home">Home</option>
+              <option value="due">Due Soon</option>
+              <option value="allwork">All Work</option>
+              <option value="priority">Priority</option>
+              <option value="grades">Grades</option>
+              <option value="syllabus">Syllabus</option>
+              <option value="goals">Goals</option>
+            </select>
+          </div>
+          <div class="tweak-label" style="margin-bottom:2px;">Tabs shown in sidebar</div>
+          <div class="toggle-row">
+            <div class="toggle-row-label">Priority</div>
+            <label class="switch"><input type="checkbox" id="pref-show-priority" checked onchange="onPrefToggle('showPriorityTab', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-label">Syllabus</div>
+            <label class="switch"><input type="checkbox" id="pref-show-syllabus" checked onchange="onPrefToggle('showSyllabusTab', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-label">Goals</div>
+            <label class="switch"><input type="checkbox" id="pref-show-goals" checked onchange="onPrefToggle('showGoalsTab', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">Notifications</div>
+        <div class="card">
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Auto-sync Canvas</div><div class="toggle-row-sub">Sync automatically once every 24 hours</div></div>
+            <label class="switch"><input type="checkbox" id="pref-autosync" checked onchange="onPrefToggle('autoSyncEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Welcome back message</div><div class="toggle-row-sub">Show the greeting popup once a day</div></div>
+            <label class="switch"><input type="checkbox" id="pref-welcome" checked onchange="onPrefToggle('welcomeToastEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Ask box on Syllabus tab</div><div class="toggle-row-sub">Show the "Ask about your syllabi" search</div></div>
+            <label class="switch"><input type="checkbox" id="pref-ask-box" checked onchange="onPrefToggle('showAskBox', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div><div class="toggle-row-label">Email reminders</div><div class="toggle-row-sub">A heads-up email before things are due</div></div>
+              <label class="switch"><input type="checkbox" id="pref-email-reminders" onchange="onPrefToggle('emailRemindersEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+            </div>
+            <div class="num-input-row" id="reminder-days-row" style="display:none;">
+              <span class="card-sub">Remind me</span>
+              <input type="number" class="num-input" id="pref-reminder-days" min="0" max="7" value="1" onchange="onPrefInput('reminderDaysBefore', parseInt(this.value)||1)">
+              <span class="card-sub">day(s) before it's due</span>
+            </div>
+            <div class="card-sub" style="line-height:1.5;">Needs email delivery configured on the backend before it actually sends — this saves your preference now, ask to finish wiring it up when ready.</div>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">Academic</div>
+        <div class="card">
+          <div class="tweak-row">
+            <div class="tweak-label">Default final exam weight</div>
+            <div class="num-input-row">
+              <input type="number" class="num-input" id="pref-final-weight" min="1" max="100" value="30" onchange="onPrefInput('defaultFinalWeight', parseInt(this.value)||30)">
+              <span class="card-sub">% — prefills the Goals calculator</span>
+            </div>
+          </div>
+          <div class="tweak-row" style="margin-bottom:0;">
+            <div class="tweak-label">How much goals influence Priority</div>
+            <div class="seg-control" id="tweak-goal-boost">
+              <button class="seg-btn" data-boost="20" onclick="onPrefSeg('priorityGoalBoost',20,this)">Light</button>
+              <button class="seg-btn active" data-boost="50" onclick="onPrefSeg('priorityGoalBoost',50,this)">Normal</button>
+              <button class="seg-btn" data-boost="90" onclick="onPrefSeg('priorityGoalBoost',90,this)">Strong</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">Canvas connection</div>
         <div id="canvas-connected" style="display:none;">
           <div class="card">
             <div class="connected-badge"><span class="connected-dot"></span>Canvas connected</div>
@@ -1150,6 +1709,12 @@ body {
             </div>
           </div>
         </div>
+        <div class="section-label" style="margin-top:20px;">Data</div>
+        <div class="card">
+          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAllData()">Export all my data</button>
+          <button class="change-courses-btn" style="margin-bottom:0;" onclick="clearDoneMarks()">Clear "done" checkmarks</button>
+        </div>
+
         <div class="section-label" style="margin-top:20px;">Account</div>
         <div class="card">
           <div class="card-sub" id="account-email" style="margin-bottom:12px;"></div>
@@ -1161,21 +1726,21 @@ body {
 
     <!-- BOTTOM NAV (mobile only) -->
     <nav class="bottom-nav" id="bottom-nav">
-      <button class="nav-item active" id="nav-due" onclick="showPage('due',this,true)">
+      <button class="nav-item active" id="nav-home" onclick="showPage('home',this,true)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9.5 10 3l7 6.5"/><path d="M5 8.5V17h10V8.5"/>
+          </svg>
+        </div>
+        <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-item" id="nav-due" onclick="showPage('due',this,true)">
         <div class="nav-icon">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="10" cy="10" r="7.5"/><polyline points="10 5.5 10 10 12.5 12.5"/>
           </svg>
         </div>
         <span class="nav-label">Due</span>
-      </button>
-      <button class="nav-item" id="nav-allwork" onclick="showPage('allwork',this,true)">
-        <div class="nav-icon">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-            <line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14" x2="11" y2="14"/>
-          </svg>
-        </div>
-        <span class="nav-label">All Work</span>
       </button>
       <button class="nav-item" id="nav-priority" onclick="showPage('priority',this,true)">
         <div class="nav-icon">
@@ -1214,35 +1779,10 @@ body {
         <span class="nav-label">Settings</span>
       </button>
     </nav>
+    </div><!-- /main-col -->
   </div><!-- /main-app -->
 
 <!-- TWEAKS PANEL -->
-<div class="tweaks-panel" id="tweaks-panel">
-  <div class="tweaks-title">Tweaks</div>
-  <div class="tweak-row">
-    <div class="tweak-label">Accent color</div>
-    <div class="tweak-swatches" id="tweak-swatches">
-      <div class="swatch active" data-h="275" style="background:oklch(0.56 0.2 275);" onclick="setAccent(275,this)" title="Violet"></div>
-      <div class="swatch" data-h="220" style="background:oklch(0.56 0.2 220);" onclick="setAccent(220,this)" title="Blue"></div>
-      <div class="swatch" data-h="170" style="background:oklch(0.52 0.18 170);" onclick="setAccent(170,this)" title="Teal"></div>
-      <div class="swatch" data-h="145" style="background:oklch(0.52 0.16 145);" onclick="setAccent(145,this)" title="Green"></div>
-      <div class="swatch" data-h="30"  style="background:oklch(0.58 0.2 30);"  onclick="setAccent(30,this)"  title="Orange"></div>
-      <div class="swatch" data-h="330" style="background:oklch(0.55 0.2 330);" onclick="setAccent(330,this)" title="Pink"></div>
-    </div>
-  </div>
-  <div class="tweak-row">
-    <div class="tweak-label">Card corners</div>
-    <div class="tweak-swatches">
-      <div class="swatch" style="background:var(--surface);border:1.5px solid var(--border);border-radius:4px;width:32px;height:32px;" onclick="setRadius(8,this)" title="Sharp"></div>
-      <div class="swatch active" style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;width:32px;height:32px;" onclick="setRadius(14,this)" title="Rounded"></div>
-      <div class="swatch" style="background:var(--surface);border:1.5px solid var(--border);border-radius:18px;width:32px;height:32px;" onclick="setRadius(20,this)" title="Pill"></div>
-    </div>
-  </div>
-  <div class="tweak-row" style="margin-bottom:0;">
-    <div class="tweak-label">Text size</div>
-    <input type="range" class="tweak-slider" min="0.85" max="1.15" step="0.05" value="1" id="tweak-font-size" oninput="setFontScale(this.value)">
-  </div>
-</div>
 
 </div><!-- /app -->
 
@@ -1253,13 +1793,20 @@ body {
 const tweakDefaults = JSON.parse(document.getElementById('tweak-defaults').textContent);
 function setAccent(h, el) {
   document.documentElement.style.setProperty('--accent-h', h);
-  document.querySelectorAll('#tweak-swatches .swatch').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#tweak-swatches-accent .swatch').forEach(s => s.classList.remove('active'));
   if (el) el.classList.add('active');
   saveTweak('accent', String(h));
 }
+function setBgHue(h, el) {
+  if (h === 'match') document.documentElement.style.removeProperty('--bg-h');
+  else document.documentElement.style.setProperty('--bg-h', h);
+  document.querySelectorAll('#tweak-swatches-bg .swatch').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  saveTweak('bgHue', String(h));
+}
 function setRadius(r, el) {
   document.documentElement.style.setProperty('--card-radius', r + 'px');
-  document.querySelectorAll('.tweaks-panel .tweak-row:nth-child(3) .swatch').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#tweak-swatches-radius .swatch').forEach(s => s.classList.remove('active'));
   if (el) el.classList.add('active');
   saveTweak('cardRadius', String(r));
 }
@@ -1267,22 +1814,58 @@ function setFontScale(v) {
   document.documentElement.style.setProperty('--font-scale', v);
   saveTweak('fontScale', String(v));
 }
+function setDensity(mode, el) {
+  document.body.classList.toggle('density-compact', mode === 'compact');
+  document.querySelectorAll('#tweak-density .seg-btn').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  saveTweak('density', mode);
+}
 function saveTweak(key, val) {
   localStorage.setItem('sf_tweak_' + key, val);
 }
 function applyTweaks(t) {
-  if (t.accent)     { document.documentElement.style.setProperty('--accent-h', t.accent); document.querySelector(`.swatch[data-h="${t.accent}"]`)?.classList.add('active'); }
-  if (t.cardRadius) { document.documentElement.style.setProperty('--card-radius', t.cardRadius + 'px'); }
+  if (t.accent) { document.documentElement.style.setProperty('--accent-h', t.accent); document.querySelector(`#tweak-swatches-accent .swatch[data-h="${t.accent}"]`)?.classList.add('active'); }
+  if (t.bgHue && t.bgHue !== 'match') document.documentElement.style.setProperty('--bg-h', t.bgHue);
+  document.querySelector(`#tweak-swatches-bg .swatch[data-h="${t.bgHue || 'match'}"]`)?.classList.add('active');
+  if (t.cardRadius) {
+    document.documentElement.style.setProperty('--card-radius', t.cardRadius + 'px');
+    document.querySelector(`#tweak-swatches-radius .swatch[data-r="${t.cardRadius}"]`)?.classList.add('active');
+  }
   if (t.fontScale)  { document.documentElement.style.setProperty('--font-scale', t.fontScale); const el = document.getElementById('tweak-font-size'); if (el) el.value = t.fontScale; }
+  if (t.density === 'compact') {
+    document.body.classList.add('density-compact');
+    document.querySelector(`#tweak-density .seg-btn[data-density="compact"]`)?.classList.add('active');
+  }
 }
 (function() {
   const saved = {
     accent: localStorage.getItem('sf_tweak_accent') || tweakDefaults.accent,
+    bgHue: localStorage.getItem('sf_tweak_bgHue') || 'match',
     cardRadius: localStorage.getItem('sf_tweak_cardRadius') || tweakDefaults.cardRadius,
     fontScale: localStorage.getItem('sf_tweak_fontScale') || tweakDefaults.fontScale,
+    density: localStorage.getItem('sf_tweak_density') || 'comfortable',
   };
   applyTweaks(saved);
 })();
+
+/* ===========================
+   THEME MODE
+=========================== */
+function applyThemeMode() {
+  const mode = localStorage.getItem('sf_theme_mode') || 'system';
+  const dark = mode === 'system' ? window.matchMedia('(prefers-color-scheme: dark)').matches : mode === 'dark';
+  applyTheme(dark);
+  document.querySelectorAll('#theme-seg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+}
+function setThemeMode(mode) {
+  localStorage.setItem('sf_theme_mode', mode);
+  applyThemeMode();
+}
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if ((localStorage.getItem('sf_theme_mode') || 'system') === 'system') applyThemeMode();
+  });
+}
 
 /* ===========================
    MAIN APP
@@ -1296,6 +1879,118 @@ let USER_ID = localStorage.getItem('sf_user_id') || '';
 let USER_EMAIL = localStorage.getItem('sf_user_email') || '';
 let USER_NAME = localStorage.getItem('sf_user_name') || '';
 let userGoals = JSON.parse(localStorage.getItem('sf_goals') || '[]');
+
+/* ===========================
+   USER PREFS (Settings)
+=========================== */
+const DEFAULT_PREFS = {
+  showPriorityTab: true,
+  showSyllabusTab: true,
+  showGoalsTab: true,
+  showAskBox: true,
+  autoSyncEnabled: true,
+  welcomeToastEnabled: true,
+  defaultLandingTab: 'home',
+  emailRemindersEnabled: false,
+  reminderDaysBefore: 1,
+  defaultFinalWeight: 30,
+  priorityGoalBoost: 50,
+};
+let userPrefs = { ...DEFAULT_PREFS };
+
+async function loadUserPrefs() {
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=prefs`);
+  const raw = (ok && data && data[0] && data[0].prefs) || {};
+  userPrefs = { ...DEFAULT_PREFS, ...raw };
+  applyUserPrefsToUI();
+}
+
+async function saveUserPrefs() {
+  await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { prefs: userPrefs });
+}
+
+function onPrefToggle(key, value) {
+  userPrefs[key] = value;
+  saveUserPrefs();
+  applyUserPrefsToUI();
+}
+function onPrefInput(key, value) {
+  userPrefs[key] = value;
+  saveUserPrefs();
+}
+function onPrefSeg(key, value, el) {
+  userPrefs[key] = value;
+  saveUserPrefs();
+  if (el && el.parentElement) {
+    el.parentElement.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+}
+
+function applyUserPrefsToUI() {
+  const tabVisibility = { priority: 'showPriorityTab', syllabus: 'showSyllabusTab', goals: 'showGoalsTab' };
+  Object.entries(tabVisibility).forEach(([name, prefKey]) => {
+    const show = userPrefs[prefKey] !== false;
+    const tabEl = document.getElementById('tab-' + name);
+    const navEl = document.getElementById('nav-' + name);
+    const qlEl = document.getElementById('home-ql-' + name);
+    if (tabEl) tabEl.style.display = show ? '' : 'none';
+    if (navEl) navEl.style.display = show ? '' : 'none';
+    if (qlEl) qlEl.style.display = show ? '' : 'none';
+  });
+
+  const askBox = document.querySelector('#page-syllabus .ai-box');
+  if (askBox) askBox.style.display = userPrefs.showAskBox === false ? 'none' : '';
+
+  const setSwitch = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+  setSwitch('pref-show-priority', userPrefs.showPriorityTab !== false);
+  setSwitch('pref-show-syllabus', userPrefs.showSyllabusTab !== false);
+  setSwitch('pref-show-goals', userPrefs.showGoalsTab !== false);
+  setSwitch('pref-autosync', userPrefs.autoSyncEnabled !== false);
+  setSwitch('pref-welcome', userPrefs.welcomeToastEnabled !== false);
+  setSwitch('pref-ask-box', userPrefs.showAskBox !== false);
+  setSwitch('pref-email-reminders', !!userPrefs.emailRemindersEnabled);
+
+  const daysRow = document.getElementById('reminder-days-row');
+  if (daysRow) daysRow.style.display = userPrefs.emailRemindersEnabled ? 'flex' : 'none';
+  const daysInput = document.getElementById('pref-reminder-days');
+  if (daysInput) daysInput.value = userPrefs.reminderDaysBefore ?? 1;
+
+  const defaultTabSel = document.getElementById('pref-default-tab');
+  if (defaultTabSel) defaultTabSel.value = userPrefs.defaultLandingTab || 'home';
+
+  const finalWeightInput = document.getElementById('pref-final-weight');
+  if (finalWeightInput) finalWeightInput.value = userPrefs.defaultFinalWeight ?? 30;
+
+  const boostVal = userPrefs.priorityGoalBoost ?? 50;
+  document.querySelectorAll('#tweak-goal-boost .seg-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.boost, 10) === boostVal);
+  });
+
+  const weightInput = document.getElementById('calc-weight');
+  if (weightInput && !weightInput.value) weightInput.value = userPrefs.defaultFinalWeight ?? 30;
+}
+
+function exportAllData() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    assignments: cachedAssignments,
+    grades: cachedGrades,
+    goals: userGoals,
+    syllabi: cachedSyllabi,
+  };
+  downloadTextFile('StudyFlow Data Export.json', JSON.stringify(payload, null, 2));
+}
+
+function clearDoneMarks() {
+  doneSet = new Set();
+  localStorage.setItem('sf_done_' + USER_ID, '[]');
+  if (cachedAssignments.length) {
+    renderDueSoon(cachedAssignments);
+    renderAllWork(cachedAssignments);
+    renderPriority(cachedAssignments);
+  }
+}
 let selectedCoursesTemp = [];
 let onboardGoals = [];
 
@@ -1407,18 +2102,22 @@ function hideAll() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
+  const glow = document.getElementById('auth-bg-glow');
+  if (glow) glow.style.display = 'none';
 }
+function showAuthGlow() { const glow = document.getElementById('auth-bg-glow'); if (glow) glow.style.display = 'block'; }
 
-function showLoginScreen() { hideAll(); document.getElementById('login-screen').style.display = 'block'; }
-function showSignup() { hideAll(); document.getElementById('signup-screen').style.display = 'block'; }
-function showLogin() { hideAll(); document.getElementById('login-screen').style.display = 'block'; }
-function showOnboardCanvas() { hideAll(); document.getElementById('onboard-canvas').style.display = 'block'; }
+function showLoginScreen() { hideAll(); document.getElementById('login-screen').style.display = 'block'; showAuthGlow(); }
+function showSignup() { hideAll(); document.getElementById('signup-screen').style.display = 'block'; showAuthGlow(); }
+function showLogin() { hideAll(); document.getElementById('login-screen').style.display = 'block'; showAuthGlow(); }
+function showOnboardCanvas() { hideAll(); document.getElementById('onboard-canvas').style.display = 'block'; showAuthGlow(); }
 function showOnboardCourses() {
   hideAll();
   document.getElementById('onboard-courses').style.display = 'block';
+  showAuthGlow();
   if (!courseSelectionFromSettings) document.getElementById('ob-courses-btn').textContent = 'Continue';
 }
-function showOnboardGoals() { hideAll(); document.getElementById('onboard-goals').style.display = 'block'; renderGoalsOnboard(); }
+function showOnboardGoals() { hideAll(); document.getElementById('onboard-goals').style.display = 'block'; showAuthGlow(); renderGoalsOnboard(); }
 
 async function routeUser() {
   if (!ACCESS_TOKEN || !USER_ID) { showLoginScreen(); return; }
@@ -1460,16 +2159,24 @@ function dismissWelcome() {
 
 async function showApp() {
   hideAll();
-  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('main-app').style.display = 'flex';
   document.getElementById('account-email').textContent = USER_EMAIL;
   doneSet = new Set(JSON.parse(localStorage.getItem('sf_done_' + USER_ID) || '[]'));
+  await loadUserPrefs();
+  const landing = userPrefs.defaultLandingTab || 'home';
+  const landingTabEl = document.getElementById('tab-' + landing);
+  if (landing !== 'home' && landingTabEl && landingTabEl.style.display !== 'none') {
+    showPage(landing, landingTabEl);
+  }
   loadCanvasSettings();
   loadCalendarToken();
   loadAssignments();
   loadGrades();
+  loadSyllabi();
   renderGoalsTab();
   renderSelectedCoursesTab();
   updateLastSyncedLabel();
+  renderHome();
   await autoSync();
   maybeShowWelcome();
 }
@@ -1673,7 +2380,7 @@ async function saveSelectedCourses() {
     courseSelectionFromSettings = false;
     btn.disabled = false; btn.textContent = 'Save classes';
     showApp();
-    showPage('settings', document.getElementById('nav-settings'));
+    showPage('settings', document.getElementById('tab-settings') || document.getElementById('nav-settings'));
     syncCanvas();
   } else {
     btn.disabled = false; btn.textContent = 'Continue';
@@ -1969,8 +2676,12 @@ async function syncCanvas() {
   const btn = document.getElementById('sync-btn');
   const statusEl = document.getElementById('sync-status');
   const wsBtn = document.getElementById('ws-sync-btn');
+  const sidebarSyncIcons = document.querySelectorAll('.sidebar-sync-icon, .mobile-sync-icon');
+  const sidebarSyncBtn = document.getElementById('sidebar-sync-btn');
   if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); }
   if (wsBtn) { wsBtn.disabled = true; }
+  if (sidebarSyncBtn) sidebarSyncBtn.disabled = true;
+  sidebarSyncIcons.forEach(el => el.classList.add('spinning'));
   if (statusEl) { statusEl.className = 'sync-status'; statusEl.textContent = ''; }
   try {
     // Ensure we have a fresh token before calling the edge function
@@ -1988,6 +2699,8 @@ async function syncCanvas() {
     syncInProgress = false;
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (wsBtn) { wsBtn.disabled = false; }
+    if (sidebarSyncBtn) sidebarSyncBtn.disabled = false;
+    sidebarSyncIcons.forEach(el => el.classList.remove('spinning'));
     if (statusEl) {
       const blocked = result.blocked_courses || 0;
       const notFound = Array.isArray(result.not_found_courses) ? result.not_found_courses : [];
@@ -2017,6 +2730,8 @@ async function syncCanvas() {
     syncInProgress = false;
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
     if (wsBtn) { wsBtn.disabled = false; }
+    if (sidebarSyncBtn) sidebarSyncBtn.disabled = false;
+    sidebarSyncIcons.forEach(el => el.classList.remove('spinning'));
     if (statusEl) { statusEl.className = 'sync-status error'; statusEl.textContent = `Sync failed: ${err.message}`; }
   }
 }
@@ -2044,6 +2759,8 @@ async function loadAssignments() {
     document.getElementById('due-empty').style.display     = 'block';
     document.getElementById('allwork-empty').style.display = 'block';
     document.getElementById('priority-empty').style.display = 'block';
+    cachedAssignments = [];
+    renderHome();
     return;
   }
   console.log('[loadAssignments] rendering', assignments.length, 'assignments');
@@ -2052,6 +2769,7 @@ async function loadAssignments() {
   renderAllWork(assignments);
   renderPriority(assignments);
   renderGoalsTab();
+  renderHome();
 }
 
 function cleanCourseName(name) {
@@ -2085,6 +2803,7 @@ async function loadGrades() {
 
   cachedGrades = grades;
   renderGoalsTab(); // refresh action plans with grade data
+  renderHome();
 
   // Only show courses that actually have a grade published
   const withGrades = grades.filter(g =>
@@ -2182,35 +2901,1190 @@ function toggleDone(encodedKey, btn) {
   localStorage.setItem('sf_done_' + USER_ID, JSON.stringify([...doneSet]));
 }
 
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+/* ===========================
+   coco.1 — StudyFlow's on-device AI
+   ---------------------------------
+   Design notes (why it's built this way):
+   Small on-device models fail in two predictable ways — they get lost in long
+   documents, and they invent specifics when unsure. So coco.1 doesn't just hand
+   the model a syllabus and hope. It:
+     1. RETRIEVES only the handful of lines relevant to the question
+        (with synonym expansion, so "miss class" finds "attendance/absences")
+     2. GENERATES an answer constrained to just those lines
+     3. VERIFIES the answer is grounded — every number must appear in the source
+     4. FALLS BACK to quoting the source line verbatim when confidence is low
+   The fallback matters most: quoting is ~always correct, so a low-confidence
+   answer degrades into "here's the relevant rule" instead of a confident lie.
+=========================== */
+const COCO_MODEL = 'Llama-3.2-3B-Instruct-q4f16_1-MLC';
+const COCO_NAME = 'coco.1';
+let schoolAIEngine = null;
+let schoolAILoading = false;
+let schoolAISupported = typeof navigator !== 'undefined' && !!navigator.gpu;
+
+function schoolAIReady() { return !!schoolAIEngine; }
+
+async function enableSchoolAI(onProgress) {
+  if (schoolAIEngine) return schoolAIEngine;
+  if (!schoolAISupported) throw new Error('This browser/device doesn\'t support the on-device AI (needs WebGPU — try a recent Chrome or Edge).');
+  if (schoolAILoading) throw new Error('Already loading.');
+  schoolAILoading = true;
+  try {
+    const webllm = await import('https://esm.run/@mlc-ai/web-llm');
+    const engine = await webllm.CreateMLCEngine(COCO_MODEL, {
+      initProgressCallback: (report) => { if (onProgress) onProgress(report); },
+    });
+    schoolAIEngine = engine;
+    localStorage.setItem('sf_school_ai_enabled', '1');
+    return engine;
+  } finally {
+    schoolAILoading = false;
+  }
+}
+
+/* ---- 1. RETRIEVAL ---------------------------------------------------- */
+
+// Words students use vs. words syllabi use. Each group is bidirectional: any
+// term in a group matches a line containing any other term in that group.
+// This is what lets "what if I skip class" find "unexcused absences".
+const COCO_TOPICS = [
+  ['attendance','attend','attends','attending','absence','absences','absent','miss','missed','missing','skip','skipped','skipping','present','showing','show','class','classes','lecture','lectures','session','sessions'],
+  ['late','overdue','deadline','deadlines','past','extension','extensions','tardy','delay','delayed','after'],
+  ['grade','grades','grading','graded','point','points','percent','percentage','weight','weighted','weighting','worth','score','scores','scoring','curve','curved','gpa','letter','mark','marks','breakdown','count','counts','counted','counting','portion','toward','towards','drop','dropped','lowest','highest'],
+  ['exam','exams','test','tests','testing','midterm','midterms','final','finals','quiz','quizzes','assessment','assessments'],
+  ['homework','assignment','assignments','hw','problem','problems','set','sets','submit','submitted','submission','submissions','turn','turning','upload','uploaded','due'],
+  ['essay','essays','paper','papers','writing','written','report','reports'],
+  ['book','books','textbook','textbooks','edition','editions','reading','readings','material','materials','required'],
+  ['office','hours','availability','available','appointment','appointments','meet','meeting'],
+  ['email','emails','contact','contacting','reach','reaching','message','messaging'],
+  ['laptop','laptops','computer','computers','device','devices','phone','phones','electronics','electronic','technology','tablet','tablets'],
+  ['cheat','cheating','plagiarism','plagiarize','plagiarized','dishonesty','dishonest','integrity','copying','copied','collaboration','collaborate'],
+  ['sick','sickness','illness','ill','medical','doctor','emergency','emergencies','excuse','excused','documented','documentation'],
+  ['participation','participate','discussion','discussions','engage','engagement'],
+  ['makeup','make','retake','redo','resubmit','second','another','chance'],
+  ['group','groups','team','teams','partner','partners','collaborative','project','projects'],
+  ['instructor','professor','teacher','prof','faculty','ta','assistant'],
+  ['extra','credit','bonus','additional','optional'],
+  ['disability','disabilities','disabled','accommodation','accommodations','accommodate','accessibility','accessible','ada','impairment','special','needs'],
+  ['lab','labs','laboratory','recitation','recitations','section','sections','studio','workshop','practicum'],
+  ['safety','goggles','equipment','protective','gear','mandatory','required','wear','wearing'],
+  ['quiz','quizzes','online','portal','canvas','website','platform','submit','submission'],
+  ['schedule','calendar','date','dates','day','days','week','weeks','time','times','when','deadline'],
+];
+
+function cocoExpandTerms(keywords) {
+  const expanded = new Set(keywords);
+  keywords.forEach(k => {
+    COCO_TOPICS.forEach(group => {
+      if (group.includes(k)) group.forEach(t => expanded.add(t));
+    });
+  });
+  return [...expanded];
+}
+
+// Splits a syllabus into retrievable units. Lines are the natural unit here
+// (syllabi are line-oriented), but very long lines get sentence-split so we
+// don't hand the model a whole paragraph when one sentence would do.
+function cocoSegments(contextText) {
+  const segments = [];
+  (contextText || '').split('\n').forEach(line => {
+    // Drop list markers so quoted answers read as sentences, not raw list items.
+    const trimmed = line.trim().replace(/^[•·▪◦\-*–—]\s*/, '');
+    if (!trimmed) return;
+    if (trimmed.length <= 220) { segments.push(trimmed); return; }
+    const parts = trimmed.match(/[^.!?]+[.!?]*/g) || [trimmed];
+    let buf = '';
+    parts.forEach(p => {
+      if ((buf + p).length > 220 && buf) { segments.push(buf.trim()); buf = p; }
+      else buf += p;
+    });
+    if (buf.trim()) segments.push(buf.trim());
+  });
+  return segments;
+}
+
+// Scores each segment against the question. Two ideas do the work here:
+//   - Direct keyword hits outweigh synonym-expansion hits (3x), so a line
+//     literally about the topic beats one that merely shares a related word.
+//   - Rare terms outweigh common ones (IDF). Without this, a generic word like
+//     "class" — which appears in half a syllabus — drowns out the actual signal,
+//     e.g. "skip class" wrongly matching "...put away during class."
+function cocoRetrieve(question, contextText, limit = 3) {
+  const direct = extractAskKeywords(question);
+  if (direct.length === 0 || !contextText) return [];
+  const expanded = cocoExpandTerms(direct);
+  const segments = cocoSegments(contextText);
+  if (segments.length === 0) return [];
+  const hit = (text, term) => new RegExp('\\b' + escapeRegex(term) + '\\b', 'i').test(text);
+
+  // How discriminating is each term within THIS document?
+  const idf = {};
+  expanded.forEach(term => {
+    const df = segments.filter(seg => hit(seg, term)).length;
+    idf[term] = Math.log(segments.length / (1 + df)) + 0.35;
+  });
+
+  return segments
+    .map(seg => {
+      // Syllabi front-load their topic ("Attendance is...", "Missed exams: ...",
+      // "Late homework loses..."). A term in that leading position means the line
+      // is ABOUT that topic, versus mentioning it in passing ("...during class").
+      const head = seg.includes(':') ? seg.slice(0, seg.indexOf(':') + 1) : seg.slice(0, 40);
+      let score = 0;
+      expanded.forEach(term => {
+        if (!hit(seg, term)) return;
+        const weight = Math.max(idf[term], 0.05);
+        const positional = hit(head, term) ? 2.5 : 1;
+        score += (direct.includes(term) ? 3 : 1) * weight * positional;
+      });
+      return { seg, score };
+    })
+    .filter(s => s.score > 0.15)
+    .sort((a, b) => b.score - a.score || a.seg.length - b.seg.length)
+    .slice(0, limit);
+}
+
+/* ---- 2 + 3. GENERATE, THEN VERIFY ------------------------------------ */
+
+const COCO_UNKNOWN = "The syllabus doesn't cover that — worth asking your instructor.";
+
+// Every number in an answer must exist in the source we gave the model.
+// This is the single highest-value check: fabricated specifics (a "90% for an A"
+// that was never written down) are the most damaging kind of wrong answer.
+function cocoIsGrounded(answer, sourceText) {
+  const nums = (answer.match(/\d+(?:\.\d+)?/g) || []);
+  if (nums.length === 0) return true;
+  const src = sourceText.replace(/\s+/g, ' ');
+  return nums.every(n => src.includes(n));
+}
+
+// Second opinion: ask the model whether its own answer is actually supported by
+// the excerpt. This catches polarity inversions — the worst failure mode, where
+// a fluent paraphrase says the OPPOSITE of the rule ("you don't need the newest
+// edition" when older editions are banned). Cheap: one ~3-token generation.
+async function cocoVerify(answer, passages) {
+  try {
+    const reply = await schoolAIEngine.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You check statements against source text. Reply with exactly one word: YES if the source supports the statement, or NO if the source contradicts it or does not support it. No explanation.' },
+        { role: 'user', content: `Source:\n"""\n${passages.join('\n')}\n"""\n\nStatement: ${answer}\n\nDoes the source support this statement? Reply YES or NO.` },
+      ],
+      temperature: 0, max_tokens: 5,
+    });
+    const verdict = (reply.choices[0].message.content || '').trim().toUpperCase();
+    return !verdict.startsWith('NO');
+  } catch (e) {
+    return true; // verification is a safety net, not a gate — don't block on its failure
+  }
+}
+
+async function cocoAsk(question, contextText) {
+  if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
+
+  const hits = cocoRetrieve(question, contextText, 3);
+
+  // Nothing relevant retrieved → don't even ask the model. It can only
+  // hallucinate from here, and "I don't know" is the correct answer anyway.
+  if (hits.length === 0) {
+    return { answer: COCO_UNKNOWN, citation: '', confidence: 'none' };
+  }
+
+  const passages = hits.map(h => h.seg);
+  const contextBlock = passages.map((p, i) => `[${i + 1}] ${p}`).join('\n');
+
+  const messages = [
+    {
+      role: 'system',
+      content:
+        'You are coco.1, a careful assistant that answers a student\'s question using ONLY the numbered syllabus excerpts provided. ' +
+        'Rules, in priority order:\n' +
+        '1. Use only what the excerpts literally say. Never add outside knowledge about how classes usually work.\n' +
+        '2. Never state a number, percentage, date, or deadline unless that exact figure appears in the excerpts.\n' +
+        '3. Watch negations carefully ("not acceptable" means NOT allowed). Your conclusion must match the excerpt\'s polarity.\n' +
+        '4. Never reply with a bare "Yes." or "No." — state the actual rule so it cannot be misread.\n' +
+        `5. If NONE of the excerpts address the question's topic at all, reply exactly: "${COCO_UNKNOWN}"\n` +
+        'These excerpts were pre-selected as the most relevant lines in the syllabus, so they usually DO contain the answer. ' +
+        'If any excerpt addresses the topic — even partially, or in different words than the question — answer from it. ' +
+        'Only fall back to the "doesn\'t cover that" reply when the excerpts are genuinely about something else.\n' +
+        'Reply with one or two plain sentences. No preamble, no restating the question, no citation markers, no formatting.',
+    },
+    {
+      role: 'user',
+      content: `Syllabus excerpts:\n${contextBlock}\n\nStudent's question: ${question}`,
+    },
+  ];
+
+  const reply = await schoolAIEngine.chat.completions.create({
+    messages, temperature: 0, max_tokens: 160, stop: ['\n\n'],
+  });
+  let answer = (reply.choices[0].message.content || '').trim()
+    .replace(/^\[\d+\]\s*/, '')
+    .replace(/\s*\[\d+\]/g, '');
+
+  const bestPassage = passages[0];
+
+  // 4. Verification + graceful degradation.
+  if (!answer) {
+    return { answer: bestPassage, citation: bestPassage, confidence: 'quoted' };
+  }
+  if (answer.includes(COCO_UNKNOWN) || /doesn'?t (say|cover|specify|mention)/i.test(answer)) {
+    return { answer: COCO_UNKNOWN, citation: '', confidence: 'none' };
+  }
+  // Bare "Yes."/"No." is forbidden by the prompt, but small models do it anyway.
+  // Enforce it in code rather than trusting instructions: a naked yes/no strips
+  // away the conditions that usually matter ("yes, but only for note-taking").
+  if (/^(yes|no|yep|nope|correct|incorrect)\b[.!]?$/i.test(answer.trim())) {
+    return { answer: bestPassage, citation: bestPassage, confidence: 'quoted' };
+  }
+  if (!cocoIsGrounded(answer, passages.join(' '))) {
+    // Model invented a figure. Don't show it — show the real rule instead.
+    return { answer: bestPassage, citation: bestPassage, confidence: 'quoted' };
+  }
+  if (!(await cocoVerify(answer, passages))) {
+    // The model's own second read says its answer isn't supported. Quote instead.
+    return { answer: bestPassage, citation: bestPassage, confidence: 'quoted' };
+  }
+
+  return { answer, citation: cocoPickCitation(answer, passages), confidence: 'high' };
+}
+
+// Which source line to highlight. Prefer a passage the answer quotes verbatim;
+// otherwise the top-retrieved passage, which is what the model was reading.
+function cocoPickCitation(answer, passages) {
+  const a = answer.trim().toLowerCase();
+  const verbatim = passages.find(p => p.toLowerCase().includes(a) && a.length > 8);
+  if (verbatim) return verbatim;
+  const contains = passages.find(p => a.includes(p.toLowerCase()));
+  if (contains) return contains;
+  return passages[0] || '';
+}
+
+/* ---- Rendering ------------------------------------------------------- */
+
+// Renders an answer according to how much coco.1 actually trusts it. A 'quoted'
+// result is a verbatim line from the syllabus, so it's labelled as a direct
+// quote rather than dressed up as an AI answer — honest about what it is.
+function cocoAnswerHTML(answer, confidence) {
+  if (confidence === 'none') {
+    return `<div class="school-ai-badge">✨ coco.1</div>` +
+           `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
+  }
+  if (confidence === 'quoted') {
+    return `<div class="school-ai-badge">✨ coco.1</div>` +
+           `<div class="school-ai-disclaimer" style="margin-top:0;">Quoting the syllabus directly:</div>` +
+           `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
+  }
+  return `<div class="school-ai-badge">✨ coco.1</div>` +
+         `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
+         `<div class="school-ai-disclaimer">AI-generated — check it against the highlighted source.</div>`;
+}
+
+/* ---- Back-compat shims for existing call sites ----------------------- */
+async function askSchoolAI(question, contextText) {
+  const r = await cocoAsk(question, contextText);
+  return r.answer;
+}
+function findBestPassage(question, contextText) {
+  const hits = cocoRetrieve(question, contextText, 1);
+  return hits.length ? hits[0].seg : '';
+}
+function findCitationText(answer, question, contextText) {
+  if (answer && contextText && contextText.toLowerCase().includes(answer.trim().toLowerCase()) && answer.trim().length > 8) {
+    return answer.trim();
+  }
+  return findBestPassage(question, contextText) || answer || '';
+}
+
+function schoolAIBannerHTML(idPrefix) {
+  if (schoolAIReady()) return '';
+  if (!schoolAISupported) {
+    return `<div class="school-ai-banner"><div class="school-ai-banner-text">
+      <div class="school-ai-banner-title">coco.1 unavailable</div>
+      <div class="school-ai-banner-sub">This browser doesn't support the on-device AI (needs WebGPU — try a recent Chrome or Edge). Keyword search still works below.</div>
+    </div></div>`;
+  }
+  return `
+    <div class="school-ai-banner" id="${idPrefix}-banner">
+      <div class="school-ai-banner-text">
+        <div class="school-ai-banner-title">✨ Turn on coco.1</div>
+        <div class="school-ai-banner-sub">Real understanding, not just keyword matching. Runs on your device — one-time ~1.9GB download, free, no account needed. Still occasionally wrong on tricky questions, so always double-check anything important.</div>
+        <div class="school-ai-progress-wrap" id="${idPrefix}-progress-wrap" style="display:none;">
+          <div class="school-ai-progress-bar"><div class="school-ai-progress-fill" id="${idPrefix}-progress-fill"></div></div>
+          <div class="school-ai-progress-label" id="${idPrefix}-progress-label">Starting…</div>
+        </div>
+      </div>
+      <button class="school-ai-enable-btn" id="${idPrefix}-enable-btn" onclick="handleEnableSchoolAI('${idPrefix}')">Enable</button>
+    </div>
+  `;
+}
+
+async function handleEnableSchoolAI(idPrefix) {
+  const btn = document.getElementById(idPrefix + '-enable-btn');
+  const progressWrap = document.getElementById(idPrefix + '-progress-wrap');
+  const progressFill = document.getElementById(idPrefix + '-progress-fill');
+  const progressLabel = document.getElementById(idPrefix + '-progress-label');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  if (progressWrap) progressWrap.style.display = 'block';
+  try {
+    await enableSchoolAI((report) => {
+      const pct = Math.round((report.progress || 0) * 100);
+      if (progressFill) progressFill.style.width = pct + '%';
+      if (progressLabel) progressLabel.textContent = report.text || `${pct}%`;
+    });
+    refreshAskPanelsAfterAIReady();
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Enable'; }
+    if (progressLabel) progressLabel.textContent = 'Failed: ' + err.message;
+  }
+}
+
+function refreshAskPanelsAfterAIReady() {
+  const resultEl = document.getElementById('syllabus-ask-result');
+  const listInput = document.getElementById('syllabus-ask-input');
+  if (resultEl) {
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = listInput && listInput.value.trim()
+      ? ''
+      : `<div class="school-ai-badge">✨ coco.1 is ready — ask away.</div>`;
+  }
+  if (listInput && listInput.value.trim()) askSyllabi();
+
+  if (syllabusDetailCourseId) {
+    const bannerHost = document.getElementById('syl-ai-banner-host');
+    if (bannerHost) bannerHost.innerHTML = schoolAIBannerHTML('syl-ai');
+    const detailInput = document.getElementById('syl-inline-search');
+    if (detailInput && detailInput.value.trim() && sylSearchMode === 'ask') searchWithinSyllabus();
+  }
+}
+
+function jumpTo(name) {
+  const el = document.getElementById('tab-' + name) || document.getElementById('nav-' + name);
+  showPage(name, el);
+}
+
+/* ===========================
+   HOME
+=========================== */
+function greetingWord() {
+  const h = new Date().getHours();
+  if (h < 5) return 'Still up';
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function renderHome() {
+  const greetEl = document.getElementById('home-greeting-text');
+  if (!greetEl) return;
+  const name = USER_NAME ? `, ${USER_NAME}` : '';
+  greetEl.textContent = `${greetingWord()}${name}`;
+  const now = new Date();
+  document.getElementById('home-greeting-sub').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate() + 7);
+  let overdueCount = 0;
+  const soon = [];
+  cachedAssignments.forEach(a => {
+    if (!a.due_date) return;
+    const due = new Date(a.due_date); due.setHours(0,0,0,0);
+    if (due < today) overdueCount++;
+    else if (due <= weekFromNow) soon.push(a);
+  });
+  const weekEl = document.getElementById('home-stat-week');
+  const overdueEl = document.getElementById('home-stat-overdue');
+  if (weekEl) weekEl.textContent = soon.length;
+  if (overdueEl) overdueEl.textContent = overdueCount;
+
+  const withDate = cachedAssignments.filter(a => a.due_date).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+  const upnextEl = document.getElementById('home-upnext');
+  if (upnextEl) {
+    if (withDate.length === 0) {
+      upnextEl.innerHTML = `<div class="empty-box"><div class="empty-icon">🎉</div><div class="empty-title">Nothing on deck</div><div class="empty-sub">Sync Canvas in Settings to pull in your work.</div></div>`;
+    } else {
+      const top = withDate[0];
+      const due = new Date(top.due_date); due.setHours(0,0,0,0);
+      const isOverdue = due < today;
+      upnextEl.innerHTML = aCard(top, isOverdue, isOverdue);
+    }
+  }
+
+  const thisWeekEl = document.getElementById('home-thisweek');
+  if (thisWeekEl) {
+    if (soon.length === 0) {
+      thisWeekEl.innerHTML = `<div class="card-sub" style="padding:2px 2px 4px;">Nothing else due this week.</div>`;
+    } else {
+      thisWeekEl.innerHTML = soon.slice(0, 3).map(a => aCard(a, false)).join('');
+    }
+  }
+
+  const gradesEl = document.getElementById('home-grades');
+  if (gradesEl) {
+    const withGrades = cachedGrades.filter(g => g.current_score != null || g.final_score != null || g.current_grade || g.final_grade);
+    if (withGrades.length === 0) {
+      gradesEl.innerHTML = `<div style="color:var(--text2);font-size:13px;">No grades published yet.</div>`;
+    } else {
+      gradesEl.innerHTML = withGrades.slice(0, 4).map(g => {
+        const letter = g.current_grade || g.final_grade || '';
+        let letterClass = 'grade-df';
+        if (letter.startsWith('A')) letterClass = 'grade-a';
+        else if (letter.startsWith('B')) letterClass = 'grade-b';
+        else if (letter.startsWith('C')) letterClass = 'grade-c';
+        return `<div class="grade-row"><span class="grade-name">${escapeHtml(cleanCourseName(g.course_name))}</span><span class="grade-letter ${letterClass}" style="background:transparent;">${escapeHtml(letter || '—')}</span></div>`;
+      }).join('');
+    }
+  }
+}
+
+/* ===========================
+   SYLLABUS
+=========================== */
+let cachedSyllabi = [];
+let syllabusCourses = [];
+let syllabusCanvas = { url: '', token: '' };
+let syllabusDetailCourseId = null;
+
+function syllabusFor(courseId) {
+  return cachedSyllabi.find(s => String(s.course_id) === String(courseId));
+}
+
+async function loadSyllabi() {
+  const listEl = document.getElementById('syllabus-list');
+  const loadingEl = document.getElementById('syllabus-loading');
+  const emptyEl = document.getElementById('syllabus-empty');
+  const aiBannerHost = document.getElementById('list-ai-banner-host');
+  if (aiBannerHost) aiBannerHost.innerHTML = schoolAIBannerHTML('list-ai');
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (listEl) listEl.style.display = 'none';
+
+  const { ok: sOk, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token,selected_courses`);
+  syllabusCourses = (sOk && settings && settings[0] && settings[0].selected_courses) || [];
+  syllabusCanvas = {
+    url: (sOk && settings && settings[0] && settings[0].canvas_url) || '',
+    token: (sOk && settings && settings[0] && settings[0].canvas_token) || '',
+  };
+
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/syllabi?user_id=eq.${USER_ID}&select=*`);
+  cachedSyllabi = (ok && Array.isArray(data)) ? data : [];
+
+  if (loadingEl) loadingEl.style.display = 'none';
+  if (syllabusCourses.length === 0) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (listEl) listEl.style.display = '';
+  renderSyllabusList();
+  autoFetchMissingSyllabi();
+}
+
+function renderSyllabusList() {
+  const listEl = document.getElementById('syllabus-list');
+  if (!listEl) return;
+  listEl.innerHTML = syllabusCourses.map(c => {
+    const s = syllabusFor(c.id);
+    const name = escapeHtml(cleanCourseName(c.name));
+    let badge, badgeClass, sub;
+    if (s && s.content) {
+      badge = s.source === 'canvas' ? 'Found on Canvas' : 'Added by you';
+      badgeClass = s.source === 'canvas' ? 'badge-hw' : 'badge-essay';
+      sub = escapeHtml(s.content).slice(0, 110) + (s.content.length > 110 ? '…' : '');
+    } else {
+      badge = 'Not found yet';
+      badgeClass = 'badge-test';
+      sub = 'Tap to add it yourself';
+    }
+    return `<div class="card syllabus-card" onclick="openSyllabus('${c.id}')">
+      <div class="card-row"><div class="card-title">${name}</div><span class="badge ${badgeClass}">${badge}</span></div>
+      <div class="card-sub syllabus-preview">${sub}</div>
+    </div>`;
+  }).join('');
+}
+
+function openSyllabus(courseId) {
+  syllabusDetailCourseId = courseId;
+  syllabusInlineMatches = [];
+  syllabusInlineMatchIdx = -1;
+  sylSearchMode = 'ask';
+  const course = syllabusCourses.find(c => String(c.id) === String(courseId));
+  const s = syllabusFor(courseId);
+  document.getElementById('syl-detail-title').textContent = course ? cleanCourseName(course.name) : 'Syllabus';
+  const bodyEl = document.getElementById('syl-detail-body');
+  const hasContent = !!(s && s.content);
+  const sourceLabel = hasContent
+    ? (s.source === 'canvas' ? 'Pulled automatically from Canvas' : 'Added manually')
+    : "StudyFlow couldn't find this on Canvas. Paste it in yourself below.";
+  bodyEl.innerHTML = `
+    <div class="card-sub" style="margin-bottom:14px;">${escapeHtml(sourceLabel)}</div>
+    ${hasContent ? `
+    <div class="seg-control" id="syl-mode-toggle" style="margin-bottom:10px;">
+      <button class="seg-btn active" data-mode="ask" onclick="setSylSearchMode('ask')">✨ Ask</button>
+      <button class="seg-btn" data-mode="literal" onclick="setSylSearchMode('literal')">Search</button>
+    </div>
+    <div id="syl-ai-banner-host">${schoolAIBannerHTML('syl-ai')}</div>
+    <div class="syl-inline-search-row">
+      <input class="settings-input" id="syl-inline-search" oninput="handleSylSearchInput()" onkeydown="if(event.key==='Enter'){searchWithinSyllabus();}" placeholder='Ask about this syllabus — "what is the grading policy?"' style="margin-bottom:0;flex:1;" />
+      ${sylSearchMode === 'ask' ? `<button class="goal-add-btn" style="flex-shrink:0;" onclick="searchWithinSyllabus()">Ask</button>` : ''}
+      <button class="detail-close" style="width:30px;height:30px;flex-shrink:0;" onclick="jumpSyllabusMatch(-1)" title="Previous match">‹</button>
+      <button class="detail-close" style="width:30px;height:30px;flex-shrink:0;" onclick="jumpSyllabusMatch(1)" title="Next match">›</button>
+    </div>
+    <div id="syl-inline-counter" style="font-size:12px;color:var(--text2);margin:6px 0 10px;"></div>
+    <div id="syl-ai-answer"></div>
+    <div class="syllabus-text" id="syl-view">${escapeHtml(s.content)}</div>` : ''}
+    <textarea class="syllabus-textarea" id="syl-edit-input" style="display:${hasContent ? 'none' : 'block'};margin-top:${hasContent ? '12px' : '0'};" placeholder="Paste your syllabus text here...">${hasContent ? escapeHtml(s.content) : ''}</textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      ${hasContent ? `<button class="sync-btn" id="syl-edit-toggle-btn" style="width:auto;flex:1;" onclick="toggleSyllabusEdit()">Edit</button>` : ''}
+      <button class="sync-btn" style="width:auto;flex:1;" onclick="saveSyllabusManual()">${hasContent ? 'Save changes' : 'Save'}</button>
+      ${hasContent ? `<button class="change-courses-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="downloadSyllabus('${courseId}')">Download</button>` : ''}
+      <button class="change-courses-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="retryAutoFetchSyllabus('${courseId}')">Try Canvas again</button>
+    </div>
+    <div id="syl-save-msg" style="margin-top:10px;"></div>
+  `;
+  document.getElementById('syllabus-detail-overlay').style.display = 'block';
+}
+
+let syllabusInlineMatches = [];
+let syllabusInlineMatchIdx = -1;
+
+let sylSearchMode = 'ask';
+
+function setSylSearchMode(mode) {
+  sylSearchMode = mode;
+  document.querySelectorAll('#syl-mode-toggle .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const inputEl = document.getElementById('syl-inline-search');
+  if (inputEl) {
+    inputEl.placeholder = mode === 'ask'
+      ? 'Ask about this syllabus — "what is the grading policy?"'
+      : 'Search for an exact word or phrase…';
+  }
+  searchWithinSyllabus();
+}
+
+function searchWithinSyllabus() {
+  if (sylSearchMode === 'literal') literalSearchWithinSyllabus();
+  else askSearchWithinSyllabus();
+}
+
+// Live-as-you-type is fine for literal search (instant, synchronous) but the AI
+// path is slow — firing it on every keystroke stacks up overlapping requests
+// that finish out of order and yank the view around. Only auto-run in literal mode.
+function handleSylSearchInput() {
+  if (sylSearchMode === 'literal') searchWithinSyllabus();
+}
+
+let sylAskRequestId = 0;
+
+async function askSearchWithinSyllabus() {
+  const inputEl = document.getElementById('syl-inline-search');
+  const viewEl = document.getElementById('syl-view');
+  const counterEl = document.getElementById('syl-inline-counter');
+  const answerEl = document.getElementById('syl-ai-answer');
+  if (!inputEl || !viewEl) return;
+  const q = inputEl.value.trim();
+  const s = syllabusFor(syllabusDetailCourseId);
+  const raw = s ? s.content : '';
+
+  syllabusInlineMatches = [];
+  syllabusInlineMatchIdx = -1;
+  if (answerEl) answerEl.innerHTML = '';
+
+  if (!q) {
+    viewEl.innerHTML = escapeHtml(raw);
+    if (counterEl) counterEl.textContent = '';
+    return;
+  }
+
+  if (schoolAIReady()) {
+    await askSchoolAIWithinSyllabus(q, raw);
+    return;
+  }
+
+  const keywords = extractAskKeywords(q);
+  if (keywords.length === 0) {
+    viewEl.innerHTML = escapeHtml(raw);
+    if (counterEl) counterEl.textContent = 'Try a word or two about the topic';
+    return;
+  }
+
+  const lines = raw.split('\n');
+  const scored = lines
+    .map((line, i) => ({
+      i, line,
+      score: keywords.filter(k => new RegExp('\\b' + escapeRegex(k) + '\\b', 'i').test(line)).length,
+    }))
+    .filter(l => l.score > 0)
+    .sort((a, b) => b.score - a.score || a.line.length - b.line.length);
+
+  if (scored.length === 0) {
+    viewEl.innerHTML = escapeHtml(raw);
+    if (counterEl) counterEl.textContent = "Couldn't find anything about that — try different words";
+    return;
+  }
+
+  const rankOf = new Map(scored.map((row, rank) => [row.i, rank]));
+  let markCounter = 0;
+  viewEl.innerHTML = lines.map((line, i) => {
+    if (!rankOf.has(i)) return escapeHtml(line);
+    let html = escapeHtml(line);
+    keywords.forEach(k => {
+      const rx = new RegExp('(' + escapeRegex(k) + ')', 'ig');
+      html = html.replace(rx, m => `<mark id="syl-mark-${markCounter++}" data-rank="${rankOf.get(i)}">${m}</mark>`);
+    });
+    return html;
+  }).join('\n');
+
+  syllabusInlineMatches = [...viewEl.querySelectorAll('mark')].sort((a, b) => Number(a.dataset.rank) - Number(b.dataset.rank));
+  if (syllabusInlineMatches.length === 0) {
+    if (counterEl) counterEl.textContent = 'No matches';
+    return;
+  }
+  syllabusInlineMatchIdx = 0;
+  setActiveSyllabusMatch();
+}
+
+async function askSchoolAIWithinSyllabus(q, raw) {
+  const myRequestId = ++sylAskRequestId;
+  const answerEl = document.getElementById('syl-ai-answer');
+  if (answerEl) answerEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Thinking…</div>`;
+  try {
+    const { answer, citation, confidence } = await cocoAsk(q, raw);
+    if (myRequestId !== sylAskRequestId) return; // a newer request superseded this one — discard
+
+    const viewEl = document.getElementById('syl-view');
+    const counterEl = document.getElementById('syl-inline-counter');
+    const currentAnswerEl = document.getElementById('syl-ai-answer');
+    const highlighted = citation ? highlightExactPassage(citation) : false;
+    if (!highlighted && viewEl) viewEl.innerHTML = escapeHtml(raw);
+    if (counterEl) counterEl.textContent = '';
+    if (currentAnswerEl) currentAnswerEl.innerHTML = cocoAnswerHTML(answer, confidence);
+  } catch (err) {
+    if (myRequestId !== sylAskRequestId) return;
+    const viewEl = document.getElementById('syl-view');
+    const currentAnswerEl = document.getElementById('syl-ai-answer');
+    if (currentAnswerEl) currentAnswerEl.innerHTML = `<div class="card-sub">coco.1 error: ${escapeHtml(err.message)}</div>`;
+    if (viewEl) viewEl.innerHTML = escapeHtml(raw);
+  }
+}
+
+function literalSearchWithinSyllabus() {
+  const inputEl = document.getElementById('syl-inline-search');
+  const viewEl = document.getElementById('syl-view');
+  const counterEl = document.getElementById('syl-inline-counter');
+  if (!inputEl || !viewEl) return;
+  const q = inputEl.value.trim();
+  const s = syllabusFor(syllabusDetailCourseId);
+  const raw = s ? s.content : '';
+
+  syllabusInlineMatches = [];
+  syllabusInlineMatchIdx = -1;
+
+  if (!q) {
+    viewEl.innerHTML = escapeHtml(raw);
+    if (counterEl) counterEl.textContent = '';
+    return;
+  }
+
+  const rx = new RegExp(escapeRegex(q), 'ig');
+  let n = 0;
+  viewEl.innerHTML = escapeHtml(raw).replace(rx, match => `<mark id="syl-mark-${n++}">${match}</mark>`);
+  syllabusInlineMatches = [...viewEl.querySelectorAll('mark')];
+
+  if (syllabusInlineMatches.length === 0) {
+    if (counterEl) counterEl.textContent = 'No matches';
+    return;
+  }
+  syllabusInlineMatchIdx = 0;
+  setActiveSyllabusMatch();
+}
+
+function setActiveSyllabusMatch() {
+  const counterEl = document.getElementById('syl-inline-counter');
+  syllabusInlineMatches.forEach(m => m.classList.remove('syl-mark-active'));
+  const active = syllabusInlineMatches[syllabusInlineMatchIdx];
+  if (!active) return;
+  active.classList.add('syl-mark-active');
+  active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (counterEl) {
+    if (sylSearchMode === 'literal') {
+      counterEl.textContent = `${syllabusInlineMatchIdx + 1} of ${syllabusInlineMatches.length}`;
+    } else {
+      counterEl.textContent = syllabusInlineMatchIdx === 0
+        ? `Best match · ${syllabusInlineMatches.length} passage${syllabusInlineMatches.length !== 1 ? 's' : ''} found`
+        : `Match ${syllabusInlineMatchIdx + 1} of ${syllabusInlineMatches.length}`;
+    }
+  }
+}
+
+function highlightExactPassage(text) {
+  const viewEl = document.getElementById('syl-view');
+  const counterEl = document.getElementById('syl-inline-counter');
+  if (!viewEl || !text) return false;
+  const s = syllabusFor(syllabusDetailCourseId);
+  const raw = s ? s.content : '';
+
+  syllabusInlineMatches = [];
+  syllabusInlineMatchIdx = -1;
+
+  const rx = new RegExp(escapeRegex(text), 'ig');
+  let n = 0;
+  viewEl.innerHTML = escapeHtml(raw).replace(rx, m => `<mark id="syl-mark-${n++}">${m}</mark>`);
+  syllabusInlineMatches = [...viewEl.querySelectorAll('mark')];
+  if (syllabusInlineMatches.length === 0) return false;
+  syllabusInlineMatchIdx = 0;
+  setActiveSyllabusMatch();
+  if (counterEl) counterEl.textContent = 'Jumped to source passage';
+  return true;
+}
+
+function jumpSyllabusMatch(dir) {
+  if (syllabusInlineMatches.length === 0) return;
+  syllabusInlineMatchIdx = (syllabusInlineMatchIdx + dir + syllabusInlineMatches.length) % syllabusInlineMatches.length;
+  setActiveSyllabusMatch();
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function safeFileName(name) {
+  return (name || 'Syllabus').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function downloadSyllabus(courseId) {
+  const course = syllabusCourses.find(c => String(c.id) === String(courseId));
+  const s = syllabusFor(courseId);
+  if (!s || !s.content) return;
+  const name = course ? cleanCourseName(course.name) : (s.course_name || 'Course');
+  downloadTextFile(`${safeFileName(name)} - Syllabus.txt`, s.content);
+}
+
+function downloadAllSyllabi() {
+  const available = cachedSyllabi.filter(s => s.content);
+  if (available.length === 0) return;
+  const parts = available.map(s => {
+    const course = syllabusCourses.find(c => String(c.id) === String(s.course_id));
+    const name = course ? cleanCourseName(course.name) : (s.course_name || 'Course');
+    return `${name}\n${'='.repeat(name.length)}\n\n${s.content}`;
+  });
+  downloadTextFile('My Syllabi.txt', parts.join('\n\n\n'));
+}
+
+function closeSyllabusDetail() {
+  document.getElementById('syllabus-detail-overlay').style.display = 'none';
+  syllabusDetailCourseId = null;
+}
+
+function toggleSyllabusEdit() {
+  const viewEl = document.getElementById('syl-view');
+  const inputEl = document.getElementById('syl-edit-input');
+  const btn = document.getElementById('syl-edit-toggle-btn');
+  if (!viewEl || !inputEl) return;
+  const isEditing = inputEl.style.display !== 'none';
+  if (isEditing) {
+    // Cancel: discard unsaved changes, go back to read view
+    const s = syllabusFor(syllabusDetailCourseId);
+    inputEl.value = s && s.content ? s.content : '';
+    inputEl.style.display = 'none';
+    viewEl.style.display = 'block';
+    if (btn) btn.textContent = 'Edit';
+  } else {
+    viewEl.style.display = 'none';
+    inputEl.style.display = 'block';
+    inputEl.style.marginTop = '0';
+    if (btn) btn.textContent = 'Cancel';
+  }
+}
+
+async function upsertSyllabus(courseId, courseName, content, source, found) {
+  const payload = { user_id: USER_ID, course_id: String(courseId), course_name: courseName || '', content, source, found, updated_at: new Date().toISOString() };
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/syllabi', 'POST', payload);
+  if (!ok) {
+    if (data && JSON.stringify(data).includes('duplicate')) {
+      await sbFetchWithRetry(`/rest/v1/syllabi?user_id=eq.${USER_ID}&course_id=eq.${encodeURIComponent(String(courseId))}`, 'PATCH',
+        { course_name: courseName || '', content, source, found, updated_at: new Date().toISOString() });
+    } else {
+      return false;
+    }
+  }
+  const idx = cachedSyllabi.findIndex(s => String(s.course_id) === String(courseId));
+  const row = { course_id: String(courseId), course_name: courseName || '', content, source, found };
+  if (idx >= 0) cachedSyllabi[idx] = { ...cachedSyllabi[idx], ...row };
+  else cachedSyllabi.push(row);
+  return true;
+}
+
+async function saveSyllabusManual() {
+  const courseId = syllabusDetailCourseId;
+  if (!courseId) return;
+  const course = syllabusCourses.find(c => String(c.id) === String(courseId));
+  const input = document.getElementById('syl-edit-input');
+  const text = input.value.trim();
+  const msgEl = document.getElementById('syl-save-msg');
+  if (!text) { msgEl.innerHTML = '<div class="msg-error">Paste in some syllabus text first.</div>'; return; }
+  const ok = await upsertSyllabus(courseId, course ? course.name : '', text, 'manual', true);
+  if (ok) {
+    renderSyllabusList();
+    msgEl.innerHTML = '<div class="msg-success">Saved.</div>';
+    setTimeout(() => { if (syllabusDetailCourseId === courseId) openSyllabus(courseId); }, 700);
+  } else {
+    msgEl.innerHTML = '<div class="msg-error">Failed to save. Please try again.</div>';
+  }
+}
+
+async function fetchSyllabusForCourse(course) {
+  if (!syllabusCanvas.url || !syllabusCanvas.token) return;
+  try {
+    const resp = await fetch(`${SB_URL}/functions/v1/fetch-syllabus`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
+      body: JSON.stringify({ canvas_url: syllabusCanvas.url, canvas_token: syllabusCanvas.token, course_id: course.id }),
+    });
+    const result = await resp.json();
+    if (result.ok && result.found) {
+      await upsertSyllabus(course.id, course.name, result.content, 'canvas', true);
+    } else if (result.ok) {
+      await upsertSyllabus(course.id, course.name, '', 'canvas', false);
+    }
+  } catch (e) { /* best-effort — leave as not-found, user can add manually */ }
+}
+
+async function autoFetchMissingSyllabi() {
+  if (!syllabusCanvas.url || !syllabusCanvas.token) return;
+  const missing = syllabusCourses.filter(c => {
+    const s = syllabusFor(c.id);
+    return !s || (!s.content && s.source !== 'manual');
+  });
+  for (const c of missing) {
+    await fetchSyllabusForCourse(c);
+    renderSyllabusList();
+  }
+}
+
+async function retryAutoFetchSyllabus(courseId) {
+  const course = syllabusCourses.find(c => String(c.id) === String(courseId));
+  if (!course) return;
+  const msgEl = document.getElementById('syl-save-msg');
+  if (msgEl) msgEl.innerHTML = '<div style="font-size:13px;color:var(--text2);">Checking Canvas…</div>';
+  await fetchSyllabusForCourse(course);
+  renderSyllabusList();
+  if (syllabusDetailCourseId === courseId) openSyllabus(courseId);
+}
+
+const ASK_STOPWORDS = new Set([
+  'what','whats',"what's",'is','are','was','were','the','a','an','of','for','my','me','in','on','to','at',
+  'does','do','did','how','when','where','who','which','why','can','i','you','your','about','tell','please',
+  'this','that','it','and','or','be','will','have','has','with','if','so','there','any','our','we','us',
+  'much','many','need','needed','some','out','into','from','also'
+]);
+
+function extractAskKeywords(q) {
+  return q.toLowerCase()
+    .replace(/[^\w\s%]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 1 && !ASK_STOPWORDS.has(w));
+}
+
+function highlightAskKeywords(text, keywords) {
+  let escaped = escapeHtml(text);
+  keywords.forEach(k => {
+    const rx = new RegExp('(' + escapeRegex(k) + ')', 'ig');
+    escaped = escaped.replace(rx, '<mark>$1</mark>');
+  });
+  return escaped;
+}
+
+async function askSyllabi() {
+  const input = document.getElementById('syllabus-ask-input');
+  const resultEl = document.getElementById('syllabus-ask-result');
+  const q = input.value.trim();
+  if (!q) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; return; }
+  resultEl.style.display = 'block';
+
+  if (schoolAIReady()) {
+    await askSyllabiWithAI(q);
+  } else {
+    askSyllabiKeyword(q);
+  }
+}
+
+let listAskRequestId = 0;
+
+async function askSyllabiWithAI(q) {
+  const myRequestId = ++listAskRequestId;
+  const resultEl = document.getElementById('syllabus-ask-result');
+  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Thinking…</div>`;
+
+  // Pick which course to answer from by scoring each syllabus with the same
+  // synonym-aware retrieval used inside the answer step, so the course choice
+  // and the passage choice agree with each other.
+  let best = null, bestScore = 0;
+  cachedSyllabi.forEach(s => {
+    if (!s.content) return;
+    const hits = cocoRetrieve(q, s.content, 3);
+    const score = hits.reduce((sum, h) => sum + h.score, 0);
+    if (score > bestScore) { bestScore = score; best = s; }
+  });
+  if (!best) best = cachedSyllabi.find(s => s.content);
+  if (!best) {
+    resultEl.innerHTML = `<div class="card-sub">You don't have any syllabi with content yet.</div>`;
+    return;
+  }
+  const course = syllabusCourses.find(c => String(c.id) === String(best.course_id));
+  const courseName = course ? cleanCourseName(course.name) : (best.course_name || 'Course');
+
+  try {
+    const { answer, citation, confidence } = await cocoAsk(q, best.content);
+    if (myRequestId !== listAskRequestId) return;
+    lastAskResults = citation ? [{ courseId: best.course_id, courseName, line: citation }] : [];
+    resultEl.innerHTML = cocoAnswerHTML(answer, confidence) + (citation ? `
+      <button class="ask-source-chip" onclick="openSyllabusAtPassage(0)">
+        <span class="ask-source-icon">📄</span>
+        <span>Source: ${escapeHtml(courseName)}</span>
+        <span class="ask-source-arrow">→</span>
+      </button>
+    ` : '');
+  } catch (err) {
+    if (myRequestId !== listAskRequestId) return;
+    resultEl.innerHTML = `<div class="card-sub">coco.1 hit an error (${escapeHtml(err.message)}) — falling back to keyword search.</div>`;
+    askSyllabiKeyword(q);
+  }
+}
+
+function askSyllabiKeyword(q) {
+  const resultEl = document.getElementById('syllabus-ask-result');
+  const keywords = extractAskKeywords(q);
+
+  if (keywords.length === 0) {
+    resultEl.innerHTML = `<div class="card-sub">Try adding a word or two about the topic — e.g. "grading policy" or "late work".</div>`;
+    return;
+  }
+
+  const candidates = [];
+  cachedSyllabi.forEach(s => {
+    if (!s.content) return;
+    const course = syllabusCourses.find(c => String(c.id) === String(s.course_id));
+    const courseName = course ? cleanCourseName(course.name) : (s.course_name || 'Course');
+    s.content.split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
+      const matched = keywords.filter(k => new RegExp('\\b' + escapeRegex(k) + '\\b', 'i').test(line));
+      if (matched.length === 0) return;
+      candidates.push({ courseId: s.course_id, courseName, line, score: matched.length, len: line.length });
+    });
+  });
+
+  if (candidates.length === 0) {
+    resultEl.innerHTML = `<div class="card-sub">Couldn't find anything about that in your syllabi. Try different words, or check the syllabus yourself if it's still missing.</div>`;
+    return;
+  }
+
+  candidates.sort((a, b) => b.score - a.score || a.len - b.len);
+  const top = candidates.slice(0, 3);
+  lastAskResults = top;
+
+  resultEl.innerHTML = `
+    <div class="ask-answer-text">${highlightAskKeywords(top[0].line, keywords)}</div>
+    <button class="ask-source-chip" onclick="openSyllabusAtPassage(0)">
+      <span class="ask-source-icon">📄</span>
+      <span>Source: ${escapeHtml(top[0].courseName)}</span>
+      <span class="ask-source-arrow">→</span>
+    </button>
+    ${top.length > 1 ? `
+    <div class="ask-more-label">Also mentioned in</div>
+    ${top.slice(1).map((c, i) => `
+      <button class="ask-source-chip-secondary" onclick="openSyllabusAtPassage(${i + 1})">
+        <div class="ask-source-chip-course">${escapeHtml(c.courseName)}</div>
+        <div class="ask-source-snippet">${highlightAskKeywords(c.line, keywords)}</div>
+      </button>`).join('')}
+    ` : ''}
+  `;
+}
+
+let lastAskResults = [];
+
+function openSyllabusAtPassage(idx) {
+  const item = lastAskResults[idx];
+  if (!item) return;
+  openSyllabus(item.courseId);
+  highlightExactPassage(item.line);
+}
+
+function searchSyllabi() {
+  const q = document.getElementById('syllabus-search').value.trim().toLowerCase();
+  const resultsEl = document.getElementById('syllabus-search-results');
+  const listEl = document.getElementById('syllabus-list');
+  if (!q) { resultsEl.style.display = 'none'; resultsEl.innerHTML = ''; listEl.style.display = ''; return; }
+  listEl.style.display = 'none';
+  resultsEl.style.display = 'block';
+  const rx = new RegExp(escapeRegex(q), 'ig');
+  const matches = [];
+  cachedSyllabi.forEach(s => {
+    if (!s.content) return;
+    const idx = s.content.toLowerCase().indexOf(q);
+    if (idx === -1) return;
+    const start = Math.max(0, idx - 40);
+    const end = Math.min(s.content.length, idx + q.length + 60);
+    let snippet = s.content.slice(start, end);
+    if (start > 0) snippet = '…' + snippet;
+    if (end < s.content.length) snippet += '…';
+    const course = syllabusCourses.find(c => String(c.id) === String(s.course_id));
+    matches.push({ courseId: s.course_id, name: course ? cleanCourseName(course.name) : (s.course_name || 'Course'), snippet });
+  });
+  if (matches.length === 0) {
+    resultsEl.innerHTML = `<div class="empty-box"><div class="empty-title">No matches</div><div class="empty-sub">Try a different word — like "office hours," "late policy," or "grading."</div></div>`;
+    return;
+  }
+  resultsEl.innerHTML = matches.map(m => {
+    const highlighted = escapeHtml(m.snippet).replace(rx, match => `<mark>${match}</mark>`);
+    return `<div class="card syllabus-card" onclick="openSyllabus('${m.courseId}')">
+      <div class="card-title">${escapeHtml(m.name)}</div>
+      <div class="card-sub syllabus-preview">${highlighted}</div>
+    </div>`;
+  }).join('');
+}
+
+let dueCalMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
+let dueCalSelectedDate = null;
+let dueCalAssignments = [];
+
+function ymd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function renderDueSoon(assignments) {
   const today = new Date(); today.setHours(0,0,0,0);
   const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate()+7);
-  let overdue=[], soon=[], later=[];
+  let overdue=[], upcoming=[], noDate=[];
   assignments.forEach(a => {
     if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
-    if (!a.due_date) { later.push(a); return; }
+    if (!a.due_date) { noDate.push(a); return; }
     const due = new Date(a.due_date); due.setHours(0,0,0,0);
     if (due < today) overdue.push(a);
-    else if (due <= weekFromNow) soon.push(a);
-    else later.push(a);
+    else upcoming.push(a);
   });
-  document.getElementById('stat-week').textContent = soon.length;
+  const soonCount = upcoming.filter(a => {
+    const d = new Date(a.due_date); d.setHours(0,0,0,0);
+    return d <= weekFromNow;
+  }).length;
+  document.getElementById('stat-week').textContent = soonCount;
   document.getElementById('stat-overdue').textContent = overdue.length;
-  if (overdue.length + soon.length + later.length === 0) {
+  if (overdue.length + upcoming.length + noDate.length === 0) {
     document.getElementById('due-empty').style.display = 'block';
     return;
   }
   document.getElementById('due-list').style.display = 'block';
   if (overdue.length) { document.getElementById('overdue-section').style.display='block'; document.getElementById('overdue-list').innerHTML=overdue.map(a=>aCard(a,true,true)).join(''); }
   else { document.getElementById('overdue-section').style.display='none'; }
-  if (soon.length) { document.getElementById('soon-section').style.display='block'; document.getElementById('soon-list').innerHTML=soon.map(a=>aCard(a,false)).join(''); }
-  else { document.getElementById('soon-section').style.display='none'; }
-  if (later.length) { document.getElementById('later-section').style.display='block'; document.getElementById('later-list').innerHTML=later.map(a=>aCard(a,false)).join(''); }
-  else { document.getElementById('later-section').style.display='none'; }
+
+  dueCalAssignments = upcoming;
+  if (!dueCalSelectedDate) dueCalSelectedDate = ymd(today);
+  renderDueCalendar();
+
+  if (noDate.length) { document.getElementById('nodate-section').style.display='block'; document.getElementById('nodate-list').innerHTML=noDate.map(a=>aCard(a,false)).join(''); }
+  else { document.getElementById('nodate-section').style.display='none'; }
+}
+
+function renderDueCalendar() {
+  const gridEl = document.getElementById('due-cal-grid');
+  const titleEl = document.getElementById('due-cal-title');
+  if (!gridEl || !titleEl) return;
+
+  const year = dueCalMonth.getFullYear();
+  const month = dueCalMonth.getMonth();
+  titleEl.textContent = `${months[month]} ${year}`;
+
+  const startDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const todayStr = ymd(new Date());
+
+  const byDate = {};
+  dueCalAssignments.forEach(a => {
+    const d = new Date(a.due_date); d.setHours(0,0,0,0);
+    const key = ymd(d);
+    (byDate[key] = byDate[key] || []).push(a);
+  });
+
+  const cells = [];
+  for (let i = startDow - 1; i >= 0; i--) {
+    const dnum = daysInPrevMonth - i;
+    cells.push({ dnum, dateObj: new Date(year, month - 1, dnum), otherMonth: true });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ dnum: d, dateObj: new Date(year, month, d), otherMonth: false });
+  }
+  let trail = 1;
+  while (cells.length % 7 !== 0) {
+    cells.push({ dnum: trail, dateObj: new Date(year, month + 1, trail), otherMonth: true });
+    trail++;
+  }
+
+  gridEl.innerHTML = cells.map(c => {
+    const key = ymd(c.dateObj);
+    const count = (byDate[key] || []).length;
+    const isToday = key === todayStr;
+    const isSelected = key === dueCalSelectedDate;
+    return `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" onclick="selectDueCalDate('${key}')">
+      <div class="cal-day-num">${c.dnum}</div>
+      ${count ? `<div class="cal-day-count">${count}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  renderDueCalSelected();
+}
+
+function selectDueCalDate(key) {
+  dueCalSelectedDate = key;
+  renderDueCalendar();
+}
+
+function shiftDueCalMonth(delta) {
+  dueCalMonth = new Date(dueCalMonth.getFullYear(), dueCalMonth.getMonth() + delta, 1);
+  renderDueCalendar();
+}
+
+function dueCalToday() {
+  const t = new Date();
+  dueCalMonth = new Date(t.getFullYear(), t.getMonth(), 1);
+  dueCalSelectedDate = ymd(t);
+  renderDueCalendar();
+}
+
+function renderDueCalSelected() {
+  const listEl = document.getElementById('due-cal-selected-list');
+  const labelEl = document.getElementById('due-cal-selected-label');
+  if (!listEl || !labelEl || !dueCalSelectedDate) return;
+
+  const items = dueCalAssignments.filter(a => {
+    const d = new Date(a.due_date); d.setHours(0,0,0,0);
+    return ymd(d) === dueCalSelectedDate;
+  });
+
+  const [y, m, d] = dueCalSelectedDate.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const todayStr = ymd(new Date());
+  labelEl.textContent = dueCalSelectedDate === todayStr
+    ? 'Today'
+    : `${days[dateObj.getDay()]}, ${months[dateObj.getMonth()]} ${dateObj.getDate()}`;
+
+  listEl.innerHTML = items.length
+    ? items.map(a => aCard(a, false)).join('')
+    : `<div class="card-sub" style="padding:4px 2px;">Nothing due this day.</div>`;
 }
 
 function renderAllWork(assignments) {
-  document.getElementById('allwork-list').style.display = 'block';
+  document.getElementById('allwork-list').style.display = '';
   const today = new Date(); today.setHours(0,0,0,0);
   const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate()+7);
   let overdue=[], soon=[], upcoming=[];
@@ -2279,7 +4153,7 @@ function renderPriority(assignments) {
     let score = d < 0 ? 1000 + Math.abs(d) : 100 - d;
     for (const goal of userGoals) {
       const g = goal.toLowerCase().split(' ')[0];
-      if ((a.course||'').toLowerCase().includes(g) || a.title.toLowerCase().includes(g)) score += 50;
+      if ((a.course||'').toLowerCase().includes(g) || a.title.toLowerCase().includes(g)) score += (userPrefs.priorityGoalBoost ?? 50);
     }
     return { ...a, score, d };
   }).sort((a, b) => b.score - a.score);
@@ -2414,21 +4288,24 @@ function calculateFinal() {
 }
 
 function updateLastSyncedLabel() {
-  const dateEl = document.getElementById('topbar-date');
-  if (!dateEl) return;
   const n = new Date();
   const dateStr = `${days[n.getDay()]}, ${months[n.getMonth()]} ${n.getDate()}`;
   const lastSync = parseInt(localStorage.getItem('sf_last_sync') || '0');
-  if (!lastSync) { dateEl.textContent = dateStr; return; }
-  const mins = Math.round((Date.now() - lastSync) / 60000);
-  let syncStr;
-  if (mins < 1) syncStr = 'Synced just now';
-  else if (mins < 60) syncStr = `Synced ${mins}m ago`;
-  else { const h = Math.floor(mins / 60); syncStr = `Synced ${h}h ago`; }
-  dateEl.textContent = `${dateStr} · ${syncStr}`;
+  let syncStr = 'Not synced yet';
+  if (lastSync) {
+    const mins = Math.round((Date.now() - lastSync) / 60000);
+    if (mins < 1) syncStr = 'Synced just now';
+    else if (mins < 60) syncStr = `Synced ${mins}m ago`;
+    else { const h = Math.floor(mins / 60); syncStr = `Synced ${h}h ago`; }
+  }
+  const dateEl = document.getElementById('topbar-date');
+  if (dateEl) dateEl.textContent = lastSync ? `${dateStr} · ${syncStr}` : dateStr;
+  const sidebarSub = document.getElementById('sidebar-sync-sub');
+  if (sidebarSub) sidebarSub.textContent = syncStr;
 }
 
 async function autoSync() {
+  if (userPrefs.autoSyncEnabled === false) return;
   const lastSync = parseInt(localStorage.getItem('sf_last_sync') || '0');
   if (Date.now() - lastSync > 24 * 60 * 60 * 1000) {
     await syncCanvas();
@@ -2443,11 +4320,10 @@ function applyTheme(dark) {
 
 function toggleTheme() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  localStorage.setItem('sf_theme', isDark ? 'light' : 'dark');
-  applyTheme(!isDark);
+  setThemeMode(isDark ? 'light' : 'dark');
 }
 
-applyTheme(localStorage.getItem('sf_theme') === 'dark');
+applyThemeMode();
 
 routeUser();
 
@@ -2470,6 +4346,7 @@ routeUser();
 
   // Replaces the existing maybeShowWelcome (assignment wins over hoisted declaration)
   window.maybeShowWelcome = function () {
+    if (userPrefs.welcomeToastEnabled === false) return;
     const last = parseInt(localStorage.getItem(wsKey()) || '0', 10);
     if (Date.now() - last < DAY_MS) return;
 

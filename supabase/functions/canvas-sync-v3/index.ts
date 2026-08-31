@@ -4,7 +4,38 @@ const corsHeaders = {
 };
 
 function preserveIds(jsonText: string): string {
-  return jsonText.replace(/:( *)(\d{16,})/g, ':$1"$2"');
+  // Walk the raw JSON text character-by-character so we can track whether we're
+  // inside a string value. Only replace bare 16+-digit numbers that appear as JSON
+  // property values (after a colon, outside of any string), never text inside strings.
+  let result = '';
+  let inString = false;
+  let i = 0;
+  while (i < jsonText.length) {
+    const ch = jsonText[i];
+    if (inString) {
+      result += ch;
+      if (ch === '\\') {
+        i++;
+        if (i < jsonText.length) result += jsonText[i]; // escaped char, pass through
+      } else if (ch === '"') {
+        inString = false;
+      }
+      i++;
+      continue;
+    }
+    if (ch === '"') { inString = true; result += ch; i++; continue; }
+    if (ch === ':') {
+      result += ch; i++;
+      let spaces = '';
+      while (i < jsonText.length && jsonText[i] === ' ') { spaces += jsonText[i++]; }
+      let digits = '';
+      while (i < jsonText.length && jsonText[i] >= '0' && jsonText[i] <= '9') { digits += jsonText[i++]; }
+      result += digits.length >= 16 ? spaces + '"' + digits + '"' : spaces + digits;
+      continue;
+    }
+    result += ch; i++;
+  }
+  return result;
 }
 
 function extractCode(name: string | null | undefined): string | null {
@@ -21,6 +52,27 @@ function isTermConcluded(courseName: string, now: Date): boolean {
   const endMonth: Record<string, number> = { FAL: 11, SPR: 4, SUM: 7, WIN: 1 };
   const termEnd = new Date(termYear, endMonth[termType] ?? 11, 28);
   return termEnd < now;
+}
+
+function htmlToText(html: string | null | undefined): string | null {
+  if (!html) return null;
+  let text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!text) return null;
+  if (text.length > 4000) text = text.slice(0, 4000).trim() + "…";
+  return text;
 }
 
 async function fetchAllPages(url: string, auth: string): Promise<any[] | null> {
@@ -172,7 +224,7 @@ Deno.serve(async (req) => {
             const matchingSc = currentSel.find((sc) => extractCode(sc.name) === code);
             if (!matchingSc) return false;
             const selectedTerm = extractTerm(matchingSc.name);
-            return !candidateTerm || !selectedTerm || candidateTerm === selectedTerm;
+            if (!candidateTerm || !selectedTerm || candidateTerm === selectedTerm) return true;
           }
           if (concludedCodeSet.has(code) && !isTermConcluded(c.name || "", now)) return true;
           return false;
@@ -223,9 +275,9 @@ Deno.serve(async (req) => {
         // Skip non-gradable assignment types
         if (types.includes("not_graded") || types.includes("none") || types.includes("wiki_page")) continue;
 
-        // Skip assignments Canvas explicitly marks as locked — only when confirmed locked
-        if (a.locked_for_user === true) continue;
-        if (a.lock_at != null && new Date(a.lock_at) < now) continue;
+        // Drop dated assignments more than 90 days past due (truly stale, no action possible)
+        const dueCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        if (a.due_at != null && new Date(a.due_at) < dueCutoff) continue;
 
         if (a.due_at === null || a.due_at === undefined) {
           const createdAt = a.created_at ? new Date(a.created_at) : null;
@@ -235,8 +287,11 @@ Deno.serve(async (req) => {
         const sub = a.submission;
         const state = String(sub?.workflow_state ?? "null");
         debugStates[state] = (debugStates[state] ?? 0) + 1;
-        const isSubmitted = !!(sub?.submitted_at || state === "submitted" || state === "graded" ||
+        const isSubmitted = !!(sub?.submitted_at || state === "submitted" ||
           state === "complete" || state === "pending_review");
+
+        // Determine lock state so the frontend's 30-day cutoff can filter appropriately
+        const isLocked = a.locked_for_user === true || (a.lock_at != null && new Date(a.lock_at) < now);
 
         if (isSubmitted) completedCount++;
         allAssignments.push({
@@ -249,7 +304,8 @@ Deno.serve(async (req) => {
           completed: isSubmitted,
           completed_at: isSubmitted ? (sub?.submitted_at ?? null) : null,
           assignment_url: a.html_url ?? null,
-          is_locked: false,
+          is_locked: isLocked,
+          description: htmlToText(a.description),
         });
         kept++;
       }

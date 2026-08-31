@@ -791,7 +791,7 @@ body {
 }
 .ws-a-title { font-size: 14px; font-weight: 600; color: var(--text1); margin-bottom: 4px; }
 .ws-a-meta { font-size: 12px; color: var(--text2); }
-.card-title-link { color: inherit; text-decoration: none; }
+.card-title-link { color: inherit; text-decoration: none; cursor: pointer; }
 .card-title-link:hover { color: var(--accent); }
 .canvas-link {
   display: inline-block; margin-top: 7px;
@@ -1055,6 +1055,7 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
     <input class="auth-input" type="password" id="login-password" placeholder="••••••••" />
     <button class="auth-btn" id="login-btn" onclick="handleLogin()">Sign in</button>
     <div class="auth-switch">Don't have an account? <a onclick="showSignup()">Sign up</a></div>
+    <div class="auth-switch" style="margin-top:8px;"><a onclick="showForgotPassword()">Forgot password?</a></div>
   </div>
 
   <!-- SIGNUP -->
@@ -1075,6 +1076,43 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
     <input class="auth-input" type="password" id="signup-password" placeholder="At least 6 characters" />
     <button class="auth-btn" id="signup-btn" onclick="handleSignup()">Create account</button>
     <div class="auth-switch">Already have an account? <a onclick="showLogin()">Sign in</a></div>
+  </div>
+
+  <!-- FORGOT PASSWORD -->
+  <div id="forgot-password-screen" class="auth-screen" style="display:none;">
+    <div class="auth-logo logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M5 7C5 5.34 6.34 4 8 4h3.5C13.43 4 15 5.57 15 7.5S13.43 11 11.5 11H8C6.34 11 5 12.34 5 14s1.34 3 3 3h5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="logo-word">Study<em>Flow</em></span>
+    </div>
+    <div class="auth-sub">Enter your email and we'll send you a link to reset your password.</div>
+    <div id="forgot-password-msg"></div>
+    <div class="auth-label">Email</div>
+    <input class="auth-input" type="email" id="forgot-password-email" placeholder="you@email.com" onkeydown="if(event.key==='Enter'){handleForgotPassword();}" />
+    <button class="auth-btn" id="forgot-password-btn" onclick="handleForgotPassword()">Send reset link</button>
+    <div class="auth-switch">Remembered it? <a onclick="showLogin()">Sign in</a></div>
+  </div>
+
+  <!-- RESET PASSWORD (arrived via emailed link) -->
+  <div id="reset-password-screen" class="auth-screen" style="display:none;">
+    <div class="auth-logo logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M5 7C5 5.34 6.34 4 8 4h3.5C13.43 4 15 5.57 15 7.5S13.43 11 11.5 11H8C6.34 11 5 12.34 5 14s1.34 3 3 3h5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="logo-word">Study<em>Flow</em></span>
+    </div>
+    <div class="auth-sub">Choose a new password for your account.</div>
+    <div id="reset-password-msg"></div>
+    <div class="auth-label">New password</div>
+    <input class="auth-input" type="password" id="reset-password-new" placeholder="At least 6 characters" />
+    <div class="auth-label">Confirm new password</div>
+    <input class="auth-input" type="password" id="reset-password-confirm" placeholder="Type it again" onkeydown="if(event.key==='Enter'){handleResetPassword();}" />
+    <button class="auth-btn" id="reset-password-btn" onclick="handleResetPassword()">Save new password</button>
   </div>
 
   <!-- ONBOARDING 1: CONNECT CANVAS -->
@@ -1183,6 +1221,17 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         <button class="detail-close" onclick="closeSyllabusDetail()" title="Close">✕</button>
       </div>
       <div id="syl-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- ASSIGNMENT DETAIL -->
+  <div id="assignment-detail-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title" id="a-detail-title"></div>
+        <button class="detail-close" onclick="closeAssignmentDetail()" title="Close">✕</button>
+      </div>
+      <div id="a-detail-body"></div>
     </div>
   </div>
 
@@ -2098,7 +2147,7 @@ function clearSession() {
 }
 
 function hideAll() {
-  ['login-screen','signup-screen','onboard-canvas','onboard-courses','onboard-goals','main-app'].forEach(id => {
+  ['login-screen','signup-screen','forgot-password-screen','reset-password-screen','onboard-canvas','onboard-courses','onboard-goals','main-app'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2106,6 +2155,70 @@ function hideAll() {
   if (glow) glow.style.display = 'none';
 }
 function showAuthGlow() { const glow = document.getElementById('auth-bg-glow'); if (glow) glow.style.display = 'block'; }
+
+function showForgotPassword() { hideAll(); document.getElementById('forgot-password-screen').style.display = 'block'; showAuthGlow(); }
+
+async function handleForgotPassword() {
+  const email = document.getElementById('forgot-password-email').value.trim();
+  const msgEl = document.getElementById('forgot-password-msg');
+  msgEl.innerHTML = '';
+  if (!email) { msgEl.innerHTML = '<div class="msg-error">Enter your email first.</div>'; return; }
+  const btn = document.getElementById('forgot-password-btn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const redirectTo = location.href.split('#')[0];
+  const { ok } = await sbFetch(
+    `/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`,
+    'POST', { email }, false
+  );
+  btn.disabled = false; btn.textContent = 'Send reset link';
+  // Always show the same message whether or not the email has an account —
+  // confirming/denying an account exists is an easy way to leak who's a user.
+  if (ok) {
+    msgEl.innerHTML = '<div class="msg-success">If an account exists for that email, a reset link is on its way. Check your inbox.</div>';
+  } else {
+    msgEl.innerHTML = '<div class="msg-error">Something went wrong sending that. Try again in a moment.</div>';
+  }
+}
+
+async function handleResetPassword() {
+  const pw = document.getElementById('reset-password-new').value;
+  const pw2 = document.getElementById('reset-password-confirm').value;
+  const msgEl = document.getElementById('reset-password-msg');
+  msgEl.innerHTML = '';
+  if (!pw || pw.length < 6) { msgEl.innerHTML = '<div class="msg-error">Password must be at least 6 characters.</div>'; return; }
+  if (pw !== pw2) { msgEl.innerHTML = '<div class="msg-error">Passwords don\'t match.</div>'; return; }
+  if (!window._recoveryAccessToken) { msgEl.innerHTML = '<div class="msg-error">This reset link has expired. Request a new one.</div>'; return; }
+  const btn = document.getElementById('reset-password-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const res = await fetch(`${SB_URL}/auth/v1/user`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${window._recoveryAccessToken}` },
+    body: JSON.stringify({ password: pw }),
+  });
+  const data = await res.json().catch(() => ({}));
+  btn.disabled = false; btn.textContent = 'Save new password';
+  if (!res.ok) { msgEl.innerHTML = `<div class="msg-error">${data.error_description || data.msg || 'Could not update your password.'}</div>`; return; }
+  window._recoveryAccessToken = null;
+  history.replaceState(null, '', location.pathname + location.search);
+  msgEl.innerHTML = '<div class="msg-success">Password updated! Redirecting to sign in…</div>';
+  setTimeout(() => { clearSession(); showLoginScreen(); }, 1200);
+}
+
+// Password-recovery links land back here with the token in the URL hash
+// (#access_token=...&type=recovery). Catch that before the normal login-vs-app
+// routing runs, so a reset link opens the reset screen instead of just logging
+// the tokens in and dropping the user into whatever state they were in.
+function checkForPasswordRecovery() {
+  if (!location.hash || !location.hash.includes('type=recovery')) return false;
+  const params = new URLSearchParams(location.hash.slice(1));
+  const token = params.get('access_token');
+  if (!token) return false;
+  window._recoveryAccessToken = token;
+  hideAll();
+  document.getElementById('reset-password-screen').style.display = 'block';
+  showAuthGlow();
+  return true;
+}
 
 function showLoginScreen() { hideAll(); document.getElementById('login-screen').style.display = 'block'; showAuthGlow(); }
 function showSignup() { hideAll(); document.getElementById('signup-screen').style.display = 'block'; showAuthGlow(); }
@@ -2868,11 +2981,11 @@ function aCard(a, isOverdue, redTint=false) {
   const isDone = a.completed || doneSet.has(decodeURIComponent(key));
   const cardClass = `card${isDone ? ' done' : ''}${redTint && !isDone ? ' overdue-card' : ''}`;
   const overdueTag = redTint && !isDone ? `<span class="overdue-pill">OVERDUE</span>` : '';
-  const titleInner = a.assignment_url
-    ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="card-title-link">${a.title}${overdueTag}</a>`
+  const titleInner = a.id
+    ? `<span class="card-title-link" onclick="event.stopPropagation();openAssignmentDetail('${a.id}')">${a.title}${overdueTag}</span>`
     : `${a.title}${overdueTag}`;
   const canvasLink = a.assignment_url
-    ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="canvas-link">Open in Canvas →</a>`
+    ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>`
     : '';
   return `<div class="${cardClass}">
     <div class="card-row" style="gap:10px;align-items:center;">
@@ -2884,6 +2997,36 @@ function aCard(a, isOverdue, redTint=false) {
       </div>
     </div>
   </div>`;
+}
+
+function openAssignmentDetail(id) {
+  const a = cachedAssignments.find(x => String(x.id) === String(id));
+  if (!a) return;
+  document.getElementById('a-detail-title').textContent = a.title;
+  const [bc, bl] = getBadge(a.assignment_type);
+  const dueStr = a.due_date
+    ? new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+    : 'No due date';
+  const canvasBtn = a.assignment_url
+    ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="sync-btn" style="width:auto;flex:1;text-decoration:none;text-align:center;display:inline-block;">Open in Canvas →</a>`
+    : '';
+  document.getElementById('a-detail-body').innerHTML = `
+    <div class="card-row" style="margin-bottom:14px;">
+      <div class="card-sub">${escapeHtml(a.course || '')} · Due ${dueStr}</div>
+      <span class="badge ${bc}">${bl}</span>
+    </div>
+    ${a.description
+      ? `<div class="syllabus-text">${escapeHtml(a.description)}</div>`
+      : `<div class="card-sub">No description was provided for this assignment.</div>`}
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+      ${canvasBtn}
+    </div>
+  `;
+  document.getElementById('assignment-detail-overlay').style.display = 'block';
+}
+
+function closeAssignmentDetail() {
+  document.getElementById('assignment-detail-overlay').style.display = 'none';
 }
 
 function toggleDone(encodedKey, btn) {
@@ -4325,7 +4468,7 @@ function toggleTheme() {
 
 applyThemeMode();
 
-routeUser();
+if (!checkForPasswordRecovery()) routeUser();
 
 /* ── Welcome Screen ─────────────────────────────────────────────────────── */
 (function () {

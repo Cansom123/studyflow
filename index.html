@@ -1466,6 +1466,15 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           <div class="ai-label"><span class="ai-dot"></span>Smart suggestion</div>
           <div class="ai-text" id="priority-ai-text">Sync your assignments to get personalized priority suggestions.</div>
         </div>
+        <div class="card" id="planning-ai-box" style="margin-top:10px;padding:14px;">
+          <div class="section-label" style="margin-top:0;">Ask coco.1 for a plan</div>
+          <div id="planning-ai-banner-host"></div>
+          <div class="study-form-row" style="margin-bottom:0;">
+            <input class="settings-input" id="planning-ai-input" placeholder='e.g. "what should I focus on this weekend?"' style="margin-bottom:0;" onkeydown="if(event.key==='Enter'){askCocoPlanning();}" />
+            <button class="goal-add-btn" onclick="askCocoPlanning()">Ask</button>
+          </div>
+          <div id="planning-ai-result" style="margin-top:10px;"></div>
+        </div>
         <div id="priority-empty" class="empty-box" style="display:none;">
           <div class="empty-icon">⚡</div>
           <div class="empty-title">Nothing to prioritize</div>
@@ -3369,6 +3378,95 @@ function cocoAnswerHTML(answer, confidence) {
          `<div class="school-ai-disclaimer">AI-generated — check it against the highlighted source.</div>`;
 }
 
+/* ---- Planning mode: advice over the whole assignment list, not one doc --- */
+
+// Structured summary of what's actually due, so coco.1 can't invent assignments,
+// courses, or dates that aren't real. Capped so a heavy course load doesn't
+// blow the small model's context window.
+function cocoPlanningContext(limit = 20) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const active = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a))));
+  const sorted = [...active].sort((a, b) => {
+    const ad = a.due_date ? new Date(a.due_date) : new Date('9999-01-01');
+    const bd = b.due_date ? new Date(b.due_date) : new Date('9999-01-01');
+    return ad - bd;
+  }).slice(0, limit);
+
+  const lines = sorted.map(a => {
+    const d = a.due_date ? Math.round((new Date(a.due_date) - today) / (1000 * 60 * 60 * 24)) : null;
+    const dueStr = d === null ? 'no due date' : d < 0 ? `${Math.abs(d)}d overdue` : d === 0 ? 'due today' : d === 1 ? 'due tomorrow' : `due in ${d} days`;
+    const points = a.points_possible ? `, ${a.points_possible} pts` : '';
+    return `- ${a.title} (${a.course || 'unknown course'}, ${a.assignment_type || 'assignment'}${points}) — ${dueStr}`;
+  });
+
+  const weekOut = new Date(today); weekOut.setDate(weekOut.getDate() + 7);
+  const studyLines = cachedStudySessions.filter(s => {
+    const sd = new Date(s.session_date + 'T00:00:00');
+    return sd >= today && sd <= weekOut;
+  }).map(s => `- Study block: ${s.title}${s.course ? ' (' + s.course + ')' : ''} on ${s.session_date}${s.start_time ? ' at ' + fmtTime12(s.start_time) : ''}`);
+
+  let text = lines.join('\n');
+  if (studyLines.length) text += `\n\nAlready scheduled study time this week:\n${studyLines.join('\n')}`;
+
+  return { text, count: sorted.length };
+}
+
+async function cocoAskPlanning(question) {
+  if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
+
+  const { text, count } = cocoPlanningContext();
+  if (count === 0) {
+    return { answer: "You don't have any upcoming assignments synced right now — nothing to plan around yet.", confidence: 'none' };
+  }
+
+  const todayStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const messages = [
+    {
+      role: 'system',
+      content:
+        'You are coco.1, a study-planning assistant. Below is the student\'s ACTUAL upcoming work, pulled from Canvas. ' +
+        'Rules:\n' +
+        '1. Only reference assignments, courses, and due dates that literally appear in the list. Never invent one.\n' +
+        '2. Give short, specific, practical advice — what to tackle first and why, and how to split time if relevant.\n' +
+        '3. If the student already has study time scheduled, build on it rather than ignoring it.\n' +
+        '4. Reply in 2-4 plain sentences. No markdown, no bullet lists, no restating the whole list back verbatim.',
+    },
+    { role: 'user', content: `Today is ${todayStr}.\n\nUpcoming work:\n${text}\n\nStudent's question: ${question}` },
+  ];
+
+  const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.2, max_tokens: 220, stop: ['\n\n'] });
+  const answer = (reply.choices[0].message.content || '').trim();
+  return { answer: answer || "Couldn't come up with a plan for that — try rephrasing.", confidence: answer ? 'high' : 'none' };
+}
+
+function cocoPlanningAnswerHTML(answer, confidence) {
+  if (confidence === 'none') {
+    return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
+  }
+  return `<div class="school-ai-badge">✨ coco.1</div>` +
+    `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
+    `<div class="school-ai-disclaimer">AI-generated planning advice based on your synced assignments — always double-check deadlines yourself.</div>`;
+}
+
+async function askCocoPlanning() {
+  const input = document.getElementById('planning-ai-input');
+  const resultEl = document.getElementById('planning-ai-result');
+  if (!input || !resultEl) return;
+  const q = input.value.trim();
+  if (!q) return;
+  if (!schoolAIReady()) {
+    resultEl.innerHTML = `<div class="card-sub">Enable coco.1 above first.</div>`;
+    return;
+  }
+  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Thinking…</div>`;
+  try {
+    const { answer, confidence } = await cocoAskPlanning(q);
+    resultEl.innerHTML = cocoPlanningAnswerHTML(answer, confidence);
+  } catch (err) {
+    resultEl.innerHTML = `<div class="card-sub">coco.1 error: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
 /* ---- Back-compat shims for existing call sites ----------------------- */
 async function askSchoolAI(question, contextText) {
   const r = await cocoAsk(question, contextText);
@@ -3445,6 +3543,11 @@ function refreshAskPanelsAfterAIReady() {
     const detailInput = document.getElementById('syl-inline-search');
     if (detailInput && detailInput.value.trim() && sylSearchMode === 'ask') searchWithinSyllabus();
   }
+
+  const planBannerHost = document.getElementById('planning-ai-banner-host');
+  if (planBannerHost) planBannerHost.innerHTML = schoolAIBannerHTML('planning-ai');
+  const planInput = document.getElementById('planning-ai-input');
+  if (planInput && planInput.value.trim()) askCocoPlanning();
 }
 
 function jumpTo(name) {
@@ -4403,6 +4506,9 @@ function renderAllWork(assignments) {
 }
 
 function renderPriority(assignments) {
+  const planBannerHost = document.getElementById('planning-ai-banner-host');
+  if (planBannerHost) planBannerHost.innerHTML = schoolAIBannerHTML('planning-ai');
+
   const today = new Date(); today.setHours(0,0,0,0);
   const todayStr = today.toDateString();
 

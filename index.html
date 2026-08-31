@@ -908,9 +908,34 @@ mark.syl-mark-active { background: var(--accent); color: #fff; }
   border-radius: 99px; min-width: 15px; height: 15px; padding: 0 3px;
   display: flex; align-items: center; justify-content: center; line-height: 1;
 }
+.cal-day-dots { display: flex; gap: 2px; align-items: center; }
+.cal-day-study-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green, #2ea043); }
 @media (min-width: 601px) {
   .due-cal-card { max-width: 480px; }
   .cal-day-num { font-size: 13px; }
+}
+
+/* ===== STUDY SESSIONS ===== */
+.study-session-card {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border-radius: 12px;
+  padding: 11px 12px; margin-bottom: 8px;
+}
+.study-session-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green, #2ea043); flex-shrink: 0; }
+.study-session-info { flex: 1; min-width: 0; }
+.study-session-title { font-size: 13.5px; font-weight: 600; color: var(--text1); }
+.study-session-meta { font-size: 11.5px; color: var(--text2); margin-top: 1px; }
+.study-session-del {
+  font-size: 18px; color: var(--text2); cursor: pointer; background: none; border: none;
+  line-height: 1; opacity: 0.6; padding: 4px; flex-shrink: 0;
+}
+.study-session-del:hover { opacity: 1; color: #d85a30; }
+.study-form-row { display: flex; gap: 8px; }
+.study-form-row .settings-input { flex: 1; }
+.add-study-btn {
+  width: 100%; padding: 11px; border-radius: 12px; background: var(--accent-soft);
+  color: var(--accent-text); font-size: 13.5px; font-weight: 600; border: 1px dashed var(--accent);
+  cursor: pointer; font-family: inherit; margin-bottom: 10px;
 }
 
 /* ===== SETTINGS CONTROLS ===== */
@@ -1402,6 +1427,22 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
               <div class="cal-grid" id="due-cal-grid"></div>
             </div>
             <div class="section-label" id="due-cal-selected-label">Today</div>
+            <div id="study-sessions-list"></div>
+            <button class="add-study-btn" id="add-study-btn" onclick="toggleStudyForm()">+ Schedule study time</button>
+            <div class="card" id="study-form" style="display:none;padding:14px;margin-bottom:14px;">
+              <input class="settings-input" id="study-form-title" placeholder="What are you studying? (e.g. Bio Chapter 4)" style="margin-bottom:10px;" />
+              <input class="settings-input" id="study-form-course" placeholder="Course (optional)" style="margin-bottom:10px;" />
+              <div class="study-form-row" style="margin-bottom:10px;">
+                <input type="time" class="settings-input" id="study-form-start" style="margin-bottom:0;" />
+                <input type="time" class="settings-input" id="study-form-end" style="margin-bottom:0;" />
+              </div>
+              <textarea class="syllabus-textarea" id="study-form-notes" placeholder="Notes (optional)" style="min-height:60px;margin-bottom:10px;"></textarea>
+              <div style="display:flex;gap:8px;">
+                <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="toggleStudyForm()">Cancel</button>
+                <button class="settings-btn" style="width:auto;flex:1;" onclick="saveStudySession()">Save</button>
+              </div>
+              <div id="study-form-msg" style="margin-top:8px;"></div>
+            </div>
             <div id="due-cal-selected-list"></div>
           </div>
           <div id="nodate-section" style="display:none;"><div class="section-label">No due date</div><div id="nodate-list"></div></div>
@@ -2284,6 +2325,7 @@ async function showApp() {
   loadCanvasSettings();
   loadCalendarToken();
   loadAssignments();
+  loadStudySessions();
   loadGrades();
   loadSyllabi();
   renderGoalsTab();
@@ -4100,6 +4142,63 @@ function searchSyllabi() {
 let dueCalMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
 let dueCalSelectedDate = null;
 let dueCalAssignments = [];
+let cachedStudySessions = [];
+
+async function loadStudySessions() {
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/study_sessions?user_id=eq.${USER_ID}&order=session_date.asc&select=*`);
+  cachedStudySessions = ok && Array.isArray(data) ? data : [];
+  renderDueCalendar();
+}
+
+function toggleStudyForm() {
+  const form = document.getElementById('study-form');
+  const btn = document.getElementById('add-study-btn');
+  const showing = form.style.display === 'none';
+  form.style.display = showing ? 'block' : 'none';
+  btn.style.display = showing ? 'none' : 'block';
+  if (showing) {
+    document.getElementById('study-form-title').value = '';
+    document.getElementById('study-form-course').value = '';
+    document.getElementById('study-form-start').value = '';
+    document.getElementById('study-form-end').value = '';
+    document.getElementById('study-form-notes').value = '';
+    document.getElementById('study-form-msg').innerHTML = '';
+  }
+}
+
+async function saveStudySession() {
+  const title = document.getElementById('study-form-title').value.trim() || 'Study session';
+  const course = document.getElementById('study-form-course').value.trim() || null;
+  const start = document.getElementById('study-form-start').value || null;
+  const end = document.getElementById('study-form-end').value || null;
+  const notes = document.getElementById('study-form-notes').value.trim() || null;
+  const msgEl = document.getElementById('study-form-msg');
+
+  if (start && end && end <= start) {
+    msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">End time must be after start time.</div>`;
+    return;
+  }
+
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/study_sessions', 'POST', {
+    user_id: USER_ID,
+    title, course,
+    session_date: dueCalSelectedDate,
+    start_time: start, end_time: end, notes,
+  }, true);
+
+  if (!ok) {
+    msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Couldn't save — try again.</div>`;
+    return;
+  }
+  await loadStudySessions();
+  toggleStudyForm();
+}
+
+async function deleteStudySession(id) {
+  cachedStudySessions = cachedStudySessions.filter(s => s.id !== id);
+  renderDueCalendar();
+  await sbFetchWithRetry(`/rest/v1/study_sessions?id=eq.${id}`, 'DELETE', null, true);
+}
 
 function ymd(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -4159,6 +4258,11 @@ function renderDueCalendar() {
     (byDate[key] = byDate[key] || []).push(a);
   });
 
+  const studyByDate = {};
+  cachedStudySessions.forEach(s => {
+    (studyByDate[s.session_date] = studyByDate[s.session_date] || []).push(s);
+  });
+
   const cells = [];
   for (let i = startDow - 1; i >= 0; i--) {
     const dnum = daysInPrevMonth - i;
@@ -4176,11 +4280,15 @@ function renderDueCalendar() {
   gridEl.innerHTML = cells.map(c => {
     const key = ymd(c.dateObj);
     const count = (byDate[key] || []).length;
+    const hasStudy = !!(studyByDate[key] || []).length;
     const isToday = key === todayStr;
     const isSelected = key === dueCalSelectedDate;
     return `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" onclick="selectDueCalDate('${key}')">
       <div class="cal-day-num">${c.dnum}</div>
-      ${count ? `<div class="cal-day-count">${count}</div>` : ''}
+      <div class="cal-day-dots">
+        ${count ? `<div class="cal-day-count">${count}</div>` : ''}
+        ${hasStudy ? `<div class="cal-day-study-dot" title="Study time scheduled"></div>` : ''}
+      </div>
     </div>`;
   }).join('');
 
@@ -4224,6 +4332,36 @@ function renderDueCalSelected() {
   listEl.innerHTML = items.length
     ? items.map(a => aCard(a, false)).join('')
     : `<div class="card-sub" style="padding:4px 2px;">Nothing due this day.</div>`;
+
+  renderStudySessionsForDay();
+}
+
+function fmtTime12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+function renderStudySessionsForDay() {
+  const listEl = document.getElementById('study-sessions-list');
+  if (!listEl || !dueCalSelectedDate) return;
+  const items = cachedStudySessions.filter(s => s.session_date === dueCalSelectedDate);
+  listEl.innerHTML = items.map(s => {
+    const timeRange = s.start_time
+      ? `${fmtTime12(s.start_time)}${s.end_time ? ' – ' + fmtTime12(s.end_time) : ''}`
+      : '';
+    const meta = [s.course, timeRange].filter(Boolean).join(' · ');
+    return `<div class="study-session-card">
+      <div class="study-session-dot"></div>
+      <div class="study-session-info">
+        <div class="study-session-title">${escapeHtml(s.title)}</div>
+        ${meta ? `<div class="study-session-meta">${escapeHtml(meta)}</div>` : ''}
+      </div>
+      <button class="study-session-del" onclick="deleteStudySession('${s.id}')" title="Remove">✕</button>
+    </div>`;
+  }).join('');
 }
 
 function renderAllWork(assignments) {

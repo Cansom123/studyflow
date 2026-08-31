@@ -3392,12 +3392,21 @@ function cocoPlanningContext(limit = 20) {
     return ad - bd;
   }).slice(0, limit);
 
-  const lines = sorted.map(a => {
+  // Overdue work gets its own labeled block. A single date-sorted list blends it in
+  // next to "due today" and the model consistently fails to treat it as more urgent —
+  // a dedicated, explicitly-labeled section fixes that in testing.
+  const fmtLine = a => {
     const d = a.due_date ? Math.round((new Date(a.due_date) - today) / (1000 * 60 * 60 * 24)) : null;
     const dueStr = d === null ? 'no due date' : d < 0 ? `${Math.abs(d)}d overdue` : d === 0 ? 'due today' : d === 1 ? 'due tomorrow' : `due in ${d} days`;
     const points = a.points_possible ? `, ${a.points_possible} pts` : '';
     return `- ${a.title} (${a.course || 'unknown course'}, ${a.assignment_type || 'assignment'}${points}) — ${dueStr}`;
-  });
+  };
+  const overdue = sorted.filter(a => a.due_date && new Date(a.due_date) < today);
+  const upcoming = sorted.filter(a => !a.due_date || new Date(a.due_date) >= today);
+
+  let text = '';
+  if (overdue.length) text += `OVERDUE (handle these first, before anything else):\n${overdue.map(fmtLine).join('\n')}\n\n`;
+  if (upcoming.length) text += `Upcoming:\n${upcoming.map(fmtLine).join('\n')}`;
 
   const weekOut = new Date(today); weekOut.setDate(weekOut.getDate() + 7);
   const studyLines = cachedStudySessions.filter(s => {
@@ -3405,7 +3414,6 @@ function cocoPlanningContext(limit = 20) {
     return sd >= today && sd <= weekOut;
   }).map(s => `- Study block: ${s.title}${s.course ? ' (' + s.course + ')' : ''} on ${s.session_date}${s.start_time ? ' at ' + fmtTime12(s.start_time) : ''}`);
 
-  let text = lines.join('\n');
   if (studyLines.length) text += `\n\nAlready scheduled study time this week:\n${studyLines.join('\n')}`;
 
   return { text, count: sorted.length };
@@ -3424,17 +3432,22 @@ async function cocoAskPlanning(question) {
     {
       role: 'system',
       content:
-        'You are coco.1, a study-planning assistant. Below is the student\'s ACTUAL upcoming work, pulled from Canvas. ' +
+        'You are coco.1, a supportive study-planning assistant for a student who might be stressed or overwhelmed. Below is their ACTUAL upcoming work, pulled from Canvas.\n' +
         'Rules:\n' +
         '1. Only reference assignments, courses, and due dates that literally appear in the list. Never invent one.\n' +
-        '2. Give short, specific, practical advice — what to tackle first and why, and how to split time if relevant.\n' +
-        '3. If the student already has study time scheduled, build on it rather than ignoring it.\n' +
-        '4. Reply in 2-4 plain sentences. No markdown, no bullet lists, no restating the whole list back verbatim.',
+        '2. If anything is overdue, treat it as the top priority and say so, unless the question clearly points elsewhere.\n' +
+        '3. You MUST end with a concrete recommendation: what to do first and why, in what order. A response that only acknowledges feelings without a recommendation is a failure.\n' +
+        '4. Sound like an encouraging friend, not a corporate assistant — warm and calm, never guilt-trippy about overdue work, never generic filler like "stay positive!".\n' +
+        '5. Weave any acknowledgment of stress INTO the same sentence as the plan, or keep it to a short clause at the start. Never spend a whole separate sentence just on feelings before getting to the plan.\n' +
+        '6. If the student already has study time scheduled, build on it rather than ignoring it.\n' +
+        '7. Reply in 2-4 plain sentences, as ONE continuous paragraph with no blank lines. No markdown, no bullet lists, no restating the whole list back verbatim.',
     },
     { role: 'user', content: `Today is ${todayStr}.\n\nUpcoming work:\n${text}\n\nStudent's question: ${question}` },
   ];
 
-  const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.2, max_tokens: 220, stop: ['\n\n'] });
+  // No stop sequence here on purpose: a '\n\n' stop was cutting generation short
+  // right after an empathy sentence, before the model reached the actual plan.
+  const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.2, max_tokens: 220 });
   const answer = (reply.choices[0].message.content || '').trim();
   return { answer: answer || "Couldn't come up with a plan for that — try rephrasing.", confidence: answer ? 'high' : 'none' };
 }

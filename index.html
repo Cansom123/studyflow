@@ -746,7 +746,23 @@ body {
 #ws-logo-name em { font-style: italic; }
 #ws-heading { font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: 5px; line-height: 1.2; }
 #ws-date { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+#ws-streak {
+  display: none; align-items: center; gap: 6px; font-size: 13px; font-weight: 700;
+  color: var(--accent-text); background: var(--accent-soft); border-radius: 99px;
+  padding: 6px 12px; margin-bottom: 14px; width: fit-content;
+}
 #ws-subtitle { font-size: 14px; color: var(--text2); margin-bottom: 26px; line-height: 1.45; }
+
+/* ===== REWARD TOAST (immediate positive feedback) ===== */
+.reward-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px) scale(0.9);
+  background: var(--accent); color: #fff; font-size: 13.5px; font-weight: 600;
+  padding: 12px 20px; border-radius: 99px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+  z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+  max-width: calc(100% - 32px); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.reward-toast-show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+@media (min-width: 601px) { .reward-toast { left: calc(50% + 116px); } }
 #ws-sync-btn {
   width: 100%; padding: 15px; background: var(--accent); color: #fff;
   border: none; border-radius: 12px; font-size: 15px; font-weight: 600;
@@ -921,15 +937,69 @@ mark.syl-mark-active { background: var(--accent); color: #fff; }
   background: var(--surface2); border-radius: 12px;
   padding: 11px 12px; margin-bottom: 8px;
 }
-.study-session-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green, #2ea043); flex-shrink: 0; }
 .study-session-info { flex: 1; min-width: 0; }
 .study-session-title { font-size: 13.5px; font-weight: 600; color: var(--text1); }
+.study-session-card.done { opacity: 0.5; }
+.study-session-card.done .study-session-title { text-decoration: line-through; }
 .study-session-meta { font-size: 11.5px; color: var(--text2); margin-top: 1px; }
 .study-session-del {
   font-size: 18px; color: var(--text2); cursor: pointer; background: none; border: none;
   line-height: 1; opacity: 0.6; padding: 4px; flex-shrink: 0;
 }
 .study-session-del:hover { opacity: 1; color: #d85a30; }
+.study-session-start {
+  font-size: 12px; font-weight: 700; color: var(--accent-text); background: var(--accent-soft);
+  border: none; border-radius: 8px; padding: 7px 11px; cursor: pointer; flex-shrink: 0; font-family: inherit;
+}
+.study-session-start:hover { filter: brightness(1.08); }
+
+/* ===== FOCUS TIMER ===== */
+#focus-overlay {
+  display: none; position: fixed; inset: 0; z-index: 10001;
+  background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 16px;
+}
+#focus-card {
+  background: var(--surface); border-radius: 20px; max-width: 380px; width: 100%;
+  padding: 30px 24px 26px; text-align: center; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+#focus-close {
+  position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--surface2); border: none; cursor: pointer; color: var(--text2); font-family: inherit; font-size: 14px;
+}
+
+/* ===== STUDY GOAL ONBOARDING (blocking, like the sync welcome screen) ===== */
+#study-goal-onboard-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; overflow-y: auto;
+}
+#study-goal-onboard-card {
+  background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-md);
+  width: 100%; max-width: 420px; padding: 32px 28px 28px;
+  animation: fadeUp 0.25s ease;
+}
+#focus-close:hover { background: var(--border); color: var(--text1); }
+.focus-title { font-size: 18px; font-weight: 700; color: var(--text1); margin-bottom: 6px; }
+.focus-sub { font-size: 13px; color: var(--text2); margin-bottom: 18px; line-height: 1.5; }
+.focus-phase-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text2); margin-bottom: 8px; margin-top: 4px; }
+.focus-duration-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px; }
+.focus-duration-btn {
+  padding: 10px 15px; border-radius: 12px; border: 1.5px solid var(--border);
+  background: var(--surface2); color: var(--text1); font-size: 13.5px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.focus-duration-btn.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); }
+.focus-timer-display { font-size: 52px; font-weight: 800; color: var(--accent); letter-spacing: -1px; margin: 10px 0 18px; font-variant-numeric: tabular-nums; }
+.focus-btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.focus-btn-row.stack { flex-direction: column; }
+
+/* ===== STUDY GOALS ===== */
+.goal-progress-label { display: flex; justify-content: space-between; font-size: 14.5px; color: var(--text1); font-weight: 700; margin-bottom: 10px; }
+.goal-progress-label span:last-child { color: var(--text2); font-weight: 500; }
+.goal-progress-track { height: 12px; border-radius: 99px; background: var(--surface2); overflow: hidden; }
+.goal-progress-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width 0.3s; }
+.goal-progress-fill.goal-met { background: var(--green, #2ea043); }
 .study-form-row { display: flex; gap: 8px; }
 .study-form-row .settings-input { flex: 1; }
 .add-study-btn {
@@ -1212,6 +1282,7 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
       <div id="ws-welcome">
         <div id="ws-heading">Welcome back</div>
         <div id="ws-date"></div>
+        <div id="ws-streak"></div>
         <div id="ws-subtitle">Here's what's on your plate today</div>
         <button id="ws-sync-btn" onclick="wsSync()">Sync assignments</button>
         <button class="ws-skip" onclick="wsClose()">Go to app →</button>
@@ -1260,6 +1331,30 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
     </div>
   </div>
 
+  <!-- FOCUS TIMER -->
+  <div id="focus-overlay">
+    <div id="focus-card">
+      <button id="focus-close" onclick="closeFocusTimer()" title="Close">✕</button>
+      <div id="focus-body"></div>
+    </div>
+  </div>
+
+  <!-- STUDY GOAL ONBOARDING (blocks the app like the sync welcome screen — answer or skip) -->
+  <div id="study-goal-onboard-overlay" style="display:none;">
+    <div id="study-goal-onboard-card">
+      <div class="focus-title" style="text-align:left;margin-bottom:4px;">What's a good study goal for you?</div>
+      <div class="card-sub" style="margin-bottom:22px;">Pick something easy to hit — you can always change it later.</div>
+      <div class="focus-phase-label">Daily goal</div>
+      <div class="focus-duration-row" id="onboard-daily-row" style="justify-content:flex-start;margin-bottom:24px;"></div>
+      <div class="focus-phase-label">Weekly goal</div>
+      <div class="focus-duration-row" id="onboard-weekly-row" style="justify-content:flex-start;margin-bottom:24px;"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="settings-btn" style="width:auto;flex:1;" onclick="finishStudyGoalOnboarding()">Sounds good</button>
+        <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="skipStudyGoalOnboarding()">Skip for now</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MAIN APP -->
   <div id="welcome-toast" onclick="dismissWelcome()" style="display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:13px 18px;box-shadow:0 4px 20px rgba(0,0,0,0.12);max-width:340px;width:calc(100% - 32px);cursor:pointer;transition:opacity 0.4s;">
     <div style="font-size:14px;font-weight:600;color:var(--text1);margin-bottom:2px;" id="welcome-toast-title"></div>
@@ -1305,6 +1400,10 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
       <button class="tab" id="tab-priority" onclick="showPage('priority',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="10 2.5 12 7.5 17.5 7.5 13 11 14.5 17 10 13.5 5.5 17 7 11 2.5 7.5 8 7.5"/></svg></span>
         <span>Priority</span>
+      </button>
+      <button class="tab" id="tab-study" onclick="showPage('study',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><polygon points="8.5 6.5 14 10 8.5 13.5 8.5 6.5"/></svg></span>
+        <span>Study</span>
       </button>
       <button class="tab" id="tab-grades" onclick="showPage('grades',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="11" width="3" height="6" rx="1"/><rect x="8.5" y="7" width="3" height="10" rx="1"/><rect x="14" y="3" width="3" height="14" rx="1"/></svg></span>
@@ -1481,6 +1580,57 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           <div class="empty-sub">Sync your Canvas account in Settings first.</div>
         </div>
         <div id="priority-list"></div>
+      </div>
+
+      <!-- STUDY -->
+      <div class="page" id="page-study">
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-label">Studied today</div><div class="stat-val" id="study-stat-today">0m</div></div>
+          <div class="stat-card"><div class="stat-label">This week</div><div class="stat-val" id="study-stat-week">0m</div></div>
+        </div>
+        <div class="card" style="padding:20px;margin-bottom:28px;">
+          <div class="card-sub" style="margin-bottom:4px;">All-time total</div>
+          <div style="font-size:28px;font-weight:800;color:var(--text1);" id="study-stat-total">0h 0m</div>
+        </div>
+
+        <div class="section-label" style="margin-top:0;">Quick start</div>
+        <div class="card" style="padding:20px;margin-bottom:28px;">
+          <input class="settings-input" id="quick-study-title" placeholder="What are you studying?" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){quickStartFocus();}" />
+          <button class="settings-btn" onclick="quickStartFocus()">▶ Start focus session</button>
+        </div>
+
+        <div class="section-label">Today's scheduled study time</div>
+        <div id="study-today-empty" class="card-sub" style="padding:2px 2px 8px;">Nothing scheduled for today. Add study time from the Due Soon calendar, or start a quick session above.</div>
+        <div id="study-today-list" style="margin-bottom:28px;"></div>
+
+        <div class="section-label">Study goals</div>
+        <div class="card" style="padding:24px;margin-bottom:16px;">
+          <div class="goal-progress-row">
+            <div class="goal-progress-label"><span>Today</span><span id="study-goal-today-text">0 / 60 min</span></div>
+            <div class="goal-progress-track"><div class="goal-progress-fill" id="study-goal-today-fill" style="width:0%;"></div></div>
+          </div>
+          <div class="goal-progress-row" style="margin-top:24px;">
+            <div class="goal-progress-label"><span>This week</span><span id="study-goal-week-text">0 / 300 min</span></div>
+            <div class="goal-progress-track"><div class="goal-progress-fill" id="study-goal-week-fill" style="width:0%;"></div></div>
+          </div>
+          <div id="study-goal-nudge" class="card-sub" style="margin-top:20px;font-size:13px;"></div>
+          <button class="help-toggle-btn" onclick="toggleStudyGoalEdit()" style="margin-top:20px;">
+            <span style="font-size:13px;color:var(--text2);">Change goals</span>
+            <span class="help-toggle-arrow" id="study-goal-edit-arrow">›</span>
+          </button>
+          <div id="study-goal-edit" style="display:none;margin-top:16px;">
+            <div class="study-form-row">
+              <div style="flex:1;">
+                <div class="card-sub" style="margin-bottom:8px;">Daily goal (min)</div>
+                <input class="settings-input" type="number" min="0" step="5" id="study-goal-daily-input" style="margin-bottom:0;" onchange="saveStudyGoals()" />
+              </div>
+              <div style="flex:1;">
+                <div class="card-sub" style="margin-bottom:8px;">Weekly goal (min)</div>
+                <input class="settings-input" type="number" min="0" step="15" id="study-goal-weekly-input" style="margin-bottom:0;" onchange="saveStudyGoals()" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- GRADES -->
@@ -1758,21 +1908,36 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         </div>
         <div class="section-label" style="margin-top:20px;">Calendar</div>
         <div class="card">
-          <div class="card-sub" style="margin-bottom:12px;">Subscribe to your assignments in Google Calendar or Apple Calendar. Updates automatically when you sync Canvas.</div>
+          <div class="card-sub" style="margin-bottom:12px;">Subscribe to your assignments and study time in Google Calendar or Apple Calendar. Updates automatically when you sync Canvas.</div>
           <div id="cal-link-loading" style="color:var(--text2);font-size:13px;">Loading…</div>
           <div id="cal-link-wrap" style="display:none;">
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
               <button class="sync-btn" onclick="addToAppleCalendar()">Add to Apple Calendar</button>
-              <button class="sync-btn" onclick="addToGoogleCalendar()">Add to Google Calendar</button>
+              <button class="sync-btn" onclick="addToGoogleCalendar()">Try one-click Google Calendar</button>
             </div>
+            <div class="help-note" style="margin-bottom:8px;">Google's one-click add is unreliable — it sometimes just opens Google Calendar without subscribing. If nothing happens, use the manual steps below — they always work.</div>
             <button class="help-toggle-btn" onclick="toggleCalendarCopyHelp()" style="margin-top:4px;">
-              <span style="font-size:13px;color:var(--text2);">Add manually instead</span>
+              <span style="font-size:13px;color:var(--text2);">Add manually instead (recommended)</span>
               <span class="help-toggle-arrow" id="cal-copy-arrow">›</span>
             </button>
             <div id="cal-copy-wrap" style="display:none;margin-top:10px;">
               <input class="settings-input" type="text" id="cal-link-input" readonly style="font-size:12px;font-family:monospace;color:var(--text2);margin-bottom:8px;" />
               <button class="sync-btn" onclick="copyCalendarLink()">Copy link</button>
               <div id="cal-copy-msg" style="font-size:13px;color:var(--accent);margin-top:6px;display:none;">Copied to clipboard!</div>
+              <div class="help-steps" style="margin-top:14px;">
+                <div class="help-step">
+                  <div class="help-step-num">1</div>
+                  <div class="help-step-text">On a computer, go to <strong>calendar.google.com</strong> and click the <strong>+</strong> next to "Other calendars" in the left sidebar.</div>
+                </div>
+                <div class="help-step">
+                  <div class="help-step-num">2</div>
+                  <div class="help-step-text">Choose <strong>From URL</strong>.</div>
+                </div>
+                <div class="help-step">
+                  <div class="help-step-num">3</div>
+                  <div class="help-step-text">Paste the copied link and click <strong>Add calendar</strong>. It can take Google a few hours to show new events the first time.</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1848,6 +2013,14 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           </svg>
         </div>
         <span class="nav-label">Priority</span>
+      </button>
+      <button class="nav-item" id="nav-study" onclick="showPage('study',this,true)">
+        <div class="nav-icon">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="10" r="7.5"/><polygon points="8.5 6.5 14 10 8.5 13.5 8.5 6.5"/>
+          </svg>
+        </div>
+        <span class="nav-label">Study</span>
       </button>
       <button class="nav-item" id="nav-grades" onclick="showPage('grades',this,true)">
         <div class="nav-icon">
@@ -1994,6 +2167,9 @@ const DEFAULT_PREFS = {
   reminderDaysBefore: 1,
   defaultFinalWeight: 30,
   priorityGoalBoost: 50,
+  studyGoalDailyMin: 60,
+  studyGoalWeeklyMin: 300,
+  studyGoalOnboarded: false,
 };
 let userPrefs = { ...DEFAULT_PREFS };
 
@@ -2890,6 +3066,9 @@ async function syncCanvas() {
       statusEl.textContent = msg;
       statusEl.style.whiteSpace = 'pre-wrap';
     }
+    // Immediate reward every time they sync — not just once a day — since
+    // syncing is the habit we most want to reinforce right when it happens.
+    showReward(SYNC_REWARD_MESSAGES[Math.floor(Math.random() * SYNC_REWARD_MESSAGES.length)]);
   } catch(err) {
     syncInProgress = false;
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
@@ -3416,13 +3595,184 @@ function cocoPlanningContext(limit = 20) {
 
   if (studyLines.length) text += `\n\nAlready scheduled study time this week:\n${studyLines.join('\n')}`;
 
-  return { text, count: sorted.length };
+  // Every weekday the student actually has something on. The model likes to
+  // translate dates into weekday names and gets them wrong ("Chem review on
+  // Friday" for a Thursday block), so the verifier needs the real set.
+  const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const validWeekdays = new Set();
+  sorted.forEach(a => { if (a.due_date) validWeekdays.add(DAY_NAMES[new Date(a.due_date).getDay()]); });
+  cachedStudySessions.forEach(s => {
+    if (!s.session_date) return;
+    const sd = new Date(s.session_date + 'T00:00:00');
+    if (sd >= today && sd <= weekOut) validWeekdays.add(DAY_NAMES[sd.getDay()]);
+  });
+
+  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays };
+}
+
+/* ---- Planning-mode verification -------------------------------------
+   Syllabus mode refuses to trust the model: it checks numbers against the
+   source, asks the model to second-guess itself, and quotes the syllabus
+   verbatim when confidence drops. Planning mode originally had none of that —
+   the raw generation went straight to the screen. That's the worst place to
+   skip verification, because fluent-but-wrong scheduling advice is exactly
+   what a stressed student acts on without double-checking.
+
+   These checks are deliberately narrow. A verifier that fires on correct
+   answers is worse than no verifier at all: it would push every response to
+   the fallback and make coco.1 feel broken. So they only catch things that
+   are cheap to check and unambiguous when wrong. */
+
+// Tokens shaped like a course code ("CHEM 101") but that are really ordinary
+// phrases a planner would legitimately invent ("Chapter 12", "Week 3").
+const COCO_NOT_COURSE_CODES = new Set([
+  'chapter', 'chapters', 'week', 'weeks', 'day', 'days', 'part', 'parts',
+  'section', 'sections', 'unit', 'units', 'page', 'pages', 'step', 'steps',
+  'round', 'rounds', 'problem', 'problems', 'question', 'questions',
+  'number', 'no', 'session', 'sessions', 'minute', 'minutes', 'hour', 'hours',
+  'top', 'level', 'phase', 'block', 'blocks', 'set', 'sets', 'module', 'modules',
+]);
+
+// "CHEM 101", "Bio210", "CS 301" — distinctive enough that a code absent from
+// the student's real course list is a fabrication, not a paraphrase.
+// The leading capital is load-bearing: without it "2 blocks of 30 minutes"
+// parses "of 30" as a course code. Course codes are essentially never written
+// lowercase, so requiring the capital costs almost no recall and removes a
+// whole class of false positives that a word blocklist could never cover.
+function cocoExtractCourseCodes(text) {
+  const out = [];
+  const re = /\b([A-Z][A-Za-z]{1,7})\s?(\d{2,4})\b/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    if (COCO_NOT_COURSE_CODES.has(m[1].toLowerCase())) continue;
+    out.push({ raw: m[0], alpha: m[1], num: m[2] });
+  }
+  return out;
+}
+
+function cocoNormalize(s) { return (s || '').toLowerCase().replace(/\s+/g, ' '); }
+
+// Returns { ok, reason }. `reason` is for logging/eval, never shown to students.
+function cocoVerifyPlanning(answer, ctx) {
+  const haystack = cocoNormalize(ctx.text);
+  const ans = cocoNormalize(answer);
+
+  // 1. Fabricated course code. The strongest signal available: the model
+  //    naming a class the student isn't taking.
+  for (const code of cocoExtractCourseCodes(answer)) {
+    const spaced = cocoNormalize(`${code.alpha} ${code.num}`);
+    const tight = cocoNormalize(`${code.alpha}${code.num}`);
+    if (!haystack.includes(spaced) && !haystack.includes(tight)) {
+      return { ok: false, reason: `fabricated course code: ${code.raw}` };
+    }
+  }
+
+  // 2. Contradicting the overdue list. "You're all caught up" when something
+  //    is genuinely late is both wrong and actively harmful.
+  if (ctx.overdue.length > 0 &&
+      /(all caught up|nothing (is )?overdue|no overdue|nothing (is )?late|you'?re (all )?set|nothing past due)/i.test(answer)) {
+    return { ok: false, reason: 'claims caught up while work is overdue' };
+  }
+
+  // 3. Quoted phrases must be real — but only ones that actually look like an
+  //    assignment title. Emphasis ("your \"must do\" today") and encouragement
+  //    ("\"You've got this\"") are legitimately invented, so a naive check here
+  //    rejects good answers. Require a title-shaped quote: capitalized, of some
+  //    length, and not addressing the student directly.
+  const quoted = answer.match(/"([^"]{8,60})"/g) || [];
+  for (const q of quoted) {
+    const inner = q.slice(1, -1).trim();
+    if (!/^[A-Z]/.test(inner)) continue;                  // lowercase → emphasis, not a title
+    if (/\b(you|your|you're|i|we|my|me|us)\b/i.test(inner)) continue; // addressed to the student
+    if (!haystack.includes(cocoNormalize(inner))) {
+      return { ok: false, reason: `quoted text not in context: ${q}` };
+    }
+  }
+
+  // 4. Weekday the student has nothing on. Caught in adversarial testing: the
+  //    model translates an ISO date into the wrong day name ("Chem review on
+  //    Friday" for a Thursday block). Sending someone to study on the wrong
+  //    day is a concrete harm, and the real weekday set is known exactly.
+  if (ctx.validWeekdays && ctx.validWeekdays.size) {
+    const mentioned = answer.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi) || [];
+    for (const day of mentioned) {
+      if (!ctx.validWeekdays.has(day.toLowerCase())) {
+        return { ok: false, reason: `weekday with nothing scheduled: ${day}` };
+      }
+    }
+  }
+
+  // 5. Overdue work described as merely due. Also from adversarial testing:
+  //    "You've got a Reading Reflection due today" for something a day late.
+  //    Understating lateness is the one direction that costs the student marks.
+  //    The window has to stop at the next clause or assignment — a naive scan
+  //    reads the NEXT item's "due today" as if it belonged to this one, which
+  //    rejected perfectly good answers on the first cut of this check.
+  for (const a of ctx.overdue) {
+    if (!a.title) continue;
+    const t = cocoNormalize(a.title);
+    const idx = ans.indexOf(t);
+    if (idx === -1) continue;
+
+    let win = ans.slice(idx + t.length, idx + t.length + 90);
+    const cuts = [/[.;]/, /\bthen\b/, /\bnext\b/, /\balso\b/]
+      .map(re => win.search(re)).filter(i => i >= 0);
+    for (const other of [...ctx.overdue, ...ctx.upcoming]) {
+      if (!other.title || other.title === a.title) continue;
+      const oi = win.indexOf(cocoNormalize(other.title));
+      if (oi >= 0) cuts.push(oi);
+    }
+    if (cuts.length) win = win.slice(0, Math.min(...cuts));
+
+    if (/\boverdue\b|\blate\b|past due/.test(win)) continue; // correctly described
+    if (/\bdue (today|tomorrow|in \d+ day)/.test(win)) {
+      return { ok: false, reason: `overdue item described as upcoming: ${a.title}` };
+    }
+  }
+
+  return { ok: true, reason: '' };
+}
+
+/* ---- Deterministic fallback ------------------------------------------
+   The planning-mode counterpart to quoting the syllabus: a plan composed
+   from the real assignment rows with no model involved, so it cannot be
+   wrong about what exists or when it's due. Less warm than a generated
+   answer, but always true — the right thing to show when the model's
+   version fails verification. */
+function cocoDeterministicPlan(ctx) {
+  const name = a => `${a.title}${a.course ? ` (${a.course})` : ''}`;
+  const parts = [];
+
+  if (ctx.overdue.length) {
+    const first = ctx.overdue[0];
+    const days = Math.abs(Math.round((new Date(first.due_date) - ctx.today) / 86400000));
+    parts.push(`Start with ${name(first)} — it's ${days} day${days !== 1 ? 's' : ''} overdue, so it's the most urgent thing on your list.`);
+    if (ctx.overdue.length > 1) {
+      parts.push(`You have ${ctx.overdue.length - 1} other overdue item${ctx.overdue.length - 1 !== 1 ? 's' : ''} after that.`);
+    }
+  }
+
+  const next = ctx.upcoming.filter(a => a.due_date).slice(0, 2);
+  if (next.length) {
+    const described = next.map(a => {
+      const d = Math.round((new Date(a.due_date) - ctx.today) / 86400000);
+      const when = d === 0 ? 'due today' : d === 1 ? 'due tomorrow' : `due in ${d} days`;
+      return `${name(a)}, ${when}`;
+    });
+    parts.push(ctx.overdue.length
+      ? `Then: ${described.join('; then ')}.`
+      : `Start with ${described.join('; then ')}.`);
+  }
+
+  if (!parts.length) return "You don't have any dated work coming up right now.";
+  return parts.join(' ');
 }
 
 async function cocoAskPlanning(question) {
   if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
 
-  const { text, count } = cocoPlanningContext();
+  const ctx = cocoPlanningContext();
+  const { text, count } = ctx;
   if (count === 0) {
     return { answer: "You don't have any upcoming assignments synced right now — nothing to plan around yet.", confidence: 'none' };
   }
@@ -3449,12 +3799,32 @@ async function cocoAskPlanning(question) {
   // right after an empathy sentence, before the model reached the actual plan.
   const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.2, max_tokens: 220 });
   const answer = (reply.choices[0].message.content || '').trim();
-  return { answer: answer || "Couldn't come up with a plan for that — try rephrasing.", confidence: answer ? 'high' : 'none' };
+
+  if (!answer) {
+    return { answer: cocoDeterministicPlan(ctx), confidence: 'computed', reason: 'empty generation' };
+  }
+
+  const verdict = cocoVerifyPlanning(answer, ctx);
+  if (!verdict.ok) {
+    console.warn('[coco.1 planning] rejected answer —', verdict.reason);
+    return { answer: cocoDeterministicPlan(ctx), confidence: 'computed', reason: verdict.reason };
+  }
+
+  return { answer, confidence: 'high', reason: '' };
 }
 
 function cocoPlanningAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
+  }
+  // 'computed' means the generated answer failed verification and this plan was
+  // built straight from the assignment rows instead. Label it as what it is
+  // rather than dressing it up as an AI answer — same honesty rule as the
+  // syllabus 'quoted' state.
+  if (confidence === 'computed') {
+    return `<div class="school-ai-badge">✨ coco.1</div>` +
+      `<div class="school-ai-disclaimer" style="margin-top:0;">Straight from your assignment list:</div>` +
+      `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
   return `<div class="school-ai-badge">✨ coco.1</div>` +
     `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
@@ -4264,6 +4634,7 @@ async function loadStudySessions() {
   const { ok, data } = await sbFetchWithRetry(`/rest/v1/study_sessions?user_id=eq.${USER_ID}&order=session_date.asc&select=*`);
   cachedStudySessions = ok && Array.isArray(data) ? data : [];
   renderDueCalendar();
+  renderStudyTab();
 }
 
 function toggleStudyForm() {
@@ -4308,17 +4679,88 @@ async function saveStudySession() {
   }
   await loadStudySessions();
   toggleStudyForm();
+  showReward(STUDY_SCHEDULE_REWARD_MESSAGES[Math.floor(Math.random() * STUDY_SCHEDULE_REWARD_MESSAGES.length)]);
 }
 
 async function deleteStudySession(id) {
   cachedStudySessions = cachedStudySessions.filter(s => s.id !== id);
   renderDueCalendar();
+  renderStudyTab();
   await sbFetchWithRetry(`/rest/v1/study_sessions?id=eq.${id}`, 'DELETE', null, true);
 }
 
 function ymd(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+
+/* ===== Immediate gratification (Atomic Habits: reward the habit right when it happens) ===== */
+
+// Small pop-in toast for an instant positive reaction to an action — opening the
+// app, syncing, scheduling or finishing study time. Deliberately lightweight and
+// frequent rather than rare and showy: the reward has to land immediately after
+// the action to actually reinforce the habit.
+let rewardToastTimer = null;
+function showReward(text) {
+  let el = document.getElementById('reward-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'reward-toast';
+    el.className = 'reward-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.classList.remove('reward-toast-show');
+  void el.offsetWidth; // restart the CSS transition even if already showing
+  el.classList.add('reward-toast-show');
+  clearTimeout(rewardToastTimer);
+  rewardToastTimer = setTimeout(() => el.classList.remove('reward-toast-show'), 2600);
+}
+
+// Consecutive-day streak, keyed per user, based on calendar day (not a rolling
+// 24h window) so a skipped day actually breaks it. Call once per app open.
+function bumpDailyStreak() {
+  const key = 'sf_streak_' + USER_ID;
+  const todayKey = ymd(new Date());
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) {}
+  if (raw && raw.lastDate === todayKey) return raw.count;
+  let count = 1;
+  if (raw) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    if (raw.lastDate === ymd(yesterday)) count = raw.count + 1;
+  }
+  localStorage.setItem(key, JSON.stringify({ count, lastDate: todayKey }));
+  return count;
+}
+
+// Days (not sessions) with at least one completed study block — same idea,
+// separate counter, so scheduling time and actually using it are rewarded distinctly.
+function bumpStudyStreak() {
+  const key = 'sf_study_streak_' + USER_ID;
+  const todayKey = ymd(new Date());
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) {}
+  if (raw && raw.lastDate === todayKey) return raw.count;
+  let count = 1;
+  if (raw) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    if (raw.lastDate === ymd(yesterday)) count = raw.count + 1;
+  }
+  localStorage.setItem(key, JSON.stringify({ count, lastDate: todayKey }));
+  return count;
+}
+
+const SYNC_REWARD_MESSAGES = [
+  "✨ Synced! You're on top of it.",
+  "✅ All caught up — nice.",
+  "🔥 Staying ahead of the work.",
+  "✨ Fresh data, zero effort.",
+];
+const STUDY_SCHEDULE_REWARD_MESSAGES = [
+  "📅 Time blocked — future you says thanks.",
+  "✨ Nice, that's on the calendar now.",
+  "📚 Study time locked in.",
+];
 
 function renderDueSoon(assignments) {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -4460,24 +4902,422 @@ function fmtTime12(t) {
   return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 
+function studySessionCardHTML(s) {
+  const timeRange = s.start_time
+    ? `${fmtTime12(s.start_time)}${s.end_time ? ' – ' + fmtTime12(s.end_time) : ''}`
+    : '';
+  const meta = [s.course, timeRange].filter(Boolean).join(' · ');
+  return `<div class="study-session-card${s.completed ? ' done' : ''}">
+    <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleStudySessionDone('${s.id}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
+    <div class="study-session-info">
+      <div class="study-session-title">${escapeHtml(s.title)}</div>
+      ${meta ? `<div class="study-session-meta">${escapeHtml(meta)}</div>` : ''}
+    </div>
+    ${!s.completed ? `<button class="study-session-start" onclick="openFocusTimer('${s.id}')" title="Start focus timer">▶ Start</button>` : ''}
+    <button class="study-session-del" onclick="deleteStudySession('${s.id}')" title="Remove">✕</button>
+  </div>`;
+}
+
 function renderStudySessionsForDay() {
   const listEl = document.getElementById('study-sessions-list');
   if (!listEl || !dueCalSelectedDate) return;
   const items = cachedStudySessions.filter(s => s.session_date === dueCalSelectedDate);
-  listEl.innerHTML = items.map(s => {
-    const timeRange = s.start_time
-      ? `${fmtTime12(s.start_time)}${s.end_time ? ' – ' + fmtTime12(s.end_time) : ''}`
-      : '';
-    const meta = [s.course, timeRange].filter(Boolean).join(' · ');
-    return `<div class="study-session-card">
-      <div class="study-session-dot"></div>
-      <div class="study-session-info">
-        <div class="study-session-title">${escapeHtml(s.title)}</div>
-        ${meta ? `<div class="study-session-meta">${escapeHtml(meta)}</div>` : ''}
-      </div>
-      <button class="study-session-del" onclick="deleteStudySession('${s.id}')" title="Remove">✕</button>
-    </div>`;
-  }).join('');
+  listEl.innerHTML = items.map(studySessionCardHTML).join('');
+  renderStudyTab();
+}
+
+/* ===== Study tab: totals + goals + today's sessions ===== */
+
+function startOfWeek(d) {
+  const start = new Date(d);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay()); // back to Sunday
+  return start;
+}
+
+function fmtHoursMinutes(totalMin) {
+  const h = Math.floor(totalMin / 60), m = totalMin % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function renderStudyTab() {
+  const totalEl = document.getElementById('study-stat-total');
+  if (!totalEl) return; // page not in DOM yet (shouldn't happen, but stay safe)
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const todayKey = ymd(today);
+  const weekStart = startOfWeek(today);
+
+  let todayMin = 0, weekMin = 0, totalMin = 0;
+  cachedStudySessions.forEach(s => {
+    const min = s.minutes_studied || 0;
+    totalMin += min;
+    if (!s.session_date) return;
+    const d = new Date(s.session_date + 'T00:00:00');
+    if (s.session_date === todayKey) todayMin += min;
+    if (d >= weekStart) weekMin += min;
+  });
+
+  document.getElementById('study-stat-today').textContent = fmtHoursMinutes(todayMin);
+  document.getElementById('study-stat-week').textContent = fmtHoursMinutes(weekMin);
+  totalEl.textContent = fmtHoursMinutes(totalMin);
+
+  const dailyGoal = userPrefs.studyGoalDailyMin ?? 60;
+  const weeklyGoal = userPrefs.studyGoalWeeklyMin ?? 300;
+
+  const todayFill = document.getElementById('study-goal-today-fill');
+  const weekFill = document.getElementById('study-goal-week-fill');
+  const todayText = document.getElementById('study-goal-today-text');
+  const weekText = document.getElementById('study-goal-week-text');
+  if (todayFill) {
+    const pct = dailyGoal > 0 ? Math.min(100, (todayMin / dailyGoal) * 100) : 0;
+    todayFill.style.width = pct + '%';
+    todayFill.classList.toggle('goal-met', todayMin >= dailyGoal && dailyGoal > 0);
+    todayText.textContent = `${todayMin} / ${dailyGoal} min`;
+  }
+  if (weekFill) {
+    const pct = weeklyGoal > 0 ? Math.min(100, (weekMin / weeklyGoal) * 100) : 0;
+    weekFill.style.width = pct + '%';
+    weekFill.classList.toggle('goal-met', weekMin >= weeklyGoal && weeklyGoal > 0);
+    weekText.textContent = `${weekMin} / ${weeklyGoal} min`;
+  }
+
+  const nudgeEl = document.getElementById('study-goal-nudge');
+  if (nudgeEl) {
+    if (dailyGoal > 0 && todayMin >= dailyGoal) {
+      nudgeEl.textContent = "🎉 You've hit today's study goal — anything more is a bonus.";
+    } else if (dailyGoal > 0) {
+      nudgeEl.textContent = `${dailyGoal - todayMin} minutes left to hit today's goal.`;
+    } else {
+      nudgeEl.textContent = '';
+    }
+  }
+
+  const dailyInput = document.getElementById('study-goal-daily-input');
+  const weeklyInput = document.getElementById('study-goal-weekly-input');
+  if (dailyInput && document.activeElement !== dailyInput) dailyInput.value = dailyGoal;
+  if (weeklyInput && document.activeElement !== weeklyInput) weeklyInput.value = weeklyGoal;
+
+  const todayItems = cachedStudySessions.filter(s => s.session_date === todayKey);
+  const todayListEl = document.getElementById('study-today-list');
+  const todayEmptyEl = document.getElementById('study-today-empty');
+  if (todayListEl) todayListEl.innerHTML = todayItems.map(studySessionCardHTML).join('');
+  if (todayEmptyEl) todayEmptyEl.style.display = todayItems.length ? 'none' : 'block';
+}
+
+function toggleStudyGoalEdit() {
+  const wrap = document.getElementById('study-goal-edit');
+  const arrow = document.getElementById('study-goal-edit-arrow');
+  const isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : 'block';
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function saveStudyGoals() {
+  const dailyInput = document.getElementById('study-goal-daily-input');
+  const weeklyInput = document.getElementById('study-goal-weekly-input');
+  const daily = Math.max(0, parseInt(dailyInput.value, 10) || 0);
+  const weekly = Math.max(0, parseInt(weeklyInput.value, 10) || 0);
+  userPrefs.studyGoalDailyMin = daily;
+  userPrefs.studyGoalWeeklyMin = weekly;
+  saveUserPrefs();
+  renderStudyTab();
+}
+
+/* ===== First-visit goal onboarding =====
+   Blocks the app the same way the sync welcome screen does — full-screen,
+   no accidental-dismiss ✕ — but the "block" is brief and the choice is easy:
+   sensible defaults are pre-selected so answering is one tap ("Sounds good"),
+   and Skip is just as prominent so nothing feels like a trap. */
+const STUDY_GOAL_DAILY_OPTIONS = [15, 30, 45, 60, 90];
+const STUDY_GOAL_WEEKLY_OPTIONS = [60, 120, 180, 300, 450];
+let onboardDailyGoal = 30;
+let onboardWeeklyGoal = 180;
+
+function maybeShowStudyGoalOnboarding() {
+  if (userPrefs.studyGoalOnboarded) return;
+  // Someone who already customized goals before this prompt existed has
+  // effectively already answered — don't relitigate their choice.
+  if (userPrefs.studyGoalDailyMin !== DEFAULT_PREFS.studyGoalDailyMin ||
+      userPrefs.studyGoalWeeklyMin !== DEFAULT_PREFS.studyGoalWeeklyMin) {
+    userPrefs.studyGoalOnboarded = true;
+    saveUserPrefs();
+    return;
+  }
+  const overlay = document.getElementById('study-goal-onboard-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  renderGoalOnboardOptions();
+}
+
+function renderGoalOnboardOptions() {
+  document.getElementById('onboard-daily-row').innerHTML = STUDY_GOAL_DAILY_OPTIONS.map(m =>
+    `<button class="focus-duration-btn${m === onboardDailyGoal ? ' active' : ''}" onclick="pickOnboardGoal('daily',${m})">${m} min</button>`
+  ).join('');
+  document.getElementById('onboard-weekly-row').innerHTML = STUDY_GOAL_WEEKLY_OPTIONS.map(m =>
+    `<button class="focus-duration-btn${m === onboardWeeklyGoal ? ' active' : ''}" onclick="pickOnboardGoal('weekly',${m})">${m >= 60 ? (m / 60) + 'h' : m + ' min'}</button>`
+  ).join('');
+}
+
+function pickOnboardGoal(kind, min) {
+  if (kind === 'daily') onboardDailyGoal = min; else onboardWeeklyGoal = min;
+  renderGoalOnboardOptions();
+}
+
+function finishStudyGoalOnboarding() {
+  userPrefs.studyGoalDailyMin = onboardDailyGoal;
+  userPrefs.studyGoalWeeklyMin = onboardWeeklyGoal;
+  userPrefs.studyGoalOnboarded = true;
+  saveUserPrefs();
+  document.getElementById('study-goal-onboard-overlay').style.display = 'none';
+  renderStudyTab();
+  showReward('🎯 Goal set — small steps count.');
+}
+
+function skipStudyGoalOnboarding() {
+  userPrefs.studyGoalOnboarded = true;
+  saveUserPrefs();
+  document.getElementById('study-goal-onboard-overlay').style.display = 'none';
+  renderStudyTab();
+}
+
+async function quickStartFocus() {
+  const input = document.getElementById('quick-study-title');
+  const title = (input.value.trim() || 'Study session');
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/study_sessions', 'POST', {
+    user_id: USER_ID, title, session_date: ymd(new Date()), completed: false,
+  }, true);
+  await loadStudySessions();
+  input.value = '';
+  const created = ok && Array.isArray(data) && data[0]
+    ? data[0]
+    : cachedStudySessions.find(s => s.title === title && s.session_date === ymd(new Date()) && !s.completed);
+  if (created) openFocusTimer(created.id);
+}
+
+const STUDY_DONE_REWARD_MESSAGES = [
+  "🎉 Nice work — that's real progress.",
+  "✨ Done! You showed up for yourself today.",
+  "🔥 That's how habits get built.",
+];
+
+async function toggleStudySessionDone(id, btn) {
+  const s = cachedStudySessions.find(x => x.id === id);
+  if (!s) return;
+  const nowDone = !s.completed;
+  s.completed = nowDone;
+  if (btn) btn.classList.toggle('checked', nowDone);
+  const card = btn ? btn.closest('.study-session-card') : null;
+  if (card) card.classList.toggle('done', nowDone);
+  renderStudyTab();
+
+  await sbFetchWithRetry(`/rest/v1/study_sessions?id=eq.${id}`, 'PATCH', { completed: nowDone }, true);
+
+  if (nowDone) {
+    bumpStudyStreak();
+    showReward(STUDY_DONE_REWARD_MESSAGES[Math.floor(Math.random() * STUDY_DONE_REWARD_MESSAGES.length)]);
+  }
+}
+
+/* ===== Focus timer =====
+   The habit-loop idea from Atomic Habits, made concrete:
+     - Commit to what the break will actually be BEFORE studying starts, so the
+       break has a plan instead of turning into 20 minutes of doomscrolling.
+     - Reward at every interval boundary, not just at the very end.
+     - Offer to keep going with an ESCALATING reward (a bigger break) rather
+       than a flat one — the classic variable-reward hook, and it matches
+       exactly what was asked for: "keep studying and get 15 after another 20". */
+let focusState = null;
+let focusOriginalTitle = null;
+const FOCUS_STUDY_DURATIONS = [15, 20, 25, 30, 45];
+const FOCUS_BREAK_DURATIONS = [5, 10, 15];
+
+function openFocusTimer(sessionId) {
+  const s = cachedStudySessions.find(x => x.id === sessionId);
+  if (!s) return;
+  focusState = {
+    sessionId,
+    sessionTitle: s.title,
+    studyMin: 20,
+    breakMin: 5,
+    nextBreakMin: 5,
+    round: 1,
+    completedStudyRounds: 0,
+    phase: 'setup',
+    breakActivity: '',
+    remainingSec: 0,
+    timerHandle: null,
+  };
+  document.getElementById('focus-overlay').style.display = 'flex';
+  renderFocusSetup();
+}
+
+function renderFocusSetup() {
+  const body = document.getElementById('focus-body');
+  body.innerHTML = `
+    <div class="focus-title">Ready to study?</div>
+    <div class="focus-sub">${escapeHtml(focusState.sessionTitle)}</div>
+    <div class="focus-phase-label">Focus length</div>
+    <div class="focus-duration-row">
+      ${FOCUS_STUDY_DURATIONS.map(m => `<button class="focus-duration-btn${m === focusState.studyMin ? ' active' : ''}" onclick="focusPickDuration('study',${m})">${m} min</button>`).join('')}
+    </div>
+    <div class="focus-phase-label">Break length</div>
+    <div class="focus-duration-row">
+      ${FOCUS_BREAK_DURATIONS.map(m => `<button class="focus-duration-btn${m === focusState.breakMin ? ' active' : ''}" onclick="focusPickDuration('break',${m})">${m} min</button>`).join('')}
+    </div>
+    <button class="settings-btn" onclick="focusGoToCommit()">Continue</button>
+  `;
+}
+
+function focusPickDuration(kind, min) {
+  if (kind === 'study') focusState.studyMin = min;
+  else { focusState.breakMin = min; focusState.nextBreakMin = min; }
+  renderFocusSetup();
+}
+
+function focusGoToCommit() {
+  const body = document.getElementById('focus-body');
+  body.innerHTML = `
+    <div class="focus-title">One more thing</div>
+    <div class="focus-sub">What will you actually do on your ${focusState.breakMin}-minute break? Naming it now makes it easier to stick to it later.</div>
+    <input class="settings-input" id="focus-break-activity" placeholder='e.g. "stretch, grab water"' style="text-align:center;" onkeydown="if(event.key==='Enter'){focusStartStudy();}" />
+    <button class="settings-btn" onclick="focusStartStudy()">Start studying</button>
+  `;
+  setTimeout(() => { const el = document.getElementById('focus-break-activity'); if (el) el.focus(); }, 50);
+}
+
+function focusStartStudy() {
+  const input = document.getElementById('focus-break-activity');
+  focusState.breakActivity = input ? input.value.trim() : '';
+  focusState.phase = 'study';
+  startFocusCountdown(focusState.studyMin * 60, onFocusStudyComplete);
+}
+
+function fmtClock(totalSec) {
+  const m = Math.floor(totalSec / 60), s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function startFocusCountdown(seconds, onComplete) {
+  clearInterval(focusState.timerHandle);
+  focusState.remainingSec = seconds;
+  if (!focusOriginalTitle) focusOriginalTitle = document.title;
+  renderFocusTimer();
+  focusState.timerHandle = setInterval(() => {
+    focusState.remainingSec--;
+    if (focusState.remainingSec <= 0) {
+      clearInterval(focusState.timerHandle);
+      onComplete();
+      return;
+    }
+    renderFocusTimer();
+  }, 1000);
+}
+
+function renderFocusTimer() {
+  const body = document.getElementById('focus-body');
+  const isStudy = focusState.phase === 'study';
+  document.title = `${fmtClock(focusState.remainingSec)} · ${isStudy ? 'Studying' : 'Break'} — StudyFlow`;
+  body.innerHTML = `
+    <div class="focus-phase-label">${isStudy ? `Round ${focusState.round} — focus` : 'Break'}</div>
+    <div class="focus-title" style="margin-bottom:0;">${escapeHtml(focusState.sessionTitle)}</div>
+    <div class="focus-timer-display">${fmtClock(focusState.remainingSec)}</div>
+    ${!isStudy && focusState.breakActivity ? `<div class="focus-sub">You said you'd: "${escapeHtml(focusState.breakActivity)}"</div>` : ''}
+    <div class="focus-btn-row">
+      <button class="sync-btn" style="width:auto;" onclick="focusEndEarly()">End session</button>
+    </div>
+  `;
+}
+
+function onFocusStudyComplete() {
+  focusState.completedStudyRounds++;
+  document.title = focusOriginalTitle;
+  showReward(`🎉 Round ${focusState.round} done — nice focus.`);
+  const body = document.getElementById('focus-body');
+  const offeredBreak = focusState.nextBreakMin;
+  const escalatedBreak = focusState.nextBreakMin + focusState.breakMin;
+  body.innerHTML = `
+    <div class="focus-title">Nice work!</div>
+    <div class="focus-sub">You focused for ${focusState.studyMin} minutes. Take your ${offeredBreak}-minute break now, or keep studying ${focusState.studyMin} more minutes and get a ${escalatedBreak}-minute break after.</div>
+    <div class="focus-btn-row stack">
+      <button class="settings-btn" onclick="focusTakeBreak()">Take ${offeredBreak} min break now</button>
+      <button class="sync-btn" onclick="focusKeepStudying()">Keep studying — get ${escalatedBreak} min break after</button>
+    </div>
+  `;
+}
+
+function focusTakeBreak() {
+  focusState.phase = 'break';
+  startFocusCountdown(focusState.nextBreakMin * 60, onFocusBreakComplete);
+}
+
+function focusKeepStudying() {
+  focusState.nextBreakMin += focusState.breakMin;
+  focusState.round++;
+  focusState.phase = 'study';
+  startFocusCountdown(focusState.studyMin * 60, onFocusStudyComplete);
+}
+
+function onFocusBreakComplete() {
+  document.title = focusOriginalTitle;
+  showReward(`⏰ Break's over — ${focusState.breakActivity ? 'hope it helped' : 'back at it?'}`);
+  const body = document.getElementById('focus-body');
+  body.innerHTML = `
+    <div class="focus-title">Break's over</div>
+    <div class="focus-sub">Ready for another round, or done for now?</div>
+    <div class="focus-btn-row stack">
+      <button class="settings-btn" onclick="focusAnotherRound()">Another round</button>
+      <button class="sync-btn" onclick="focusFinish()">I'm done — mark as complete</button>
+    </div>
+  `;
+}
+
+function focusAnotherRound() {
+  focusState.round++;
+  focusState.nextBreakMin = focusState.breakMin; // a real break was taken, so escalation resets
+  focusState.phase = 'study';
+  startFocusCountdown(focusState.studyMin * 60, onFocusStudyComplete);
+}
+
+// Persists actual minutes studied (completed rounds only — an in-progress
+// round doesn't count) regardless of how the session ends, so bailing early
+// still credits real effort instead of losing it.
+async function persistFocusProgress(markComplete) {
+  const id = focusState.sessionId;
+  const minutesEarned = focusState.completedStudyRounds * focusState.studyMin;
+  const s = cachedStudySessions.find(x => x.id === id);
+  if (!s) return;
+  s.minutes_studied = (s.minutes_studied || 0) + minutesEarned;
+  if (markComplete) s.completed = true;
+  renderStudySessionsForDay();
+  renderStudyTab();
+  const patch = { minutes_studied: s.minutes_studied };
+  if (markComplete) patch.completed = true;
+  await sbFetchWithRetry(`/rest/v1/study_sessions?id=eq.${id}`, 'PATCH', patch, true);
+}
+
+async function focusFinish() {
+  const rounds = focusState.completedStudyRounds;
+  await persistFocusProgress(true);
+  closeFocusTimer();
+  if (rounds > 0) bumpStudyStreak();
+  showReward(`🎉 Session complete — ${rounds} round${rounds !== 1 ? 's' : ''} of real focus today.`);
+}
+
+async function focusEndEarly() {
+  const rounds = focusState ? focusState.completedStudyRounds : 0;
+  if (rounds > 0) {
+    await persistFocusProgress(false);
+    showReward(`✨ Saved — ${rounds} round${rounds !== 1 ? 's' : ''} of focus logged.`);
+  }
+  closeFocusTimer();
+}
+
+function closeFocusTimer() {
+  if (focusState && focusState.timerHandle) clearInterval(focusState.timerHandle);
+  if (focusOriginalTitle) { document.title = focusOriginalTitle; focusOriginalTitle = null; }
+  document.getElementById('focus-overlay').style.display = 'none';
+  focusState = null;
 }
 
 function renderAllWork(assignments) {
@@ -4640,6 +5480,8 @@ function showPage(name, el, fromNav) {
   // Keep both nav and tab in sync
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
+
+  if (name === 'study') maybeShowStudyGoalOnboarding();
 }
 
 function calculateFinal() {
@@ -4742,6 +5584,17 @@ if (!checkForPasswordRecovery()) routeUser();
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     document.getElementById('ws-date').textContent =
       `${dayNames[now.getDay()]}, ${monthNames[now.getMonth()]} ${now.getDate()}`;
+
+    // Immediate, visible reward for the habit of opening the app itself —
+    // shown before they even sync, so the payoff isn't gated behind an action.
+    const streakEl = document.getElementById('ws-streak');
+    const streak = bumpDailyStreak();
+    if (streak >= 2) {
+      streakEl.style.display = 'flex';
+      streakEl.textContent = `🔥 ${streak} day streak`;
+    } else {
+      streakEl.style.display = 'none';
+    }
   }
 
   // Replaces the existing maybeShowWelcome (assignment wins over hoisted declaration)

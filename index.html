@@ -967,6 +967,44 @@ mark.syl-mark-active { background: var(--accent); color: #fff; }
   background: var(--surface2); border: none; cursor: pointer; color: var(--text2); font-family: inherit; font-size: 14px;
 }
 
+/* ===== PERSISTENT TIMER BAR =====
+   Sits above the mobile nav so a running session stays visible and pausable
+   while the student browses assignments — the whole reason they're in the app. */
+#focus-minibar {
+  position: fixed; z-index: 9998;
+  left: 12px; right: 12px;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: stretch; gap: 6px;
+}
+#focus-minibar-main {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 11px 14px; cursor: pointer; font-family: inherit; text-align: left;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+}
+#focus-minibar-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+  animation: focusPulse 2s ease-in-out infinite;
+}
+#focus-minibar.is-paused #focus-minibar-dot { background: var(--text2); animation: none; }
+@keyframes focusPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+#focus-minibar-label {
+  flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#focus-minibar-time {
+  font-size: 15px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; flex-shrink: 0;
+}
+#focus-minibar-pause {
+  width: 46px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; cursor: pointer; font-family: inherit; font-size: 15px; color: var(--text1);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+}
+#focus-minibar-pause:hover, #focus-minibar-main:hover { border-color: var(--accent); }
+@media (min-width: 601px) {
+  #focus-minibar { left: auto; right: 20px; bottom: 20px; width: 320px; }
+}
+
 /* ===== STUDY GOAL ONBOARDING (blocking, like the sync welcome screen) ===== */
 #study-goal-onboard-overlay {
   position: fixed; inset: 0; z-index: 2000;
@@ -1334,9 +1372,19 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
   <!-- FOCUS TIMER -->
   <div id="focus-overlay">
     <div id="focus-card">
-      <button id="focus-close" onclick="closeFocusTimer()" title="Close">✕</button>
+      <button id="focus-close" onclick="minimizeFocusTimer()" title="Keep timer running and go back to the app">✕</button>
       <div id="focus-body"></div>
     </div>
+  </div>
+
+  <!-- Persistent timer bar: the session keeps running while you browse the app -->
+  <div id="focus-minibar" style="display:none;">
+    <button id="focus-minibar-main" onclick="expandFocusTimer()">
+      <span id="focus-minibar-dot"></span>
+      <span id="focus-minibar-label"></span>
+      <span id="focus-minibar-time"></span>
+    </button>
+    <button id="focus-minibar-pause" onclick="toggleFocusPause()" title="Pause"></button>
   </div>
 
   <!-- STUDY GOAL ONBOARDING (blocks the app like the sync welcome screen — answer or skip) -->
@@ -1458,9 +1506,10 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           <div class="home-greeting-text" id="home-greeting-text">Welcome</div>
           <div class="home-greeting-sub" id="home-greeting-sub"></div>
         </div>
-        <div class="stats-row" style="margin-top:18px;">
+        <div class="stats-row" style="margin-top:18px;grid-template-columns:repeat(3,1fr);">
           <div class="stat-card"><div class="stat-label">Due this week</div><div class="stat-val" id="home-stat-week">0</div></div>
           <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" id="home-stat-overdue" style="color:var(--red);">0</div></div>
+          <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-val" id="home-stat-done" style="color:var(--green);">0</div></div>
         </div>
         <div class="home-columns">
           <div class="home-col-main">
@@ -3250,9 +3299,54 @@ function openAssignmentDetail(id) {
       : `<div class="card-sub">No description was provided for this assignment.</div>`}
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
       ${canvasBtn}
+      <button class="sync-btn" id="a-detail-done-btn" style="width:auto;flex:1;" onclick="toggleDoneFromDetail('${a.id}')"></button>
     </div>
   `;
+  updateAssignmentDetailDoneButton(a);
   document.getElementById('assignment-detail-overlay').style.display = 'block';
+}
+
+function updateAssignmentDetailDoneButton(a) {
+  const btn = document.getElementById('a-detail-done-btn');
+  if (!btn) return;
+  const isDone = a.completed || doneSet.has(decodeURIComponent(doneKey(a)));
+  btn.textContent = isDone ? '✓ Completed — click to undo' : 'Mark as done';
+  btn.style.background = isDone ? 'var(--green)' : '';
+  btn.style.borderColor = isDone ? 'var(--green)' : '';
+  btn.style.color = isDone ? '#fff' : '';
+}
+
+// Lets a student mark an assignment done right from its description, instead of
+// closing out, hunting the card back down in a list, and clicking its checkmark.
+async function toggleDoneFromDetail(id) {
+  const a = cachedAssignments.find(x => String(x.id) === String(id));
+  if (!a) return;
+  const key = decodeURIComponent(doneKey(a));
+  const wasDone = a.completed || doneSet.has(key);
+  const nowDone = !wasDone;
+  const now = new Date().toISOString();
+
+  if (nowDone) doneSet.add(key); else doneSet.delete(key);
+  localStorage.setItem('sf_done_' + USER_ID, JSON.stringify([...doneSet]));
+
+  cachedAssignments = cachedAssignments.map(x =>
+    x.id === a.id ? { ...x, completed: nowDone, completed_at: nowDone ? now : null } : x
+  );
+  try {
+    await sbFetchWithRetry(
+      `/rest/v1/assignments?id=eq.${id}&user_id=eq.${USER_ID}`,
+      'PATCH',
+      { completed: nowDone, completed_at: nowDone ? now : null }
+    );
+  } catch (_) {}
+
+  bumpCompletedCount(nowDone ? 1 : -1);
+  updateAssignmentDetailDoneButton({ ...a, completed: nowDone });
+  renderDueSoon(cachedAssignments);
+  renderAllWork(cachedAssignments);
+  renderPriority(cachedAssignments);
+  renderHome();
+  if (nowDone) showReward('✅ Nice work — one more done.');
 }
 
 function closeAssignmentDetail() {
@@ -3262,16 +3356,40 @@ function closeAssignmentDetail() {
 function toggleDone(encodedKey, btn) {
   const key = decodeURIComponent(encodedKey);
   const card = btn.closest('.card');
-  if (doneSet.has(key)) {
-    doneSet.delete(key);
-    btn.classList.remove('checked');
-    card.classList.remove('done');
-  } else {
+  // Must check a.completed too, not just doneSet — an assignment finished via
+  // markPriorityDone/toggleDoneFromDetail sets a.completed but never touches
+  // doneSet, so this card already renders checked (aCard uses the same
+  // a.completed || doneSet.has(...) check). Reading doneSet alone here meant
+  // clicking an already-checked box tried to check it AGAIN instead of
+  // unchecking it, double-counting the same assignment as completed twice.
+  const a = cachedAssignments.find(x => decodeURIComponent(doneKey(x)) === key);
+  const wasDone = (a && a.completed) || doneSet.has(key);
+  const nowDone = !wasDone;
+  if (nowDone) {
     doneSet.add(key);
     btn.classList.add('checked');
     card.classList.add('done');
+  } else {
+    doneSet.delete(key);
+    btn.classList.remove('checked');
+    card.classList.remove('done');
   }
   localStorage.setItem('sf_done_' + USER_ID, JSON.stringify([...doneSet]));
+  bumpCompletedCount(nowDone ? 1 : -1);
+
+  if (a) {
+    const now = new Date().toISOString();
+    cachedAssignments = cachedAssignments.map(x =>
+      x === a ? { ...x, completed: nowDone, completed_at: nowDone ? now : null } : x
+    );
+    if (a.id) {
+      sbFetchWithRetry(
+        `/rest/v1/assignments?id=eq.${a.id}&user_id=eq.${USER_ID}`,
+        'PATCH',
+        { completed: nowDone, completed_at: nowDone ? now : null }
+      ).catch(() => {});
+    }
+  }
 }
 
 function escapeHtml(str) {
@@ -3574,24 +3692,43 @@ function cocoPlanningContext(limit = 20) {
   // Overdue work gets its own labeled block. A single date-sorted list blends it in
   // next to "due today" and the model consistently fails to treat it as more urgent —
   // a dedicated, explicitly-labeled section fixes that in testing.
+  const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  // Spell the weekday out rather than making the model derive it from a date.
+  // Asked to compute "2026-09-02 -> Wednesday" it answered Friday often enough
+  // to matter; given the word, it just copies it.
+  // Overdue work is spelled out the long way ("was due Monday, now 1 day LATE").
+  // A/B tested against the terser "1d overdue": the short form got described as
+  // still-upcoming in ~37% of generations, the explicit form in 0 of 26.
   const fmtLine = a => {
     const d = a.due_date ? Math.round((new Date(a.due_date) - today) / (1000 * 60 * 60 * 24)) : null;
-    const dueStr = d === null ? 'no due date' : d < 0 ? `${Math.abs(d)}d overdue` : d === 0 ? 'due today' : d === 1 ? 'due tomorrow' : `due in ${d} days`;
+    const dow = a.due_date ? DOW[new Date(a.due_date).getDay()] : '';
     const points = a.points_possible ? `, ${a.points_possible} pts` : '';
+    let dueStr;
+    if (d === null) dueStr = 'no due date';
+    else if (d < 0) {
+      const n = Math.abs(d);
+      dueStr = `was due ${dow}, now ${n} day${n !== 1 ? 's' : ''} LATE (deadline passed, not submitted)`;
+    }
+    else if (d === 0) dueStr = `due today (${dow})`;
+    else if (d === 1) dueStr = `due tomorrow (${dow})`;
+    else dueStr = `due in ${d} days (${dow})`;
     return `- ${a.title} (${a.course || 'unknown course'}, ${a.assignment_type || 'assignment'}${points}) — ${dueStr}`;
   };
   const overdue = sorted.filter(a => a.due_date && new Date(a.due_date) < today);
   const upcoming = sorted.filter(a => !a.due_date || new Date(a.due_date) >= today);
 
   let text = '';
-  if (overdue.length) text += `OVERDUE (handle these first, before anything else):\n${overdue.map(fmtLine).join('\n')}\n\n`;
+  if (overdue.length) text += `OVERDUE — ALREADY LATE, the deadline has PASSED (handle these first):\n${overdue.map(fmtLine).join('\n')}\n\n`;
   if (upcoming.length) text += `Upcoming:\n${upcoming.map(fmtLine).join('\n')}`;
 
   const weekOut = new Date(today); weekOut.setDate(weekOut.getDate() + 7);
   const studyLines = cachedStudySessions.filter(s => {
     const sd = new Date(s.session_date + 'T00:00:00');
     return sd >= today && sd <= weekOut;
-  }).map(s => `- Study block: ${s.title}${s.course ? ' (' + s.course + ')' : ''} on ${s.session_date}${s.start_time ? ' at ' + fmtTime12(s.start_time) : ''}`);
+  }).map(s => {
+    const sd = new Date(s.session_date + 'T00:00:00');
+    return `- Study block: ${s.title}${s.course ? ' (' + s.course + ')' : ''} on ${DOW[sd.getDay()]} ${s.session_date}${s.start_time ? ' at ' + fmtTime12(s.start_time) : ''}`;
+  });
 
   if (studyLines.length) text += `\n\nAlready scheduled study time this week:\n${studyLines.join('\n')}`;
 
@@ -3600,14 +3737,25 @@ function cocoPlanningContext(limit = 20) {
   // Friday" for a Thursday block), so the verifier needs the real set.
   const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
   const validWeekdays = new Set();
-  sorted.forEach(a => { if (a.due_date) validWeekdays.add(DAY_NAMES[new Date(a.due_date).getDay()]); });
+  // itemDays lets the verifier check not just that a weekday exists somewhere,
+  // but that it's attached to the right thing.
+  const itemDays = [];
+  sorted.forEach(a => {
+    if (!a.due_date || !a.title) return;
+    const day = DAY_NAMES[new Date(a.due_date).getDay()];
+    validWeekdays.add(day);
+    itemDays.push({ title: a.title, day });
+  });
   cachedStudySessions.forEach(s => {
     if (!s.session_date) return;
     const sd = new Date(s.session_date + 'T00:00:00');
-    if (sd >= today && sd <= weekOut) validWeekdays.add(DAY_NAMES[sd.getDay()]);
+    if (sd < today || sd > weekOut) return;
+    const day = DAY_NAMES[sd.getDay()];
+    validWeekdays.add(day);
+    if (s.title) itemDays.push({ title: s.title, day });
   });
 
-  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays };
+  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays, itemDays };
 }
 
 /* ---- Planning-mode verification -------------------------------------
@@ -3651,6 +3799,27 @@ function cocoExtractCourseCodes(text) {
 }
 
 function cocoNormalize(s) { return (s || '').toLowerCase().replace(/\s+/g, ' '); }
+
+// Text immediately following a mention of `title`, cut off at the next clause
+// or the next assignment name. Without the cut, a later item's due date or
+// weekday gets read as belonging to this one — which rejected good answers on
+// the first version of these checks.
+function cocoClauseWindow(ans, title, ctx, span = 80) {
+  const t = cocoNormalize(title);
+  const idx = ans.indexOf(t);
+  if (idx === -1) return null;
+  let win = ans.slice(idx + t.length, idx + t.length + span);
+  const cuts = [/[.;]/, /\bthen\b/, /\bnext\b/, /\balso\b/, /\bafter that\b/]
+    .map(re => win.search(re)).filter(i => i >= 0);
+  for (const other of [...ctx.overdue, ...ctx.upcoming, ...(ctx.itemDays || [])]) {
+    if (!other.title) continue;
+    const ot = cocoNormalize(other.title);
+    if (ot === t) continue;
+    const oi = win.indexOf(ot);
+    if (oi >= 0) cuts.push(oi);
+  }
+  return cuts.length ? win.slice(0, Math.min(...cuts)) : win;
+}
 
 // Returns { ok, reason }. `reason` is for logging/eval, never shown to students.
 function cocoVerifyPlanning(answer, ctx) {
@@ -3710,23 +3879,37 @@ function cocoVerifyPlanning(answer, ctx) {
   //    rejected perfectly good answers on the first cut of this check.
   for (const a of ctx.overdue) {
     if (!a.title) continue;
-    const t = cocoNormalize(a.title);
-    const idx = ans.indexOf(t);
-    if (idx === -1) continue;
-
-    let win = ans.slice(idx + t.length, idx + t.length + 90);
-    const cuts = [/[.;]/, /\bthen\b/, /\bnext\b/, /\balso\b/]
-      .map(re => win.search(re)).filter(i => i >= 0);
-    for (const other of [...ctx.overdue, ...ctx.upcoming]) {
-      if (!other.title || other.title === a.title) continue;
-      const oi = win.indexOf(cocoNormalize(other.title));
-      if (oi >= 0) cuts.push(oi);
-    }
-    if (cuts.length) win = win.slice(0, Math.min(...cuts));
-
+    const win = cocoClauseWindow(ans, a.title, ctx, 90);
+    if (win === null) continue;
     if (/\boverdue\b|\blate\b|past due/.test(win)) continue; // correctly described
     if (/\bdue (today|tomorrow|in \d+ day)/.test(win)) {
       return { ok: false, reason: `overdue item described as upcoming: ${a.title}` };
+    }
+  }
+
+  // 7. Claims about late penalties or whether submitting still counts. coco.1
+  //    is never given the course's grading policy, so any such claim is
+  //    invented — and the discouraging direction ("submitting now won't change
+  //    the grade", seen in testing) could talk a student out of turning work in
+  //    at all. Only the futility framing is blocked; "get it in to avoid late
+  //    penalties" is generic encouragement and stays allowed.
+  if (/\b(won'?t|will not|doesn'?t|does not|no longer)\b[^.]{0,40}\b(change|affect|count|matter|help|improve)\b[^.]{0,25}\b(grade|score|mark|points)\b/i.test(answer) ||
+      /\b(no|little)\s+(point|use|sense)\b[^.]{0,25}\bsubmit/i.test(answer) ||
+      /\btoo late to\b[^.]{0,25}\b(submit|turn in|hand in|bother)\b/i.test(answer) ||
+      /\bwon'?t get (any )?credit\b/i.test(answer)) {
+    return { ok: false, reason: 'invented claim about late penalty / grading policy' };
+  }
+
+  // 6. Weekday attached to the WRONG item. Check 4 only proves a weekday exists
+  //    somewhere in the schedule, so "Chem review on Thursday" slipped through
+  //    when Thursday belonged to a different assignment. Sending a student to
+  //    study on the wrong day is the concrete harm worth catching here.
+  for (const item of (ctx.itemDays || [])) {
+    const win = cocoClauseWindow(ans, item.title, ctx, 70);
+    if (win === null) continue;
+    const m = win.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+    if (m && m[1] !== item.day) {
+      return { ok: false, reason: `${item.title} is on ${item.day}, answer said ${m[1]}` };
     }
   }
 
@@ -3971,6 +4154,7 @@ function renderHome() {
   const overdueEl = document.getElementById('home-stat-overdue');
   if (weekEl) weekEl.textContent = soon.length;
   if (overdueEl) overdueEl.textContent = overdueCount;
+  renderCompletedCount();
 
   const withDate = cachedAssignments.filter(a => a.due_date).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
   const upnextEl = document.getElementById('home-upnext');
@@ -4733,6 +4917,24 @@ function bumpDailyStreak() {
   return count;
 }
 
+// Lifetime count of assignments marked done, independent of Canvas sync state
+// so it keeps climbing even after synced assignments roll off the list.
+function getCompletedCount() {
+  return parseInt(localStorage.getItem('sf_completed_count_' + USER_ID) || '0', 10) || 0;
+}
+
+function bumpCompletedCount(delta) {
+  const next = Math.max(0, getCompletedCount() + delta);
+  localStorage.setItem('sf_completed_count_' + USER_ID, String(next));
+  renderCompletedCount();
+  return next;
+}
+
+function renderCompletedCount() {
+  const el = document.getElementById('home-stat-done');
+  if (el) el.textContent = getCompletedCount();
+}
+
 // Days (not sessions) with at least one completed study block — same idea,
 // separate counter, so scheduling time and actually using it are rewarded distinctly.
 function bumpStudyStreak() {
@@ -5147,8 +5349,14 @@ function openFocusTimer(sessionId) {
     breakActivity: '',
     remainingSec: 0,
     timerHandle: null,
+    deadline: 0,
+    paused: false,
+    minimized: false,
+    awaiting: false,
+    onComplete: null,
   };
   document.getElementById('focus-overlay').style.display = 'flex';
+  renderFocusMiniBar();
   renderFocusSetup();
 }
 
@@ -5198,41 +5406,128 @@ function fmtClock(totalSec) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+// Deadline-based rather than counting ticks down. Once the timer keeps running
+// while the student navigates, a tick-counting loop drifts whenever the browser
+// throttles intervals; wall-clock time can't drift.
 function startFocusCountdown(seconds, onComplete) {
   clearInterval(focusState.timerHandle);
   focusState.remainingSec = seconds;
+  focusState.deadline = Date.now() + seconds * 1000;
+  focusState.paused = false;
+  focusState.awaiting = false;
+  focusState.onComplete = onComplete;
   if (!focusOriginalTitle) focusOriginalTitle = document.title;
-  renderFocusTimer();
-  focusState.timerHandle = setInterval(() => {
-    focusState.remainingSec--;
-    if (focusState.remainingSec <= 0) {
-      clearInterval(focusState.timerHandle);
-      onComplete();
-      return;
-    }
-    renderFocusTimer();
-  }, 1000);
+  renderFocusViews();
+  focusState.timerHandle = setInterval(focusTick, 250);
+}
+
+function focusTick() {
+  if (!focusState || focusState.paused) return;
+  const remaining = Math.max(0, Math.round((focusState.deadline - Date.now()) / 1000));
+  if (remaining === focusState.remainingSec) return; // same displayed second — skip re-render
+  focusState.remainingSec = remaining;
+  if (remaining <= 0) {
+    clearInterval(focusState.timerHandle);
+    focusState.timerHandle = null;
+    const cb = focusState.onComplete;
+    focusState.onComplete = null;
+    if (cb) cb();
+    return;
+  }
+  renderFocusViews();
+}
+
+function toggleFocusPause() {
+  if (!focusState || focusState.awaiting) return;
+  if (focusState.paused) {
+    focusState.deadline = Date.now() + focusState.remainingSec * 1000;
+    focusState.paused = false;
+  } else {
+    focusState.remainingSec = Math.max(0, Math.round((focusState.deadline - Date.now()) / 1000));
+    focusState.paused = true;
+  }
+  renderFocusViews();
+}
+
+function minimizeFocusTimer() {
+  if (!focusState) return;
+  focusState.minimized = true;
+  document.getElementById('focus-overlay').style.display = 'none';
+  renderFocusViews();
+}
+
+function expandFocusTimer() {
+  if (!focusState) return;
+  focusState.minimized = false;
+  document.getElementById('focus-overlay').style.display = 'flex';
+  renderFocusViews();
+}
+
+// Keeps the overlay and the persistent bar in sync from one place, so whichever
+// one the student is looking at shows the same state.
+function renderFocusViews() {
+  if (!focusState) return;
+  updateFocusDocTitle();
+  if (!focusState.minimized) renderFocusTimer();
+  renderFocusMiniBar();
+}
+
+// Lives outside renderFocusTimer() so the tab title keeps counting while the
+// timer is minimized — which is now the normal way to run a session.
+function updateFocusDocTitle() {
+  if (!focusState) return;
+  if (focusState.awaiting) { document.title = focusOriginalTitle || 'StudyFlow'; return; }
+  const label = focusState.phase === 'study' ? 'Studying' : 'Break';
+  document.title = focusState.paused
+    ? `⏸ ${fmtClock(focusState.remainingSec)} — StudyFlow`
+    : `${fmtClock(focusState.remainingSec)} · ${label} — StudyFlow`;
+}
+
+function renderFocusMiniBar() {
+  const bar = document.getElementById('focus-minibar');
+  if (!bar) return;
+  if (!focusState || !focusState.minimized) { bar.style.display = 'none'; return; }
+
+  const isStudy = focusState.phase === 'study';
+  bar.style.display = 'flex';
+  bar.classList.toggle('is-paused', !!focusState.paused);
+  document.getElementById('focus-minibar-label').textContent =
+    focusState.awaiting ? 'Round done — tap to continue'
+      : focusState.paused ? `Paused · ${isStudy ? 'focus' : 'break'}`
+      : (isStudy ? `Focus · ${focusState.sessionTitle}` : 'Break');
+  document.getElementById('focus-minibar-time').textContent =
+    focusState.awaiting ? '' : fmtClock(focusState.remainingSec);
+
+  const pauseBtn = document.getElementById('focus-minibar-pause');
+  pauseBtn.style.display = focusState.awaiting ? 'none' : '';
+  pauseBtn.textContent = focusState.paused ? '▶' : '❚❚';
+  pauseBtn.title = focusState.paused ? 'Resume' : 'Pause';
 }
 
 function renderFocusTimer() {
   const body = document.getElementById('focus-body');
   const isStudy = focusState.phase === 'study';
-  document.title = `${fmtClock(focusState.remainingSec)} · ${isStudy ? 'Studying' : 'Break'} — StudyFlow`;
   body.innerHTML = `
-    <div class="focus-phase-label">${isStudy ? `Round ${focusState.round} — focus` : 'Break'}</div>
+    <div class="focus-phase-label">${isStudy ? `Round ${focusState.round} — focus` : 'Break'}${focusState.paused ? ' · paused' : ''}</div>
     <div class="focus-title" style="margin-bottom:0;">${escapeHtml(focusState.sessionTitle)}</div>
     <div class="focus-timer-display">${fmtClock(focusState.remainingSec)}</div>
     ${!isStudy && focusState.breakActivity ? `<div class="focus-sub">You said you'd: "${escapeHtml(focusState.breakActivity)}"</div>` : ''}
+    <div class="focus-sub" style="margin-bottom:14px;">Close this to keep the timer running while you use the app.</div>
     <div class="focus-btn-row">
-      <button class="sync-btn" style="width:auto;" onclick="focusEndEarly()">End session</button>
+      <button class="sync-btn" style="width:auto;margin-bottom:0;" onclick="toggleFocusPause()">${focusState.paused ? 'Resume' : 'Pause'}</button>
+      <button class="sync-btn" style="width:auto;margin-bottom:0;" onclick="focusEndEarly()">End session</button>
     </div>
   `;
 }
 
 function onFocusStudyComplete() {
   focusState.completedStudyRounds++;
+  focusState.awaiting = true;
   document.title = focusOriginalTitle;
   showReward(`🎉 Round ${focusState.round} done — nice focus.`);
+  // The round is over and there's a choice to make, so surface it even if they
+  // minimized and wandered off into their assignments.
+  if (focusState.minimized) expandFocusTimer();
   const body = document.getElementById('focus-body');
   const offeredBreak = focusState.nextBreakMin;
   const escalatedBreak = focusState.nextBreakMin + focusState.breakMin;
@@ -5259,8 +5554,10 @@ function focusKeepStudying() {
 }
 
 function onFocusBreakComplete() {
+  focusState.awaiting = true;
   document.title = focusOriginalTitle;
   showReward(`⏰ Break's over — ${focusState.breakActivity ? 'hope it helped' : 'back at it?'}`);
+  if (focusState.minimized) expandFocusTimer();
   const body = document.getElementById('focus-body');
   body.innerHTML = `
     <div class="focus-title">Break's over</div>
@@ -5313,11 +5610,14 @@ async function focusEndEarly() {
   closeFocusTimer();
 }
 
+// Fully ends the session. Distinct from minimizeFocusTimer(), which keeps it
+// running in the background — the ✕ minimizes, only "End session" stops.
 function closeFocusTimer() {
   if (focusState && focusState.timerHandle) clearInterval(focusState.timerHandle);
   if (focusOriginalTitle) { document.title = focusOriginalTitle; focusOriginalTitle = null; }
   document.getElementById('focus-overlay').style.display = 'none';
   focusState = null;
+  renderFocusMiniBar();
 }
 
 function renderAllWork(assignments) {
@@ -5456,6 +5756,7 @@ async function markPriorityDone(id) {
   cachedAssignments = cachedAssignments.map(a =>
     a.id === id ? { ...a, completed: true, completed_at: now } : a
   );
+  bumpCompletedCount(1);
   renderPriority(cachedAssignments);
 }
 
@@ -5468,6 +5769,7 @@ async function undoPriorityDone(id) {
   cachedAssignments = cachedAssignments.map(a =>
     a.id === id ? { ...a, completed: false, completed_at: null } : a
   );
+  bumpCompletedCount(-1);
   renderPriority(cachedAssignments);
 }
 

@@ -1261,6 +1261,9 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
     <input class="auth-input" type="text" id="ob-canvas-url" placeholder="yourschool.instructure.com" />
     <div class="auth-label">Canvas API Token</div>
     <input class="auth-input" type="password" id="ob-canvas-token" placeholder="Paste your token here" />
+    <div class="help-note" style="margin-top:-6px;">
+      Treat this token like a password — whoever has it can see and do anything your Canvas login can, not just assignments. StudyFlow only uses it to pull your assignments, syllabi, and grades; it's never shared. You're always in control: you can revoke it anytime from Canvas → Settings → Approved Integrations, independent of StudyFlow.
+    </div>
     <div class="card" style="margin-bottom:16px;">
       <div class="card-title" style="margin-bottom:6px;font-size:13px;">How to get your token</div>
       <div class="settings-note" style="margin-bottom:0;">1. Log into Canvas<br>2. Click your profile picture<br>3. Go to Settings<br>4. Scroll to "Approved Integrations"<br>5. Click "+ New Access Token"<br>6. Name it "StudyFlow" and paste it above</div>
@@ -1912,6 +1915,9 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
             <div id="sync-status" class="sync-status"></div>
             <button class="change-courses-btn" style="margin-top:8px;" onclick="showCourseSelection()">Did we miss a class?</button>
             <button class="disconnect-btn" style="margin-top:8px;" onclick="disconnectCanvas()">Disconnect Canvas</button>
+            <div class="help-note" style="margin-top:10px;margin-bottom:0;">
+              Your Canvas token works like a password — StudyFlow only uses it to read your assignments, syllabi, and grades, and never shares it. Note that <strong>Disconnect Canvas removes it from StudyFlow only</strong> — the token itself stays active in Canvas until you also remove it there, under Canvas → Settings → Approved Integrations.
+            </div>
           </div>
         </div>
         <div id="canvas-form" style="display:none;">
@@ -1920,6 +1926,9 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
             <input class="settings-input" type="text" id="canvas-url" placeholder="yourschool.instructure.com" />
             <div class="auth-label">Canvas API Token</div>
             <input class="settings-input" type="password" id="canvas-token" placeholder="Paste your token here" />
+            <div class="help-note">
+              Treat this token like a password — StudyFlow only uses it to pull your assignments, syllabi, and grades, and never shares it. You can revoke it anytime from Canvas → Settings → Approved Integrations, independent of StudyFlow.
+            </div>
             <div id="canvas-msg"></div>
             <button class="settings-btn" onclick="saveCanvasSettings()">Save & connect</button>
           </div>

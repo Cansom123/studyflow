@@ -2031,6 +2031,19 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
             </div>
           </div>
         </div>
+        <div class="section-label" style="margin-top:20px;">Report a problem</div>
+        <div class="card">
+          <div class="card-sub" style="margin-bottom:12px;">Found a bug or have an idea? Send it straight through — no email needed.</div>
+          <div class="seg-control" id="report-type-toggle" style="margin-bottom:12px;">
+            <button class="seg-btn active" data-type="bug" onclick="setReportType('bug',this)">🐛 Bug</button>
+            <button class="seg-btn" data-type="idea" onclick="setReportType('idea',this)">💡 Idea</button>
+            <button class="seg-btn" data-type="other" onclick="setReportType('other',this)">Other</button>
+          </div>
+          <textarea class="syllabus-textarea" id="report-message" placeholder="What happened? What did you expect instead?" style="min-height:100px;margin-bottom:10px;"></textarea>
+          <button class="settings-btn" onclick="submitProblemReport()">Send report</button>
+          <div id="report-msg" style="margin-top:10px;"></div>
+        </div>
+
         <div class="section-label" style="margin-top:20px;">Data</div>
         <div class="card">
           <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAllData()">Export all my data</button>
@@ -2302,6 +2315,47 @@ function applyUserPrefsToUI() {
 
   const weightInput = document.getElementById('calc-weight');
   if (weightInput && !weightInput.value) weightInput.value = userPrefs.defaultFinalWeight ?? 30;
+}
+
+let reportType = 'bug';
+function setReportType(type, el) {
+  reportType = type;
+  document.querySelectorAll('#report-type-toggle .seg-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function submitProblemReport() {
+  const input = document.getElementById('report-message');
+  const statusEl = document.getElementById('report-msg');
+  const text = input.value.trim();
+  if (!text) {
+    statusEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Write a quick description first.</div>`;
+    return;
+  }
+  statusEl.innerHTML = `<div class="card-sub">Sending…</div>`;
+
+  // Auto-captured context so bug reports are actionable without back-and-forth
+  // asking "what page were you on" / "what browser".
+  const context = {
+    page: document.querySelector('.page.active')?.id || null,
+    userAgent: navigator.userAgent,
+    url: location.href,
+  };
+
+  const { ok } = await sbFetchWithRetry('/rest/v1/problem_reports', 'POST', {
+    user_id: USER_ID,
+    email: USER_EMAIL,
+    report_type: reportType,
+    message: text,
+    context,
+  }, true);
+
+  if (ok) {
+    statusEl.innerHTML = `<div class="card-sub" style="color:var(--green,#2ea043);">Thanks — sent! We'll look into it.</div>`;
+    input.value = '';
+  } else {
+    statusEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Couldn't send — try again in a bit.</div>`;
+  }
 }
 
 function exportAllData() {

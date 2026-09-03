@@ -5774,6 +5774,16 @@ async function undoPriorityDone(id) {
 }
 
 function showPage(name, el, fromNav) {
+  // A detail overlay (assignment description, syllabus) sits above everything
+  // at z-index 2100 -- on mobile that's higher than the bottom nav (z-index
+  // 100), so taps on it don't even register; on desktop the tap does switch
+  // the page underneath, but the overlay itself was never told to close, so
+  // it just keeps covering the new page too. Either way, switching tabs while
+  // one is open looked like it did nothing. Closing them here means any tab
+  // click is always a way out, regardless of what's open.
+  closeAssignmentDetail();
+  closeSyllabusDetail();
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));

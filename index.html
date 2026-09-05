@@ -1542,6 +1542,10 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
                 <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v1.5m0 13V18m8-8h-1.5M3.5 10H2m11.66-5.66-1.06 1.06M7.4 12.6l-1.06 1.06M17.66 15.66l-1.06-1.06M3.4 7.4 2.34 6.34M13.66 13.66l1.06 1.06M5.46 5.46 4.4 4.4"/></svg></div>
                 <span>Settings</span>
               </button>
+              <button class="home-qlink" style="grid-column:1 / -1;" onclick="jumpToReportProblem()">
+                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2 2.5 16h15L10 2z"/><line x1="10" y1="8" x2="10" y2="11.5"/><circle cx="10" cy="13.5" r="0.75" fill="currentColor" stroke="none"/></svg></div>
+                <span>Report a problem</span>
+              </button>
             </div>
           </div>
         </div>
@@ -4182,6 +4186,15 @@ function refreshAskPanelsAfterAIReady() {
 function jumpTo(name) {
   const el = document.getElementById('tab-' + name) || document.getElementById('nav-' + name);
   showPage(name, el);
+}
+
+// One tap from Home straight to the report form, focused and ready to type --
+// not just "go to Settings and scroll until you find it".
+function jumpToReportProblem() {
+  jumpTo('settings');
+  const card = document.getElementById('report-message')?.closest('.card');
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => document.getElementById('report-message')?.focus(), 300);
 }
 
 /* ===========================

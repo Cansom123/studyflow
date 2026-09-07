@@ -2678,6 +2678,7 @@ async function showApp() {
   loadGrades();
   loadSyllabi();
   loadClassNotes();
+  loadAssignmentChecklists();
   renderGoalsTab();
   renderSelectedCoursesTab();
   updateLastSyncedLabel();
@@ -3445,8 +3446,10 @@ function openAssignmentDetail(id) {
       ${canvasBtn}
       <button class="sync-btn" id="a-detail-done-btn" style="width:auto;flex:1;" onclick="toggleDoneFromDetail('${a.id}')"></button>
     </div>
+    <div id="a-checklist-section"></div>
   `;
   updateAssignmentDetailDoneButton(a);
+  renderChecklistSection(a);
   document.getElementById('assignment-detail-overlay').style.display = 'block';
 }
 
@@ -3486,6 +3489,7 @@ async function toggleDoneFromDetail(id) {
 
   bumpCompletedCount(nowDone ? 1 : -1);
   updateAssignmentDetailDoneButton({ ...a, completed: nowDone });
+  renderChecklistSection({ ...a, completed: nowDone });
   renderDueSoon(cachedAssignments);
   renderAllWork(cachedAssignments);
   renderPriority(cachedAssignments);
@@ -4177,6 +4181,238 @@ async function askCocoPlanning() {
   }
 }
 
+/* ===========================
+   ASSIGNMENT CHECKLISTS
+   Phase 2 of the notes -> flashcards roadmap, built before flashcards on
+   purpose: this needs nothing flashcards need (no notes, no retrieval
+   scoping) -- just an assignment's title, description, and due date, which
+   every synced assignment already has. Generated steps become real
+   study_sessions rows, reusing the calendar/streak/focus-timer machinery
+   instead of inventing new scheduling UI.
+=========================== */
+let cachedChecklists = [];
+
+async function loadAssignmentChecklists() {
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/assignment_checklists?user_id=eq.${USER_ID}&select=*&order=step_order.asc`);
+  cachedChecklists = (ok && Array.isArray(data)) ? data : [];
+}
+
+function checklistForAssignment(assignmentId) {
+  return cachedChecklists
+    .filter(s => String(s.assignment_id) === String(assignmentId))
+    .sort((a, b) => a.step_order - b.step_order);
+}
+
+// Mostly rule-based on purpose: Canvas already tells us assignment_type for
+// free, and a title keyword pass resolves most of what's left. An LLM call
+// on every assignment-detail open would make a screen that should feel
+// instant feel slow, for a classification job cheap rules already do well.
+function classifyAssignmentWork(a) {
+  const type = (a.assignment_type || '').toLowerCase();
+  const title = (a.title || '').toLowerCase();
+
+  if (type.includes('quiz')) return 'content'; // unambiguous straight from Canvas
+  if (type.includes('discussion')) return 'task'; // a written response to produce, not review material -- checked before title keywords so e.g. "Peer Review Discussion" isn't caught by the content regex's "review"
+
+  if (/\b(essay|paper|project|proposal|problem set|lab report|presentation|draft|design|program|build)\b/.test(title)) return 'task';
+  if (/\b(quiz|exam|midterm|final|test|reading|review|reflection)\b/.test(title)) return 'content';
+
+  if (type === 'on_paper') return 'task';
+
+  return 'ambiguous';
+}
+
+// Always available, no model required -- the checklist equivalent of
+// quoting the syllabus or computing a plan straight from the assignment
+// rows: never wrong about the one thing that actually matters (the dates),
+// even if it's a less specific plan than the AI version would be.
+function deterministicChecklist(a, today) {
+  const due = new Date(a.due_date); due.setHours(0, 0, 0, 0);
+  const daysUntilDue = Math.max(0, Math.round((due - today) / (1000 * 60 * 60 * 24)));
+  const totalDays = Math.max(1, daysUntilDue);
+
+  let templates;
+  if (totalDays <= 1) templates = ['Do the work', 'Submit'];
+  else if (totalDays <= 3) templates = ['Draft', 'Revise', 'Submit'];
+  else if (totalDays <= 7) templates = ['Outline / plan', 'Draft', 'Revise', 'Submit'];
+  else templates = ['Outline / plan', 'Research or gather materials', 'Draft', 'Revise', 'Final review', 'Submit'];
+
+  return templates.map((text, i) => {
+    const frac = (i + 1) / templates.length;
+    const dayOffset = Math.min(daysUntilDue, Math.round(frac * daysUntilDue));
+    const d = new Date(today); d.setDate(d.getDate() + dayOffset);
+    return { step_order: i, step_text: text, target_date: ymd(d) };
+  });
+}
+
+function parseChecklistLines(raw) {
+  const steps = [];
+  raw.split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
+    const m = line.match(/^(\d{4}-\d{2}-\d{2})\s*\|\s*(.+)$/);
+    if (m) steps.push({ target_date: m[1], step_text: m[2].trim() });
+  });
+  return steps;
+}
+
+async function generateChecklistViaAI(a, todayStr, dueStr) {
+  const todayLabel = new Date(todayStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const dueLabel = new Date(dueStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const messages = [
+    {
+      role: 'system',
+      content:
+        'You are coco.1, breaking a school assignment into a short work plan.\n' +
+        'Rules:\n' +
+        '1. Produce 3-6 concrete steps, working backward from the due date.\n' +
+        '2. Each step needs a target date on or between today and the due date -- never after the due date, never before today.\n' +
+        '3. Steps must be in chronological order, each on the same day or later than the one before.\n' +
+        '4. Output ONLY lines in the exact format: YYYY-MM-DD | step text\n' +
+        '5. No other text, no numbering, no markdown, nothing before or after the list.',
+    },
+    {
+      role: 'user',
+      content: `Today: ${todayLabel} (${todayStr})\nDue: ${dueLabel} (${dueStr})\nAssignment: ${a.title}${a.course ? ' (' + a.course + ')' : ''}\n${a.description ? 'Description: ' + a.description.slice(0, 600) : ''}`,
+    },
+  ];
+  const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.3, max_tokens: 300 });
+  return parseChecklistLines((reply.choices[0].message.content || '').trim());
+}
+
+// The date-safety net: a step scheduled after the due date, or before today,
+// or out of order, is worse than no plan at all -- it's the checklist
+// equivalent of coco.1 planning mode's grounding checks, just for dates
+// instead of facts.
+function verifyChecklistDates(steps, todayStr, dueStr) {
+  if (!steps.length) return { ok: false, reason: 'no steps parsed' };
+  let prev = null;
+  for (const s of steps) {
+    if (!s.target_date || !/^\d{4}-\d{2}-\d{2}$/.test(s.target_date)) return { ok: false, reason: `bad date format: ${s.target_date}` };
+    if (s.target_date < todayStr) return { ok: false, reason: `step dated before today: ${s.target_date}` };
+    if (s.target_date > dueStr) return { ok: false, reason: `step dated after due date: ${s.target_date}` };
+    if (prev && s.target_date < prev) return { ok: false, reason: 'steps out of chronological order' };
+    if (!s.step_text || s.step_text.trim().length < 3) return { ok: false, reason: 'empty or too-short step text' };
+    prev = s.target_date;
+  }
+  return { ok: true, reason: '' };
+}
+
+async function generateChecklist(assignmentId) {
+  const a = cachedAssignments.find(x => String(x.id) === String(assignmentId));
+  if (!a || !a.due_date) return;
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const todayStr = ymd(today);
+  const dueStr = ymd(new Date(a.due_date));
+
+  let steps = null;
+  let source = 'fallback';
+  if (schoolAIReady()) {
+    try {
+      const aiSteps = await generateChecklistViaAI(a, todayStr, dueStr);
+      const verdict = verifyChecklistDates(aiSteps, todayStr, dueStr);
+      if (verdict.ok) { steps = aiSteps; source = 'ai'; }
+      else console.warn('[checklist] rejected AI output —', verdict.reason);
+    } catch (err) {
+      console.warn('[checklist] AI generation failed —', err.message);
+    }
+  }
+  if (!steps) steps = deterministicChecklist(a, today);
+
+  const rows = steps.map((s, i) => ({
+    user_id: USER_ID, assignment_id: assignmentId, step_order: i,
+    step_text: s.step_text, target_date: s.target_date, completed: false, source,
+  }));
+
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/assignment_checklists', 'POST', rows, true);
+  const created = ok && Array.isArray(data) && data.length === rows.length
+    ? data
+    : rows.map((r, i) => ({ id: crypto.randomUUID(), ...r }));
+
+  cachedChecklists = cachedChecklists.filter(s => String(s.assignment_id) !== String(assignmentId)).concat(created);
+  renderChecklistSection(a);
+  showReward(source === 'ai' ? '🗓️ Study plan ready.' : '🗓️ Plan ready (basic version — coco.1 wasn\'t available).');
+}
+
+async function toggleChecklistStep(stepId, btn) {
+  const step = cachedChecklists.find(s => s.id === stepId);
+  if (!step) return;
+  step.completed = !step.completed;
+  btn.classList.toggle('checked', step.completed);
+  btn.closest('.study-session-card')?.classList.toggle('done', step.completed);
+  await sbFetchWithRetry(`/rest/v1/assignment_checklists?id=eq.${stepId}`, 'PATCH', { completed: step.completed }, true);
+}
+
+// Adding to the calendar is a separate, explicit action from generating the
+// plan -- these are auto-generated guesses, not something that should land
+// on a student's schedule without them choosing to.
+async function addChecklistToCalendar(assignmentId) {
+  const a = cachedAssignments.find(x => String(x.id) === String(assignmentId));
+  const steps = checklistForAssignment(assignmentId);
+  if (!a || !steps.length) return;
+
+  const rows = steps
+    .filter(s => s.target_date)
+    .map(s => ({
+      user_id: USER_ID, title: `${s.step_text} — ${a.title}`, course: a.course || null,
+      session_date: s.target_date, completed: false,
+    }));
+  if (!rows.length) return;
+
+  await sbFetchWithRetry('/rest/v1/study_sessions', 'POST', rows, true);
+  await loadStudySessions();
+  showReward('📅 Added to your calendar.');
+}
+
+function renderChecklistSection(a) {
+  const el = document.getElementById('a-checklist-section');
+  if (!el) return;
+  const workType = classifyAssignmentWork(a);
+  const eligible = workType !== 'content' && !!a.due_date && !a.completed;
+  if (!eligible) { el.innerHTML = ''; return; }
+
+  const steps = checklistForAssignment(a.id);
+  if (steps.length === 0) {
+    el.innerHTML = `
+      <div class="section-label" style="margin-top:20px;">Study plan</div>
+      <div id="checklist-ai-banner-host">${schoolAIBannerHTML('checklist-ai')}</div>
+      <button class="settings-btn" onclick="handleGenerateChecklistClick('${a.id}', this)">🗓️ Generate a study checklist</button>
+    `;
+    return;
+  }
+
+  const stepsHTML = steps.map(s => {
+    const dateStr = s.target_date
+      ? new Date(s.target_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : '';
+    return `<div class="study-session-card${s.completed ? ' done' : ''}">
+      <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleChecklistStep('${s.id}', this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
+      <div class="study-session-info">
+        <div class="study-session-title">${escapeHtml(s.step_text)}</div>
+        ${dateStr ? `<div class="study-session-meta">${dateStr}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="section-label" style="margin-top:20px;">Study plan</div>
+    ${stepsHTML}
+    <button class="sync-btn" style="margin-top:8px;" onclick="addChecklistToCalendar('${a.id}')">📅 Add these to my calendar</button>
+  `;
+}
+
+async function handleGenerateChecklistClick(assignmentId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Thinking…';
+  try {
+    await generateChecklist(assignmentId);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '🗓️ Generate a study checklist';
+    const el = document.getElementById('a-checklist-section');
+    if (el) el.insertAdjacentHTML('beforeend', `<div class="card-sub" style="color:#d85a30;">Couldn't generate a plan — try again.</div>`);
+  }
+}
+
 /* ---- Back-compat shims for existing call sites ----------------------- */
 async function askSchoolAI(question, contextText) {
   const r = await cocoAsk(question, contextText);
@@ -4258,6 +4494,12 @@ function refreshAskPanelsAfterAIReady() {
   if (planBannerHost) planBannerHost.innerHTML = schoolAIBannerHTML('planning-ai');
   const planInput = document.getElementById('planning-ai-input');
   if (planInput && planInput.value.trim()) askCocoPlanning();
+
+  // If an assignment detail is open and still showing the "generate" button,
+  // just refresh its banner too -- no pending input to replay here since
+  // generation is a button click, not a text field.
+  const checklistBannerHost = document.getElementById('checklist-ai-banner-host');
+  if (checklistBannerHost) checklistBannerHost.innerHTML = schoolAIBannerHTML('checklist-ai');
 }
 
 function jumpTo(name) {

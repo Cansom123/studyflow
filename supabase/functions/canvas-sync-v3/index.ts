@@ -290,8 +290,15 @@ Deno.serve(async (req) => {
         const isSubmitted = !!(sub?.submitted_at || state === "submitted" ||
           state === "complete" || state === "pending_review");
 
-        // Determine lock state so the frontend's 30-day cutoff can filter appropriately
-        const isLocked = a.locked_for_user === true || (a.lock_at != null && new Date(a.lock_at) < now);
+        // Canvas's locked_for_user is ambiguous: it's true both when the deadline
+        // has passed (closed) AND when the assignment simply isn't available yet
+        // (a future unlock_at, or a module prerequisite not yet met). Those need
+        // opposite messaging to the student, so don't collapse them into one flag.
+        // lock_at having actually passed is ground truth we can compute ourselves,
+        // independent of whatever Canvas's own flag says.
+        const lockAtPassed = a.lock_at != null && new Date(a.lock_at) < now;
+        const isLocked = a.locked_for_user === true || lockAtPassed;
+        const lockReason = !isLocked ? null : (lockAtPassed ? "closed" : "unavailable");
 
         if (isSubmitted) completedCount++;
         allAssignments.push({
@@ -305,6 +312,7 @@ Deno.serve(async (req) => {
           completed_at: isSubmitted ? (sub?.submitted_at ?? null) : null,
           assignment_url: a.html_url ?? null,
           is_locked: isLocked,
+          lock_reason: lockReason,
           description: htmlToText(a.description),
         });
         kept++;

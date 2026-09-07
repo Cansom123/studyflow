@@ -3151,7 +3151,7 @@ async function syncCanvas() {
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.message || result.error || 'Sync failed');
     await Promise.all([loadAssignments(), loadGrades()]);
-    localStorage.setItem('sf_last_sync', Date.now());
+    localStorage.setItem('sf_last_sync_' + USER_ID, Date.now());
     updateLastSyncedLabel();
     syncInProgress = false;
     if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); }
@@ -3309,17 +3309,20 @@ function getBadge(type) {
   return ['badge-hw','Homework'];
 }
 
-function getDueText(due_date, isOverdue, isLocked) {
-  // A locked assignment (Canvas's lock_at has already passed, or Canvas itself
-  // says locked_for_user) can't be submitted anymore, no matter what the due
-  // date says. Canvas allows lock_at to land before, on, or after due_at, so
-  // "due today" was genuinely true by the date math while the assignment had
-  // already stopped accepting submissions -- the text needs to say that
-  // plainly rather than let the date math imply there's still time.
+function getDueText(due_date, isOverdue, isLocked, lockReason) {
+  // Canvas's "locked" covers two opposite situations: the deadline already
+  // passed (closed -- can't submit) and the assignment isn't available yet
+  // (a future unlock date or an unmet module prerequisite -- can't submit
+  // YET, but will be able to). Telling a student "can no longer submit" on
+  // something they simply haven't unlocked would be its own false alarm, so
+  // these need different messages, not one blanket "locked" label.
   if (isLocked) {
     const dateStr = due_date
       ? ` (was due ${new Date(due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
       : '';
+    if (lockReason === 'unavailable') {
+      return `<div class="due-locked">🔒 Not yet available — check Canvas for requirements</div>`;
+    }
     return `<div class="due-locked">🔒 Locked${dateStr} — can no longer submit</div>`;
   }
   if (!due_date) return `<div class="due-ok">No due date</div>`;
@@ -3356,7 +3359,7 @@ function aCard(a, isOverdue, redTint=false) {
       <button class="done-check${isDone ? ' checked' : ''}" onclick="toggleDone('${key}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
       <div style="flex:1;min-width:0;">
         <div class="card-row"><div style="flex:1;min-width:0;"><div class="card-title">${titleInner}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>
-        ${getDueText(a.due_date, isOverdue, a.is_locked)}
+        ${getDueText(a.due_date, isOverdue, a.is_locked, a.lock_reason)}
         ${canvasLink}
       </div>
     </div>
@@ -3372,7 +3375,9 @@ function openAssignmentDetail(id) {
     ? new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
     : 'No due date';
   const lockedNotice = a.is_locked
-    ? `<div class="due-locked" style="margin-top:6px;">🔒 Locked — Canvas is no longer accepting submissions for this assignment.</div>`
+    ? (a.lock_reason === 'unavailable'
+        ? `<div class="due-locked" style="margin-top:6px;">🔒 Not yet available — check Canvas for what's required to unlock it.</div>`
+        : `<div class="due-locked" style="margin-top:6px;">🔒 Locked — Canvas is no longer accepting submissions for this assignment.</div>`)
     : '';
   const canvasBtn = a.assignment_url
     ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="sync-btn" style="width:auto;flex:1;text-decoration:none;text-align:center;display:inline-block;">Open in Canvas →</a>`
@@ -5944,7 +5949,7 @@ function calculateFinal() {
 function updateLastSyncedLabel() {
   const n = new Date();
   const dateStr = `${days[n.getDay()]}, ${months[n.getMonth()]} ${n.getDate()}`;
-  const lastSync = parseInt(localStorage.getItem('sf_last_sync') || '0');
+  const lastSync = parseInt(localStorage.getItem('sf_last_sync_' + USER_ID) || '0');
   let syncStr = 'Not synced yet';
   if (lastSync) {
     const mins = Math.round((Date.now() - lastSync) / 60000);
@@ -5960,7 +5965,11 @@ function updateLastSyncedLabel() {
 
 async function autoSync() {
   if (userPrefs.autoSyncEnabled === false) return;
-  const lastSync = parseInt(localStorage.getItem('sf_last_sync') || '0');
+  // Was a bare 'sf_last_sync' key, shared across every account on the same
+  // browser -- syncing account A would make account B's auto-sync think IT
+  // had just synced too, and skip. Every other stored value in this app is
+  // namespaced per USER_ID; this one wasn't.
+  const lastSync = parseInt(localStorage.getItem('sf_last_sync_' + USER_ID) || '0');
   if (Date.now() - lastSync > 24 * 60 * 60 * 1000) {
     await syncCanvas();
   }

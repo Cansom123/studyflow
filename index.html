@@ -4202,10 +4202,16 @@ async function loadAssignmentChecklists() {
 }
 
 function checklistForAssignment(assignmentId) {
+  // Sort by date rather than step_order -- once a student can edit a step's
+  // date by hand, step_order (assigned at generation time) no longer reflects
+  // the actual order of the plan.
   return cachedChecklists
     .filter(s => String(s.assignment_id) === String(assignmentId))
-    .sort((a, b) => a.step_order - b.step_order);
+    .sort((a, b) => (a.target_date || '9999-99-99').localeCompare(b.target_date || '9999-99-99') || a.step_order - b.step_order);
 }
+
+// Id of the checklist step currently in inline-edit mode, if any (only one at a time).
+let editingChecklistStepId = null;
 
 // Mostly rule-based on purpose: Canvas already tells us assignment_type for
 // free, and a title keyword pass resolves most of what's left. An LLM call
@@ -4346,6 +4352,67 @@ async function toggleChecklistStep(stepId, btn) {
   await sbFetchWithRetry(`/rest/v1/assignment_checklists?id=eq.${stepId}`, 'PATCH', { completed: step.completed }, true);
 }
 
+// Letting a student override a generated step's text/date -- it's a suggestion,
+// not an order, and being able to reshape it to fit their own plan is the point.
+function startEditChecklistStep(id) {
+  editingChecklistStepId = id;
+  const step = cachedChecklists.find(s => s.id === id);
+  const a = step && cachedAssignments.find(x => String(x.id) === String(step.assignment_id));
+  if (a) renderChecklistSection(a);
+}
+
+function cancelEditChecklistStep(id) {
+  editingChecklistStepId = null;
+  const step = cachedChecklists.find(s => s.id === id);
+  const a = step && cachedAssignments.find(x => String(x.id) === String(step.assignment_id));
+  if (a) renderChecklistSection(a);
+}
+
+async function saveEditChecklistStep(id) {
+  const step = cachedChecklists.find(s => s.id === id);
+  if (!step) return;
+  const textEl = document.getElementById(`checklist-edit-text-${id}`);
+  const dateEl = document.getElementById(`checklist-edit-date-${id}`);
+  const newText = (textEl?.value || '').trim();
+  const newDate = dateEl?.value || null;
+  if (!newText) return;
+
+  step.step_text = newText;
+  step.target_date = newDate;
+  editingChecklistStepId = null;
+  await sbFetchWithRetry(`/rest/v1/assignment_checklists?id=eq.${id}`, 'PATCH', { step_text: newText, target_date: newDate }, true);
+
+  const a = cachedAssignments.find(x => String(x.id) === String(step.assignment_id));
+  if (a) renderChecklistSection(a);
+}
+
+async function deleteChecklistStep(id) {
+  const step = cachedChecklists.find(s => s.id === id);
+  if (!step) return;
+  const assignmentId = step.assignment_id;
+  cachedChecklists = cachedChecklists.filter(s => s.id !== id);
+  await sbFetchWithRetry(`/rest/v1/assignment_checklists?id=eq.${id}`, 'DELETE', null, true);
+
+  const a = cachedAssignments.find(x => String(x.id) === String(assignmentId));
+  if (a) renderChecklistSection(a);
+}
+
+async function addManualChecklistStep(assignmentId) {
+  const a = cachedAssignments.find(x => String(x.id) === String(assignmentId));
+  if (!a) return;
+  const existing = checklistForAssignment(assignmentId);
+  const row = {
+    user_id: USER_ID, assignment_id: assignmentId, step_order: existing.length,
+    step_text: 'New step', target_date: ymd(new Date()), completed: false, source: 'manual',
+  };
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/assignment_checklists', 'POST', row, true);
+  const created = ok && Array.isArray(data) && data[0] ? data[0] : { id: crypto.randomUUID(), ...row };
+
+  cachedChecklists.push(created);
+  editingChecklistStepId = created.id; // drop straight into edit mode so they can fill it in
+  renderChecklistSection(a);
+}
+
 // Adding to the calendar is a separate, explicit action from generating the
 // plan -- these are auto-generated guesses, not something that should land
 // on a student's schedule without them choosing to.
@@ -4367,6 +4434,31 @@ async function addChecklistToCalendar(assignmentId) {
   showReward('📅 Added to your calendar.');
 }
 
+function checklistStepCardHTML(s) {
+  if (s.id === editingChecklistStepId) {
+    return `<div class="study-session-card">
+      <div class="study-session-info" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input type="text" id="checklist-edit-text-${s.id}" value="${escapeHtml(s.step_text)}" class="settings-input" style="flex:1;min-width:140px;margin-bottom:0;">
+        <input type="date" id="checklist-edit-date-${s.id}" value="${s.target_date || ''}" class="settings-input" style="width:auto;margin-bottom:0;">
+      </div>
+      <button class="study-session-start" onclick="saveEditChecklistStep('${s.id}')" title="Save">✓</button>
+      <button class="study-session-del" onclick="cancelEditChecklistStep('${s.id}')" title="Cancel">✕</button>
+    </div>`;
+  }
+  const dateStr = s.target_date
+    ? new Date(s.target_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : '';
+  return `<div class="study-session-card${s.completed ? ' done' : ''}">
+    <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleChecklistStep('${s.id}', this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
+    <div class="study-session-info">
+      <div class="study-session-title">${escapeHtml(s.step_text)}</div>
+      ${dateStr ? `<div class="study-session-meta">${dateStr}</div>` : ''}
+    </div>
+    <button class="study-session-start" onclick="startEditChecklistStep('${s.id}')" title="Edit">✏️</button>
+    <button class="study-session-del" onclick="deleteChecklistStep('${s.id}')" title="Remove">✕</button>
+  </div>`;
+}
+
 function renderChecklistSection(a) {
   const el = document.getElementById('a-checklist-section');
   if (!el) return;
@@ -4384,22 +4476,12 @@ function renderChecklistSection(a) {
     return;
   }
 
-  const stepsHTML = steps.map(s => {
-    const dateStr = s.target_date
-      ? new Date(s.target_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      : '';
-    return `<div class="study-session-card${s.completed ? ' done' : ''}">
-      <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleChecklistStep('${s.id}', this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
-      <div class="study-session-info">
-        <div class="study-session-title">${escapeHtml(s.step_text)}</div>
-        ${dateStr ? `<div class="study-session-meta">${dateStr}</div>` : ''}
-      </div>
-    </div>`;
-  }).join('');
+  const stepsHTML = steps.map(s => checklistStepCardHTML(s)).join('');
 
   el.innerHTML = `
     <div class="section-label" style="margin-top:20px;">Study plan</div>
     ${stepsHTML}
+    <button class="settings-btn" style="margin-top:8px;" onclick="addManualChecklistStep('${a.id}')">+ Add a step</button>
     <button class="sync-btn" style="margin-top:8px;" onclick="addChecklistToCalendar('${a.id}')">📅 Add these to my calendar</button>
   `;
 }

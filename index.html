@@ -3389,7 +3389,11 @@ function getDueText(due_date, isOverdue, isLocked, lockReason) {
   return `<div class="due-ok">Due ${due.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
 }
 
-function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`); }
+// encodeURIComponent leaves ' unescaped (it's an RFC3986 "unreserved" char), which breaks
+// out of the single-quoted onclick="toggleDone('${key}',this)" JS string for any title/course
+// with an apostrophe -- silently killing the click handler. %27 round-trips through
+// decodeURIComponent fine, so escape it too.
+function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`).replace(/'/g, '%27'); }
 
 function aCard(a, isOverdue, redTint=false) {
   const [bc, bl] = getBadge(a.assignment_type);

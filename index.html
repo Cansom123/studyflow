@@ -408,6 +408,7 @@ body {
 
 .due-soon { color: var(--red); font-size: 12px; font-weight: 500; margin-top: 6px; }
 .due-ok   { color: var(--text2); font-size: 12px; margin-top: 6px; }
+.due-locked { color: var(--amber); font-size: 12px; font-weight: 600; margin-top: 6px; }
 
 .card.overdue-card {
   border-color: oklch(0.52 0.2 22 / 0.28);
@@ -3308,11 +3309,28 @@ function getBadge(type) {
   return ['badge-hw','Homework'];
 }
 
-function getDueText(due_date, isOverdue) {
+function getDueText(due_date, isOverdue, isLocked) {
+  // A locked assignment (Canvas's lock_at has already passed, or Canvas itself
+  // says locked_for_user) can't be submitted anymore, no matter what the due
+  // date says. Canvas allows lock_at to land before, on, or after due_at, so
+  // "due today" was genuinely true by the date math while the assignment had
+  // already stopped accepting submissions -- the text needs to say that
+  // plainly rather than let the date math imply there's still time.
+  if (isLocked) {
+    const dateStr = due_date
+      ? ` (was due ${new Date(due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
+      : '';
+    return `<div class="due-locked">🔒 Locked${dateStr} — can no longer submit</div>`;
+  }
   if (!due_date) return `<div class="due-ok">No due date</div>`;
   const due = new Date(due_date);
   const today = new Date(); today.setHours(0,0,0,0);
-  const d = Math.round((due - today) / (1000*60*60*24));
+  // Diff calendar days, not raw hours -- a due time later today (e.g. 7pm) is
+  // 0.79 days away by the clock, which Math.round bumps to 1 and mislabels
+  // "due tomorrow". Normalizing due_date to its own local midnight first makes
+  // the difference an exact day count, so "today" only ever means today.
+  const dueMidnight = new Date(due); dueMidnight.setHours(0,0,0,0);
+  const d = Math.round((dueMidnight - today) / (1000*60*60*24));
   if (isOverdue) return `<div class="due-soon">${Math.abs(d)} day${Math.abs(d)!==1?'s':''} overdue</div>`;
   if (d === 0) return `<div class="due-soon">Due today</div>`;
   if (d === 1) return `<div class="due-soon">Due tomorrow</div>`;
@@ -3338,7 +3356,7 @@ function aCard(a, isOverdue, redTint=false) {
       <button class="done-check${isDone ? ' checked' : ''}" onclick="toggleDone('${key}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
       <div style="flex:1;min-width:0;">
         <div class="card-row"><div style="flex:1;min-width:0;"><div class="card-title">${titleInner}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>
-        ${getDueText(a.due_date, isOverdue)}
+        ${getDueText(a.due_date, isOverdue, a.is_locked)}
         ${canvasLink}
       </div>
     </div>
@@ -3353,12 +3371,18 @@ function openAssignmentDetail(id) {
   const dueStr = a.due_date
     ? new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
     : 'No due date';
+  const lockedNotice = a.is_locked
+    ? `<div class="due-locked" style="margin-top:6px;">🔒 Locked — Canvas is no longer accepting submissions for this assignment.</div>`
+    : '';
   const canvasBtn = a.assignment_url
     ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="sync-btn" style="width:auto;flex:1;text-decoration:none;text-align:center;display:inline-block;">Open in Canvas →</a>`
     : '';
   document.getElementById('a-detail-body').innerHTML = `
     <div class="card-row" style="margin-bottom:14px;">
-      <div class="card-sub">${escapeHtml(a.course || '')} · Due ${dueStr}</div>
+      <div>
+        <div class="card-sub">${escapeHtml(a.course || '')} · Due ${dueStr}</div>
+        ${lockedNotice}
+      </div>
       <span class="badge ${bc}">${bl}</span>
     </div>
     ${a.description

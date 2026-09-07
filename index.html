@@ -1373,6 +1373,35 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
     </div>
   </div>
 
+  <!-- CLASS NOTES DETAIL -->
+  <div id="class-notes-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title" id="notes-detail-title"></div>
+        <button class="detail-close" onclick="closeClassNotes()" title="Close">✕</button>
+      </div>
+      <button class="settings-btn" id="notes-add-btn" onclick="openNoteForm()">+ New note</button>
+      <div class="card" id="note-form" style="display:none;padding:16px;margin-bottom:16px;">
+        <input class="settings-input" id="note-title-input" placeholder="Title (optional)" />
+        <input class="settings-input" id="note-topic-input" list="note-topic-datalist" placeholder="Topic (optional) — e.g. Chapter 4" />
+        <datalist id="note-topic-datalist"></datalist>
+        <label class="change-courses-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;width:auto;margin-bottom:10px;">
+          📄 Upload PDF
+          <input type="file" accept="application/pdf" id="note-pdf-input" style="display:none;" onchange="handleNotePdfUpload(event)" />
+        </label>
+        <span id="note-pdf-status" class="card-sub" style="margin-left:8px;"></span>
+        <textarea class="syllabus-textarea" id="note-content-input" placeholder="Paste or type your notes..." style="min-height:160px;margin-top:8px;"></textarea>
+        <div id="note-form-msg" style="margin:8px 0;"></div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="cancelNoteForm()">Cancel</button>
+          <button class="settings-btn" style="width:auto;flex:1;" onclick="saveNote()">Save note</button>
+        </div>
+      </div>
+      <div id="notes-entries-empty" class="card-sub" style="display:none;padding:8px 2px;">No notes yet for this class — add your first one above.</div>
+      <div id="notes-entries-list"></div>
+    </div>
+  </div>
+
   <!-- FOCUS TIMER -->
   <div id="focus-overlay">
     <div id="focus-card">
@@ -1465,6 +1494,10 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h7l3 3v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M12 4v3h3"/><line x1="6.5" y1="10.5" x2="13.5" y2="10.5"/><line x1="6.5" y1="13.5" x2="13.5" y2="13.5"/></svg></span>
         <span>Syllabus</span>
       </button>
+      <button class="tab" id="tab-notes" onclick="showPage('notes',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h9l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><line x1="6" y1="8" x2="14" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/><line x1="6" y1="14" x2="10.5" y2="14"/></svg></span>
+        <span>Notes</span>
+      </button>
       <button class="tab" id="tab-goals" onclick="showPage('goals',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="2.5" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="17.5"/></svg></span>
         <span>Goals</span>
@@ -1534,6 +1567,10 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
               <button class="home-qlink" id="home-ql-syllabus" onclick="jumpTo('syllabus')">
                 <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h7l3 3v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M12 4v3h3"/><line x1="6.5" y1="10.5" x2="13.5" y2="10.5"/><line x1="6.5" y1="13.5" x2="13.5" y2="13.5"/></svg></div>
                 <span>Syllabus</span>
+              </button>
+              <button class="home-qlink" style="grid-column:1 / -1;" onclick="jumpTo('notes')">
+                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h9l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><line x1="6" y1="8" x2="14" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/><line x1="6" y1="14" x2="10.5" y2="14"/></svg></div>
+                <span>Class Notes</span>
               </button>
               <button class="home-qlink" id="home-ql-goals" onclick="jumpTo('goals')">
                 <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="2.5" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="17.5"/></svg></div>
@@ -1776,6 +1813,17 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         </div>
         <div id="syllabus-search-results" style="display:none;"></div>
         <div id="syllabus-list" style="display:none;"></div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="page" id="page-notes">
+        <div id="notes-loading" class="loading-box">Loading your classes...</div>
+        <div id="notes-empty" class="empty-box" style="display:none;">
+          <div class="empty-icon">📝</div>
+          <div class="empty-title">No classes selected yet</div>
+          <div class="empty-sub">Pick your classes in Settings first — then add notes for each one here.</div>
+        </div>
+        <div id="notes-course-list" style="display:none;"></div>
       </div>
 
       <!-- SETTINGS -->
@@ -2630,6 +2678,7 @@ async function showApp() {
   loadStudySessions();
   loadGrades();
   loadSyllabi();
+  loadClassNotes();
   renderGoalsTab();
   renderSelectedCoursesTab();
   updateLastSyncedLabel();
@@ -4914,6 +4963,266 @@ function searchSyllabi() {
   }).join('');
 }
 
+/* ===========================
+   CLASS NOTES
+   Flat entries per class, each with an optional free-text topic tag rather
+   than a forced unit/topic hierarchy -- a real hierarchy means the student
+   has to architect their semester before they can capture a single note,
+   which is exactly the setup tax that kills adoption for this kind of
+   feature. A loose tag still gives future scoping (e.g. flashcard
+   generation limited to one topic) without that cost.
+=========================== */
+let notesCourses = [];
+let cachedClassNotes = [];
+let notesDetailCourseId = null;
+let notesDetailCourseName = '';
+let editingNoteId = null;
+
+async function loadClassNotes() {
+  const loadingEl = document.getElementById('notes-loading');
+  const emptyEl = document.getElementById('notes-empty');
+  const listEl = document.getElementById('notes-course-list');
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (listEl) listEl.style.display = 'none';
+
+  const { ok: sOk, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=selected_courses`);
+  notesCourses = (sOk && settings && settings[0] && settings[0].selected_courses) || [];
+
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/class_notes?user_id=eq.${USER_ID}&select=*&order=created_at.desc`);
+  cachedClassNotes = (ok && Array.isArray(data)) ? data : [];
+
+  if (loadingEl) loadingEl.style.display = 'none';
+  if (notesCourses.length === 0) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (listEl) listEl.style.display = '';
+  renderNotesCourseList();
+}
+
+// Joined by Canvas's course_id, not a name string -- notes save under the
+// cleaned display name while notesCourses carries the raw Canvas name, and
+// that mismatch meant a class always looked note-less even after saving to
+// it. Syllabi already avoid this by keying on the stable id; same fix here.
+function notesForCourseId(courseId) {
+  return cachedClassNotes.filter(n => String(n.course_id) === String(courseId));
+}
+
+function renderNotesCourseList() {
+  const listEl = document.getElementById('notes-course-list');
+  if (!listEl) return;
+  listEl.innerHTML = notesCourses.map(c => {
+    const name = cleanCourseName(c.name);
+    const notes = notesForCourseId(c.id);
+    const badge = notes.length ? `${notes.length} note${notes.length !== 1 ? 's' : ''}` : 'No notes yet';
+    const badgeClass = notes.length ? 'badge-hw' : 'badge-test';
+    const sub = notes.length
+      ? escapeHtml(notes[0].content).slice(0, 110) + (notes[0].content.length > 110 ? '…' : '')
+      : 'Tap to add your first note';
+    return `<div class="card syllabus-card" onclick="openClassNotes('${c.id}')">
+      <div class="card-row"><div class="card-title">${escapeHtml(name)}</div><span class="badge ${badgeClass}">${badge}</span></div>
+      <div class="card-sub syllabus-preview">${sub}</div>
+    </div>`;
+  }).join('');
+}
+
+function openClassNotes(courseId) {
+  const course = notesCourses.find(c => String(c.id) === String(courseId));
+  if (!course) return;
+  notesDetailCourseId = courseId;
+  notesDetailCourseName = cleanCourseName(course.name);
+  editingNoteId = null;
+  document.getElementById('notes-detail-title').textContent = notesDetailCourseName;
+  document.getElementById('note-form').style.display = 'none';
+  document.getElementById('notes-add-btn').style.display = '';
+  renderNoteEntries();
+  document.getElementById('class-notes-overlay').style.display = 'block';
+}
+
+function closeClassNotes() {
+  document.getElementById('class-notes-overlay').style.display = 'none';
+  notesDetailCourseId = null;
+}
+
+function renderNoteEntries() {
+  const listEl = document.getElementById('notes-entries-list');
+  const emptyEl = document.getElementById('notes-entries-empty');
+  if (!listEl) return;
+  const notes = notesForCourseId(notesDetailCourseId)
+    .slice()
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if (notes.length === 0) {
+    emptyEl.style.display = 'block';
+    listEl.innerHTML = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  // Group by topic tag (entries with no tag fall into their own untagged
+  // group, shown last) rather than forcing every note into a topic.
+  const groups = new Map();
+  notes.forEach(n => {
+    const key = n.topic ? n.topic.trim() : '';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(n);
+  });
+  const orderedKeys = [...groups.keys()].filter(k => k).sort();
+  if (groups.has('')) orderedKeys.push('');
+
+  listEl.innerHTML = orderedKeys.map(key => {
+    const items = groups.get(key);
+    const heading = key ? `<div class="section-label" style="margin-top:16px;">${escapeHtml(key)}</div>` : (orderedKeys.length > 1 ? `<div class="section-label" style="margin-top:16px;">Untagged</div>` : '');
+    const cards = items.map(n => {
+      const dateStr = new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return `<div class="card" style="margin-bottom:10px;">
+        <div class="card-row">
+          <div class="card-title">${escapeHtml(n.title || 'Untitled note')}</div>
+          <span class="card-sub">${dateStr}</span>
+        </div>
+        <div class="card-sub" style="margin-top:8px;white-space:pre-wrap;line-height:1.5;">${escapeHtml(n.content)}</div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="editNote('${n.id}')">Edit</button>
+          <button class="study-session-del" onclick="deleteNote('${n.id}')" title="Delete">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+    return heading + cards;
+  }).join('');
+}
+
+function populateNoteTopicDatalist() {
+  const dl = document.getElementById('note-topic-datalist');
+  if (!dl) return;
+  const topics = [...new Set(notesForCourseId(notesDetailCourseId).map(n => n.topic).filter(Boolean))].sort();
+  dl.innerHTML = topics.map(t => `<option value="${escapeHtml(t)}"></option>`).join('');
+}
+
+function openNoteForm(note) {
+  editingNoteId = note ? note.id : null;
+  document.getElementById('note-title-input').value = note ? (note.title || '') : '';
+  document.getElementById('note-topic-input').value = note ? (note.topic || '') : '';
+  document.getElementById('note-content-input').value = note ? note.content : '';
+  document.getElementById('note-pdf-status').textContent = '';
+  document.getElementById('note-form-msg').innerHTML = '';
+  populateNoteTopicDatalist();
+  document.getElementById('note-form').style.display = 'block';
+  document.getElementById('notes-add-btn').style.display = 'none';
+  document.getElementById('note-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function editNote(id) {
+  const note = cachedClassNotes.find(n => n.id === id);
+  if (note) openNoteForm(note);
+}
+
+function cancelNoteForm() {
+  editingNoteId = null;
+  document.getElementById('note-form').style.display = 'none';
+  document.getElementById('notes-add-btn').style.display = '';
+}
+
+async function saveNote() {
+  const title = document.getElementById('note-title-input').value.trim() || 'Untitled note';
+  const topic = document.getElementById('note-topic-input').value.trim() || null;
+  const content = document.getElementById('note-content-input').value.trim();
+  const msgEl = document.getElementById('note-form-msg');
+  if (!content) {
+    msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Add some content first.</div>`;
+    return;
+  }
+
+  if (editingNoteId) {
+    const { ok } = await sbFetchWithRetry(`/rest/v1/class_notes?id=eq.${editingNoteId}`, 'PATCH', {
+      title, topic, content, updated_at: new Date().toISOString(),
+    }, true);
+    if (!ok) { msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Couldn't save — try again.</div>`; return; }
+    cachedClassNotes = cachedClassNotes.map(n => n.id === editingNoteId ? { ...n, title, topic, content } : n);
+  } else {
+    const source = document.getElementById('note-pdf-status').dataset.usedPdf === '1' ? 'pdf' : 'typed';
+    const { ok, data } = await sbFetchWithRetry('/rest/v1/class_notes', 'POST', {
+      user_id: USER_ID, course_id: notesDetailCourseId, course_name: notesDetailCourseName, title, topic, content, source,
+    }, true);
+    if (!ok) { msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Couldn't save — try again.</div>`; return; }
+    const created = Array.isArray(data) && data[0] ? data[0] : {
+      id: crypto.randomUUID(), user_id: USER_ID, course_id: notesDetailCourseId, course_name: notesDetailCourseName, title, topic, content, source, created_at: new Date().toISOString(),
+    };
+    cachedClassNotes.push(created);
+  }
+
+  cancelNoteForm();
+  renderNoteEntries();
+  renderNotesCourseList();
+  showReward('📝 Note saved.');
+}
+
+async function deleteNote(id) {
+  cachedClassNotes = cachedClassNotes.filter(n => n.id !== id);
+  renderNoteEntries();
+  renderNotesCourseList();
+  await sbFetchWithRetry(`/rest/v1/class_notes?id=eq.${id}`, 'DELETE', null, true);
+}
+
+// pdf.js is loaded lazily, only when a student actually uploads a PDF --
+// most sessions won't touch this path, so there's no reason to pay for it
+// on every page load the way a static <script> tag would.
+let pdfJsLoadPromise = null;
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve();
+  if (pdfJsLoadPromise) return pdfJsLoadPromise;
+  pdfJsLoadPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve();
+    };
+    s.onerror = () => reject(new Error('Could not load the PDF reader — check your connection and try again.'));
+    document.head.appendChild(s);
+  });
+  return pdfJsLoadPromise;
+}
+
+async function extractPdfText(file) {
+  await loadPdfJs();
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it => it.str).join(' ') + '\n\n';
+  }
+  return text.trim();
+}
+
+async function handleNotePdfUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  const statusEl = document.getElementById('note-pdf-status');
+  if (!file) return;
+  statusEl.textContent = 'Reading PDF…';
+  statusEl.dataset.usedPdf = '';
+  try {
+    const text = await extractPdfText(file);
+    if (!text) {
+      statusEl.textContent = "Couldn't find text in that PDF (it may be scanned images) — try pasting manually.";
+      return;
+    }
+    const contentInput = document.getElementById('note-content-input');
+    // Prefill rather than auto-save: extraction is often imperfect (odd
+    // spacing, dropped line breaks from multi-column slides), so the student
+    // should see and fix it up before it's saved as their note.
+    contentInput.value = contentInput.value ? contentInput.value + '\n\n' + text : text;
+    statusEl.textContent = `Extracted text from "${file.name}" — check it over before saving.`;
+    statusEl.dataset.usedPdf = '1';
+  } catch (err) {
+    statusEl.textContent = err.message || "Couldn't read that PDF — try pasting the text manually.";
+  } finally {
+    event.target.value = '';
+  }
+}
+
 let dueCalMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
 let dueCalSelectedDate = null;
 let dueCalAssignments = [];
@@ -5888,6 +6197,7 @@ function showPage(name, el, fromNav) {
   // click is always a way out, regardless of what's open.
   closeAssignmentDetail();
   closeSyllabusDetail();
+  closeClassNotes();
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));

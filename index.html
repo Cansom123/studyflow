@@ -4751,27 +4751,38 @@ function batchChunks(chunks, size) {
 // chunk back as the answer. Never wrong (it's the student's own words),
 // just less specific than a real question would be. Used per-batch as the
 // fallback for whichever batches the AI path fails on.
+// A topic-prefixed chunk's front must never repeat the chunk's own answer
+// text -- an earlier version anchored the front on content AFTER the
+// topic's colon to avoid same-looking fronts for different bullets under
+// one topic, but for a short bullet ("Timing of Goals: Retirement") that
+// meant the front WAS the whole answer, verbatim. Flipping such a card
+// reveals nothing new -- it's not a flashcard, it's a card that answers
+// itself. The front is built from the topic alone (never the bullet text),
+// with a "(n of N)" disambiguator when several bullets share one topic.
 function deterministicFlashcardsForChunks(chunks) {
-  return chunks.map(chunk => {
-    // A topic-prefixed chunk ("Interest Calculations: Simple Interest") can
-    // have its whole differentiator swallowed by a first-8-words cutoff if
-    // the topic itself runs long -- multiple cards from the same topic then
-    // show an identical-looking front even though their backs differ.
-    // Anchoring the word budget to what follows the topic's colon keeps the
-    // actual distinguishing content in view.
+  const topicCounts = new Map();
+  const parsed = chunks.map(chunk => {
     const colonIdx = chunk.lastIndexOf(': ');
-    let lead;
-    if (colonIdx > -1) {
-      const topicWords = chunk.slice(0, colonIdx).split(/\s+/);
-      const topic = topicWords.length > 6 ? topicWords.slice(0, 6).join(' ') + '…' : topicWords.join(' ');
-      const restWords = chunk.slice(colonIdx + 2).split(/\s+/);
-      const rest = restWords.slice(0, 8).join(' ') + (restWords.length > 8 ? '…' : '');
-      lead = `${topic}: ${rest}`;
-    } else {
+    if (colonIdx === -1) return { chunk, topic: null };
+    const topic = chunk.slice(0, colonIdx).trim();
+    topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
+    return { chunk, topic };
+  });
+
+  const topicSeen = new Map();
+  return parsed.map(({ chunk, topic }) => {
+    if (topic === null) {
       const words = chunk.split(/\s+/);
-      lead = words.slice(0, 8).join(' ') + (words.length > 8 ? '…' : '');
+      const lead = words.slice(0, 8).join(' ') + (words.length > 8 ? '…' : '');
+      return { front: `What does the note say about: "${lead}"`, back: chunk };
     }
-    return { front: `What does the note say about: "${lead}"`, back: chunk };
+    const total = topicCounts.get(topic);
+    const idx = (topicSeen.get(topic) || 0) + 1;
+    topicSeen.set(topic, idx);
+    const topicWords = topic.split(/\s+/);
+    const topicLabel = topicWords.length > 8 ? topicWords.slice(0, 8).join(' ') + '…' : topic;
+    const suffix = total > 1 ? ` (${idx} of ${total})` : '';
+    return { front: `What does the note say about "${topicLabel}"${suffix}?`, back: chunk };
   });
 }
 

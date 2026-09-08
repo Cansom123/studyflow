@@ -1825,6 +1825,33 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         <div id="notes-course-list" style="display:none;"></div>
       </div>
 
+      <!-- MORE (mobile only -- the bottom nav only has room for the 4 most-used
+           tabs, so everything else lives here behind one extra tap instead of
+           crowding the bar) -->
+      <div class="page" id="page-more">
+        <div class="card syllabus-card" onclick="jumpTo('grades')">
+          <div class="card-row"><div class="card-title">📊 Grades</div><span style="opacity:.4;">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('goals')">
+          <div class="card-row"><div class="card-title">🎯 Goals</div><span style="opacity:.4;">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('notes')">
+          <div class="card-row"><div class="card-title">📝 Class Notes</div><span style="opacity:.4;">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('syllabus')">
+          <div class="card-row"><div class="card-title">📄 Syllabus</div><span style="opacity:.4;">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('allwork')">
+          <div class="card-row"><div class="card-title">☰ All Work</div><span style="opacity:.4;">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('settings')">
+          <div class="card-row"><div class="card-title">⚙️ Settings</div><span style="opacity:.4;">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpToReportProblem()">
+          <div class="card-row"><div class="card-title">⚠️ Report a problem</div><span style="opacity:.4;">›</span></div>
+        </div>
+      </div>
+
       <!-- SETTINGS -->
       <div class="page" id="page-settings">
         <div class="section-label">Appearance</div>
@@ -2145,33 +2172,15 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         </div>
         <span class="nav-label">Study</span>
       </button>
-      <button class="nav-item" id="nav-grades" onclick="showPage('grades',this,true)">
+      <button class="nav-item" id="nav-more" onclick="showPage('more',this,true)">
         <div class="nav-icon">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-            <rect x="3" y="11" width="3" height="6" rx="1"/>
-            <rect x="8.5" y="7" width="3" height="10" rx="1"/>
-            <rect x="14" y="3" width="3" height="14" rx="1"/>
+            <circle cx="4.5" cy="10" r="1.15" fill="currentColor" stroke="none"/>
+            <circle cx="10" cy="10" r="1.15" fill="currentColor" stroke="none"/>
+            <circle cx="15.5" cy="10" r="1.15" fill="currentColor" stroke="none"/>
           </svg>
         </div>
-        <span class="nav-label">Grades</span>
-      </button>
-      <button class="nav-item" id="nav-goals" onclick="showPage('goals',this,true)">
-        <div class="nav-icon">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-            <circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="3.5"/>
-            <line x1="10" y1="2.5" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="17.5"/>
-          </svg>
-        </div>
-        <span class="nav-label">Goals</span>
-      </button>
-      <button class="nav-item" id="nav-settings" onclick="showPage('settings',this,true)">
-        <div class="nav-icon">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="10" cy="10" r="2.5"/>
-            <path d="M10 2v1.5m0 13V18m8-8h-1.5M3.5 10H2m11.66-5.66-1.06 1.06M7.4 12.6l-1.06 1.06M17.66 15.66l-1.06-1.06M3.4 7.4 2.34 6.34M13.66 13.66l1.06 1.06M5.46 5.46 4.4 4.4"/>
-          </svg>
-        </div>
-        <span class="nav-label">Settings</span>
+        <span class="nav-label">More</span>
       </button>
     </nav>
     </div><!-- /main-col -->

@@ -4789,9 +4789,18 @@ function deterministicFlashcardsForChunks(chunks) {
 function parseFlashcardLines(raw) {
   const cards = [];
   raw.split(/\n\s*\n|\n-{2,}\n/).map(b => b.trim()).filter(Boolean).forEach(block => {
-    const q = block.match(/^Q:\s*(.+)$/mi);
-    const a = block.match(/^A:\s*(.+)$/mi);
-    if (q && a) cards.push({ front: q[1].trim(), back: a[1].trim() });
+    // [ \t]*, not \s* -- \s matches newlines too, so a blank "Q: " line let
+    // \s* consume past the line break entirely and .+ then captured the
+    // NEXT line's text as the "question" (e.g. "Q: \nA: B." produced front
+    // "A: B.", not an empty string as it looks like it should). Restricting
+    // to same-line whitespace means a truly empty Q/A line just fails to
+    // match at all, which is the correct outcome.
+    const q = block.match(/^Q:[ \t]*(.+)$/mi);
+    const a = block.match(/^A:[ \t]*(.+)$/mi);
+    if (!q || !a) return;
+    const front = q[1].trim();
+    const back = a[1].trim();
+    if (front && back) cards.push({ front, back });
   });
   return cards;
 }

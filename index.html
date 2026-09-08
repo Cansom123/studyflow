@@ -2687,6 +2687,7 @@ async function showApp() {
   loadGrades();
   loadSyllabi();
   loadClassNotes();
+  loadFlashcards();
   loadAssignmentChecklists();
   renderGoalsTab();
   renderSelectedCoursesTab();
@@ -4513,6 +4514,207 @@ async function handleGenerateChecklistClick(assignmentId, btn) {
   }
 }
 
+/* ===========================
+   Flashcard generation -- turns a Class Note's content into a small set of
+   Q/A flashcards using coco.1, with the same verify-or-fallback discipline
+   as the assignment checklist: an AI answer that isn't actually grounded in
+   the note's own words is worse than a plain quote-based card, so it's
+   rejected and the deterministic fallback (chunk the note into cards) is
+   used instead.
+=========================== */
+let cachedFlashcards = [];
+let flippedFlashcards = new Set();
+
+async function loadFlashcards() {
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/flashcards?user_id=eq.${USER_ID}&select=*&order=created_at.asc`);
+  cachedFlashcards = (ok && Array.isArray(data)) ? data : [];
+}
+
+function flashcardsForNote(noteId) {
+  return cachedFlashcards.filter(c => String(c.note_id) === String(noteId));
+}
+
+// Always available, no model required -- chunks the note into paragraphs and
+// quotes each one back as the answer, exactly like coco.1's own quote
+// fallback for syllabus mode. Never wrong (it's the student's own words),
+// just less specific than a real question would be.
+function deterministicFlashcards(note) {
+  const paragraphs = note.content
+    .split(/\n\s*\n/)
+    .map(c => c.trim())
+    .filter(c => c.length > 15)
+    .slice(0, 6);
+  const chunks = paragraphs.length ? paragraphs : [note.content.trim()].filter(Boolean);
+  return chunks.map(chunk => {
+    const words = chunk.split(/\s+/);
+    const lead = words.slice(0, 8).join(' ');
+    return { front: `What does the note say about: "${lead}${words.length > 8 ? '…' : ''}"`, back: chunk };
+  });
+}
+
+function parseFlashcardLines(raw) {
+  const cards = [];
+  raw.split(/\n\s*\n|\n-{2,}\n/).map(b => b.trim()).filter(Boolean).forEach(block => {
+    const q = block.match(/^Q:\s*(.+)$/mi);
+    const a = block.match(/^A:\s*(.+)$/mi);
+    if (q && a) cards.push({ front: q[1].trim(), back: a[1].trim() });
+  });
+  return cards;
+}
+
+async function generateFlashcardsViaAI(note) {
+  const messages = [
+    {
+      role: 'system',
+      content:
+        'You are coco.1, turning a student\'s class notes into flashcards.\n' +
+        'Rules:\n' +
+        '1. Produce 4-8 flashcards using ONLY facts stated in the notes -- never invent anything not in the text.\n' +
+        '2. Each flashcard is a block: a line starting "Q: " with the question, then a line starting "A: " with the answer, with a blank line between cards.\n' +
+        '3. Answers should be short and specific, quoting or closely paraphrasing the notes.\n' +
+        '4. No numbering, no markdown, nothing before or after the flashcards.',
+    },
+    {
+      role: 'user',
+      content: `Notes${note.title ? ' ("' + note.title + '")' : ''}:\n${note.content.slice(0, 2000)}`,
+    },
+  ];
+  const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.4, max_tokens: 500 });
+  return parseFlashcardLines((reply.choices[0].message.content || '').trim());
+}
+
+// The grounding check: an answer full of words that never appear anywhere in
+// the source note is a hallucination, not a flashcard, and gets rejected
+// just like a checklist step with a bad date does.
+function verifyFlashcards(cards, noteContent) {
+  if (cards.length < 2 || cards.length > 10) return { ok: false, reason: `bad card count: ${cards.length}` };
+  const noteWords = new Set(
+    noteContent.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3)
+  );
+  const seenFronts = new Set();
+  for (const c of cards) {
+    if (!c.front || c.front.trim().length < 5) return { ok: false, reason: 'question too short' };
+    if (!c.back || c.back.trim().length < 3) return { ok: false, reason: 'answer too short' };
+    const key = c.front.toLowerCase().trim();
+    if (seenFronts.has(key)) return { ok: false, reason: 'duplicate question' };
+    seenFronts.add(key);
+
+    const backWords = c.back.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3);
+    if (backWords.length > 0) {
+      const groundedFrac = backWords.filter(w => noteWords.has(w)).length / backWords.length;
+      if (groundedFrac < 0.3) return { ok: false, reason: `answer not grounded in note (${Math.round(groundedFrac * 100)}% overlap)` };
+    }
+  }
+  return { ok: true, reason: '' };
+}
+
+async function generateFlashcards(noteId) {
+  const note = cachedClassNotes.find(n => n.id === noteId);
+  if (!note || !note.content) return;
+
+  let cards = null;
+  let source = 'fallback';
+  if (schoolAIReady()) {
+    try {
+      const aiCards = await generateFlashcardsViaAI(note);
+      const verdict = verifyFlashcards(aiCards, note.content);
+      if (verdict.ok) { cards = aiCards; source = 'ai'; }
+      else console.warn('[flashcards] rejected AI output —', verdict.reason);
+    } catch (err) {
+      console.warn('[flashcards] AI generation failed —', err.message);
+    }
+  }
+  if (!cards) cards = deterministicFlashcards(note);
+
+  const rows = cards.map(c => ({
+    user_id: USER_ID, note_id: noteId, course_id: note.course_id,
+    front: c.front, back: c.back, source,
+  }));
+
+  // Regenerating replaces the old set instead of piling duplicates on top.
+  const oldIds = flashcardsForNote(noteId).map(c => c.id);
+  if (oldIds.length) {
+    await sbFetchWithRetry(`/rest/v1/flashcards?id=in.(${oldIds.join(',')})`, 'DELETE', null, true);
+  }
+
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/flashcards', 'POST', rows, true);
+  const created = ok && Array.isArray(data) && data.length === rows.length
+    ? data
+    : rows.map(r => ({ id: crypto.randomUUID(), ...r }));
+
+  cachedFlashcards = cachedFlashcards.filter(c => c.note_id !== noteId).concat(created);
+  flippedFlashcards.clear();
+  renderFlashcardsSection(note);
+  showReward(source === 'ai' ? '🃏 Flashcards ready.' : '🃏 Flashcards ready (basic version — coco.1 wasn\'t available).');
+}
+
+function toggleFlashcardFlip(id) {
+  if (flippedFlashcards.has(id)) flippedFlashcards.delete(id); else flippedFlashcards.add(id);
+  const card = cachedFlashcards.find(c => c.id === id);
+  const el = document.getElementById(`flashcard-${id}`);
+  if (!card || !el) return;
+  const isFlipped = flippedFlashcards.has(id);
+  el.querySelector('.flashcard-text').textContent = isFlipped ? card.back : card.front;
+  el.querySelector('.flashcard-hint').textContent = isFlipped ? 'Tap to see the question' : 'Tap to reveal the answer';
+}
+
+async function deleteFlashcard(id) {
+  const card = cachedFlashcards.find(c => c.id === id);
+  if (!card) return;
+  const noteId = card.note_id;
+  cachedFlashcards = cachedFlashcards.filter(c => c.id !== id);
+  flippedFlashcards.delete(id);
+  await sbFetchWithRetry(`/rest/v1/flashcards?id=eq.${id}`, 'DELETE', null, true);
+  const note = cachedClassNotes.find(n => n.id === noteId);
+  if (note) renderFlashcardsSection(note);
+}
+
+function flashcardCardHTML(c) {
+  const isFlipped = flippedFlashcards.has(c.id);
+  return `<div style="display:flex;gap:8px;align-items:stretch;margin-bottom:8px;">
+    <div class="card flashcard" id="flashcard-${c.id}" style="flex:1;cursor:pointer;margin-bottom:0;" onclick="toggleFlashcardFlip('${c.id}')">
+      <div class="card-sub flashcard-text" style="font-size:14px;line-height:1.5;">${escapeHtml(isFlipped ? c.back : c.front)}</div>
+      <div class="card-sub flashcard-hint" style="margin-top:6px;font-size:11px;opacity:.6;">${isFlipped ? 'Tap to see the question' : 'Tap to reveal the answer'}</div>
+    </div>
+    <button class="study-session-del" onclick="deleteFlashcard('${c.id}')" title="Delete">✕</button>
+  </div>`;
+}
+
+function renderFlashcardsSection(note) {
+  const el = document.getElementById(`flashcards-section-${note.id}`);
+  if (!el) return;
+  const cards = flashcardsForNote(note.id);
+  const idPrefix = `flashcards-ai-${note.id}`;
+
+  if (cards.length === 0) {
+    el.innerHTML = `
+      <div id="flashcards-ai-banner-host-${note.id}">${schoolAIBannerHTML(idPrefix)}</div>
+      <button class="settings-btn" style="margin-top:8px;" onclick="handleGenerateFlashcardsClick('${note.id}', this)">🃏 Generate flashcards</button>
+    `;
+    return;
+  }
+
+  const cardsHTML = cards.map(c => flashcardCardHTML(c)).join('');
+  el.innerHTML = `
+    <div class="section-label" style="margin-top:10px;">Flashcards (${cards.length})</div>
+    ${cardsHTML}
+    <button class="settings-btn" style="margin-top:4px;" onclick="handleGenerateFlashcardsClick('${note.id}', this)">🔄 Regenerate</button>
+  `;
+}
+
+async function handleGenerateFlashcardsClick(noteId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Thinking…';
+  try {
+    await generateFlashcards(noteId);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '🃏 Generate flashcards';
+    const el = document.getElementById(`flashcards-section-${noteId}`);
+    if (el) el.insertAdjacentHTML('beforeend', `<div class="card-sub" style="color:#d85a30;">Couldn't generate flashcards — try again.</div>`);
+  }
+}
+
 /* ---- Back-compat shims for existing call sites ----------------------- */
 async function askSchoolAI(question, contextText) {
   const r = await cocoAsk(question, contextText);
@@ -4600,6 +4802,15 @@ function refreshAskPanelsAfterAIReady() {
   // generation is a button click, not a text field.
   const checklistBannerHost = document.getElementById('checklist-ai-banner-host');
   if (checklistBannerHost) checklistBannerHost.innerHTML = schoolAIBannerHTML('checklist-ai');
+
+  // Same idea for any note currently showing a "generate flashcards" banner --
+  // one banner host per note, since several can be visible in a course at once.
+  if (notesDetailCourseId) {
+    notesForCourseId(notesDetailCourseId).forEach(n => {
+      const host = document.getElementById(`flashcards-ai-banner-host-${n.id}`);
+      if (host) host.innerHTML = schoolAIBannerHTML(`flashcards-ai-${n.id}`);
+    });
+  }
 }
 
 function jumpTo(name) {
@@ -5427,10 +5638,13 @@ function renderNoteEntries() {
           <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="editNote('${n.id}')">Edit</button>
           <button class="study-session-del" onclick="deleteNote('${n.id}')" title="Delete">✕</button>
         </div>
+        <div id="flashcards-section-${n.id}"></div>
       </div>`;
     }).join('');
     return heading + cards;
   }).join('');
+
+  notes.forEach(n => renderFlashcardsSection(n));
 }
 
 function populateNoteTopicDatalist() {
@@ -5500,6 +5714,7 @@ async function saveNote() {
 
 async function deleteNote(id) {
   cachedClassNotes = cachedClassNotes.filter(n => n.id !== id);
+  cachedFlashcards = cachedFlashcards.filter(c => c.note_id !== id); // cascades server-side too, but the client cache needs pruning
   renderNoteEntries();
   renderNotesCourseList();
   await sbFetchWithRetry(`/rest/v1/class_notes?id=eq.${id}`, 'DELETE', null, true);

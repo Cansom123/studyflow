@@ -4596,30 +4596,145 @@ function chunkNoteContent(content) {
   const text = (content || '').trim();
   if (!text) return [];
 
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  let lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const pageMarker = /\d+\s*\/\s*\d+\s*$/;
   const looksLikeSlides = lines.length >= 3 && lines.filter(l => pageMarker.test(l)).length >= lines.length * 0.6;
 
   let units;
   if (looksLikeSlides) {
-    units = lines.map(l => l.replace(pageMarker, '').trim());
+    // Google Slides (and similar) exports with click-to-reveal bullet builds
+    // bake each reveal step in as its OWN PDF page -- one slide numbered
+    // "4 / 34" can appear 5-7 times, each with a few more bullets than the
+    // last. Every build step shares the same trailing page marker and each
+    // is a strict superset of the one before it, so grouping by that marker
+    // and keeping only the longest line per group collapses the whole build
+    // sequence down to its final, complete bullet list.
+    const bySlideNumber = new Map();
+    lines.forEach(l => {
+      const m = l.match(pageMarker);
+      const key = m ? m[0] : l; // no marker at all -- treat as its own group
+      const existing = bySlideNumber.get(key);
+      if (!existing || l.length > existing.length) bySlideNumber.set(key, l);
+    });
+    lines = [...bySlideNumber.values()];
+    units = stripRepeatedHeader(lines.map(l => l.replace(pageMarker, '').trim()));
   } else {
     const paras = text.split(/\n\s*\n/).map(c => c.trim()).filter(Boolean);
     units = paras.length > 1 ? paras : [text];
   }
 
+  // Track which chunks came from bullet-explosion (already have their own
+  // topic-prefixed context, so merging them back together would undo the
+  // whole point of exploding them) vs. bare units with no bullets at all
+  // (diagram-style boxes with zero context -- these are what actually need
+  // merging with their neighbors).
   const chunks = [];
+  const mergeEligible = [];
   units.forEach(u => {
     const parts = u.split('•').map(p => p.trim()).filter(Boolean);
     if (parts.length >= 3) {
       const topic = parts[0].length < 80 ? parts[0] : '';
-      parts.slice(1).forEach(bullet => chunks.push(topic ? `${topic}: ${bullet}` : bullet));
+      parts.slice(1).forEach(bullet => {
+        chunks.push(topic ? `${topic}: ${bullet}` : bullet);
+        mergeEligible.push(false);
+      });
     } else {
       chunks.push(u);
+      mergeEligible.push(true);
     }
   });
 
-  return chunks.filter(c => c.length > 12);
+  const kept = [];
+  const keptEligible = [];
+  chunks.forEach((c, i) => {
+    if (c.length > 12) { kept.push(c); keptEligible.push(mergeEligible[i]); }
+  });
+
+  return mergeShortChunks(kept, keptEligible);
+}
+
+// A slide deck's course name/chapter running header repeats on nearly every
+// slide (e.g. "Personal Finance Basics  Time value of Money") -- left in,
+// it dominates the fallback front's first-8-words truncation, so every card
+// LOOKS like a near-duplicate even when the actual answers differ. Finds the
+// most common 6-word line-start (a real title slide or outlier won't match
+// it) and strips it from whichever lines begin with it.
+function stripRepeatedHeader(lines) {
+  if (lines.length < 4) return lines;
+  // pdf.js's per-run text extraction leaves irregular multi-space gaps
+  // between words (font kerning/positioning, not real whitespace runs), so
+  // the same header can render as "Basics   Time" in one line and
+  // "Basics  Time" in another -- comparing on the word list, not the raw
+  // substring, is what makes the match actually land.
+  const wordArrs = lines.map(l => l.trim().split(/\s+/));
+
+  // A fixed detection window is fragile -- too short a header and the window
+  // reaches past it into each line's own differentiating words, splitting
+  // what should be one shared group into many one-off ones. Trying several
+  // window sizes and keeping whichever finds the strongest majority (ties
+  // favor the longer window) adapts to headers of different lengths instead
+  // of assuming one.
+  let bestKey = '', bestCount = 0, bestWindow = 0;
+  for (let w = 3; w <= 8; w++) {
+    const counts = new Map();
+    wordArrs.forEach(arr => {
+      const key = arr.slice(0, w).join(' ');
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    counts.forEach((count, key) => {
+      if (count > bestCount || (count === bestCount && w > bestWindow)) {
+        bestCount = count; bestKey = key; bestWindow = w;
+      }
+    });
+  }
+  if (bestCount < lines.length * 0.4 || bestKey.length < 6) return lines;
+
+  // The window finds the candidate group, but the shared header can run
+  // longer than the window (e.g. a trailing "Money" from "...Time value of
+  // Money") -- extend to the true common prefix across every line in that
+  // group before stripping, so no boilerplate word is left glued on.
+  const matching = wordArrs.filter(arr => arr.slice(0, bestWindow).join(' ') === bestKey);
+  let commonLen = matching[0].length;
+  matching.forEach(w => {
+    let i = 0;
+    while (i < commonLen && i < w.length && w[i] === matching[0][i]) i++;
+    commonLen = Math.min(commonLen, i);
+  });
+  const words = matching[0].slice(0, commonLen).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp('^\\s*' + words.join('\\s+'));
+  return lines.map(l => l.replace(re, '').trim());
+}
+
+// Diagram/roadmap-style slides (a flowchart of short boxes: "Obtaining (Chap
+// 2)", "Saving (Chap 5)", "Borrowing (Chaps 6, 7)"...) don't have "•"
+// bullets to explode, so each box lands as its own isolated, context-free
+// fragment -- exactly the kind of chunk that produced a useless standalone
+// card ("What does the note say about: 'saving chap 5'"). Merging a run of
+// short fragments into one combined chunk gives the generator (AI or
+// fallback) something substantive to work with instead.
+function mergeShortChunks(chunks, eligible, opts) {
+  const shortLen = (opts && opts.shortLen) || 40;
+  const maxMerged = (opts && opts.maxMerged) || 200;
+  const merged = [];
+  let buffer = [];
+  const flush = () => {
+    if (buffer.length === 0) return;
+    merged.push(buffer.length === 1 ? buffer[0] : buffer.join('; '));
+    buffer = [];
+  };
+  chunks.forEach((c, i) => {
+    const canMerge = eligible ? eligible[i] : true;
+    if (canMerge && c.length < shortLen) {
+      const combinedLen = buffer.reduce((n, b) => n + b.length + 2, 0) + c.length;
+      if (combinedLen > maxMerged) flush();
+      buffer.push(c);
+    } else {
+      flush();
+      merged.push(c);
+    }
+  });
+  flush();
+  return merged;
 }
 
 function batchChunks(chunks, size) {
@@ -4634,9 +4749,25 @@ function batchChunks(chunks, size) {
 // fallback for whichever batches the AI path fails on.
 function deterministicFlashcardsForChunks(chunks) {
   return chunks.map(chunk => {
-    const words = chunk.split(/\s+/);
-    const lead = words.slice(0, 8).join(' ');
-    return { front: `What does the note say about: "${lead}${words.length > 8 ? '…' : ''}"`, back: chunk };
+    // A topic-prefixed chunk ("Interest Calculations: Simple Interest") can
+    // have its whole differentiator swallowed by a first-8-words cutoff if
+    // the topic itself runs long -- multiple cards from the same topic then
+    // show an identical-looking front even though their backs differ.
+    // Anchoring the word budget to what follows the topic's colon keeps the
+    // actual distinguishing content in view.
+    const colonIdx = chunk.lastIndexOf(': ');
+    let lead;
+    if (colonIdx > -1) {
+      const topicWords = chunk.slice(0, colonIdx).split(/\s+/);
+      const topic = topicWords.length > 6 ? topicWords.slice(0, 6).join(' ') + '…' : topicWords.join(' ');
+      const restWords = chunk.slice(colonIdx + 2).split(/\s+/);
+      const rest = restWords.slice(0, 8).join(' ') + (restWords.length > 8 ? '…' : '');
+      lead = `${topic}: ${rest}`;
+    } else {
+      const words = chunk.split(/\s+/);
+      lead = words.slice(0, 8).join(' ') + (words.length > 8 ? '…' : '');
+    }
+    return { front: `What does the note say about: "${lead}"`, back: chunk };
   });
 }
 

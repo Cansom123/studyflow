@@ -1401,6 +1401,30 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
     </div>
   </div>
 
+  <!-- FLASHCARDS: course detail (per-note deck generation) -->
+  <div id="flashcards-course-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title" id="flashcards-detail-title"></div>
+        <button class="detail-close" onclick="closeFlashcardsCourse()" title="Close">✕</button>
+      </div>
+      <div id="flashcards-course-study-all-host"></div>
+      <div id="flashcards-course-notes-empty" class="card-sub" style="display:none;padding:8px 2px;">No notes yet for this class — add some in Notes first, then come back here to turn them into flashcards.</div>
+      <div id="flashcards-course-notes-list"></div>
+    </div>
+  </div>
+
+  <!-- FLASHCARDS: study session -->
+  <div id="flashcard-study-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title" id="flashcard-study-title">Study</div>
+        <button class="detail-close" onclick="exitFlashcardStudy()" title="Close">✕</button>
+      </div>
+      <div id="flashcard-study-body"></div>
+    </div>
+  </div>
+
   <!-- FOCUS TIMER -->
   <div id="focus-overlay">
     <div id="focus-card">
@@ -1496,6 +1520,10 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
       <button class="tab" id="tab-notes" onclick="showPage('notes',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h9l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><line x1="6" y1="8" x2="14" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/><line x1="6" y1="14" x2="10.5" y2="14"/></svg></span>
         <span>Notes</span>
+      </button>
+      <button class="tab" id="tab-flashcards" onclick="showPage('flashcards',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="12" height="9" rx="1.3"/><path d="M6 5.5V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1.5"/></svg></span>
+        <span>Flashcards</span>
       </button>
       <button class="tab" id="tab-goals" onclick="showPage('goals',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="2.5" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="17.5"/></svg></span>
@@ -1825,6 +1853,17 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         <div id="notes-course-list" style="display:none;"></div>
       </div>
 
+      <!-- FLASHCARDS -->
+      <div class="page" id="page-flashcards">
+        <div id="flashcards-loading" class="loading-box">Loading your classes...</div>
+        <div id="flashcards-empty" class="empty-box" style="display:none;">
+          <div class="empty-icon">🃏</div>
+          <div class="empty-title">No classes selected yet</div>
+          <div class="empty-sub">Pick your classes in Settings first — then generate flashcards from your notes here.</div>
+        </div>
+        <div id="flashcards-course-list" style="display:none;"></div>
+      </div>
+
       <!-- MORE (mobile only -- the bottom nav only has room for the 4 most-used
            tabs, so everything else lives here behind one extra tap instead of
            crowding the bar) -->
@@ -1837,6 +1876,9 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         </div>
         <div class="card syllabus-card" onclick="jumpTo('notes')">
           <div class="card-row"><div class="card-title">📝 Class Notes</div><span style="opacity:.4;">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('flashcards')">
+          <div class="card-row"><div class="card-title">🃏 Flashcards</div><span style="opacity:.4;">›</span></div>
         </div>
         <div class="card syllabus-card" onclick="jumpTo('syllabus')">
           <div class="card-row"><div class="card-title">📄 Syllabus</div><span style="opacity:.4;">›</span></div>
@@ -4515,15 +4557,20 @@ async function handleGenerateChecklistClick(assignmentId, btn) {
 }
 
 /* ===========================
-   Flashcard generation -- turns a Class Note's content into a small set of
-   Q/A flashcards using coco.1, with the same verify-or-fallback discipline
-   as the assignment checklist: an AI answer that isn't actually grounded in
-   the note's own words is worse than a plain quote-based card, so it's
-   rejected and the deterministic fallback (chunk the note into cards) is
-   used instead.
+   Flashcards -- a dedicated study mode, not a widget bolted onto a note.
+   Generates a full deck from real course-volume notes (a whole slide deck
+   pasted into one note, not just a paragraph) by chunking the note into
+   individual facts first, then running those chunks through coco.1 a batch
+   at a time. One AI call per batch means a hallucinated/rejected batch only
+   loses that batch's cards to the deterministic fallback, not the whole
+   note's deck the way one bad model reply used to.
 =========================== */
 let cachedFlashcards = [];
-let flippedFlashcards = new Set();
+let flashcardsDetailCourseId = null;
+let flashcardStudyQueue = [];   // card ids, in study order
+let flashcardStudyIndex = 0;
+let flashcardStudyFlipped = false;
+let flashcardStudySkipKnown = true;
 
 async function loadFlashcards() {
   const { ok, data } = await sbFetchWithRetry(`/rest/v1/flashcards?user_id=eq.${USER_ID}&select=*&order=created_at.asc`);
@@ -4533,18 +4580,59 @@ async function loadFlashcards() {
 function flashcardsForNote(noteId) {
   return cachedFlashcards.filter(c => String(c.note_id) === String(noteId));
 }
+function flashcardsForCourse(courseId) {
+  return cachedFlashcards.filter(c => String(c.course_id) === String(courseId));
+}
 
-// Always available, no model required -- chunks the note into paragraphs and
-// quotes each one back as the answer, exactly like coco.1's own quote
-// fallback for syllabus mode. Never wrong (it's the student's own words),
-// just less specific than a real question would be.
-function deterministicFlashcards(note) {
-  const paragraphs = note.content
-    .split(/\n\s*\n/)
-    .map(c => c.trim())
-    .filter(c => c.length > 15)
-    .slice(0, 6);
-  const chunks = paragraphs.length ? paragraphs : [note.content.trim()].filter(Boolean);
+/* ---- Chunking: break a note into small, individually quiz-able facts ----
+   Notes copy/pasted from a slide deck (Google Slides export, a PDF) tend to
+   land as one line per slide, bullets joined with "•", ending in a page
+   marker like "21 / 34". Treating a whole slide's worth of bullets as one
+   chunk is exactly what produced unusable "first 8 words as the question"
+   cards before -- splitting each bullet out as its own chunk (keeping the
+   slide's leading topic phrase as context) gives the generator something
+   actually specific to ask about. */
+function chunkNoteContent(content) {
+  const text = (content || '').trim();
+  if (!text) return [];
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const pageMarker = /\d+\s*\/\s*\d+\s*$/;
+  const looksLikeSlides = lines.length >= 3 && lines.filter(l => pageMarker.test(l)).length >= lines.length * 0.6;
+
+  let units;
+  if (looksLikeSlides) {
+    units = lines.map(l => l.replace(pageMarker, '').trim());
+  } else {
+    const paras = text.split(/\n\s*\n/).map(c => c.trim()).filter(Boolean);
+    units = paras.length > 1 ? paras : [text];
+  }
+
+  const chunks = [];
+  units.forEach(u => {
+    const parts = u.split('•').map(p => p.trim()).filter(Boolean);
+    if (parts.length >= 3) {
+      const topic = parts[0].length < 80 ? parts[0] : '';
+      parts.slice(1).forEach(bullet => chunks.push(topic ? `${topic}: ${bullet}` : bullet));
+    } else {
+      chunks.push(u);
+    }
+  });
+
+  return chunks.filter(c => c.length > 12);
+}
+
+function batchChunks(chunks, size) {
+  const batches = [];
+  for (let i = 0; i < chunks.length; i += size) batches.push(chunks.slice(i, i + size));
+  return batches;
+}
+
+// Always available, no model required -- one card per chunk, quoting the
+// chunk back as the answer. Never wrong (it's the student's own words),
+// just less specific than a real question would be. Used per-batch as the
+// fallback for whichever batches the AI path fails on.
+function deterministicFlashcardsForChunks(chunks) {
   return chunks.map(chunk => {
     const words = chunk.split(/\s+/);
     const lead = words.slice(0, 8).join(' ');
@@ -4562,34 +4650,33 @@ function parseFlashcardLines(raw) {
   return cards;
 }
 
-async function generateFlashcardsViaAI(note) {
+async function generateFlashcardsViaAI(batchText, cardTarget) {
   const messages = [
     {
       role: 'system',
       content:
         'You are coco.1, turning a student\'s class notes into flashcards.\n' +
         'Rules:\n' +
-        '1. Produce 4-8 flashcards using ONLY facts stated in the notes -- never invent anything not in the text.\n' +
+        `1. Produce ${cardTarget} flashcards using ONLY facts stated in the given text -- never invent anything not in it.\n` +
         '2. Each flashcard is a block: a line starting "Q: " with the question, then a line starting "A: " with the answer, with a blank line between cards.\n' +
-        '3. Answers should be short and specific, quoting or closely paraphrasing the notes.\n' +
+        '3. Answers should be short and specific, quoting or closely paraphrasing the text.\n' +
         '4. No numbering, no markdown, nothing before or after the flashcards.',
     },
-    {
-      role: 'user',
-      content: `Notes${note.title ? ' ("' + note.title + '")' : ''}:\n${note.content.slice(0, 2000)}`,
-    },
+    { role: 'user', content: `Text:\n${batchText.slice(0, 2000)}` },
   ];
-  const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.4, max_tokens: 500 });
+  const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.4, max_tokens: 600 });
   return parseFlashcardLines((reply.choices[0].message.content || '').trim());
 }
 
 // The grounding check: an answer full of words that never appear anywhere in
-// the source note is a hallucination, not a flashcard, and gets rejected
+// the source text is a hallucination, not a flashcard, and gets rejected
 // just like a checklist step with a bad date does.
-function verifyFlashcards(cards, noteContent) {
-  if (cards.length < 2 || cards.length > 10) return { ok: false, reason: `bad card count: ${cards.length}` };
-  const noteWords = new Set(
-    noteContent.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3)
+function verifyFlashcards(cards, sourceText, opts) {
+  const minCards = (opts && opts.minCards) || 1;
+  const maxCards = (opts && opts.maxCards) || 12;
+  if (cards.length < minCards || cards.length > maxCards) return { ok: false, reason: `bad card count: ${cards.length}` };
+  const sourceWords = new Set(
+    sourceText.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3)
   );
   const seenFronts = new Set();
   for (const c of cards) {
@@ -4601,34 +4688,77 @@ function verifyFlashcards(cards, noteContent) {
 
     const backWords = c.back.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3);
     if (backWords.length > 0) {
-      const groundedFrac = backWords.filter(w => noteWords.has(w)).length / backWords.length;
-      if (groundedFrac < 0.3) return { ok: false, reason: `answer not grounded in note (${Math.round(groundedFrac * 100)}% overlap)` };
+      const groundedFrac = backWords.filter(w => sourceWords.has(w)).length / backWords.length;
+      if (groundedFrac < 0.3) return { ok: false, reason: `answer not grounded (${Math.round(groundedFrac * 100)}% overlap)` };
     }
   }
   return { ok: true, reason: '' };
 }
 
-async function generateFlashcards(noteId) {
-  const note = cachedClassNotes.find(n => n.id === noteId);
-  if (!note || !note.content) return;
+const FLASHCARD_BATCH_SIZE = 6;
+const FLASHCARD_MAX_CHUNKS = 40; // cap on CHUNKS, sampled evenly across the note -- capping cards
+                                  // instead (and stopping once full) meant only the front of a
+                                  // long note ever became cards; the back of a 34-slide deck
+                                  // never got touched. Sampling first keeps coverage start-to-end.
 
-  let cards = null;
-  let source = 'fallback';
-  if (schoolAIReady()) {
-    try {
-      const aiCards = await generateFlashcardsViaAI(note);
-      const verdict = verifyFlashcards(aiCards, note.content);
-      if (verdict.ok) { cards = aiCards; source = 'ai'; }
-      else console.warn('[flashcards] rejected AI output —', verdict.reason);
-    } catch (err) {
-      console.warn('[flashcards] AI generation failed —', err.message);
+// arr.length <= maxCount returns arr unchanged; otherwise picks maxCount
+// items spread evenly across the full range instead of just the first N.
+function sampleEvenly(arr, maxCount) {
+  if (arr.length <= maxCount) return arr;
+  const step = arr.length / maxCount;
+  const out = [];
+  for (let i = 0; i < maxCount; i++) out.push(arr[Math.floor(i * step)]);
+  return out;
+}
+
+// Generates a full deck for a note, however much content it actually has --
+// not capped to a handful of cards pulled from one paragraph. The note is
+// chunked into individual facts first (sampled evenly if there are more than
+// FLASHCARD_MAX_CHUNKS, so a big note still gets covered start-to-end rather
+// than just its first few slides), then worked through a few chunks at a
+// time -- one coco.1 call per batch. A batch whose AI output fails
+// verification falls back to quote-cards for just that batch, so one bad
+// batch doesn't wipe out the rest of a real chapter's worth of material.
+async function generateFlashcards(noteId, onProgress) {
+  const note = cachedClassNotes.find(n => n.id === noteId);
+  if (!note || !note.content) return null;
+
+  const allChunks = chunkNoteContent(note.content);
+  if (!allChunks.length) return null;
+  const chunks = sampleEvenly(allChunks, FLASHCARD_MAX_CHUNKS);
+
+  const batches = batchChunks(chunks, FLASHCARD_BATCH_SIZE);
+  const cards = [];
+  let usedAI = false;
+  let usedFallback = false;
+
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    if (onProgress) onProgress(i + 1, batches.length);
+
+    const batchText = batch.join('\n');
+    let batchCards = null;
+    if (schoolAIReady()) {
+      try {
+        const cardTarget = batch.length <= 3 ? '2-4' : '4-8';
+        const aiCards = await generateFlashcardsViaAI(batchText, cardTarget);
+        const verdict = verifyFlashcards(aiCards, batchText, { minCards: 1, maxCards: 10 });
+        if (verdict.ok) { batchCards = aiCards.map(c => ({ ...c, source: 'ai' })); usedAI = true; }
+        else console.warn(`[flashcards] batch ${i + 1} rejected —`, verdict.reason);
+      } catch (err) {
+        console.warn(`[flashcards] batch ${i + 1} AI failed —`, err.message);
+      }
     }
+    if (!batchCards) {
+      batchCards = deterministicFlashcardsForChunks(batch).map(c => ({ ...c, source: 'fallback' }));
+      usedFallback = true;
+    }
+    cards.push(...batchCards);
   }
-  if (!cards) cards = deterministicFlashcards(note);
 
   const rows = cards.map(c => ({
     user_id: USER_ID, note_id: noteId, course_id: note.course_id,
-    front: c.front, back: c.back, source,
+    front: c.front, back: c.back, source: c.source, known: false,
   }));
 
   // Regenerating replaces the old set instead of piling duplicates on top.
@@ -4643,76 +4773,250 @@ async function generateFlashcards(noteId) {
     : rows.map(r => ({ id: crypto.randomUUID(), ...r }));
 
   cachedFlashcards = cachedFlashcards.filter(c => c.note_id !== noteId).concat(created);
-  flippedFlashcards.clear();
-  renderFlashcardsSection(note);
-  showReward(source === 'ai' ? '🃏 Flashcards ready.' : '🃏 Flashcards ready (basic version — coco.1 wasn\'t available).');
-}
 
-function toggleFlashcardFlip(id) {
-  if (flippedFlashcards.has(id)) flippedFlashcards.delete(id); else flippedFlashcards.add(id);
-  const card = cachedFlashcards.find(c => c.id === id);
-  const el = document.getElementById(`flashcard-${id}`);
-  if (!card || !el) return;
-  const isFlipped = flippedFlashcards.has(id);
-  el.querySelector('.flashcard-text').textContent = isFlipped ? card.back : card.front;
-  el.querySelector('.flashcard-hint').textContent = isFlipped ? 'Tap to see the question' : 'Tap to reveal the answer';
+  const quality = usedAI && usedFallback ? 'mixed' : usedAI ? 'ai' : 'fallback';
+  return { count: created.length, quality };
 }
 
 async function deleteFlashcard(id) {
   const card = cachedFlashcards.find(c => c.id === id);
   if (!card) return;
-  const noteId = card.note_id;
   cachedFlashcards = cachedFlashcards.filter(c => c.id !== id);
-  flippedFlashcards.delete(id);
   await sbFetchWithRetry(`/rest/v1/flashcards?id=eq.${id}`, 'DELETE', null, true);
-  const note = cachedClassNotes.find(n => n.id === noteId);
-  if (note) renderFlashcardsSection(note);
 }
 
-function flashcardCardHTML(c) {
-  const isFlipped = flippedFlashcards.has(c.id);
-  return `<div style="display:flex;gap:8px;align-items:stretch;margin-bottom:8px;">
-    <div class="card flashcard" id="flashcard-${c.id}" style="flex:1;cursor:pointer;margin-bottom:0;" onclick="toggleFlashcardFlip('${c.id}')">
-      <div class="card-sub flashcard-text" style="font-size:14px;line-height:1.5;">${escapeHtml(isFlipped ? c.back : c.front)}</div>
-      <div class="card-sub flashcard-hint" style="margin-top:6px;font-size:11px;opacity:.6;">${isFlipped ? 'Tap to see the question' : 'Tap to reveal the answer'}</div>
-    </div>
-    <button class="study-session-del" onclick="deleteFlashcard('${c.id}')" title="Delete">✕</button>
-  </div>`;
-}
+/* ---- Tab: course list ---- */
+function renderFlashcardsCourseList() {
+  const loadingEl = document.getElementById('flashcards-loading');
+  const emptyEl = document.getElementById('flashcards-empty');
+  const listEl = document.getElementById('flashcards-course-list');
+  if (!listEl) return;
+  if (loadingEl) loadingEl.style.display = 'none';
 
-function renderFlashcardsSection(note) {
-  const el = document.getElementById(`flashcards-section-${note.id}`);
-  if (!el) return;
-  const cards = flashcardsForNote(note.id);
-  const idPrefix = `flashcards-ai-${note.id}`;
-
-  if (cards.length === 0) {
-    el.innerHTML = `
-      <div id="flashcards-ai-banner-host-${note.id}">${schoolAIBannerHTML(idPrefix)}</div>
-      <button class="settings-btn" style="margin-top:8px;" onclick="handleGenerateFlashcardsClick('${note.id}', this)">🃏 Generate flashcards</button>
-    `;
+  if (!notesCourses || notesCourses.length === 0) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    listEl.style.display = 'none';
     return;
   }
+  if (emptyEl) emptyEl.style.display = 'none';
+  listEl.style.display = '';
 
-  const cardsHTML = cards.map(c => flashcardCardHTML(c)).join('');
-  el.innerHTML = `
-    <div class="section-label" style="margin-top:10px;">Flashcards (${cards.length})</div>
-    ${cardsHTML}
-    <button class="settings-btn" style="margin-top:4px;" onclick="handleGenerateFlashcardsClick('${note.id}', this)">🔄 Regenerate</button>
-  `;
+  listEl.innerHTML = notesCourses.map(c => {
+    const name = cleanCourseName(c.name);
+    const count = flashcardsForCourse(c.id).length;
+    const badge = count ? `${count} card${count !== 1 ? 's' : ''}` : 'No flashcards yet';
+    const badgeClass = count ? 'badge-hw' : 'badge-test';
+    return `<div class="card syllabus-card" onclick="openFlashcardsCourse('${c.id}')">
+      <div class="card-row"><div class="card-title">${escapeHtml(name)}</div><span class="badge ${badgeClass}">${badge}</span></div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- Course detail: generate/regenerate per note, study the whole course ---- */
+function openFlashcardsCourse(courseId) {
+  const course = notesCourses.find(c => String(c.id) === String(courseId));
+  if (!course) return;
+  flashcardsDetailCourseId = courseId;
+  document.getElementById('flashcards-detail-title').textContent = cleanCourseName(course.name);
+  renderFlashcardsCourseDetail();
+  document.getElementById('flashcards-course-overlay').style.display = 'block';
+}
+
+function closeFlashcardsCourse() {
+  const el = document.getElementById('flashcards-course-overlay');
+  if (el) el.style.display = 'none';
+  flashcardsDetailCourseId = null;
+}
+
+function renderFlashcardsCourseDetail() {
+  if (!flashcardsDetailCourseId) return;
+  const notes = notesForCourseId(flashcardsDetailCourseId);
+  const notesEmptyEl = document.getElementById('flashcards-course-notes-empty');
+  const listEl = document.getElementById('flashcards-course-notes-list');
+  const studyAllHost = document.getElementById('flashcards-course-study-all-host');
+
+  if (notes.length === 0) {
+    notesEmptyEl.style.display = 'block';
+    listEl.innerHTML = '';
+    studyAllHost.innerHTML = '';
+    return;
+  }
+  notesEmptyEl.style.display = 'none';
+
+  const totalCards = flashcardsForCourse(flashcardsDetailCourseId).length;
+  studyAllHost.innerHTML = totalCards
+    ? `<button class="sync-btn" style="margin-bottom:16px;" onclick="openFlashcardStudyForCourse('${flashcardsDetailCourseId}')">🃏 Study all (${totalCards})</button>`
+    : '';
+
+  listEl.innerHTML = notes.map(n => {
+    const count = flashcardsForNote(n.id).length;
+    return `<div class="card" style="margin-bottom:10px;" id="flashcards-note-row-${n.id}">
+      <div class="card-row"><div class="card-title">${escapeHtml(n.title || 'Untitled note')}</div>
+        <span class="badge ${count ? 'badge-hw' : 'badge-test'}">${count ? `${count} card${count !== 1 ? 's' : ''}` : 'No cards yet'}</span></div>
+      <div id="flashcards-note-ai-banner-${n.id}">${schoolAIBannerHTML('flashcards-ai-' + n.id)}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="settings-btn" style="flex:1;margin-bottom:0;" id="flashcards-gen-btn-${n.id}" onclick="handleGenerateFlashcardsClick('${n.id}', this)">${count ? '🔄 Regenerate' : '🃏 Generate deck'}</button>
+        ${count ? `<button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="openFlashcardStudyForNote('${n.id}')">Study</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 async function handleGenerateFlashcardsClick(noteId, btn) {
   btn.disabled = true;
-  btn.textContent = 'Thinking…';
+  const setLabel = (cur, total) => { btn.textContent = total > 1 ? `Thinking… (${cur}/${total})` : 'Thinking…'; };
+  setLabel(0, 1);
   try {
-    await generateFlashcards(noteId);
+    const result = await generateFlashcards(noteId, setLabel);
+    renderFlashcardsCourseDetail();
+    renderFlashcardsCourseList();
+    if (result) {
+      showReward(result.quality === 'fallback'
+        ? '🃏 Deck ready (basic version — coco.1 wasn\'t available).'
+        : '🃏 Deck ready.');
+    }
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = '🃏 Generate flashcards';
-    const el = document.getElementById(`flashcards-section-${noteId}`);
-    if (el) el.insertAdjacentHTML('beforeend', `<div class="card-sub" style="color:#d85a30;">Couldn't generate flashcards — try again.</div>`);
+    btn.textContent = '🃏 Generate deck';
+    console.warn('[flashcards] generation failed —', err.message);
   }
+}
+
+/* ---- Study session ---- */
+let flashcardStudyReturnCourseId = null; // so the study overlay's own close button can reopen the course list it was launched from
+
+function openFlashcardStudyForNote(noteId) {
+  const note = cachedClassNotes.find(n => n.id === noteId);
+  startFlashcardStudy(flashcardsForNote(noteId).map(c => c.id), note ? (note.title || 'Study') : 'Study', note ? note.course_id : null);
+}
+function openFlashcardStudyForCourse(courseId) {
+  const course = notesCourses.find(c => String(c.id) === String(courseId));
+  startFlashcardStudy(flashcardsForCourse(courseId).map(c => c.id), course ? cleanCourseName(course.name) : 'Study', courseId);
+}
+
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Study is launched from inside the course overlay, so opening it needs to
+// close that overlay first -- otherwise both sit on top of each other at the
+// same z-index and neither reads cleanly.
+function startFlashcardStudy(cardIds, title, returnCourseId) {
+  if (!cardIds.length) return;
+  closeFlashcardsCourse();
+  flashcardStudyReturnCourseId = returnCourseId || null;
+  flashcardStudyQueue = shuffleArray(cardIds);
+  flashcardStudyIndex = 0;
+  flashcardStudyFlipped = false;
+  document.getElementById('flashcard-study-title').textContent = title;
+  renderFlashcardStudy();
+  document.getElementById('flashcard-study-overlay').style.display = 'block';
+}
+
+// The study overlay's own ✕ button calls this (not closeFlashcardStudy
+// directly) so leaving a session returns to the course list it came from.
+// showPage's blanket overlay-close still uses plain closeFlashcardStudy(),
+// which must stay a no-side-effects close -- otherwise switching tabs mid-
+// session would reopen the course overlay right behind the new page.
+function exitFlashcardStudy() {
+  const returnId = flashcardStudyReturnCourseId;
+  closeFlashcardStudy();
+  if (returnId) openFlashcardsCourse(returnId);
+}
+
+function closeFlashcardStudy() {
+  const el = document.getElementById('flashcard-study-overlay');
+  if (el) el.style.display = 'none';
+  flashcardStudyReturnCourseId = null;
+  flashcardStudyQueue = [];
+}
+
+function currentStudyQueue() {
+  return flashcardStudySkipKnown
+    ? flashcardStudyQueue.filter(id => !(cachedFlashcards.find(c => c.id === id) || {}).known)
+    : flashcardStudyQueue;
+}
+
+function renderFlashcardStudy() {
+  const body = document.getElementById('flashcard-study-body');
+  if (!body) return;
+  const queue = currentStudyQueue();
+
+  if (queue.length === 0) {
+    const total = flashcardStudyQueue.length;
+    body.innerHTML = `
+      <div class="card" style="text-align:center;padding:24px;">
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">All done 🎉</div>
+        <div class="card-sub">You've marked every card in this session as known.</div>
+      </div>
+      <button class="settings-btn" style="margin-top:12px;" onclick="flashcardStudyResetKnown()">Study again (reset known)</button>
+    `;
+    return;
+  }
+
+  if (flashcardStudyIndex >= queue.length) flashcardStudyIndex = 0;
+  const cardId = queue[flashcardStudyIndex];
+  const card = cachedFlashcards.find(c => c.id === cardId);
+  if (!card) { flashcardStudyQueue = flashcardStudyQueue.filter(id => id !== cardId); renderFlashcardStudy(); return; }
+
+  body.innerHTML = `
+    <div class="card-sub" style="margin-bottom:10px;">${flashcardStudyIndex + 1} / ${queue.length}</div>
+    <div class="card flashcard" style="min-height:140px;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;padding:24px;" onclick="flashcardStudyFlip()">
+      <div style="font-size:16px;line-height:1.5;">${escapeHtml(flashcardStudyFlipped ? card.back : card.front)}</div>
+    </div>
+    <div class="card-sub" style="text-align:center;margin-top:8px;">${flashcardStudyFlipped ? 'Tap to see the question' : 'Tap to reveal the answer'}</div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="flashcardStudyPrev()">← Prev</button>
+      <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="flashcardStudyNext()">Next →</button>
+    </div>
+    <button class="settings-btn" style="margin-top:8px;" onclick="flashcardStudyMarkKnown()">${card.known ? '✓ Known — mark unknown' : 'Mark as known'}</button>
+  `;
+}
+
+function flashcardStudyFlip() {
+  flashcardStudyFlipped = !flashcardStudyFlipped;
+  renderFlashcardStudy();
+}
+
+function flashcardStudyNext() {
+  const queue = currentStudyQueue();
+  flashcardStudyIndex = queue.length ? (flashcardStudyIndex + 1) % queue.length : 0;
+  flashcardStudyFlipped = false;
+  renderFlashcardStudy();
+}
+
+function flashcardStudyPrev() {
+  const queue = currentStudyQueue();
+  flashcardStudyIndex = queue.length ? (flashcardStudyIndex - 1 + queue.length) % queue.length : 0;
+  flashcardStudyFlipped = false;
+  renderFlashcardStudy();
+}
+
+async function flashcardStudyMarkKnown() {
+  const queue = currentStudyQueue();
+  const cardId = queue[flashcardStudyIndex];
+  const card = cachedFlashcards.find(c => c.id === cardId);
+  if (!card) return;
+  card.known = !card.known;
+  await sbFetchWithRetry(`/rest/v1/flashcards?id=eq.${cardId}`, 'PATCH', { known: card.known }, true);
+  flashcardStudyFlipped = false;
+  renderFlashcardStudy();
+}
+
+async function flashcardStudyResetKnown() {
+  const ids = flashcardStudyQueue;
+  ids.forEach(id => { const c = cachedFlashcards.find(x => x.id === id); if (c) c.known = false; });
+  if (ids.length) {
+    await sbFetchWithRetry(`/rest/v1/flashcards?id=in.(${ids.join(',')})`, 'PATCH', { known: false }, true);
+  }
+  flashcardStudyIndex = 0;
+  flashcardStudyFlipped = false;
+  renderFlashcardStudy();
 }
 
 /* ---- Back-compat shims for existing call sites ----------------------- */
@@ -4805,9 +5109,9 @@ function refreshAskPanelsAfterAIReady() {
 
   // Same idea for any note currently showing a "generate flashcards" banner --
   // one banner host per note, since several can be visible in a course at once.
-  if (notesDetailCourseId) {
-    notesForCourseId(notesDetailCourseId).forEach(n => {
-      const host = document.getElementById(`flashcards-ai-banner-host-${n.id}`);
+  if (flashcardsDetailCourseId) {
+    notesForCourseId(flashcardsDetailCourseId).forEach(n => {
+      const host = document.getElementById(`flashcards-note-ai-banner-${n.id}`);
       if (host) host.innerHTML = schoolAIBannerHTML(`flashcards-ai-${n.id}`);
     });
   }
@@ -5638,13 +5942,19 @@ function renderNoteEntries() {
           <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="editNote('${n.id}')">Edit</button>
           <button class="study-session-del" onclick="deleteNote('${n.id}')" title="Delete">✕</button>
         </div>
-        <div id="flashcards-section-${n.id}"></div>
+        <button class="settings-btn" style="margin-top:8px;" onclick="jumpToFlashcardsForCourse('${n.course_id}')">🃏 Flashcards</button>
       </div>`;
     }).join('');
     return heading + cards;
   }).join('');
+}
 
-  notes.forEach(n => renderFlashcardsSection(n));
+// A note-level "Flashcards" button just jumps to that note's course in the
+// dedicated Flashcards tab -- generating a real deck (not a handful of cards
+// crammed under the note preview) needs its own screen, not a widget here.
+function jumpToFlashcardsForCourse(courseId) {
+  showPage('flashcards', document.getElementById('tab-flashcards'));
+  openFlashcardsCourse(courseId);
 }
 
 function populateNoteTopicDatalist() {
@@ -6754,6 +7064,8 @@ function showPage(name, el, fromNav) {
   closeAssignmentDetail();
   closeSyllabusDetail();
   closeClassNotes();
+  closeFlashcardsCourse();
+  closeFlashcardStudy();
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -6765,6 +7077,7 @@ function showPage(name, el, fromNav) {
   if (navEl) navEl.classList.add('active');
 
   if (name === 'study') maybeShowStudyGoalOnboarding();
+  if (name === 'flashcards') renderFlashcardsCourseList();
 }
 
 function calculateFinal() {

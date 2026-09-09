@@ -2969,7 +2969,7 @@ function buildActionPlan(goalText) {
   // Step 3: next upcoming assignments (up to 3)
   const upcoming = matchingAssignments.filter(a => new Date(a.due_date) >= today).slice(0, 3);
   for (const a of upcoming) {
-    const d = Math.round((new Date(a.due_date) - today) / (1000*60*60*24));
+    const d = dayDiff(a.due_date, today);
     const dueStr = d === 0 ? 'today' : d === 1 ? 'tomorrow'
       : new Date(a.due_date).toLocaleDateString('en-US', {month:'short',day:'numeric'});
     steps.push(`Prepare "${a.title}" — due ${dueStr}`);
@@ -3349,6 +3349,17 @@ async function loadGrades() {
   if (listEl) listEl.style.display = 'block';
 }
 
+// Calendar-day difference between a due date and a reference date (defaults to
+// today), normalizing the due date to its own local midnight first. A raw
+// timestamp diff makes a due time later today (e.g. 11:59pm) round up to
+// "1 day away" and get mislabeled "due tomorrow" — this always answers 0 for
+// anything still due today, no matter what time it's due.
+function dayDiff(due_date, ref) {
+  const today = ref || (() => { const t = new Date(); t.setHours(0,0,0,0); return t; })();
+  const dueMidnight = new Date(due_date); dueMidnight.setHours(0,0,0,0);
+  return Math.round((dueMidnight - today) / (1000*60*60*24));
+}
+
 function getBadge(type) {
   const t = (type || '').toLowerCase();
   if (t.includes('quiz')) return ['badge-quiz','Quiz'];
@@ -3376,13 +3387,7 @@ function getDueText(due_date, isOverdue, isLocked, lockReason) {
   }
   if (!due_date) return `<div class="due-ok">No due date</div>`;
   const due = new Date(due_date);
-  const today = new Date(); today.setHours(0,0,0,0);
-  // Diff calendar days, not raw hours -- a due time later today (e.g. 7pm) is
-  // 0.79 days away by the clock, which Math.round bumps to 1 and mislabels
-  // "due tomorrow". Normalizing due_date to its own local midnight first makes
-  // the difference an exact day count, so "today" only ever means today.
-  const dueMidnight = new Date(due); dueMidnight.setHours(0,0,0,0);
-  const d = Math.round((dueMidnight - today) / (1000*60*60*24));
+  const d = dayDiff(due_date);
   if (isOverdue) return `<div class="due-soon">${Math.abs(d)} day${Math.abs(d)!==1?'s':''} overdue</div>`;
   if (d === 0) return `<div class="due-soon">Due today</div>`;
   if (d === 1) return `<div class="due-soon">Due tomorrow</div>`;
@@ -3852,7 +3857,7 @@ function cocoPlanningContext(limit = 20) {
   // A/B tested against the terser "1d overdue": the short form got described as
   // still-upcoming in ~37% of generations, the explicit form in 0 of 26.
   const fmtLine = a => {
-    const d = a.due_date ? Math.round((new Date(a.due_date) - today) / (1000 * 60 * 60 * 24)) : null;
+    const d = a.due_date ? dayDiff(a.due_date, today) : null;
     const dow = a.due_date ? DOW[new Date(a.due_date).getDay()] : '';
     const points = a.points_possible ? `, ${a.points_possible} pts` : '';
     let dueStr;
@@ -4080,7 +4085,7 @@ function cocoDeterministicPlan(ctx) {
 
   if (ctx.overdue.length) {
     const first = ctx.overdue[0];
-    const days = Math.abs(Math.round((new Date(first.due_date) - ctx.today) / 86400000));
+    const days = Math.abs(dayDiff(first.due_date, ctx.today));
     parts.push(`Start with ${name(first)} — it's ${days} day${days !== 1 ? 's' : ''} overdue, so it's the most urgent thing on your list.`);
     if (ctx.overdue.length > 1) {
       parts.push(`You have ${ctx.overdue.length - 1} other overdue item${ctx.overdue.length - 1 !== 1 ? 's' : ''} after that.`);
@@ -4090,7 +4095,7 @@ function cocoDeterministicPlan(ctx) {
   const next = ctx.upcoming.filter(a => a.due_date).slice(0, 2);
   if (next.length) {
     const described = next.map(a => {
-      const d = Math.round((new Date(a.due_date) - ctx.today) / 86400000);
+      const d = dayDiff(a.due_date, ctx.today);
       const when = d === 0 ? 'due today' : d === 1 ? 'due tomorrow' : `due in ${d} days`;
       return `${name(a)}, ${when}`;
     });
@@ -6414,7 +6419,7 @@ function renderPriority(assignments) {
   // Active: has due date, not completed, not more than 7 days overdue
   const active = assignments.filter(a => {
     if (!a.due_date || a.completed) return false;
-    const d = Math.round((new Date(a.due_date) - today) / (1000*60*60*24));
+    const d = dayDiff(a.due_date, today);
     return d >= -7;
   });
 
@@ -6430,7 +6435,7 @@ function renderPriority(assignments) {
   emptyEl.style.display = 'none';
 
   const scored = active.map(a => {
-    const d = Math.round((new Date(a.due_date) - today) / (1000*60*60*24));
+    const d = dayDiff(a.due_date, today);
     let score = d < 0 ? 1000 + Math.abs(d) : 100 - d;
     for (const goal of userGoals) {
       const g = goal.toLowerCase().split(' ')[0];

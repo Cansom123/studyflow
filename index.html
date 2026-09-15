@@ -7,11 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-<script type="application/json" id="tweak-defaults">{"accent":"275","cardRadius":"14","fontScale":"1"}</script>
+<script type="application/json" id="tweak-defaults">{"accent":"220","cardRadius":"14","fontScale":"1"}</script>
 <style>
 /* ===== TOKENS ===== */
 :root {
-  --accent-h: 275;
+  --accent-h: 220;
   --bg-h: var(--accent-h);
   --accent:        oklch(0.56 0.2  var(--accent-h));
   --accent-mid:    oklch(0.62 0.18 var(--accent-h));
@@ -64,60 +64,88 @@
   --error-color:        var(--red);
   --grade-sep:          var(--border);
   --grade-letter-bg:    var(--surface2);
+  --on-accent:          #ffffff;
 
   --card-radius: 14px;
   --font-scale: 1;
 }
 
 [data-theme="dark"] {
-  --bg:            oklch(0.10 0.015 var(--bg-h));
-  --surface:       oklch(0.15 0.015 var(--bg-h));
-  --surface2:      oklch(0.20 0.015 var(--bg-h));
-  --border:        oklch(0.26 0.018 var(--bg-h));
-  --border2:       oklch(0.22 0.015 var(--bg-h));
-  --text1:         oklch(0.95 0.008 var(--bg-h));
-  --text2:         oklch(0.58 0.022 var(--bg-h));
-  --input-bg:      oklch(0.19 0.015 var(--bg-h));
-  --input-focus-bg:oklch(0.23 0.016 var(--bg-h));
-  --shadow-sm:     0 1px 2px #0006, 0 2px 6px #0004;
-  --shadow-md:     0 2px 8px #0008, 0 6px 20px #0005;
+  /* Near-black immersive surfaces; accent hue follows the user's Appearance pick (--accent-h),
+     with green/amber/red/purple kept as fixed semantic colors (success/warn/error/discussion). */
+  --bg:            #121212;
+  --surface:       #181818;
+  --surface2:      #1f1f1f;
+  --border:        transparent;
+  --border2:       #2a2a2a;
+  --text1:         #ffffff;
+  --text2:         #b3b3b3;
+  --input-bg:      #1f1f1f;
+  --input-focus-bg:#2a2a2a;
+  --shadow-sm:     rgba(0,0,0,0.3) 0px 4px 8px;
+  --shadow-md:     rgba(0,0,0,0.5) 0px 8px 24px;
+  --card-radius: 8px;
 
-  --accent:        oklch(0.68 0.18 var(--accent-h));
-  --accent-mid:    oklch(0.72 0.16 var(--accent-h));
-  --accent-soft:   oklch(0.68 0.18 var(--accent-h) / 0.16);
-  --accent-text:   oklch(0.68 0.18 var(--accent-h));
-  --green:         oklch(0.65 0.15 145);
-  --green-soft:    oklch(0.65 0.15 145 / 0.16);
-  --amber:         oklch(0.72 0.16 72);
-  --amber-soft:    oklch(0.72 0.16 72 / 0.16);
-  --red:           oklch(0.65 0.18 22);
-  --red-soft:      oklch(0.65 0.18 22 / 0.16);
-  --purple:        oklch(0.68 0.15 305);
-  --purple-soft:   oklch(0.68 0.15 305 / 0.16);
+  --accent:        oklch(0.72 0.17 var(--accent-h));
+  --accent-mid:    oklch(0.66 0.18 var(--accent-h));
+  --accent-soft:   oklch(0.72 0.17 var(--accent-h) / 0.16);
+  --accent-text:   oklch(0.72 0.17 var(--accent-h));
+  --green:         #1ed760;
+  --green-soft:    rgba(30,215,96,0.16);
+  --amber:         #ffa42b;
+  --amber-soft:    rgba(255,164,43,0.16);
+  --red:           #f3727f;
+  --red-soft:      rgba(243,114,127,0.16);
+  --purple:        #539df5;
+  --purple-soft:   rgba(83,157,245,0.16);
 
-  --btn-secondary-bg:    oklch(0.22 0.016 var(--bg-h));
+  --btn-secondary-bg:    #1f1f1f;
   --btn-secondary-color: var(--text1);
-  --ai-bg:               oklch(0.68 0.18 var(--accent-h) / 0.14);
-  --ai-border:           oklch(0.68 0.18 var(--accent-h) / 0.3);
+  --ai-bg:               oklch(0.72 0.17 var(--accent-h) / 0.12);
+  --ai-border:           oklch(0.72 0.17 var(--accent-h) / 0.3);
   --ai-label:            var(--accent);
-  --ai-text:             oklch(0.8 0.1 var(--accent-h));
+  --ai-text:             #cbcbcb;
   --goal-tag-bg:         var(--accent-soft);
   --goal-tag-text:       var(--accent-text);
   --connected-bg:        var(--green-soft);
   --connected-color:     var(--green);
   --sync-btn-bg:         var(--green-soft);
   --sync-btn-color:      var(--green);
-  --sync-btn-border:     oklch(0.65 0.15 145 / 0.35);
+  --sync-btn-border:     rgba(30,215,96,0.35);
   --disconnect-bg:       var(--red-soft);
   --disconnect-color:    var(--red);
-  --disconnect-border:   oklch(0.65 0.18 22 / 0.35);
+  --disconnect-border:   rgba(243,114,127,0.35);
   --success-bg:          var(--green-soft);
   --success-color:       var(--green);
   --error-bg:            var(--red-soft);
   --error-color:         var(--red);
-  --grade-sep:           var(--border);
+  --grade-sep:           var(--border2);
   --grade-letter-bg:     var(--surface2);
+  /* Accent lightness (0.72) is high by design so it pops against #121212 --
+     dark text clears WCAG AA against it far more reliably than white across every hue. */
+  --on-accent:           #0f0f0f;
 }
+
+/* Pill/circle geometry + uppercase button labels, Spotify-style -- dark theme only */
+[data-theme="dark"] .settings-btn,
+[data-theme="dark"] .sync-btn,
+[data-theme="dark"] .change-courses-btn,
+[data-theme="dark"] .disconnect-btn {
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  font-weight: 700;
+  font-size: 12.5px;
+}
+[data-theme="dark"] .card { border-color: transparent; box-shadow: none; }
+/* --border is transparent in dark mode for the seamless card look, but that also made
+   unchecked checkbox rings invisible until checked -- give them a real outline here. */
+[data-theme="dark"] .done-check,
+[data-theme="dark"] .priority-check,
+[data-theme="dark"] .course-check {
+  border-color: var(--border2);
+}
+[data-theme="dark"] .tab.active { font-weight: 700; }
 
 /* ===== RESET ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -143,7 +171,7 @@ body {
   border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px var(--accent) / 0.35;
+  box-shadow: 0 2px 8px color-mix(in oklch, var(--accent) 35%, transparent);
 }
 .logo-mark svg { width: 18px; height: 18px; }
 .logo-word { font-size: 19px; font-weight: 700; color: var(--text1); letter-spacing: -0.4px; }
@@ -183,13 +211,13 @@ body {
 .auth-btn {
   width: 100%; padding: 14px;
   border-radius: 12px; background: var(--accent);
-  color: #fff; font-size: 15px; font-weight: 600;
+  color: var(--on-accent); font-size: 15px; font-weight: 600;
   border: none; cursor: pointer; margin-top: 4px; font-family: inherit;
   letter-spacing: -0.1px;
   transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
-  box-shadow: 0 2px 10px var(--accent) / 0.3;
+  box-shadow: 0 2px 10px color-mix(in oklch, var(--accent) 30%, transparent);
 }
-.auth-btn:hover { opacity: 0.9; box-shadow: 0 4px 16px var(--accent) / 0.4; }
+.auth-btn:hover { opacity: 0.9; box-shadow: 0 4px 16px color-mix(in oklch, var(--accent) 40%, transparent); }
 .auth-btn:active { transform: scale(0.98); }
 .auth-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 .auth-switch { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text2); }
@@ -218,17 +246,22 @@ body {
 .onboard-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.55; }
 .onboard-btn {
   width: 100%; padding: 13px; border-radius: 12px;
-  background: var(--accent); color: #fff; font-size: 15px; font-weight: 600;
+  background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 600;
   border: none; cursor: pointer; margin-top: 8px; font-family: inherit;
-  transition: opacity 0.15s; box-shadow: 0 2px 10px var(--accent) / 0.28;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 2px 10px color-mix(in oklch, var(--accent) 28%, transparent);
 }
-.onboard-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.onboard-btn:hover { opacity: 0.9; }
+.onboard-btn:active { transform: scale(0.98); }
+.onboard-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 .onboard-btn-secondary {
   width: 100%; padding: 13px; border-radius: 12px;
   background: var(--btn-secondary-bg); color: var(--btn-secondary-color);
   font-size: 15px; font-weight: 500; border: none; cursor: pointer;
-  margin-top: 8px; font-family: inherit; transition: background 0.15s;
+  margin-top: 8px; font-family: inherit; transition: background 0.15s, transform 0.1s;
 }
+.onboard-btn-secondary:hover { background: var(--border2); }
+.onboard-btn-secondary:active { transform: scale(0.98); }
 
 .progress-dots { display: flex; gap: 7px; justify-content: center; margin-bottom: 26px; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); transition: all 0.2s; }
@@ -247,7 +280,7 @@ body {
   display: flex; align-items: center; justify-content: center; transition: all 0.15s;
 }
 .course-item.selected .course-check { background: var(--accent); border-color: var(--accent); }
-.course-check-inner { width: 8px; height: 8px; border-radius: 50%; background: #fff; display: none; }
+.course-check-inner { width: 8px; height: 8px; border-radius: 50%; background: var(--on-accent); display: none; }
 .course-item.selected .course-check-inner { display: block; }
 .course-name { font-size: 14px; font-weight: 500; color: var(--text1); }
 .course-loading { text-align: center; padding: 20px; color: var(--text2); font-size: 14px; }
@@ -273,9 +306,12 @@ body {
 .goal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .goal-add-btn {
   padding: 11px 16px; border-radius: 12px;
-  background: var(--accent); color: #fff; font-size: 14px; font-weight: 600;
+  background: var(--accent); color: var(--on-accent); font-size: 14px; font-weight: 600;
   border: none; cursor: pointer; font-family: inherit;
+  transition: opacity 0.15s, transform 0.1s;
 }
+.goal-add-btn:hover { opacity: 0.9; }
+.goal-add-btn:active { transform: scale(0.96); }
 .goal-tag {
   display: flex; align-items: center; gap: 8px;
   background: var(--accent-soft); border-radius: 10px;
@@ -327,6 +363,12 @@ body {
   .tab.active { background: var(--accent-soft); color: var(--accent-text); }
   .tab-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; }
   .tab-icon svg { width: 100%; height: 100%; }
+  .nav-group-label {
+    font-size: 10px; font-weight: 700; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 16px 12px 6px;
+  }
+  .nav-group-label:first-of-type { padding-top: 6px; }
   .topbar-logo { display: none; }
   .content { width: 100%; max-width: 1440px; margin: 0 auto; padding: 28px 40px 40px; box-sizing: border-box; }
   .bottom-nav { display: none !important; }
@@ -390,8 +432,26 @@ body {
   border: 1px solid var(--border);
   padding: 13px 15px; margin-bottom: 9px;
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  animation: cardIn 0.55s cubic-bezier(.16,1,.3,1) both;
 }
+.card:has(.card-title-link):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card:nth-of-type(1)  { animation-delay: 0ms; }
+.card:nth-of-type(2)  { animation-delay: 70ms; }
+.card:nth-of-type(3)  { animation-delay: 140ms; }
+.card:nth-of-type(4)  { animation-delay: 210ms; }
+.card:nth-of-type(5)  { animation-delay: 280ms; }
+.card:nth-of-type(6)  { animation-delay: 350ms; }
+.card:nth-of-type(7)  { animation-delay: 420ms; }
+.card:nth-of-type(8)  { animation-delay: 490ms; }
+.card:nth-of-type(n+9) { animation-delay: 560ms; }
 .card-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .card-title { font-size: 14px; font-weight: 500; color: var(--text1); line-height: 1.4; }
 .card-sub { font-size: 11.5px; color: var(--text2); margin-top: 2px; }
@@ -419,7 +479,7 @@ body {
   color: var(--red); background: var(--red-soft); border-radius: 4px;
   padding: 2px 5px; margin-left: 5px; vertical-align: middle; letter-spacing: 0.04em;
 }
-.card.done { opacity: 0.42; }
+.card.done .card-row > div:last-child { opacity: 0.42; }
 .card.done .card-title { text-decoration: line-through; }
 .done-check {
   width: 22px; height: 22px; border-radius: 50%;
@@ -427,25 +487,60 @@ body {
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; background: none; transition: all 0.18s; padding: 0;
 }
-.done-check.checked { background: var(--green); border-color: var(--green); }
-.done-check-icon { font-size: 11px; color: #fff; display: none; line-height: 1; }
+.done-check.checked { background: var(--green); border-color: var(--green); animation: checkPop 0.5s cubic-bezier(.34,1.56,.64,1); }
+.done-check-icon { font-size: 11px; color: var(--on-accent); display: none; line-height: 1; }
 .done-check.checked .done-check-icon { display: block; }
-
-/* Stats */
-.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-.stat-card {
-  background: var(--surface); border-radius: var(--card-radius);
-  padding: 15px 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+@keyframes checkPop {
+  0%   { transform: scale(0.55); }
+  65%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
 }
+
+/* Stats -- one bordered strip with internal dividers instead of N identical
+   floating cards side by side (the generic "KPI row" every AI dashboard ships). */
+.home-stats-strip {
+  display: flex; background: var(--surface); border-radius: var(--card-radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 20px;
+  overflow: hidden;
+  animation: cardIn 0.6s cubic-bezier(.16,1,.3,1) both;
+}
+.home-stat { flex: 1; min-width: 0; padding: 15px 16px; }
+.home-stat + .home-stat { border-left: 1px solid var(--border2); }
 .stat-label { font-size: 10.5px; color: var(--text2); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-.stat-val { font-size: 30px; font-weight: 700; color: var(--text1); letter-spacing: -0.5px; line-height: 1; }
+.stat-val { font-size: 30px; font-weight: 700; color: var(--text1); letter-spacing: -0.5px; line-height: 1; display: inline-block; }
+@keyframes statPop {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.75); }
+  45%  { opacity: 1; transform: translateY(0) scale(1.18); }
+  70%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.stat-val.stat-pop { animation: statPop 0.9s cubic-bezier(.22,1,.36,1); }
+
+/* ===== CELEBRATION (assignment / task completion) ===== */
+.confetti-piece {
+  position: fixed; width: 7px; height: 7px; border-radius: 2px;
+  pointer-events: none; z-index: 9999; top: 0; left: 0;
+  animation: confettiBurst 0.75s cubic-bezier(.16,.8,.3,1) forwards;
+}
+@keyframes confettiBurst {
+  0%   { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3) rotate(var(--rot)); opacity: 0; }
+}
 
 /* ===== PRIORITY ===== */
 .priority-card {
   background: var(--surface); border-radius: var(--card-radius);
   border: 1px solid var(--border); padding: 13px 15px; margin-bottom: 9px;
   display: flex; align-items: center; gap: 11px; box-shadow: var(--shadow-sm);
+  animation: cardIn 0.55s cubic-bezier(.16,1,.3,1) both;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
+.priority-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.priority-card:nth-of-type(1) { animation-delay: 0ms; }
+.priority-card:nth-of-type(2) { animation-delay: 70ms; }
+.priority-card:nth-of-type(3) { animation-delay: 140ms; }
+.priority-card:nth-of-type(4) { animation-delay: 210ms; }
+.priority-card:nth-of-type(n+5) { animation-delay: 280ms; }
 .priority-num {
   width: 26px; height: 26px; border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
@@ -472,7 +567,8 @@ body {
 .priority-check:hover { border-color: var(--green); color: var(--green); background: var(--green-soft); }
 .priority-completed-section { margin-top: 20px; }
 .priority-completed-label { font-size: 10.5px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
-.priority-card.completed-card { opacity: 0.48; }
+.priority-card.completed-card .priority-num,
+.priority-card.completed-card .priority-info { opacity: 0.48; }
 .priority-card.completed-card .card-title { text-decoration: line-through; }
 .priority-info { flex: 1; min-width: 0; }
 
@@ -499,7 +595,12 @@ body {
   background: var(--surface); border-radius: var(--card-radius);
   border: 1px solid var(--border); padding: 15px 16px;
   margin-bottom: 10px; box-shadow: var(--shadow-sm);
+  animation: cardIn 0.55s cubic-bezier(.16,1,.3,1) both;
 }
+.goal-card:nth-of-type(1) { animation-delay: 0ms; }
+.goal-card:nth-of-type(2) { animation-delay: 90ms; }
+.goal-card:nth-of-type(3) { animation-delay: 180ms; }
+.goal-card:nth-of-type(n+4) { animation-delay: 280ms; }
 .goal-row { display: flex; align-items: flex-start; gap: 10px; }
 .goal-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
 .goal-text { font-size: 14px; font-weight: 600; color: var(--text1); flex: 1; line-height: 1.4; }
@@ -518,8 +619,11 @@ body {
 .add-goal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .add-goal-btn {
   padding: 11px 14px; border-radius: 12px; background: var(--accent);
-  color: #fff; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit;
+  color: var(--on-accent); font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit;
+  transition: opacity 0.15s, transform 0.1s;
 }
+.add-goal-btn:hover { opacity: 0.9; }
+.add-goal-btn:active { transform: scale(0.96); }
 
 /* ===== GRADES ===== */
 .grade-card {
@@ -527,11 +631,18 @@ body {
   padding: 14px 16px; margin-bottom: 9px;
   background: var(--surface); border-radius: var(--card-radius);
   border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  animation: cardIn 0.55s cubic-bezier(.16,1,.3,1) both;
 }
+.grade-card:nth-of-type(1) { animation-delay: 0ms; }
+.grade-card:nth-of-type(2) { animation-delay: 70ms; }
+.grade-card:nth-of-type(3) { animation-delay: 140ms; }
+.grade-card:nth-of-type(4) { animation-delay: 210ms; }
+.grade-card:nth-of-type(n+5) { animation-delay: 280ms; }
 .grade-card-left { flex: 1; min-width: 0; padding-right: 12px; }
 .grade-card-name { font-size: 14px; font-weight: 500; color: var(--text1); }
 .grade-bar-wrap { height: 3px; border-radius: 99px; background: var(--border); margin-top: 8px; overflow: hidden; }
-.grade-bar { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+.grade-bar { height: 100%; border-radius: 99px; width: 0; animation: growBar 1.3s 0.25s cubic-bezier(.4,0,.2,1) both; }
+@keyframes growBar { to { width: var(--w, 100%); } }
 .grade-card-right { text-align: right; flex-shrink: 0; }
 .grade-card-letter { font-size: 24px; font-weight: 700; line-height: 1; }
 .grade-card-pct { font-size: 11px; color: var(--text2); margin-top: 2px; font-weight: 500; }
@@ -577,9 +688,13 @@ body {
 .settings-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .settings-btn {
   width: 100%; padding: 13px; border-radius: 12px; background: var(--accent);
-  color: #fff; font-size: 14px; font-weight: 600; border: none; cursor: pointer; font-family: inherit;
-  box-shadow: 0 2px 10px var(--accent) / 0.28;
+  color: var(--on-accent); font-size: 14px; font-weight: 600; border: none; cursor: pointer; font-family: inherit;
+  box-shadow: 0 2px 10px color-mix(in oklch, var(--accent) 28%, transparent);
+  transition: opacity 0.15s, transform 0.1s;
 }
+.settings-btn:hover { opacity: 0.9; }
+.settings-btn:active { transform: scale(0.98); }
+.settings-btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 .settings-note { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
 .connected-badge {
   display: inline-flex; align-items: center; gap: 7px;
@@ -591,13 +706,19 @@ body {
   width: 100%; padding: 13px; border-radius: 12px;
   background: var(--sync-btn-bg); color: var(--sync-btn-color); font-size: 14px; font-weight: 600;
   border: 1px solid var(--sync-btn-border); cursor: pointer; margin-bottom: 8px; font-family: inherit;
+  transition: opacity 0.15s, transform 0.1s;
 }
+.sync-btn:hover:not(:disabled) { opacity: 0.85; }
+.sync-btn:active:not(:disabled) { transform: scale(0.98); }
 .sync-btn:disabled { background: var(--btn-secondary-bg); color: var(--text2); cursor: not-allowed; border-color: var(--border); }
 .disconnect-btn {
   width: 100%; padding: 13px; border-radius: 12px;
   background: var(--disconnect-bg); color: var(--disconnect-color); font-size: 14px; font-weight: 600;
   border: 1px solid var(--disconnect-border); cursor: pointer; font-family: inherit;
+  transition: opacity 0.15s, transform 0.1s;
 }
+.disconnect-btn:hover { opacity: 0.85; }
+.disconnect-btn:active { transform: scale(0.98); }
 .sync-status { border-radius: 10px; padding: 10px 13px; font-size: 13px; margin-top: 10px; display: none; }
 .sync-status.success { background: var(--success-bg); color: var(--success-color); display: block; }
 .sync-status.error   { background: var(--error-bg);   color: var(--error-color);   display: block; }
@@ -605,7 +726,10 @@ body {
   width: 100%; padding: 13px; border-radius: 12px;
   background: var(--btn-secondary-bg); color: var(--btn-secondary-color);
   font-size: 14px; font-weight: 600; border: none; cursor: pointer; margin-bottom: 8px; font-family: inherit;
+  transition: background 0.15s, transform 0.1s;
 }
+.change-courses-btn:hover { background: var(--border2); }
+.change-courses-btn:active { transform: scale(0.98); }
 
 /* Empty / Loading */
 .loading-box { text-align: center; padding: 48px 0; color: var(--text2); font-size: 14px; }
@@ -641,7 +765,7 @@ body {
 .help-note { font-size: 13px; color: var(--text2); background: var(--surface2); border-radius: 10px; padding: 12px; margin-bottom: 14px; line-height: 1.5; }
 .help-steps { display: flex; flex-direction: column; gap: 14px; }
 .help-step { display: flex; align-items: flex-start; gap: 12px; }
-.help-step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.help-step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
 .help-step-text { font-size: 13px; color: var(--text1); line-height: 1.55; padding-top: 3px; }
 .help-step-text strong { font-weight: 600; }
 
@@ -710,7 +834,7 @@ body {
 }
 
 /* Animate page entry */
-.page.active { animation: fadeUp 0.2s ease both; }
+.page.active { animation: fadeUp 0.4s ease both; }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -757,14 +881,14 @@ body {
 /* ===== REWARD TOAST (immediate positive feedback) ===== */
 .reward-toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px) scale(0.9);
-  background: var(--accent); color: #fff; font-size: 13.5px; font-weight: 600;
+  background: var(--accent); color: var(--on-accent); font-size: 13.5px; font-weight: 600;
   padding: 12px 20px; border-radius: 99px; box-shadow: 0 6px 24px rgba(0,0,0,0.25);
   z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
   max-width: calc(100% - 32px); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .reward-toast-show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 #ws-sync-btn {
-  width: 100%; padding: 15px; background: var(--accent); color: #fff;
+  width: 100%; padding: 15px; background: var(--accent); color: var(--on-accent);
   border: none; border-radius: 12px; font-size: 15px; font-weight: 600;
   cursor: pointer; font-family: inherit; transition: opacity 0.15s;
 }
@@ -772,8 +896,37 @@ body {
 #ws-sync-btn:disabled { opacity: 0.6; cursor: default; }
 .ws-skip { background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; font-family: inherit; display: block; margin: 14px auto 0; }
 .ws-skip:hover { color: var(--text1); }
-#ws-result-count { font-size: 20px; font-weight: 700; color: var(--text1); margin-bottom: 6px; }
-#ws-result-sub { font-size: 13px; color: var(--text2); margin-bottom: 22px; line-height: 1.45; }
+#ws-result.ws-anim-in { animation: fadeUp 0.4s cubic-bezier(.16,1,.3,1) both; }
+
+/* Dashboard "drop-in" -- assignment cards fall into place with a little bounce
+   right as the sync popup closes, so the freshly-synced work visibly lands
+   instead of just being there when the overlay disappears. */
+@keyframes cardDrop {
+  0%   { opacity: 0; transform: translateY(-22px) rotate(-1.5deg); }
+  55%  { opacity: 1; transform: translateY(5px) rotate(1deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+.drop-in .card { animation: cardDrop 0.55s cubic-bezier(.34,1.56,.64,1) both; }
+.drop-in .card:nth-of-type(1)   { animation-delay: 0ms; }
+.drop-in .card:nth-of-type(2)   { animation-delay: 70ms; }
+.drop-in .card:nth-of-type(3)   { animation-delay: 140ms; }
+.drop-in .card:nth-of-type(n+4) { animation-delay: 210ms; }
+.ws-sync-spinner {
+  width: 36px; height: 36px; margin: 8px auto 0;
+  border: 3px solid var(--border2); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+.ws-check-badge {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--green-soft);
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+  animation: wsBadgePop 0.5s cubic-bezier(.34,1.56,.64,1) both;
+}
+.ws-check-badge svg { width: 30px; height: 30px; }
+.ws-check-path { stroke-dasharray: 20; stroke-dashoffset: 20; animation: wsCheckDraw 0.4s 0.2s cubic-bezier(.65,0,.35,1) forwards; }
+@keyframes wsBadgePop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes wsCheckDraw { to { stroke-dashoffset: 0; } }
+#ws-result-count { font-size: 20px; font-weight: 700; color: var(--text1); margin-bottom: 6px; text-align: center; }
+#ws-result-sub { font-size: 13px; color: var(--text2); margin-bottom: 22px; line-height: 1.45; text-align: center; }
 #ws-view-btn {
   width: 100%; padding: 14px; background: var(--accent-soft); color: var(--accent-text);
   border: 1px solid var(--accent-soft); border-radius: 12px; font-size: 14px; font-weight: 600;
@@ -833,22 +986,77 @@ body {
 }
 
 /* ===== HOME ===== */
-.home-greeting-text { font-size: 21px; font-weight: 700; color: var(--text1); letter-spacing: -0.4px; }
-.home-greeting-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+#home-greeting { margin-bottom: 6px; }
+.home-greeting-text {
+  font-size: 40px; font-weight: 800; color: var(--text1); letter-spacing: -1.2px; line-height: 1.1;
+  animation: greetReveal 0.7s cubic-bezier(.16,1,.3,1) both;
+}
+.home-greeting-text .greet-name { color: var(--accent); }
+.home-greeting-sub {
+  font-size: 14.5px; color: var(--text2); margin-top: 8px;
+  animation: fadeUp 0.5s cubic-bezier(.16,1,.3,1) both; animation-delay: 150ms;
+}
+@keyframes greetReveal {
+  from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@media (max-width: 600px) {
+  .home-greeting-text { font-size: 30px; }
+}
 .home-quicklinks { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 .home-qlink {
   display: flex; align-items: center; gap: 10px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius);
   padding: 13px 14px; cursor: pointer; box-shadow: var(--shadow-sm);
   font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text1);
-  transition: border-color 0.15s, transform 0.1s;
+  text-decoration: none; overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  animation: cardIn 0.5s cubic-bezier(.16,1,.3,1) both;
 }
-.home-qlink:active { transform: scale(0.98); }
+.home-qlink:nth-of-type(1) { animation-delay: 0ms; }
+.home-qlink:nth-of-type(2) { animation-delay: 60ms; }
+.home-qlink:nth-of-type(3) { animation-delay: 120ms; }
+.home-qlink:nth-of-type(n+4) { animation-delay: 180ms; }
+.home-qlink:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.home-qlink:active { transform: scale(0.98) translateY(0); }
+.home-qlink span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .home-qlink-icon {
   width: 30px; height: 30px; border-radius: 9px; background: var(--accent-soft);
   color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 15px; font-weight: 700;
 }
 .home-qlink-icon svg { width: 16px; height: 16px; }
+.home-qlink-icon img { width: 16px; height: 16px; border-radius: 3px; }
+
+/* ===== CUSTOM LINKS (Links tab + Home) ===== */
+.link-card {
+  transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease, border-color 0.15s;
+  max-height: 80px; overflow: hidden;
+}
+.link-card.removing {
+  opacity: 0; transform: translateX(8px); max-height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; border-width: 0;
+}
+
+/* Links tab: 3-icon "how it works" strip instead of a paragraph -- shows once,
+   then gets out of the way. */
+#links-tutorial-card { animation: cardIn 0.5s cubic-bezier(.16,1,.3,1) both; }
+.links-tutorial-steps { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 4px 20px 4px 4px; }
+.links-tutorial-step { display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; width: 88px; }
+.links-tutorial-step-icon {
+  width: 40px; height: 40px; border-radius: 50%; background: var(--accent-soft);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.links-tutorial-step-text { font-size: 11.5px; font-weight: 600; color: var(--text1); line-height: 1.3; }
+.links-tutorial-arrow { color: var(--text2); font-size: 16px; flex-shrink: 0; }
+@media (max-width: 480px) { .links-tutorial-arrow { transform: rotate(90deg); } }
+
+/* A couple of gentle pulses on the actual inputs so the tutorial points at
+   where to act instead of just describing it. */
+.field-pulse { animation: fieldPulse 1.1s ease-in-out 2; }
+@keyframes fieldPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); }
+  50%      { box-shadow: 0 0 0 5px var(--accent-soft); }
+}
 
 /* ===== SYLLABUS ===== */
 .syllabus-card { cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
@@ -889,7 +1097,7 @@ body {
   .syllabus-text { font-size: 14px; line-height: 1.75; padding: 24px 28px; }
 }
 mark { background: var(--accent-soft); color: var(--accent-text); padding: 0 2px; border-radius: 3px; }
-mark.syl-mark-active { background: var(--accent); color: #fff; }
+mark.syl-mark-active { background: var(--accent); color: var(--on-accent); }
 .syl-inline-search-row { display: flex; gap: 8px; align-items: center; }
 
 /* ===== DUE CALENDAR ===== */
@@ -920,7 +1128,7 @@ mark.syl-mark-active { background: var(--accent); color: #fff; }
 .cal-day.selected { background: var(--accent-soft); border-color: var(--accent); }
 .cal-day-num { font-size: 12px; font-weight: 600; color: var(--text1); line-height: 1; }
 .cal-day-count {
-  font-size: 9.5px; font-weight: 700; color: #fff; background: var(--accent);
+  font-size: 9.5px; font-weight: 700; color: var(--on-accent); background: var(--accent);
   border-radius: 99px; min-width: 15px; height: 15px; padding: 0 3px;
   display: flex; align-items: center; justify-content: center; line-height: 1;
 }
@@ -939,14 +1147,14 @@ mark.syl-mark-active { background: var(--accent); color: #fff; }
 }
 .study-session-info { flex: 1; min-width: 0; }
 .study-session-title { font-size: 13.5px; font-weight: 600; color: var(--text1); }
-.study-session-card.done { opacity: 0.5; }
+.study-session-card.done .study-session-info { opacity: 0.5; }
 .study-session-card.done .study-session-title { text-decoration: line-through; }
 .study-session-meta { font-size: 11.5px; color: var(--text2); margin-top: 1px; }
 .study-session-del {
   font-size: 18px; color: var(--text2); cursor: pointer; background: none; border: none;
   line-height: 1; opacity: 0.6; padding: 4px; flex-shrink: 0;
 }
-.study-session-del:hover { opacity: 1; color: #d85a30; }
+.study-session-del:hover { opacity: 1; color: var(--error-color); }
 .study-session-start {
   font-size: 12px; font-weight: 700; color: var(--accent-text); background: var(--accent-soft);
   border: none; border-radius: 8px; padding: 7px 11px; cursor: pointer; flex-shrink: 0; font-family: inherit;
@@ -978,7 +1186,7 @@ mark.syl-mark-active { background: var(--accent); color: #fff; }
 }
 #focus-minibar-main {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius);
   padding: 11px 14px; cursor: pointer; font-family: inherit; text-align: left;
   box-shadow: 0 6px 24px rgba(0,0,0,0.22);
 }
@@ -1085,8 +1293,8 @@ mark.syl-mark-active { background: var(--accent); color: #fff; }
 body.density-compact .card { padding: 8px 11px; margin-bottom: 6px; }
 body.density-compact .content { padding-top: 14px; }
 body.density-compact .section-label { margin-top: 12px; margin-bottom: 6px; }
-body.density-compact .stat-card { padding: 10px 11px; }
-body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
+body.density-compact .home-stat { padding: 10px 11px; }
+body.density-compact .home-stats-strip { margin-bottom: 12px; }
 
 /* ===== SIDEBAR / MOBILE SYNC ===== */
 .sidebar-sync {
@@ -1148,7 +1356,7 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
 .school-ai-banner-title { font-size: 12.5px; font-weight: 700; color: var(--ai-label); }
 .school-ai-banner-sub { font-size: 11.5px; color: var(--ai-text); margin-top: 2px; line-height: 1.4; }
 .school-ai-enable-btn {
-  flex-shrink: 0; background: var(--accent); color: #fff; border: none; border-radius: 10px;
+  flex-shrink: 0; background: var(--accent); color: var(--on-accent); border: none; border-radius: 10px;
   padding: 8px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit;
   transition: opacity 0.15s;
 }
@@ -1319,6 +1527,12 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         <div id="ws-logo-name">Study<em>Flow</em></div>
       </div>
 
+      <!-- State 0: manual sync triggered from inside the app (no greeting, just progress) -->
+      <div id="ws-syncing" style="display:none; text-align:center; padding:20px 0 4px;">
+        <div class="ws-sync-spinner"></div>
+        <div id="ws-syncing-msg" style="margin-top:16px;font-size:14px;color:var(--text2);">Checking your Canvas…</div>
+      </div>
+
       <!-- State 1: initial prompt -->
       <div id="ws-welcome">
         <div id="ws-heading">Welcome back</div>
@@ -1331,6 +1545,12 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
 
       <!-- State 2: after sync result -->
       <div id="ws-result" style="display:none;">
+        <div class="ws-check-badge" id="ws-check-badge">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="11" stroke="var(--green)" stroke-width="1.5" opacity="0.35"/>
+            <path class="ws-check-path" d="M7 12.5l3.2 3.2L17 9" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div id="ws-result-count"></div>
         <div id="ws-result-sub"></div>
         <button id="ws-view-btn" onclick="wsViewNew()" style="display:none;">View new assignments</button>
@@ -1369,59 +1589,6 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         <button class="detail-close" onclick="closeAssignmentDetail()" title="Close">✕</button>
       </div>
       <div id="a-detail-body"></div>
-    </div>
-  </div>
-
-  <!-- CLASS NOTES DETAIL -->
-  <div id="class-notes-overlay" class="detail-overlay">
-    <div class="detail-inner">
-      <div class="detail-header">
-        <div class="detail-title" id="notes-detail-title"></div>
-        <button class="detail-close" onclick="closeClassNotes()" title="Close">✕</button>
-      </div>
-      <button class="settings-btn" id="notes-add-btn" onclick="openNoteForm()">+ New note</button>
-      <div class="card" id="note-form" style="display:none;padding:16px;margin-bottom:16px;">
-        <input class="settings-input" id="note-title-input" placeholder="Title (optional)" />
-        <input class="settings-input" id="note-topic-input" list="note-topic-datalist" placeholder="Topic (optional) — e.g. Chapter 4" />
-        <datalist id="note-topic-datalist"></datalist>
-        <label class="change-courses-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;width:auto;margin-bottom:10px;">
-          📄 Upload PDF
-          <input type="file" accept="application/pdf" id="note-pdf-input" style="display:none;" onchange="handleNotePdfUpload(event)" />
-        </label>
-        <span id="note-pdf-status" class="card-sub" style="margin-left:8px;"></span>
-        <textarea class="syllabus-textarea" id="note-content-input" placeholder="Paste or type your notes..." style="min-height:160px;margin-top:8px;"></textarea>
-        <div id="note-form-msg" style="margin:8px 0;"></div>
-        <div style="display:flex;gap:8px;margin-top:6px;">
-          <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="cancelNoteForm()">Cancel</button>
-          <button class="settings-btn" style="width:auto;flex:1;" onclick="saveNote()">Save note</button>
-        </div>
-      </div>
-      <div id="notes-entries-empty" class="card-sub" style="display:none;padding:8px 2px;">No notes yet for this class — add your first one above.</div>
-      <div id="notes-entries-list"></div>
-    </div>
-  </div>
-
-  <!-- FLASHCARDS: course detail (per-note deck generation) -->
-  <div id="flashcards-course-overlay" class="detail-overlay">
-    <div class="detail-inner">
-      <div class="detail-header">
-        <div class="detail-title" id="flashcards-detail-title"></div>
-        <button class="detail-close" onclick="closeFlashcardsCourse()" title="Close">✕</button>
-      </div>
-      <div id="flashcards-course-study-all-host"></div>
-      <div id="flashcards-course-notes-empty" class="card-sub" style="display:none;padding:8px 2px;">No notes yet for this class — add some in Notes first, then come back here to turn them into flashcards.</div>
-      <div id="flashcards-course-notes-list"></div>
-    </div>
-  </div>
-
-  <!-- FLASHCARDS: study session -->
-  <div id="flashcard-study-overlay" class="detail-overlay">
-    <div class="detail-inner">
-      <div class="detail-header">
-        <div class="detail-title" id="flashcard-study-title">Study</div>
-        <button class="detail-close" onclick="exitFlashcardStudy()" title="Close">✕</button>
-      </div>
-      <div id="flashcard-study-body"></div>
     </div>
   </div>
 
@@ -1475,7 +1642,7 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         </div>
         <span class="logo-word">Study<em>Flow</em></span>
       </div>
-      <button class="sidebar-sync" id="sidebar-sync-btn" onclick="syncCanvas()" title="Sync assignments now">
+      <button class="sidebar-sync" id="sidebar-sync-btn" onclick="openSyncOverlay()" title="Sync assignments now">
         <span class="sidebar-sync-icon">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 10a6 6 0 0 1 10.24-4.24L16 7.5"/>
@@ -1493,41 +1660,40 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 3l7 6.5"/><path d="M5 8.5V17h10V8.5"/></svg></span>
         <span>Home</span>
       </button>
+      <button class="tab" id="tab-links" onclick="showPage('links',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 11.5a3 3 0 0 0 4.2.3l2-2a3 3 0 0 0-4.2-4.2l-1 1"/><path d="M11.5 8.5a3 3 0 0 0-4.2-.3l-2 2a3 3 0 0 0 4.2 4.2l1-1"/></svg></span>
+        <span>Links</span>
+      </button>
+      <div class="nav-group-label">Assignments</div>
       <button class="tab" id="tab-due" onclick="showPage('due',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><polyline points="10 5.5 10 10 12.5 12.5"/></svg></span>
-        <span>Due Soon</span>
+        <span>Upcoming</span>
       </button>
       <button class="tab" id="tab-allwork" onclick="showPage('allwork',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14" x2="11" y2="14"/></svg></span>
-        <span>All Work</span>
+        <span>Assignments</span>
       </button>
       <button class="tab" id="tab-priority" onclick="showPage('priority',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="10 2.5 12 7.5 17.5 7.5 13 11 14.5 17 10 13.5 5.5 17 7 11 2.5 7.5 8 7.5"/></svg></span>
         <span>Priority</span>
       </button>
+      <div class="nav-group-label">Study</div>
       <button class="tab" id="tab-study" onclick="showPage('study',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><polygon points="8.5 6.5 14 10 8.5 13.5 8.5 6.5"/></svg></span>
         <span>Study</span>
       </button>
+      <div class="nav-group-label">Progress</div>
       <button class="tab" id="tab-grades" onclick="showPage('grades',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="11" width="3" height="6" rx="1"/><rect x="8.5" y="7" width="3" height="10" rx="1"/><rect x="14" y="3" width="3" height="14" rx="1"/></svg></span>
         <span>Grades</span>
       </button>
-      <button class="tab" id="tab-syllabus" onclick="showPage('syllabus',this)">
-        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h7l3 3v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M12 4v3h3"/><line x1="6.5" y1="10.5" x2="13.5" y2="10.5"/><line x1="6.5" y1="13.5" x2="13.5" y2="13.5"/></svg></span>
-        <span>Syllabus</span>
-      </button>
-      <button class="tab" id="tab-notes" onclick="showPage('notes',this)">
-        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h9l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><line x1="6" y1="8" x2="14" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/><line x1="6" y1="14" x2="10.5" y2="14"/></svg></span>
-        <span>Notes</span>
-      </button>
-      <button class="tab" id="tab-flashcards" onclick="showPage('flashcards',this)">
-        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="12" height="9" rx="1.3"/><path d="M6 5.5V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1.5"/></svg></span>
-        <span>Flashcards</span>
-      </button>
       <button class="tab" id="tab-goals" onclick="showPage('goals',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="2.5" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="17.5"/></svg></span>
         <span>Goals</span>
+      </button>
+      <button class="tab" id="tab-syllabus" onclick="showPage('syllabus',this)">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h7l3 3v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M12 4v3h3"/><line x1="6.5" y1="10.5" x2="13.5" y2="10.5"/><line x1="6.5" y1="13.5" x2="13.5" y2="13.5"/></svg></span>
+        <span>Syllabus</span>
       </button>
       <button class="tab" id="tab-settings" onclick="showPage('settings',this)">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v1.5m0 13V18m8-8h-1.5M3.5 10H2m11.66-5.66-1.06 1.06M7.4 12.6l-1.06 1.06M17.66 15.66l-1.06-1.06M3.4 7.4 2.34 6.34M13.66 13.66l1.06 1.06M5.46 5.46 4.4 4.4"/></svg></span>
@@ -1548,7 +1714,7 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         </div>
       </div>
       <div class="topbar-right">
-        <button class="mobile-sync-btn" onclick="syncCanvas()" title="Sync assignments now">
+        <button class="mobile-sync-btn" onclick="openSyncOverlay()" title="Sync assignments now">
           <span class="mobile-sync-icon">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 10a6 6 0 0 1 10.24-4.24L16 7.5"/>
@@ -1570,10 +1736,10 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           <div class="home-greeting-text" id="home-greeting-text">Welcome</div>
           <div class="home-greeting-sub" id="home-greeting-sub"></div>
         </div>
-        <div class="stats-row" style="margin-top:18px;grid-template-columns:repeat(3,1fr);">
-          <div class="stat-card"><div class="stat-label">Due this week</div><div class="stat-val" id="home-stat-week">0</div></div>
-          <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" id="home-stat-overdue" style="color:var(--red);">0</div></div>
-          <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-val" id="home-stat-done" style="color:var(--green);">0</div></div>
+        <div class="home-stats-strip" style="margin-top:18px;">
+          <div class="home-stat"><div class="stat-label">Due this week</div><div class="stat-val" id="home-stat-week">0</div></div>
+          <div class="home-stat"><div class="stat-label">Overdue</div><div class="stat-val" id="home-stat-overdue" style="color:var(--red);">0</div></div>
+          <div class="home-stat"><div class="stat-label">Completed</div><div class="stat-val" id="home-stat-done" style="color:var(--green);">0</div></div>
         </div>
         <div class="home-columns">
           <div class="home-col-main">
@@ -1585,37 +1751,8 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           <div class="home-col-side">
             <div class="section-label">Grades at a glance</div>
             <div class="card" id="home-grades"><div style="color:var(--text2);font-size:13px;">No grades published yet.</div></div>
-            <div class="section-label">Quick links</div>
-            <div class="home-quicklinks">
-              <button class="home-qlink" onclick="jumpTo('allwork')">
-                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14" x2="11" y2="14"/></svg></div>
-                <span>All Work</span>
-              </button>
-              <button class="home-qlink" id="home-ql-syllabus" onclick="jumpTo('syllabus')">
-                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h7l3 3v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M12 4v3h3"/><line x1="6.5" y1="10.5" x2="13.5" y2="10.5"/><line x1="6.5" y1="13.5" x2="13.5" y2="13.5"/></svg></div>
-                <span>Syllabus</span>
-              </button>
-              <button class="home-qlink" onclick="jumpTo('notes')">
-                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h9l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><line x1="6" y1="8" x2="14" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/><line x1="6" y1="14" x2="10.5" y2="14"/></svg></div>
-                <span>Class Notes</span>
-              </button>
-              <button class="home-qlink" onclick="jumpTo('flashcards')">
-                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="12" height="9" rx="1.3"/><path d="M6 5.5V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1.5"/></svg></div>
-                <span>Flashcards</span>
-              </button>
-              <button class="home-qlink" id="home-ql-goals" onclick="jumpTo('goals')">
-                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="2.5" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="17.5"/></svg></div>
-                <span>Goals</span>
-              </button>
-              <button class="home-qlink" onclick="jumpTo('settings')">
-                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v1.5m0 13V18m8-8h-1.5M3.5 10H2m11.66-5.66-1.06 1.06M7.4 12.6l-1.06 1.06M17.66 15.66l-1.06-1.06M3.4 7.4 2.34 6.34M13.66 13.66l1.06 1.06M5.46 5.46 4.4 4.4"/></svg></div>
-                <span>Settings</span>
-              </button>
-              <button class="home-qlink" style="grid-column:1 / -1;" onclick="jumpToReportProblem()">
-                <div class="home-qlink-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2 2.5 16h15L10 2z"/><line x1="10" y1="8" x2="10" y2="11.5"/><circle cx="10" cy="13.5" r="0.75" fill="currentColor" stroke="none"/></svg></div>
-                <span>Report a problem</span>
-              </button>
-            </div>
+            <div class="section-label">Your links</div>
+            <div class="home-quicklinks" id="home-custom-links"></div>
           </div>
         </div>
       </div>
@@ -1629,9 +1766,9 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           <div class="empty-sub">No upcoming assignments. Hit sync in Settings or check back later.</div>
         </div>
         <div id="due-list" style="display:none;">
-          <div class="stats-row">
-            <div class="stat-card"><div class="stat-label">Due this week</div><div class="stat-val" id="stat-week">0</div></div>
-            <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-val" id="stat-overdue" style="color:#d85a30;">0</div></div>
+          <div class="home-stats-strip">
+            <div class="home-stat"><div class="stat-label">Due this week</div><div class="stat-val" id="stat-week">0</div></div>
+            <div class="home-stat"><div class="stat-label">Overdue</div><div class="stat-val" id="stat-overdue" style="color:var(--error-color);">0</div></div>
           </div>
           <div id="overdue-section" style="display:none;"><div class="section-label">Overdue</div><div id="overdue-list"></div></div>
           <div id="due-cal-section">
@@ -1675,7 +1812,7 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
 
       <!-- ALL WORK -->
       <div class="page" id="page-allwork">
-        <div id="allwork-loading" class="loading-box">Loading all work...</div>
+        <div id="allwork-loading" class="loading-box">Loading assignments...</div>
         <div id="allwork-empty" class="empty-box" style="display:none;">
           <div class="empty-icon">📚</div>
           <div class="empty-title">No assignments found</div>
@@ -1709,9 +1846,9 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
 
       <!-- STUDY -->
       <div class="page" id="page-study">
-        <div class="stats-row">
-          <div class="stat-card"><div class="stat-label">Studied today</div><div class="stat-val" id="study-stat-today">0m</div></div>
-          <div class="stat-card"><div class="stat-label">This week</div><div class="stat-val" id="study-stat-week">0m</div></div>
+        <div class="home-stats-strip">
+          <div class="home-stat"><div class="stat-label">Studied today</div><div class="stat-val" id="study-stat-today">0m</div></div>
+          <div class="home-stat"><div class="stat-label">This week</div><div class="stat-val" id="study-stat-week">0m</div></div>
         </div>
         <div class="card" style="padding:20px;margin-bottom:28px;">
           <div class="card-sub" style="margin-bottom:4px;">All-time total</div>
@@ -1776,7 +1913,7 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
       <div class="page" id="page-goals">
         <div class="section-label">Your goals</div>
         <div id="goals-display">
-          <div style="color:#8e8e93;font-size:13px;padding:14px 0;">No goals set yet. Add one below!</div>
+          <div style="color:var(--text2);font-size:13px;padding:14px 0;">No goals set yet. Add one below!</div>
         </div>
         <div class="add-goal-row">
           <input class="add-goal-input" type="text" id="main-goal-input" placeholder="Add a goal..." />
@@ -1817,8 +1954,32 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
 
         <div class="section-label" style="margin-top:20px;">Your selected classes</div>
         <div class="card" id="selected-courses-display">
-          <div style="color:#8e8e93;font-size:13px;">No classes selected yet.</div>
+          <div style="color:var(--text2);font-size:13px;">No classes selected yet.</div>
         </div>
+      </div>
+
+      <!-- LINKS -->
+      <div class="page" id="page-links">
+        <div class="card" id="links-tutorial-card" style="display:none;margin-bottom:16px;">
+          <button class="detail-close" id="links-tutorial-dismiss" onclick="dismissLinksTutorial()" title="Dismiss" style="float:right;">✕</button>
+          <div class="links-tutorial-steps">
+            <div class="links-tutorial-step"><div class="links-tutorial-step-icon">🔗</div><div class="links-tutorial-step-text">Copy a link</div></div>
+            <div class="links-tutorial-arrow">→</div>
+            <div class="links-tutorial-step"><div class="links-tutorial-step-icon">✏️</div><div class="links-tutorial-step-text">Name it, paste below</div></div>
+            <div class="links-tutorial-arrow">→</div>
+            <div class="links-tutorial-step"><div class="links-tutorial-step-icon">⚡</div><div class="links-tutorial-step-text">Tap from Home</div></div>
+          </div>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input class="settings-input" id="custom-link-label-input" placeholder="Name (e.g. Bio notes)" style="flex:1;min-width:120px;margin-bottom:0;">
+            <input class="settings-input" id="custom-link-url-input" placeholder="Paste link here" style="flex:2;min-width:160px;margin-bottom:0;">
+          </div>
+          <div id="custom-link-msg" style="color:var(--error-color);font-size:12.5px;margin-top:6px;"></div>
+          <button class="settings-btn" style="margin-top:10px;" onclick="addCustomLink()">+ Add link</button>
+        </div>
+        <div class="section-label" style="margin-top:20px;">Your links</div>
+        <div id="links-list"></div>
       </div>
 
       <!-- SYLLABUS -->
@@ -1846,49 +2007,24 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
         <div id="syllabus-list" style="display:none;"></div>
       </div>
 
-      <!-- NOTES -->
-      <div class="page" id="page-notes">
-        <div id="notes-loading" class="loading-box">Loading your classes...</div>
-        <div id="notes-empty" class="empty-box" style="display:none;">
-          <div class="empty-icon">📝</div>
-          <div class="empty-title">No classes selected yet</div>
-          <div class="empty-sub">Pick your classes in Settings first — then add notes for each one here.</div>
-        </div>
-        <div id="notes-course-list" style="display:none;"></div>
-      </div>
-
-      <!-- FLASHCARDS -->
-      <div class="page" id="page-flashcards">
-        <div id="flashcards-loading" class="loading-box">Loading your classes...</div>
-        <div id="flashcards-empty" class="empty-box" style="display:none;">
-          <div class="empty-icon">🃏</div>
-          <div class="empty-title">No classes selected yet</div>
-          <div class="empty-sub">Pick your classes in Settings first — then generate flashcards from your notes here.</div>
-        </div>
-        <div id="flashcards-course-list" style="display:none;"></div>
-      </div>
-
       <!-- MORE (mobile only -- the bottom nav only has room for the 4 most-used
            tabs, so everything else lives here behind one extra tap instead of
            crowding the bar) -->
       <div class="page" id="page-more">
+        <div class="card syllabus-card" onclick="jumpTo('links')">
+          <div class="card-row"><div class="card-title">🔗 Links</div><span style="opacity:.4;">›</span></div>
+        </div>
         <div class="card syllabus-card" onclick="jumpTo('grades')">
           <div class="card-row"><div class="card-title">📊 Grades</div><span style="opacity:.4;">›</span></div>
         </div>
         <div class="card syllabus-card" onclick="jumpTo('goals')">
           <div class="card-row"><div class="card-title">🎯 Goals</div><span style="opacity:.4;">›</span></div>
         </div>
-        <div class="card syllabus-card" onclick="jumpTo('notes')">
-          <div class="card-row"><div class="card-title">📝 Class Notes</div><span style="opacity:.4;">›</span></div>
-        </div>
-        <div class="card syllabus-card" onclick="jumpTo('flashcards')">
-          <div class="card-row"><div class="card-title">🃏 Flashcards</div><span style="opacity:.4;">›</span></div>
-        </div>
         <div class="card syllabus-card" onclick="jumpTo('syllabus')">
           <div class="card-row"><div class="card-title">📄 Syllabus</div><span style="opacity:.4;">›</span></div>
         </div>
         <div class="card syllabus-card" onclick="jumpTo('allwork')">
-          <div class="card-row"><div class="card-title">☰ All Work</div><span style="opacity:.4;">›</span></div>
+          <div class="card-row"><div class="card-title">☰ Assignments</div><span style="opacity:.4;">›</span></div>
         </div>
         <div class="card syllabus-card" onclick="jumpTo('settings')">
           <div class="card-row"><div class="card-title">⚙️ Settings</div><span style="opacity:.4;">›</span></div>
@@ -1913,8 +2049,8 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           <div class="tweak-row">
             <div class="tweak-label">Accent color</div>
             <div class="tweak-swatches" id="tweak-swatches-accent">
-              <div class="swatch active" data-h="275" style="background:oklch(0.56 0.2 275);" onclick="setAccent(275,this)" title="Violet"></div>
-              <div class="swatch" data-h="220" style="background:oklch(0.56 0.2 220);" onclick="setAccent(220,this)" title="Blue"></div>
+              <div class="swatch" data-h="275" style="background:oklch(0.56 0.2 275);" onclick="setAccent(275,this)" title="Violet"></div>
+              <div class="swatch active" data-h="220" style="background:oklch(0.56 0.2 220);" onclick="setAccent(220,this)" title="Blue"></div>
               <div class="swatch" data-h="170" style="background:oklch(0.52 0.18 170);" onclick="setAccent(170,this)" title="Teal"></div>
               <div class="swatch" data-h="145" style="background:oklch(0.52 0.16 145);" onclick="setAccent(145,this)" title="Green"></div>
               <div class="swatch" data-h="30"  style="background:oklch(0.58 0.2 30);"  onclick="setAccent(30,this)"  title="Orange"></div>
@@ -1961,8 +2097,9 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
             <div class="tweak-label">Default landing tab</div>
             <select class="settings-select" id="pref-default-tab" onchange="onPrefInput('defaultLandingTab', this.value)">
               <option value="home">Home</option>
-              <option value="due">Due Soon</option>
-              <option value="allwork">All Work</option>
+              <option value="links">Links</option>
+              <option value="due">Upcoming</option>
+              <option value="allwork">Assignments</option>
               <option value="priority">Priority</option>
               <option value="grades">Grades</option>
               <option value="syllabus">Syllabus</option>
@@ -2036,7 +2173,7 @@ body.density-compact .stats-row { margin-bottom: 12px; gap: 8px; }
           <div class="card">
             <div class="connected-badge"><span class="connected-dot"></span>Canvas connected</div>
             <div class="card-sub" id="canvas-url-display" style="margin-bottom:12px;"></div>
-            <button class="sync-btn" id="sync-btn" onclick="syncCanvas()">Sync assignments now</button>
+            <button class="sync-btn" id="sync-btn" onclick="openSyncOverlay()">Sync assignments now</button>
             <div id="sync-status" class="sync-status"></div>
             <button class="change-courses-btn" style="margin-top:8px;" onclick="showCourseSelection()">Did we miss a class?</button>
             <button class="disconnect-btn" style="margin-top:8px;" onclick="disconnectCanvas()">Disconnect Canvas</button>
@@ -2348,6 +2485,8 @@ const DEFAULT_PREFS = {
   studyGoalDailyMin: 60,
   studyGoalWeeklyMin: 300,
   studyGoalOnboarded: false,
+  customLinks: [],
+  linksTutorialSeen: false,
 };
 let userPrefs = { ...DEFAULT_PREFS };
 
@@ -2422,6 +2561,128 @@ function applyUserPrefsToUI() {
 
   const weightInput = document.getElementById('calc-weight');
   if (weightInput && !weightInput.value) weightInput.value = userPrefs.defaultFinalWeight ?? 30;
+
+  renderCustomLinks();
+}
+
+/* ===========================
+   CUSTOM QUICK LINKS
+   User-added shortcuts (Google Doc, NotebookLM, class site, whatever they
+   actually use) instead of us guessing which built-in pages deserve a
+   shortcut. Managed on their own Links tab; Home shows whichever ones were
+   opened most recently so the dashboard surfaces what's actually in use.
+=========================== */
+function normalizeLinkUrl(raw) {
+  const trimmed = (raw || '').trim();
+  if (!trimmed) return '';
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function faviconFor(url) {
+  try {
+    const host = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?sz=32&domain=${host}`;
+  } catch (_) {
+    return '';
+  }
+}
+
+function linkIconHTML(url) {
+  const fav = faviconFor(url);
+  return fav ? `<img src="${fav}" alt="" width="16" height="16">` : '↗';
+}
+
+function openCustomLink(index) {
+  const links = userPrefs.customLinks || [];
+  const link = links[index];
+  if (!link) return;
+  link.lastOpened = Date.now();
+  saveUserPrefs();
+  renderCustomLinks();
+  window.open(link.url, '_blank', 'noopener,noreferrer');
+}
+
+function renderCustomLinks() {
+  const homeHost = document.getElementById('home-custom-links');
+  const linksHost = document.getElementById('links-list');
+  const links = Array.isArray(userPrefs.customLinks) ? userPrefs.customLinks : [];
+
+  if (homeHost) {
+    if (links.length === 0) {
+      homeHost.innerHTML = `<button class="home-qlink" style="grid-column:1 / -1;" onclick="jumpTo('links')">
+        <div class="home-qlink-icon">+</div>
+        <span>Add a link</span>
+      </button>`;
+    } else {
+      // Most-recently-opened first; links never opened yet sort after, newest-added first.
+      const recent = links
+        .map((l, i) => ({ ...l, i }))
+        .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0))
+        .slice(0, 4);
+      homeHost.innerHTML = recent.map(l => `
+        <button class="home-qlink" onclick="openCustomLink(${l.i})">
+          <div class="home-qlink-icon">${linkIconHTML(l.url)}</div>
+          <span>${escapeHtml(l.label)}</span>
+        </button>`).join('');
+    }
+  }
+
+  if (linksHost) {
+    linksHost.innerHTML = links.length === 0
+      ? `<div class="empty-box"><div class="empty-icon">🔗</div><div class="empty-title">No links yet</div><div class="empty-sub">Add a Google Doc, NotebookLM notebook, class site — anything you use for school — below.</div></div>`
+      : links.map((l, i) => `
+        <div class="card link-card" style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openCustomLink(${i})">
+          <div class="home-qlink-icon" style="flex-shrink:0;">${linkIconHTML(l.url)}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="card-title">${escapeHtml(l.label)}</div>
+            <div class="card-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(l.url)}</div>
+          </div>
+          <button class="goal-remove" title="Remove" onclick="event.stopPropagation();removeCustomLink(${i}, this)">✕</button>
+        </div>`).join('');
+  }
+}
+
+function addCustomLink() {
+  const labelInput = document.getElementById('custom-link-label-input');
+  const urlInput = document.getElementById('custom-link-url-input');
+  const msgEl = document.getElementById('custom-link-msg');
+  const label = (labelInput.value || '').trim();
+  const url = normalizeLinkUrl(urlInput.value);
+  if (msgEl) msgEl.textContent = '';
+
+  if (!label || !url) {
+    if (msgEl) msgEl.textContent = 'Add both a name and a link.';
+    return;
+  }
+  let hostname = '';
+  try { hostname = new URL(url).hostname; } catch (_) { hostname = ''; }
+  // new URL() percent-encodes spaces into the hostname instead of rejecting them,
+  // so "not a url!!" silently "parses" -- require a real-looking domain instead.
+  const looksLikeDomain = hostname && !hostname.includes('%20') && hostname.includes('.');
+  if (!looksLikeDomain) {
+    if (msgEl) msgEl.textContent = "That link doesn't look right — double check you copied the full URL.";
+    return;
+  }
+
+  userPrefs.customLinks = [...(userPrefs.customLinks || []), { label, url }];
+  saveUserPrefs();
+  renderCustomLinks();
+  labelInput.value = '';
+  urlInput.value = '';
+  // Successfully adding one is proof they got it -- no need to keep the tutorial around.
+  dismissLinksTutorial();
+}
+
+function removeCustomLink(index, btn) {
+  const row = btn ? btn.closest('.link-card') : null;
+  const commit = () => {
+    userPrefs.customLinks = (userPrefs.customLinks || []).filter((_, i) => i !== index);
+    saveUserPrefs();
+    renderCustomLinks();
+  };
+  if (!row) { commit(); return; }
+  row.classList.add('removing');
+  row.addEventListener('transitionend', commit, { once: true });
 }
 
 let reportType = 'bug';
@@ -2436,7 +2697,7 @@ async function submitProblemReport() {
   const statusEl = document.getElementById('report-msg');
   const text = input.value.trim();
   if (!text) {
-    statusEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Write a quick description first.</div>`;
+    statusEl.innerHTML = `<div class="card-sub" style="color:var(--error-color);">Write a quick description first.</div>`;
     return;
   }
   statusEl.innerHTML = `<div class="card-sub">Sending…</div>`;
@@ -2461,7 +2722,7 @@ async function submitProblemReport() {
     statusEl.innerHTML = `<div class="card-sub" style="color:var(--green,#2ea043);">Thanks — sent! We'll look into it.</div>`;
     input.value = '';
   } else {
-    statusEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Couldn't send — try again in a bit.</div>`;
+    statusEl.innerHTML = `<div class="card-sub" style="color:var(--error-color);">Couldn't send — try again in a bit.</div>`;
   }
 }
 
@@ -2732,8 +2993,6 @@ async function showApp() {
   loadStudySessions();
   loadGrades();
   loadSyllabi();
-  loadClassNotes();
-  loadFlashcards();
   loadAssignmentChecklists();
   renderGoalsTab();
   renderSelectedCoursesTab();
@@ -3035,10 +3294,10 @@ function buildActionPlan(goalText) {
   if (steps.length === 0) {
     if (text.includes('raise') || text.includes('improve') || text.includes('better')) {
       steps.push('Sync Canvas to pull your latest assignments');
-      steps.push('Check All Work for any overdue items');
+      steps.push('Check Assignments for any overdue items');
       steps.push('Mark assignments done as you finish them to track progress');
     } else if (text.includes('miss') || text.includes('deadline') || text.includes('on top')) {
-      steps.push('Check Due Soon tab daily for what\'s coming up');
+      steps.push('Check Upcoming daily for what\'s coming up');
       steps.push('Use Priority tab to focus on the most urgent work first');
     } else {
       steps.push('Sync Canvas in Settings to see your latest assignments');
@@ -3053,7 +3312,7 @@ function renderGoalsTab() {
   const el = document.getElementById('goals-display');
   if (!el) return;
   if (userGoals.length === 0) {
-    el.innerHTML = '<div style="color:#8e8e93;font-size:13px;padding:14px 0;">No goals set yet. Add one below!</div>';
+    el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:14px 0;">No goals set yet. Add one below!</div>';
     return;
   }
   const colors = ['#d85a30','#007aff','#3b6d11','#854f0b','#534ab7'];
@@ -3093,7 +3352,7 @@ async function renderSelectedCoursesTab() {
   const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=selected_courses`);
   const el = document.getElementById('selected-courses-display');
   if (!ok || !data || !data[0]?.selected_courses?.length) {
-    el.innerHTML = '<div style="color:#8e8e93;font-size:13px;">No classes selected.</div>'; return;
+    el.innerHTML = '<div style="color:var(--text2);font-size:13px;">No classes selected.</div>'; return;
   }
   el.innerHTML = data[0].selected_courses.map(c => `<div class="grade-row"><span class="grade-name">${c.name}</span></div>`).join('');
 }
@@ -3214,6 +3473,31 @@ async function showCourseSelection() {
   courseSelectionFromSettings = true;
   document.getElementById('ob-courses-btn').textContent = 'Save classes';
   await loadCoursesForSelection(); showOnboardCourses();
+}
+
+function dismissLinksTutorial() {
+  const card = document.getElementById('links-tutorial-card');
+  if (card) card.style.display = 'none';
+  if (!userPrefs.linksTutorialSeen) {
+    userPrefs.linksTutorialSeen = true;
+    saveUserPrefs();
+  }
+}
+
+// First time someone opens the Links tab: show the 3-icon strip and draw the
+// eye straight to the actual inputs (a quick glow) instead of making them
+// read a paragraph to find out where to click.
+function maybeShowLinksTutorial() {
+  if (userPrefs.linksTutorialSeen) return;
+  const card = document.getElementById('links-tutorial-card');
+  if (card) card.style.display = 'block';
+  ['custom-link-label-input', 'custom-link-url-input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('field-pulse');
+    void el.offsetWidth;
+    el.classList.add('field-pulse');
+  });
 }
 
 function toggleCanvasHelp() {
@@ -3393,7 +3677,7 @@ async function loadGrades() {
       return `<div class="card grade-card">
         <div class="grade-card-left">
           <div class="grade-card-name">${cleanName}</div>
-          ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="width:${barWidth}%;background:${barColor}"></div></div>` : ''}
+          ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="--w:${barWidth}%;background:${barColor}"></div></div>` : ''}
         </div>
         <div class="grade-card-right">
           <div class="grade-card-letter ${letterClass}">${letter || '—'}</div>
@@ -3525,8 +3809,14 @@ function updateAssignmentDetailDoneButton(a) {
   btn.textContent = isDone ? '✓ Completed — click to undo' : 'Mark as done';
   btn.style.background = isDone ? 'var(--green)' : '';
   btn.style.borderColor = isDone ? 'var(--green)' : '';
-  btn.style.color = isDone ? '#fff' : '';
+  btn.style.color = isDone ? 'var(--on-accent)' : '';
 }
+
+const ASSIGNMENT_DONE_REWARD_MESSAGES = [
+  'Nice work — one more done.',
+  'One less thing on your list.',
+  'Marked off. Keep going.',
+];
 
 // Lets a student mark an assignment done right from its description, instead of
 // closing out, hunting the card back down in a list, and clicking its checkmark.
@@ -3559,7 +3849,10 @@ async function toggleDoneFromDetail(id) {
   renderAllWork(cachedAssignments);
   renderPriority(cachedAssignments);
   renderHome();
-  if (nowDone) showReward('✅ Nice work — one more done.');
+  if (nowDone) {
+    celebrateFromElement(document.getElementById('a-detail-done-btn'));
+    showReward(ASSIGNMENT_DONE_REWARD_MESSAGES[Math.floor(Math.random() * ASSIGNMENT_DONE_REWARD_MESSAGES.length)]);
+  }
 }
 
 function closeAssignmentDetail() {
@@ -3582,6 +3875,8 @@ function toggleDone(encodedKey, btn) {
     doneSet.add(key);
     btn.classList.add('checked');
     card.classList.add('done');
+    celebrateFromElement(btn);
+    showReward(ASSIGNMENT_DONE_REWARD_MESSAGES[Math.floor(Math.random() * ASSIGNMENT_DONE_REWARD_MESSAGES.length)]);
   } else {
     doneSet.delete(key);
     btn.classList.remove('checked');
@@ -4556,7 +4851,7 @@ async function handleGenerateChecklistClick(assignmentId, btn) {
     btn.disabled = false;
     btn.textContent = '🗓️ Generate a study checklist';
     const el = document.getElementById('a-checklist-section');
-    if (el) el.insertAdjacentHTML('beforeend', `<div class="card-sub" style="color:#d85a30;">Couldn't generate a plan — try again.</div>`);
+    if (el) el.insertAdjacentHTML('beforeend', `<div class="card-sub" style="color:var(--error-color);">Couldn't generate a plan — try again.</div>`);
   }
 }
 
@@ -5201,7 +5496,7 @@ function schoolAIBannerHTML(idPrefix) {
   return `
     <div class="school-ai-banner" id="${idPrefix}-banner">
       <div class="school-ai-banner-text">
-        <div class="school-ai-banner-title">✨ Turn on coco.1</div>
+        <div class="school-ai-banner-title">Turn on coco.1</div>
         <div class="school-ai-banner-sub">Real understanding, not just keyword matching. Runs on your device — one-time ~1.9GB download, free, no account needed. Still occasionally wrong on tricky questions, so always double-check anything important.</div>
         <div class="school-ai-progress-wrap" id="${idPrefix}-progress-wrap" style="display:none;">
           <div class="school-ai-progress-bar"><div class="school-ai-progress-fill" id="${idPrefix}-progress-fill"></div></div>
@@ -5300,10 +5595,10 @@ function greetingWord() {
 function renderHome() {
   const greetEl = document.getElementById('home-greeting-text');
   if (!greetEl) return;
-  const name = USER_NAME ? `, ${USER_NAME}` : '';
-  greetEl.textContent = `${greetingWord()}${name}`;
+  const nameSpan = USER_NAME ? `, <span class="greet-name">${escapeHtml(USER_NAME)}</span>` : '';
+  greetEl.innerHTML = `Welcome back${nameSpan}`;
   const now = new Date();
-  document.getElementById('home-greeting-sub').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  document.getElementById('home-greeting-sub').textContent = `${greetingWord()} · ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
 
   const today = new Date(); today.setHours(0,0,0,0);
   const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate() + 7);
@@ -5317,8 +5612,8 @@ function renderHome() {
   });
   const weekEl = document.getElementById('home-stat-week');
   const overdueEl = document.getElementById('home-stat-overdue');
-  if (weekEl) weekEl.textContent = soon.length;
-  if (overdueEl) overdueEl.textContent = overdueCount;
+  setStatValue(weekEl, soon.length);
+  setStatValue(overdueEl, overdueCount);
   renderCompletedCount();
 
   const withDate = cachedAssignments.filter(a => a.due_date).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
@@ -6052,7 +6347,8 @@ function openClassNotes(courseId) {
 }
 
 function closeClassNotes() {
-  document.getElementById('class-notes-overlay').style.display = 'none';
+  const el = document.getElementById('class-notes-overlay');
+  if (el) el.style.display = 'none';
   notesDetailCourseId = null;
 }
 
@@ -6149,7 +6445,7 @@ async function saveNote() {
   const content = document.getElementById('note-content-input').value.trim();
   const msgEl = document.getElementById('note-form-msg');
   if (!content) {
-    msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Add some content first.</div>`;
+    msgEl.innerHTML = `<div class="card-sub" style="color:var(--error-color);">Add some content first.</div>`;
     return;
   }
 
@@ -6157,14 +6453,14 @@ async function saveNote() {
     const { ok } = await sbFetchWithRetry(`/rest/v1/class_notes?id=eq.${editingNoteId}`, 'PATCH', {
       title, topic, content, updated_at: new Date().toISOString(),
     }, true);
-    if (!ok) { msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Couldn't save — try again.</div>`; return; }
+    if (!ok) { msgEl.innerHTML = `<div class="card-sub" style="color:var(--error-color);">Couldn't save — try again.</div>`; return; }
     cachedClassNotes = cachedClassNotes.map(n => n.id === editingNoteId ? { ...n, title, topic, content } : n);
   } else {
     const source = document.getElementById('note-pdf-status').dataset.usedPdf === '1' ? 'pdf' : 'typed';
     const { ok, data } = await sbFetchWithRetry('/rest/v1/class_notes', 'POST', {
       user_id: USER_ID, course_id: notesDetailCourseId, course_name: notesDetailCourseName, title, topic, content, source,
     }, true);
-    if (!ok) { msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Couldn't save — try again.</div>`; return; }
+    if (!ok) { msgEl.innerHTML = `<div class="card-sub" style="color:var(--error-color);">Couldn't save — try again.</div>`; return; }
     const created = Array.isArray(data) && data[0] ? data[0] : {
       id: crypto.randomUUID(), user_id: USER_ID, course_id: notesDetailCourseId, course_name: notesDetailCourseName, title, topic, content, source, created_at: new Date().toISOString(),
     };
@@ -6281,7 +6577,7 @@ async function saveStudySession() {
   const msgEl = document.getElementById('study-form-msg');
 
   if (start && end && end <= start) {
-    msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">End time must be after start time.</div>`;
+    msgEl.innerHTML = `<div class="card-sub" style="color:var(--error-color);">End time must be after start time.</div>`;
     return;
   }
 
@@ -6293,7 +6589,7 @@ async function saveStudySession() {
   }, true);
 
   if (!ok) {
-    msgEl.innerHTML = `<div class="card-sub" style="color:#d85a30;">Couldn't save — try again.</div>`;
+    msgEl.innerHTML = `<div class="card-sub" style="color:var(--error-color);">Couldn't save — try again.</div>`;
     return;
   }
   await loadStudySessions();
@@ -6335,6 +6631,33 @@ function showReward(text) {
   rewardToastTimer = setTimeout(() => el.classList.remove('reward-toast-show'), 2600);
 }
 
+// A short burst of color from wherever a "done" checkbox was clicked -- finishing
+// an assignment is the actual point of the app, so that click gets a visible payoff
+// instead of just a checkmark quietly filling in.
+const CONFETTI_COLORS = ['var(--green)', 'var(--accent)', 'var(--amber)'];
+function celebrateAt(x, y) {
+  const count = 10;
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.5 - 0.25);
+    const dist = 36 + Math.random() * 28;
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = x + 'px';
+    piece.style.top = y + 'px';
+    piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+    piece.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+    piece.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+    piece.style.setProperty('--rot', `${(Math.random() * 240 - 120)}deg`);
+    document.body.appendChild(piece);
+    piece.addEventListener('animationend', () => piece.remove());
+  }
+}
+function celebrateFromElement(el) {
+  if (!el || !el.getBoundingClientRect) return;
+  const r = el.getBoundingClientRect();
+  celebrateAt(r.left + r.width / 2, r.top + r.height / 2);
+}
+
 // Consecutive-day streak, keyed per user, based on calendar day (not a rolling
 // 24h window) so a skipped day actually breaks it. Call once per app open.
 function bumpDailyStreak() {
@@ -6367,7 +6690,18 @@ function bumpCompletedCount(delta) {
 
 function renderCompletedCount() {
   const el = document.getElementById('home-stat-done');
-  if (el) el.textContent = getCompletedCount();
+  setStatValue(el, getCompletedCount());
+}
+
+// Only replays the pop-in animation when the displayed value actually changes,
+// so re-renders that don't touch a stat don't keep re-triggering its animation.
+function setStatValue(el, value) {
+  if (!el) return;
+  if (el.textContent === String(value)) return;
+  el.textContent = value;
+  el.classList.remove('stat-pop');
+  void el.offsetWidth;
+  el.classList.add('stat-pop');
 }
 
 // Days (not sessions) with at least one completed study block — same idea,
@@ -6388,15 +6722,15 @@ function bumpStudyStreak() {
 }
 
 const SYNC_REWARD_MESSAGES = [
-  "✨ Synced! You're on top of it.",
-  "✅ All caught up — nice.",
-  "🔥 Staying ahead of the work.",
-  "✨ Fresh data, zero effort.",
+  "Synced. You're all set.",
+  "All caught up.",
+  "Staying ahead of the work.",
+  "Fresh data pulled in.",
 ];
 const STUDY_SCHEDULE_REWARD_MESSAGES = [
-  "📅 Time blocked — future you says thanks.",
-  "✨ Nice, that's on the calendar now.",
-  "📚 Study time locked in.",
+  "Added to your schedule.",
+  "That's on the calendar now.",
+  "Study time locked in.",
 ];
 
 function renderDueSoon(assignments) {
@@ -6733,9 +7067,9 @@ async function quickStartFocus() {
 }
 
 const STUDY_DONE_REWARD_MESSAGES = [
-  "🎉 Nice work — that's real progress.",
-  "✨ Done! You showed up for yourself today.",
-  "🔥 That's how habits get built.",
+  "Nice work — that's real progress.",
+  "Session done.",
+  "That's how habits get built.",
 ];
 
 async function toggleStudySessionDone(id, btn) {
@@ -7040,7 +7374,7 @@ async function focusEndEarly() {
   const rounds = focusState ? focusState.completedStudyRounds : 0;
   if (rounds > 0) {
     await persistFocusProgress(false);
-    showReward(`✨ Saved — ${rounds} round${rounds !== 1 ? 's' : ''} of focus logged.`);
+    showReward(`Saved — ${rounds} round${rounds !== 1 ? 's' : ''} of focus logged.`);
   }
   closeFocusTimer();
 }
@@ -7079,7 +7413,7 @@ function renderAllWork(assignments) {
   });
   let html = '';
   if (overdue.length) {
-    html += `<div class="section-label" style="color:#c0392b;">Overdue</div>`;
+    html += `<div class="section-label" style="color:var(--error-color);">Overdue</div>`;
     html += sortGroup(overdue).map(a => aCard(a, true, true)).join('');
   }
   if (soon.length) {
@@ -7136,9 +7470,9 @@ function renderPriority(assignments) {
   const colors = ['p1','p2','p3','p4','p5'];
   let html = scored.slice(0, 5).map((a, i) => {
     const [bc, bl] = getBadge(a.assignment_type);
-    const dueText = a.d < 0 ? `<span style="color:#d85a30;">${Math.abs(a.d)}d overdue</span>`
-      : a.d===0 ? `<span style="color:#d85a30;">due today</span>`
-      : a.d===1 ? `<span style="color:#d85a30;">due tomorrow</span>`
+    const dueText = a.d < 0 ? `<span style="color:var(--error-color);">${Math.abs(a.d)}d overdue</span>`
+      : a.d===0 ? `<span style="color:var(--error-color);">due today</span>`
+      : a.d===1 ? `<span style="color:var(--error-color);">due tomorrow</span>`
       : `due ${new Date(a.due_date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
     return `<div class="priority-card">
       <button class="priority-check" onclick="markPriorityDone('${a.id}')" title="Mark as done">✓</button>
@@ -7156,7 +7490,7 @@ function renderPriority(assignments) {
       ${completedToday.map(a => {
         const [bc, bl] = getBadge(a.assignment_type);
         return `<div class="priority-card completed-card">
-          <button class="priority-check" style="border-color:#4caf50;color:#4caf50;" onclick="undoPriorityDone('${a.id}')" title="Undo">✓</button>
+          <button class="priority-check" style="border-color:var(--green);color:var(--green);" onclick="undoPriorityDone('${a.id}')" title="Undo">✓</button>
           <div class="priority-num p5" style="opacity:0.5;">✓</div>
           <div class="priority-info">
             <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
@@ -7233,6 +7567,7 @@ function showPage(name, el, fromNav) {
 
   if (name === 'study') maybeShowStudyGoalOnboarding();
   if (name === 'flashcards') renderFlashcardsCourseList();
+  if (name === 'links') maybeShowLinksTutorial();
 }
 
 function calculateFinal() {
@@ -7363,6 +7698,7 @@ if (!checkForPasswordRecovery()) routeUser();
     // Reset to initial state
     document.getElementById('ws-welcome').style.display = 'block';
     document.getElementById('ws-result').style.display  = 'none';
+    document.getElementById('ws-syncing').style.display = 'none';
     const syncBtn = document.getElementById('ws-sync-btn');
     syncBtn.disabled    = false;
     syncBtn.textContent = 'Sync assignments';
@@ -7374,49 +7710,68 @@ if (!checkForPasswordRecovery()) routeUser();
     localStorage.setItem(wsKey(), String(Date.now()));
     document.getElementById('ws-overlay').style.display      = 'none';
     document.getElementById('ws-list-overlay').style.display = 'none';
+    playDashboardDropIn();
   };
 
-  window.wsSync = async function () {
-    const btn = document.getElementById('ws-sync-btn');
-    btn.disabled = true;
+  // Replays the "cards fall into place" entrance on Home's lists right as the
+  // sync popup closes -- the cards are already mounted underneath by this point,
+  // so without this the dashboard would just be sitting there, unanimated.
+  function playDashboardDropIn() {
+    ['home-upnext', 'home-thisweek'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('drop-in');
+      void el.offsetWidth;
+      el.classList.add('drop-in');
+    });
+  }
 
-    const wsMessages = [
-      'Checking your Canvas…',
-      'Grabbing your assignments…',
-      'Seeing what\'s due soon…',
-      'Almost there…',
-      'Calculating your priorities…',
-      'Getting you organized…',
-      'Syncing your grades…',
-      'Loading your workload…',
-    ];
-    let wsMsgIdx = 0;
-    btn.textContent = wsMessages[0];
-    const wsMsgTimer = setInterval(() => {
-      wsMsgIdx = (wsMsgIdx + 1) % wsMessages.length;
-      btn.textContent = wsMessages[wsMsgIdx];
+  const WS_SYNC_MESSAGES = [
+    'Checking your Canvas…',
+    'Grabbing your assignments…',
+    'Seeing what\'s due soon…',
+    'Almost there…',
+    'Calculating your priorities…',
+    'Getting you organized…',
+    'Syncing your grades…',
+    'Loading your workload…',
+  ];
+
+  // Runs the actual sync while cycling a status message through onTick, and
+  // reports back which assignments are new so the caller can render the
+  // result state -- shared by the once-a-day welcome screen and any "Sync
+  // now" button clicked later in the same session.
+  async function runSyncWithMessages(onTick) {
+    let idx = 0;
+    onTick(WS_SYNC_MESSAGES[0]);
+    const timer = setInterval(() => {
+      idx = (idx + 1) % WS_SYNC_MESSAGES.length;
+      onTick(WS_SYNC_MESSAGES[idx]);
     }, 2000);
 
-    // Snapshot current assignment keys before sync
-    const beforeKeys = new Set(
-      cachedAssignments.map(a => `${a.title}||${a.course}`)
-    );
-
+    const beforeKeys = new Set(cachedAssignments.map(a => `${a.title}||${a.course}`));
     await syncCanvas();
-    clearInterval(wsMsgTimer);
+    clearInterval(timer);
 
-    // New = in the post-sync cache but not in the pre-sync snapshot, and not already completed
     wsNewAssignments = cachedAssignments.filter(
       a => !beforeKeys.has(`${a.title}||${a.course}`) && !a.completed
     );
+  }
 
-    // Switch to result state
+  // Switches the (already-open) ws-card over to the result state -- checkmark
+  // badge, count, confetti -- regardless of which state was showing before.
+  function showSyncResult() {
     document.getElementById('ws-welcome').style.display = 'none';
-    document.getElementById('ws-result').style.display  = 'block';
+    document.getElementById('ws-syncing').style.display = 'none';
+    const resultEl = document.getElementById('ws-result');
+    resultEl.style.display = 'block';
+    resultEl.classList.remove('ws-anim-in');
+    void resultEl.offsetWidth;
+    resultEl.classList.add('ws-anim-in');
 
-    const countEl   = document.getElementById('ws-result-count');
-    const subEl     = document.getElementById('ws-result-sub');
-    const viewBtn   = document.getElementById('ws-view-btn');
+    const countEl = document.getElementById('ws-result-count');
+    const subEl   = document.getElementById('ws-result-sub');
+    const viewBtn = document.getElementById('ws-view-btn');
 
     if (wsNewAssignments.length > 0) {
       const n = wsNewAssignments.length;
@@ -7428,6 +7783,27 @@ if (!checkForPasswordRecovery()) routeUser();
       subEl.textContent     = 'No new assignments since your last sync.';
       viewBtn.style.display = 'none';
     }
+    celebrateFromElement(document.getElementById('ws-check-badge'));
+  }
+
+  window.wsSync = async function () {
+    const btn = document.getElementById('ws-sync-btn');
+    btn.disabled = true;
+    await runSyncWithMessages(msg => { btn.textContent = msg; });
+    showSyncResult();
+  };
+
+  // "Sync now" clicked from inside the app (sidebar, mobile topbar, Settings) --
+  // reuses the same darkened overlay + progress + result sequence as the
+  // once-a-day welcome screen, instead of syncing quietly in the background.
+  window.openSyncOverlay = async function () {
+    document.getElementById('ws-overlay').style.display  = 'flex';
+    document.getElementById('ws-welcome').style.display  = 'none';
+    document.getElementById('ws-result').style.display   = 'none';
+    document.getElementById('ws-syncing').style.display  = 'block';
+    const msgEl = document.getElementById('ws-syncing-msg');
+    await runSyncWithMessages(msg => { msgEl.textContent = msg; });
+    showSyncResult();
   };
 
   window.wsViewNew = function () {

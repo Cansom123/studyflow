@@ -353,6 +353,44 @@ Deno.serve(async (req) => {
       console.warn(`[run ${runId}] grades error: ${e?.message}`);
     }
 
+    // Announcements -- one call across all active courses (Canvas's
+    // /announcements endpoint takes a context_codes[] list) rather than a
+    // per-course request. Upserted (not delete-then-reinsert like
+    // assignments/grades above) so a student's read/unread state survives
+    // the next sync instead of resetting every time.
+    const allAnnouncements: any[] = [];
+    try {
+      if (activeCourses.length > 0) {
+        const announceCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const contextParams = activeCourses
+          .map((c: any) => `context_codes[]=course_${c.id}`)
+          .join("&");
+        const rawAnnouncements = await fetchAllPages(
+          `${canvasUrl}/api/v1/announcements?${contextParams}&per_page=50&start_date=${announceCutoff.toISOString()}`,
+          canvasAuth,
+        ) ?? [];
+        const courseIdToName = new Map(activeCourses.map((c: any) => [String(c.id), c.name as string]));
+        for (const an of rawAnnouncements) {
+          const courseId = String(an.context_code ?? "").replace(/^course_/, "");
+          const courseName = courseIdToName.get(courseId);
+          if (!courseName || !an.id || !an.title) continue;
+          allAnnouncements.push({
+            user_id: userId,
+            canvas_announcement_id: String(an.id),
+            course_name: courseName,
+            title: an.title,
+            message: htmlToText(an.message),
+            author_name: an.author?.display_name ?? null,
+            posted_at: an.posted_at ?? an.delayed_post_at ?? null,
+            announcement_url: an.html_url ?? null,
+          });
+        }
+        console.log(`[run ${runId}] announcements: ${allAnnouncements.length}`);
+      }
+    } catch (e: any) {
+      console.warn(`[run ${runId}] announcements error: ${e?.message}`);
+    }
+
     if (syncAll && activeCourses.length > 0) {
       const discovered = activeCourses.map((c: any) => ({ id: String(c.id), name: c.name }));
       await fetch(`${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}`, {
@@ -380,6 +418,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Upsert (not delete-then-reinsert) so a previously-read announcement
+    // doesn't flip back to unread just because it came back in this sync.
+    if (allAnnouncements.length > 0) {
+      await fetch(`${supabaseUrl}/rest/v1/announcements?on_conflict=user_id,canvas_announcement_id`, {
+        method: "POST",
+        headers: { ...svcHdr, Prefer: "return=minimal,resolution=merge-duplicates" },
+        body: JSON.stringify(allAnnouncements),
+      });
+    }
+    // Prune announcements Canvas no longer returns for this user's active
+    // window (unposted/deleted upstream, or older than the 30-day fetch cutoff).
+    const keepIds = allAnnouncements.map((a) => a.canvas_announcement_id);
+    const keepList = keepIds.length > 0 ? `(${keepIds.map((id) => `"${id}"`).join(",")})` : "()";
+    await fetch(
+      `${supabaseUrl}/rest/v1/announcements?user_id=eq.${userId}&canvas_announcement_id=not.in.${keepList}`,
+      { method: "DELETE", headers: svcHdr },
+    );
+
     const effectiveCourses = syncAll ? activeCourses.map((c: any) => ({ id: String(c.id), name: c.name })) : activeSel;
     const assignmentsByCourse = new Map<string, any[]>();
     for (const a of allAssignments) {
@@ -403,6 +459,7 @@ Deno.serve(async (req) => {
         assignments: allAssignments.length,
         active_assignments: activeCount,
         grades: allGrades.length,
+        announcements: allAnnouncements.length,
         blocked_courses: blockedCourseCount,
         courses: courseSummaries,
         sync_all: syncAll,

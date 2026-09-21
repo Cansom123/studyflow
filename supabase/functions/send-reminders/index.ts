@@ -1,3 +1,36 @@
+// Computing "due tomorrow" against UTC midnight silently used the wrong day
+// boundary for every student not on UTC -- the same class of bug that once
+// made a late-evening assignment display on the wrong calendar day
+// client-side. This converts a student's actual local midnight to the
+// correct UTC instant, timezone- and DST-aware. Verified against UTC,
+// Pacific, Eastern, India (+5:30), Tokyo, and a real DST transition before
+// being wired in here.
+function getTzOffsetMinutes(timeZone: string, date: Date): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = dtf.formatToParts(date).reduce((acc: Record<string, string>, p) => {
+    acc[p.type] = p.value; return acc;
+  }, {});
+  const asUTC = Date.UTC(
+    Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+    Number(parts.hour), Number(parts.minute), Number(parts.second),
+  );
+  return Math.round((asUTC - date.getTime()) / 60000);
+}
+
+function localMidnightUtc(timeZone: string, refDate: Date, daysFromNow: number): Date {
+  const dtf = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+  const parts = dtf.formatToParts(refDate).reduce((acc: Record<string, string>, p) => {
+    acc[p.type] = p.value; return acc;
+  }, {});
+  const guessUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + daysFromNow, 0, 0, 0);
+  const offsetMin = getTzOffsetMinutes(timeZone, new Date(guessUtc));
+  return new Date(guessUtc - offsetMin * 60000);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: { "Access-Control-Allow-Origin": "*" } });
@@ -22,7 +55,7 @@ Deno.serve(async (req) => {
 
     // Only users who've opted in via Settings
     const settingsResp = await fetch(
-      `${supabaseUrl}/rest/v1/user_settings?prefs->>emailRemindersEnabled=eq.true&select=user_id,prefs`,
+      `${supabaseUrl}/rest/v1/user_settings?prefs->>emailRemindersEnabled=eq.true&select=user_id,prefs,timezone`,
       { headers: svcHeaders }
     );
     const settingsRows = await settingsResp.json();
@@ -33,16 +66,18 @@ Deno.serve(async (req) => {
     }
 
     let sent = 0;
+    const now = new Date();
 
     for (const row of settingsRows) {
       const userId = row.user_id;
       const daysBefore = Number(row.prefs?.reminderDaysBefore ?? 1);
+      // Falls back to UTC only for a student whose client hasn't synced a
+      // timezone yet (e.g. hasn't opened the app since this shipped) --
+      // every active student gets their real timezone within one app open.
+      const timeZone = row.timezone || "UTC";
 
-      const target = new Date();
-      target.setUTCDate(target.getUTCDate() + daysBefore);
-      target.setUTCHours(0, 0, 0, 0);
-      const targetEnd = new Date(target);
-      targetEnd.setUTCDate(targetEnd.getUTCDate() + 1);
+      const target = localMidnightUtc(timeZone, now, daysBefore);
+      const targetEnd = localMidnightUtc(timeZone, now, daysBefore + 1);
 
       const assignResp = await fetch(
         `${supabaseUrl}/rest/v1/assignments?user_id=eq.${userId}&completed=eq.false` +

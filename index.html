@@ -4273,6 +4273,7 @@ async function showApp() {
   }
   loadCanvasSettings();
   loadCalendarToken();
+  syncUserTimezone();
   loadAssignments();
   loadStudySessions();
   loadGrades();
@@ -5205,6 +5206,19 @@ async function saveCanvasSettings() {
   syncCanvas();
 }
 
+// Keeps each student's real IANA timezone current server-side so
+// send-reminders can compute their actual local "today"/"tomorrow" instead
+// of guessing UTC for everyone. Fire-and-forget, best-effort -- a missed
+// write just means the next reminder run falls back to the old UTC behavior
+// for this student, not a broken app.
+function syncUserTimezone() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz) return;
+    sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { timezone: tz });
+  } catch (e) {}
+}
+
 async function loadCalendarToken() {
   const loadingEl = document.getElementById('cal-link-loading');
   const wrapEl = document.getElementById('cal-link-wrap');
@@ -5718,7 +5732,15 @@ async function toggleAnnouncement(id) {
 // anything still due today, no matter what time it's due.
 function dayDiff(due_date, ref) {
   const today = ref || (() => { const t = new Date(); t.setHours(0,0,0,0); return t; })();
-  const dueMidnight = new Date(due_date); dueMidnight.setHours(0,0,0,0);
+  // A bare "YYYY-MM-DD" (no time) is parsed as UTC midnight by the Date
+  // constructor; reinterpreting that instant in local time can silently
+  // shift the calendar day back by one for anyone west of UTC -- the exact
+  // bug class that once showed a Sunday-night deadline as due Monday.
+  // Every real due_date is a full timestamp and is unaffected by this; this
+  // guards a caller that ever passes a bare date instead.
+  const isDateOnly = typeof due_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(due_date);
+  const dueMidnight = new Date(isDateOnly ? due_date + 'T00:00:00' : due_date);
+  dueMidnight.setHours(0,0,0,0);
   return Math.round((dueMidnight - today) / (1000*60*60*24));
 }
 

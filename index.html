@@ -726,6 +726,8 @@ body {
   animation: wsSummaryPop 0.4s cubic-bezier(.16,1,.3,1) both;
 }
 .announcements-badge:not(:empty) { display: inline-flex; }
+.announcements-see-all { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: none; letter-spacing: normal; }
+.announcements-section-label:hover .announcements-see-all { color: var(--text1); }
 #home-announcements.has-unread {
   border-color: var(--accent-soft);
   box-shadow: var(--shadow-sm), 0 0 0 3px var(--accent-soft);
@@ -2580,6 +2582,17 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
     </div>
   </div>
 
+  <!-- ALL ANNOUNCEMENTS -->
+  <div id="announcements-detail-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title">All announcements</div>
+        <button class="detail-close" onclick="closeAllAnnouncements()" title="Close">✕</button>
+      </div>
+      <div id="announcements-detail-body"></div>
+    </div>
+  </div>
+
   <!-- ASSIGNMENT DETAIL -->
   <div id="assignment-detail-overlay" class="detail-overlay">
     <div class="detail-inner">
@@ -2768,10 +2781,11 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
           <div class="home-hero-sub" id="home-hero-sub"></div>
         </div>
         <div class="announcements-section" id="home-announcements-section" style="display:none;">
-          <div class="section-label announcements-section-label" id="home-announcements-label">
+          <div class="section-label announcements-section-label" id="home-announcements-label" onclick="openAllAnnouncements()" style="cursor:pointer;">
             <svg class="announcements-icon" viewBox="0 0 20 20" fill="none"><path d="M6 8a4 4 0 0 1 8 0c0 3 1 4 1.5 4.5H4.5C5 12 6 11 6 8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.3 15a1.8 1.8 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             Announcements
             <span class="announcements-badge" id="home-announcements-badge"></span>
+            <span class="announcements-see-all">See all ›</span>
           </div>
           <div id="home-announcements"></div>
         </div>
@@ -5668,25 +5682,43 @@ function renderAnnouncements() {
   }
   document.getElementById('home-announcements-label')?.classList.toggle('has-unread', unreadCount > 0);
   listEl.classList.toggle('has-unread', unreadCount > 0);
-  listEl.innerHTML = cachedAnnouncements.slice(0, 5).map(a => {
-    const expanded = a._expanded ? ' expanded' : '';
-    const unread = !a.read ? ' unread' : '';
-    const readCls = a.read ? ' read' : '';
-    const body = a._expanded
-      ? `<div class="announcement-body">${escapeHtml(a.message || 'No additional details.')}</div>
-         ${a.announcement_url ? `<a href="${a.announcement_url}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>` : ''}`
-      : '';
-    return `<div class="announcement-card${expanded}${unread}${readCls}" onclick="toggleAnnouncement('${a.id}')">
-      <div class="announcement-unread-dot"></div>
-      <div class="announcement-main">
-        <div class="announcement-course">${escapeHtml(cleanCourseName(a.course_name))}</div>
-        <div class="announcement-title">${escapeHtml(a.title)}</div>
-        <div class="announcement-meta">${announcementTimeAgo(a.posted_at)}${a.author_name ? ` · ${escapeHtml(a.author_name)}` : ''}</div>
-        ${body}
-      </div>
-      ${a.read ? `<button class="announcement-dismiss" title="Done with this, remove it" onclick="dismissAnnouncement('${a.id}', event)">✕</button>` : ''}
-    </div>`;
-  }).join('');
+  listEl.innerHTML = cachedAnnouncements.slice(0, 5).map(announcementCardHTML).join('');
+
+  // Keep the full-list overlay in sync too, in case it's open (or gets
+  // reopened) while a dismiss/toggle/sync updates the underlying data.
+  const detailBody = document.getElementById('announcements-detail-body');
+  if (detailBody) detailBody.innerHTML = cachedAnnouncements.map(announcementCardHTML).join('');
+}
+
+function announcementCardHTML(a) {
+  const expanded = a._expanded ? ' expanded' : '';
+  const unread = !a.read ? ' unread' : '';
+  const readCls = a.read ? ' read' : '';
+  const body = a._expanded
+    ? `<div class="announcement-body">${escapeHtml(a.message || 'No additional details.')}</div>
+       ${a.announcement_url ? `<a href="${a.announcement_url}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>` : ''}`
+    : '';
+  return `<div class="announcement-card${expanded}${unread}${readCls}" onclick="toggleAnnouncement('${a.id}')">
+    <div class="announcement-unread-dot"></div>
+    <div class="announcement-main">
+      <div class="announcement-course">${escapeHtml(cleanCourseName(a.course_name))}</div>
+      <div class="announcement-title">${escapeHtml(a.title)}</div>
+      <div class="announcement-meta">${announcementTimeAgo(a.posted_at)}${a.author_name ? ` · ${escapeHtml(a.author_name)}` : ''}</div>
+      ${body}
+    </div>
+    ${a.read ? `<button class="announcement-dismiss" title="Done with this, remove it" onclick="dismissAnnouncement('${a.id}', event)">✕</button>` : ''}
+  </div>`;
+}
+
+function openAllAnnouncements() {
+  const overlay = document.getElementById('announcements-detail-overlay');
+  const body = document.getElementById('announcements-detail-body');
+  if (!overlay || !body) return;
+  body.innerHTML = cachedAnnouncements.map(announcementCardHTML).join('');
+  overlay.style.display = 'block';
+}
+function closeAllAnnouncements() {
+  document.getElementById('announcements-detail-overlay').style.display = 'none';
 }
 
 function finishDismissAnnouncement(id) {
@@ -9907,6 +9939,7 @@ function showPage(name, el, fromNav) {
   // click is always a way out, regardless of what's open.
   closeAssignmentDetail();
   closeSyllabusDetail();
+  closeAllAnnouncements();
   closeClassNotes();
   closeFlashcardsCourse();
   closeFlashcardStudy();

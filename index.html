@@ -326,6 +326,18 @@ body {
 .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); transition: all 0.2s; }
 .dot.active { background: var(--accent); width: 18px; border-radius: 3px; }
 
+/* Onboarding step 4 -- a short feature tour instead of dropping students
+   straight onto the dashboard cold. Reuses the onboarding shell (dots,
+   title, sub) so it doesn't feel like a different screen bolted on. */
+.tour-slide { text-align: center; padding: 12px 0 28px; animation: fadeUp 0.3s cubic-bezier(.16,1,.3,1) both; }
+.tour-slide-icon {
+  width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 18px;
+  background: var(--surface2); display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+}
+.tour-slide .onboard-title, .tour-slide .onboard-sub { margin-bottom: 0; }
+.tour-slide .onboard-sub { margin-top: 8px; }
+
 .course-item {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 14px; background: var(--input-bg);
@@ -1800,6 +1812,22 @@ mark.syl-mark-active { background: var(--accent); color: var(--on-accent); }
 .syl-inline-search-row { display: flex; gap: 8px; align-items: center; }
 
 /* ===== DUE CALENDAR ===== */
+.cal-tip-banner {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 12px;
+  background: var(--ai-bg); border: 1px solid var(--ai-border);
+}
+.cal-tip-text { flex: 1; font-size: 12.5px; color: var(--ai-text); line-height: 1.45; }
+.cal-tip-text strong { color: var(--text1); }
+.cal-tip-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cal-tip-btn {
+  background: var(--btn-bg); color: var(--btn-fg); border: none; border-radius: 8px;
+  padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+  white-space: nowrap;
+}
+.cal-tip-dismiss {
+  background: none; border: none; cursor: pointer; color: var(--text2); font-size: 13px;
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
 .due-cal-card { padding: 14px 12px; }
 .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; }
 .cal-title { font-size: 14px; font-weight: 700; color: var(--text1); letter-spacing: -0.2px; }
@@ -2280,9 +2308,9 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
   <!-- ONBOARDING 1: CONNECT CANVAS -->
   <div id="onboard-canvas" class="onboard-screen">
     <div class="progress-dots">
-      <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+      <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
     </div>
-    <div class="onboard-step">Step 1 of 3</div>
+    <div class="onboard-step">Step 1 of 4</div>
     <div class="onboard-title">Connect Canvas</div>
     <div class="onboard-sub">Enter your school's Canvas URL and API token so StudyFlow can see your assignments.</div>
     <div id="onboard-canvas-msg"></div>
@@ -2303,9 +2331,9 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
   <!-- ONBOARDING 2: SELECT COURSES -->
   <div id="onboard-courses" class="onboard-screen">
     <div class="progress-dots">
-      <div class="dot active"></div><div class="dot active"></div><div class="dot"></div>
+      <div class="dot active"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div>
     </div>
-    <div class="onboard-step">Step 2 of 3</div>
+    <div class="onboard-step">Step 2 of 4</div>
     <div class="onboard-title">Your current classes</div>
     <div class="onboard-sub">Select only the classes you're taking right now. StudyFlow will only pull assignments from these.</div>
     <div id="course-list-loading" class="course-loading">Loading your courses from Canvas...</div>
@@ -2318,9 +2346,9 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
   <!-- ONBOARDING 2: SET GOALS -->
   <div id="onboard-goals" class="onboard-screen">
     <div class="progress-dots">
-      <div class="dot active"></div><div class="dot active"></div><div class="dot active"></div>
+      <div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot"></div>
     </div>
-    <div class="onboard-step">Step 3 of 3</div>
+    <div class="onboard-step">Step 3 of 4</div>
     <div class="onboard-title">Set your goals</div>
     <div class="onboard-sub">What do you want to achieve this semester? These help StudyFlow prioritize your work.</div>
     <div id="goals-list-onboard"></div>
@@ -2329,9 +2357,25 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
       <button class="goal-add-btn" onclick="addGoalOnboard()">Add</button>
     </div>
     <div id="onboard-goals-msg"></div>
-    <button class="onboard-btn" id="ob-goals-btn" onclick="finishOnboarding()">Get started</button>
+    <button class="onboard-btn" id="ob-goals-btn" onclick="finishOnboarding()">Continue</button>
     <button class="onboard-btn-secondary" onclick="finishOnboarding()">Skip for now</button>
     <button class="onboard-btn-secondary" onclick="showOnboardCourses()">Go back</button>
+  </div>
+
+  <!-- ONBOARDING 4: QUICK TOUR -->
+  <div id="onboard-tour" class="onboard-screen">
+    <div class="progress-dots">
+      <div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div>
+    </div>
+    <div class="onboard-step">Step 4 of 4</div>
+    <div class="tour-slide">
+      <div class="tour-slide-icon" id="tour-slide-icon"></div>
+      <div class="onboard-title" id="tour-slide-title"></div>
+      <div class="onboard-sub" id="tour-slide-body"></div>
+    </div>
+    <div class="progress-dots" id="tour-mini-dots" style="margin-bottom:18px;"></div>
+    <button class="onboard-btn" id="tour-next-btn" onclick="onboardTourNext()">Next</button>
+    <button class="onboard-btn-secondary" id="tour-back-btn" onclick="onboardTourBack()" style="display:none;">Back</button>
   </div>
 
   <!-- ══ WELCOME SCREEN — shows once per 24 h ══ -->
@@ -2621,6 +2665,10 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v1.5m0 13V18m8-8h-1.5M3.5 10H2m11.66-5.66-1.06 1.06M7.4 12.6l-1.06 1.06M17.66 15.66l-1.06-1.06M3.4 7.4 2.34 6.34M13.66 13.66l1.06 1.06M5.46 5.46 4.4 4.4"/></svg></span>
         <span>Settings</span>
       </button>
+      <button class="tab" id="tab-more" onclick="showPage('more',this)" title="More">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="4.5" cy="10" r="1.15" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.5" cy="10" r="1.15" fill="currentColor" stroke="none"/></svg></span>
+        <span>More</span>
+      </button>
     </div>
     <div class="main-col">
     <div class="topbar">
@@ -2705,6 +2753,13 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
           <div id="overdue-section" style="display:none;"><div class="section-label">Overdue</div><div id="overdue-list"></div></div>
           <div id="due-cal-section">
             <div class="section-label">Calendar</div>
+            <div class="card cal-tip-banner" id="cal-tip-banner" style="display:none;">
+              <div class="cal-tip-text"><strong>Did you know?</strong> You can subscribe this calendar to Google or Apple Calendar, so due dates show up right alongside your other events.</div>
+              <div class="cal-tip-actions">
+                <button class="cal-tip-btn" onclick="jumpTo('settings');dismissCalTip();">Set it up</button>
+                <button class="cal-tip-dismiss" onclick="dismissCalTip()" title="Dismiss">✕</button>
+              </div>
+            </div>
             <div class="card due-cal-card">
               <div class="cal-header">
                 <button class="cal-nav-btn" onclick="shiftDueCalMonth(-1)" title="Previous month">‹</button>
@@ -2963,6 +3018,12 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
         <!-- Only ever shown to the app owner's own account (see maybeShowAdminReports) -->
         <div class="card syllabus-card" id="admin-analytics-card" style="display:none;" onclick="jumpTo('adminanalytics')">
           <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 16.5V10M10 16.5V5M16 16.5v-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Analytics</div><span class="more-chevron">›</span></div>
+        </div>
+        <!-- Dev-only preview: jumps straight to the onboarding tour without
+             touching a real Canvas connection, so it can be checked without
+             wiping a working test account's setup. -->
+        <div class="card syllabus-card" id="admin-preview-tour-card" style="display:none;" onclick="showOnboardTour()">
+          <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 3.5 17.5 16h-15L10 3.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>Preview onboarding tour</div><span class="more-chevron">›</span></div>
         </div>
       </div>
 
@@ -3878,7 +3939,7 @@ function clearSession() {
 }
 
 function hideAll() {
-  ['login-screen','mfa-verify-screen','mfa-backup-screen','mfa-email-screen','signup-screen','forgot-password-screen','reset-password-screen','onboard-canvas','onboard-courses','onboard-goals','main-app'].forEach(id => {
+  ['login-screen','mfa-verify-screen','mfa-backup-screen','mfa-email-screen','signup-screen','forgot-password-screen','reset-password-screen','onboard-canvas','onboard-courses','onboard-goals','onboard-tour','main-app'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -4140,6 +4201,7 @@ async function showApp() {
   renderHome();
   maybeShowAdminReports();
   maybeShowAdminAnalytics();
+  maybeShowAdminPreviewTour();
   loadMfaStatus();
   await autoSync();
   maybeShowWelcome();
@@ -4161,6 +4223,12 @@ function maybeShowAdminReports() {
 
 function maybeShowAdminAnalytics() {
   const card = document.getElementById('admin-analytics-card');
+  if (!card) return;
+  if (ADMIN_EMAILS.includes(USER_EMAIL)) card.style.display = 'block';
+}
+
+function maybeShowAdminPreviewTour() {
+  const card = document.getElementById('admin-preview-tour-card');
   if (!card) return;
   if (ADMIN_EMAILS.includes(USER_EMAIL)) card.style.display = 'block';
 }
@@ -4795,7 +4863,67 @@ async function finishOnboarding() {
   }
   await syncCanvas();
   btn.disabled = false; btn.classList.remove('btn-loading');
-  showApp();
+  showOnboardTour();
+}
+
+// One idea per slide, covering the features that actually exist today
+// (not what onboarding looked like when it was first built) -- so a new
+// student has some idea what each tab is for before landing on it cold.
+const ONBOARD_TOUR_SLIDES = [
+  {
+    icon: '🏠',
+    title: 'Home is your daily summary',
+    body: 'What\'s due, your top priority, and any new announcements -- the moment you open the app, before you go digging.',
+  },
+  {
+    icon: '📅',
+    title: 'Due has a real calendar',
+    body: 'Browse by month or list. Tip: you can subscribe this calendar to Google or Apple Calendar from Settings, so due dates show up right alongside your other events.',
+  },
+  {
+    icon: '⭐',
+    title: 'Priority tells you what\'s first',
+    body: 'StudyFlow ranks your work so you always know what to start with -- no more guessing which assignment matters most today.',
+  },
+  {
+    icon: '⏱',
+    title: 'Study has a focus timer and flashcards',
+    body: 'Run timed study sessions, and turn your class notes into flashcards you can actually review.',
+  },
+  {
+    icon: '✨',
+    title: 'coco.1 answers from your syllabus',
+    body: 'An optional on-device AI assistant -- ask it about grading policy or deadlines, or ask it to help you plan. It runs on your device, and nothing leaves your browser.',
+  },
+];
+let onboardTourSlide = 0;
+function renderOnboardTourSlide() {
+  const slide = ONBOARD_TOUR_SLIDES[onboardTourSlide];
+  document.getElementById('tour-slide-icon').textContent = slide.icon;
+  document.getElementById('tour-slide-title').textContent = slide.title;
+  document.getElementById('tour-slide-body').textContent = slide.body;
+  document.getElementById('tour-mini-dots').innerHTML = ONBOARD_TOUR_SLIDES
+    .map((_, i) => `<div class="dot${i === onboardTourSlide ? ' active' : ''}"></div>`).join('');
+  document.getElementById('tour-back-btn').style.display = onboardTourSlide === 0 ? 'none' : 'block';
+  document.getElementById('tour-next-btn').textContent =
+    onboardTourSlide === ONBOARD_TOUR_SLIDES.length - 1 ? 'Let\'s go' : 'Next';
+}
+function showOnboardTour() {
+  onboardTourSlide = 0;
+  hideAll();
+  document.getElementById('onboard-tour').style.display = 'block';
+  showAuthGlow();
+  renderOnboardTourSlide();
+}
+function onboardTourNext() {
+  if (onboardTourSlide >= ONBOARD_TOUR_SLIDES.length - 1) { showApp(); return; }
+  onboardTourSlide++;
+  renderOnboardTourSlide();
+}
+function onboardTourBack() {
+  if (onboardTourSlide === 0) return;
+  onboardTourSlide--;
+  renderOnboardTourSlide();
 }
 
 function buildActionPlan(goalText) {
@@ -8651,7 +8779,23 @@ function renderDueSoon(assignments) {
   else { document.getElementById('nodate-section').style.display='none'; }
 }
 
+// Buried in Settings otherwise -- most students would never find the
+// calendar-subscribe feature without this pointing at it directly from the
+// one place they'd actually think to look for it.
+function maybeShowCalTip() {
+  const banner = document.getElementById('cal-tip-banner');
+  if (!banner) return;
+  const dismissed = localStorage.getItem('sf_cal_tip_dismissed_' + USER_ID);
+  banner.style.display = dismissed ? 'none' : 'flex';
+}
+function dismissCalTip() {
+  localStorage.setItem('sf_cal_tip_dismissed_' + USER_ID, '1');
+  const banner = document.getElementById('cal-tip-banner');
+  if (banner) banner.style.display = 'none';
+}
+
 function renderDueCalendar() {
+  maybeShowCalTip();
   const gridEl = document.getElementById('due-cal-grid');
   const titleEl = document.getElementById('due-cal-title');
   if (!gridEl || !titleEl) return;

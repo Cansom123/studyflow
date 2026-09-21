@@ -5005,8 +5005,8 @@ const ONBOARD_TOUR_SLIDES = [
   },
   {
     icon: '⏱',
-    title: 'Study has a focus timer and flashcards',
-    body: 'Run timed study sessions, and turn your class notes into flashcards you can actually review.',
+    title: 'Study has a focus timer',
+    body: 'Run timed focus sessions, schedule study time on your calendar, and track daily and weekly study goals.',
     mock: `
       <div class="tour-mock-timer">
         <div class="tour-mock-timer-ring">24:58</div>
@@ -8663,7 +8663,6 @@ function renderNoteEntries() {
           <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="editNote('${n.id}')">Edit</button>
           <button class="study-session-del" onclick="deleteNote('${n.id}')" title="Delete">✕</button>
         </div>
-        <button class="settings-btn" style="margin-top:8px;" onclick="jumpToFlashcardsForCourse('${n.course_id}')">🃏 Flashcards</button>
       </div>`;
     }).join('');
     return heading + cards;

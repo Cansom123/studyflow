@@ -338,6 +338,42 @@ body {
 .tour-slide .onboard-title, .tour-slide .onboard-sub { margin-bottom: 0; }
 .tour-slide .onboard-sub { margin-top: 8px; }
 
+/* Small, stylized mockups of the real UI per slide -- a description of
+   "Due has a calendar" means a lot less than actually seeing a calendar. */
+.tour-mock {
+  background: var(--surface2); border-radius: 16px; padding: 16px;
+  margin-bottom: 18px; min-height: 112px; display: flex; flex-direction: column;
+  justify-content: center; gap: 8px; text-align: left;
+  animation: fadeUp 0.3s cubic-bezier(.16,1,.3,1) both;
+}
+.tour-mock-stat { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+.tour-mock-stat-num { font-size: 28px; font-weight: 800; color: var(--text1); line-height: 1; }
+.tour-mock-stat-label { font-size: 12.5px; color: var(--text2); }
+.tour-mock-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text1); background: var(--surface); border-radius: 8px; padding: 8px 10px; }
+.tour-mock-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.tour-mock-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.tour-mock-cal-cell {
+  aspect-ratio: 1; border-radius: 6px; background: var(--surface); display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--text2); position: relative;
+}
+.tour-mock-cal-cell.active { background: var(--btn-bg); color: var(--btn-fg); font-weight: 700; }
+.tour-mock-cal-dot { position: absolute; bottom: 3px; width: 3px; height: 3px; border-radius: 50%; background: var(--btn-fg); }
+.tour-mock-priority-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text1); background: var(--surface); border-radius: 8px; padding: 9px 10px; }
+.tour-mock-rank {
+  width: 20px; height: 20px; border-radius: 50%; background: var(--btn-bg); color: var(--btn-fg);
+  font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tour-mock-timer { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.tour-mock-timer-ring {
+  width: 72px; height: 72px; border-radius: 50%; border: 4px solid var(--border2);
+  border-top-color: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--text1);
+}
+.tour-mock-timer-label { font-size: 12px; color: var(--text2); }
+.tour-mock-bubble { font-size: 12px; padding: 9px 12px; border-radius: 14px; max-width: 90%; line-height: 1.4; }
+.tour-mock-bubble-q { align-self: flex-end; background: var(--btn-bg); color: var(--btn-fg); border-bottom-right-radius: 4px; }
+.tour-mock-bubble-a { align-self: flex-start; background: var(--surface); color: var(--text1); border-bottom-left-radius: 4px; }
+
 .course-item {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 14px; background: var(--input-bg);
@@ -2369,6 +2405,7 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
     </div>
     <div class="onboard-step">Step 4 of 4</div>
     <div class="tour-slide">
+      <div class="tour-mock" id="tour-slide-mock"></div>
       <div class="tour-slide-icon" id="tour-slide-icon"></div>
       <div class="onboard-title" id="tour-slide-title"></div>
       <div class="onboard-sub" id="tour-slide-body"></div>
@@ -4863,7 +4900,10 @@ async function finishOnboarding() {
   }
   await syncCanvas();
   btn.disabled = false; btn.classList.remove('btn-loading');
-  showOnboardTour();
+  // Gated to admin accounts for now -- the tour isn't polished enough yet
+  // to put in front of real students signing up.
+  if (ADMIN_EMAILS.includes(USER_EMAIL)) showOnboardTour();
+  else showApp();
 }
 
 // One idea per slide, covering the features that actually exist today
@@ -4874,31 +4914,52 @@ const ONBOARD_TOUR_SLIDES = [
     icon: '🏠',
     title: 'Home is your daily summary',
     body: 'What\'s due, your top priority, and any new announcements -- the moment you open the app, before you go digging.',
+    mock: `
+      <div class="tour-mock-stat"><span class="tour-mock-stat-num">3</span><span class="tour-mock-stat-label">due this week</span></div>
+      <div class="tour-mock-row"><span class="tour-mock-dot"></span>Bio Lab Report</div>
+      <div class="tour-mock-row"><span class="tour-mock-dot"></span>Math Problem Set</div>`,
   },
   {
     icon: '📅',
     title: 'Due has a real calendar',
     body: 'Browse by month or list. Tip: you can subscribe this calendar to Google or Apple Calendar from Settings, so due dates show up right alongside your other events.',
+    mock: `
+      <div class="tour-mock-cal-grid">
+        <div class="tour-mock-cal-cell">3</div><div class="tour-mock-cal-cell">4</div><div class="tour-mock-cal-cell">5</div><div class="tour-mock-cal-cell">6</div><div class="tour-mock-cal-cell active">7<span class="tour-mock-cal-dot"></span></div><div class="tour-mock-cal-cell">8</div><div class="tour-mock-cal-cell">9</div>
+        <div class="tour-mock-cal-cell">10</div><div class="tour-mock-cal-cell">11</div><div class="tour-mock-cal-cell">12</div><div class="tour-mock-cal-cell">13</div><div class="tour-mock-cal-cell">14</div><div class="tour-mock-cal-cell">15</div><div class="tour-mock-cal-cell">16</div>
+      </div>`,
   },
   {
     icon: '⭐',
     title: 'Priority tells you what\'s first',
     body: 'StudyFlow ranks your work so you always know what to start with -- no more guessing which assignment matters most today.',
+    mock: `
+      <div class="tour-mock-priority-row"><span class="tour-mock-rank">1</span>Finish essay draft</div>
+      <div class="tour-mock-priority-row"><span class="tour-mock-rank">2</span>Study for quiz</div>`,
   },
   {
     icon: '⏱',
     title: 'Study has a focus timer and flashcards',
     body: 'Run timed study sessions, and turn your class notes into flashcards you can actually review.',
+    mock: `
+      <div class="tour-mock-timer">
+        <div class="tour-mock-timer-ring">24:58</div>
+        <div class="tour-mock-timer-label">Round 1 - focus</div>
+      </div>`,
   },
   {
     icon: '✨',
     title: 'coco.1 answers from your syllabus',
     body: 'An optional on-device AI assistant -- ask it about grading policy or deadlines, or ask it to help you plan. It runs on your device, and nothing leaves your browser.',
+    mock: `
+      <div class="tour-mock-bubble tour-mock-bubble-q">Can I turn this in late?</div>
+      <div class="tour-mock-bubble tour-mock-bubble-a">✨ Late work loses 10% per day, per your syllabus.</div>`,
   },
 ];
 let onboardTourSlide = 0;
 function renderOnboardTourSlide() {
   const slide = ONBOARD_TOUR_SLIDES[onboardTourSlide];
+  document.getElementById('tour-slide-mock').innerHTML = slide.mock;
   document.getElementById('tour-slide-icon').textContent = slide.icon;
   document.getElementById('tour-slide-title').textContent = slide.title;
   document.getElementById('tour-slide-body').textContent = slide.body;
@@ -6520,11 +6581,27 @@ function deterministicChecklist(a, today) {
   const daysUntilDue = Math.max(0, Math.round((due - today) / (1000 * 60 * 60 * 24)));
   const totalDays = Math.max(1, daysUntilDue);
 
+  // No AI required for this -- naming the actual assignment and leaning on
+  // its type (quiz/reading vs essay/project) turns "Do the work" into
+  // something a student can actually act on, without needing coco.1 enabled.
+  const rawTitle = (a.title || 'this assignment').trim();
+  const shortTitle = rawTitle.length > 48 ? rawTitle.slice(0, 45).trim() + '…' : rawTitle;
+  const workType = classifyAssignmentWork(a);
+
   let templates;
-  if (totalDays <= 1) templates = ['Do the work', 'Submit'];
-  else if (totalDays <= 3) templates = ['Draft', 'Revise', 'Submit'];
-  else if (totalDays <= 7) templates = ['Outline / plan', 'Draft', 'Revise', 'Submit'];
-  else templates = ['Outline / plan', 'Research or gather materials', 'Draft', 'Revise', 'Final review', 'Submit'];
+  if (workType === 'content') {
+    if (totalDays <= 1) templates = [`Go through "${shortTitle}"`, 'Complete and submit'];
+    else if (totalDays <= 3) templates = [`Go through "${shortTitle}"`, 'Review the key points', 'Complete and submit'];
+    else templates = [`Go through "${shortTitle}"`, 'Take notes on the key points', 'Review before the deadline', 'Complete and submit'];
+  } else if (workType === 'task') {
+    if (totalDays <= 1) templates = [`Work on "${shortTitle}"`, 'Submit'];
+    else if (totalDays <= 3) templates = [`Draft "${shortTitle}"`, 'Revise', 'Submit'];
+    else if (totalDays <= 7) templates = [`Outline "${shortTitle}"`, 'Write a draft', 'Revise', 'Submit'];
+    else templates = [`Outline "${shortTitle}"`, 'Research or gather materials', 'Write a draft', 'Revise', 'Final review', 'Submit'];
+  } else if (totalDays <= 1) templates = [`Work on "${shortTitle}"`, 'Submit'];
+  else if (totalDays <= 3) templates = [`Draft "${shortTitle}"`, 'Revise', 'Submit'];
+  else if (totalDays <= 7) templates = [`Plan "${shortTitle}"`, 'Draft', 'Revise', 'Submit'];
+  else templates = [`Plan "${shortTitle}"`, 'Research or gather materials', 'Draft', 'Revise', 'Final review', 'Submit'];
 
   return templates.map((text, i) => {
     const frac = (i + 1) / templates.length;

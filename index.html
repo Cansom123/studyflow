@@ -2597,6 +2597,17 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
     </div>
   </div>
 
+  <!-- COMPLETED ASSIGNMENTS -->
+  <div id="completed-detail-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title">Completed assignments</div>
+        <button class="detail-close" onclick="closeCompletedAssignments()" title="Close">✕</button>
+      </div>
+      <div id="completed-detail-body"></div>
+    </div>
+  </div>
+
   <!-- ASSIGNMENT DETAIL -->
   <div id="assignment-detail-overlay" class="detail-overlay">
     <div class="detail-inner">
@@ -3412,6 +3423,7 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
 
         <div class="section-label" style="margin-top:20px;">Data</div>
         <div class="card">
+          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="openCompletedAssignments()">Completed assignments</button>
           <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAllData()">Export all my data</button>
           <button class="change-courses-btn" style="margin-bottom:0;" onclick="clearDoneMarks()">Clear "done" checkmarks</button>
         </div>
@@ -5725,6 +5737,25 @@ function closeAllAnnouncements() {
   document.getElementById('announcements-detail-overlay').style.display = 'none';
 }
 
+// Reachable from Settings so checking something off doesn't mean losing
+// track of it entirely -- most recently completed first, and reuses aCard()
+// so the same checkbox lets a student undo one right from this list.
+function openCompletedAssignments() {
+  const overlay = document.getElementById('completed-detail-overlay');
+  const body = document.getElementById('completed-detail-body');
+  if (!overlay || !body) return;
+  const done = cachedAssignments
+    .filter(a => a.completed || doneSet.has(decodeURIComponent(doneKey(a))))
+    .sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0));
+  body.innerHTML = done.length
+    ? done.map(a => aCard(a, false)).join('')
+    : `<div class="empty-box"><div class="empty-title">Nothing completed yet</div><div class="empty-sub">Assignments you check off will show up here.</div></div>`;
+  overlay.style.display = 'block';
+}
+function closeCompletedAssignments() {
+  document.getElementById('completed-detail-overlay').style.display = 'none';
+}
+
 function finishDismissAnnouncement(id) {
   trackEvent('announcement_dismissed');
   cachedAnnouncements = cachedAnnouncements.filter(a => String(a.id) !== String(id));
@@ -7174,10 +7205,15 @@ function renderHome() {
 
   const today = new Date(); today.setHours(0,0,0,0);
   const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate() + 7);
+  // Same "is this actually checked" test aCard() uses -- completion can come
+  // from either a.completed (server-synced) or the local doneSet, and a card
+  // checked either way needs to stop counting as overdue/upcoming here too,
+  // or a completed assignment keeps showing as the featured "Up next" card.
+  const isChecked = a => a.completed || doneSet.has(decodeURIComponent(doneKey(a)));
   let overdueCount = 0;
   const soon = [];
   cachedAssignments.forEach(a => {
-    if (!a.due_date) return;
+    if (!a.due_date || isChecked(a)) return;
     const due = new Date(a.due_date); due.setHours(0,0,0,0);
     if (due < today) overdueCount++;
     else if (due <= weekFromNow) soon.push(a);
@@ -7220,7 +7256,7 @@ function renderHome() {
   if (labelEl) labelEl.textContent = heroLabel;
   if (subEl) subEl.textContent = subParts.join(' · ');
 
-  const withDate = cachedAssignments.filter(a => a.due_date).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+  const withDate = cachedAssignments.filter(a => a.due_date && !isChecked(a)).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
   const upnextEl = document.getElementById('home-upnext');
   if (upnextEl) {
     if (withDate.length === 0) {
@@ -9311,6 +9347,7 @@ function showPage(name, el, fromNav) {
   closeAssignmentDetail();
   closeSyllabusDetail();
   closeAllAnnouncements();
+  closeCompletedAssignments();
   closeClassNotes();
   document.getElementById('links-tutorial-overlay')?.classList.remove('show');
 

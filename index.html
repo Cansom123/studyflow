@@ -2150,6 +2150,23 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
   border-radius: 99px; padding: 3px 9px; margin-bottom: 8px;
 }
 .school-ai-disclaimer { font-size: 10.5px; color: var(--text2); line-height: 1.4; margin: 4px 0 10px; }
+.coco-feedback-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.coco-feedback-label { font-size: 11.5px; color: var(--text2); }
+.coco-feedback-label a { color: var(--accent-text); cursor: pointer; }
+.coco-feedback-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 8px; cursor: pointer;
+  font-size: 12px; padding: 3px 7px; line-height: 1; transition: background 0.15s, border-color 0.15s;
+}
+.coco-feedback-btn:hover { background: var(--surface2); border-color: var(--accent); }
+.coco-suggest-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.coco-suggest-chip {
+  background: var(--surface); border: 1px solid var(--border2); border-radius: 99px;
+  padding: 6px 11px; font-size: 11.5px; color: var(--text2); cursor: pointer; font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+.coco-suggest-chip:hover { border-color: var(--accent); color: var(--text1); }
+.coco-chat-note { font-size: 11px; color: var(--text2); margin-top: 8px; }
+.coco-chat-note a { color: var(--accent-text); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -3007,6 +3024,12 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
             <input class="auth-input" id="syllabus-ask-input" placeholder='e.g. "what is the grading policy?"' style="margin-bottom:0;flex:1;background:var(--surface);" onkeydown="if(event.key==='Enter'){askSyllabi();}" />
             <button class="goal-add-btn" style="flex-shrink:0;" onclick="askSyllabi()">Ask</button>
           </div>
+          <div class="coco-suggest-row" id="coco-suggest-row">
+            <button class="coco-suggest-chip" onclick="askSyllabiSuggested('What is the grading breakdown?')">Grading breakdown</button>
+            <button class="coco-suggest-chip" onclick="askSyllabiSuggested('What is the late work policy?')">Late work policy</button>
+            <button class="coco-suggest-chip" onclick="askSyllabiSuggested('What is the attendance policy?')">Attendance policy</button>
+            <button class="coco-suggest-chip" onclick="askSyllabiSuggested('What materials do I need for this class?')">Required materials</button>
+          </div>
           <div id="syllabus-ask-result" style="display:none;margin-top:14px;"></div>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:16px;">
@@ -3117,6 +3140,7 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
               <div class="swatch" data-h="145" style="background:oklch(0.52 0.16 145);" onclick="setAccent(145,this)" title="Green"></div>
               <div class="swatch" data-h="30"  style="background:oklch(0.58 0.2 30);"  onclick="setAccent(30,this)"  title="Orange"></div>
               <div class="swatch" data-h="330" style="background:oklch(0.55 0.2 330);" onclick="setAccent(330,this)" title="Pink"></div>
+              <div class="swatch" data-h="gray" style="background:oklch(0.6 0 0);" onclick="setAccentGray(this)" title="Gray"></div>
             </div>
           </div>
           <div class="tweak-row">
@@ -3470,7 +3494,14 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
    TWEAKS
 =========================== */
 const tweakDefaults = JSON.parse(document.getElementById('tweak-defaults').textContent);
+// Gray sets --accent directly (chroma 0) rather than through --accent-h, so
+// switching back to a real color has to explicitly clear those inline
+// overrides -- otherwise they'd outrank the hue-based CSS rule forever.
+function clearAccentOverrides() {
+  ['--accent', '--accent-mid', '--accent-soft', '--accent-text'].forEach(v => document.documentElement.style.removeProperty(v));
+}
 function setAccent(h, el) {
+  clearAccentOverrides();
   document.documentElement.style.setProperty('--accent-h', h);
   document.documentElement.setAttribute('data-btn-accent', '1');
   document.querySelectorAll('#tweak-swatches-accent .swatch').forEach(s => s.classList.remove('active'));
@@ -3479,10 +3510,25 @@ function setAccent(h, el) {
   saveTweak('btnAccent', '1');
 }
 function resetAccentToWhite(el) {
+  clearAccentOverrides();
   document.documentElement.removeAttribute('data-btn-accent');
   document.querySelectorAll('#tweak-swatches-accent .swatch').forEach(s => s.classList.remove('active'));
   if (el) el.classList.add('active');
   localStorage.removeItem('sf_tweak_btnAccent');
+  localStorage.removeItem('sf_tweak_accent');
+}
+function setAccentGray(el) {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const l = isDark ? 0.72 : 0.5;
+  document.documentElement.setAttribute('data-btn-accent', '1');
+  document.documentElement.style.setProperty('--accent', `oklch(${l} 0 0)`);
+  document.documentElement.style.setProperty('--accent-mid', `oklch(${l - 0.06} 0 0)`);
+  document.documentElement.style.setProperty('--accent-soft', `oklch(${l} 0 0 / 0.16)`);
+  document.documentElement.style.setProperty('--accent-text', `oklch(${l} 0 0)`);
+  document.querySelectorAll('#tweak-swatches-accent .swatch').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  saveTweak('accent', 'gray');
+  saveTweak('btnAccent', '1');
 }
 function setBgHue(h, el) {
   if (h === 'match') document.documentElement.style.removeProperty('--bg-h');
@@ -3511,7 +3557,8 @@ function saveTweak(key, val) {
   localStorage.setItem('sf_tweak_' + key, val);
 }
 function applyTweaks(t) {
-  if (t.accent) document.documentElement.style.setProperty('--accent-h', t.accent);
+  if (t.accent === 'gray') setAccentGray();
+  else if (t.accent) document.documentElement.style.setProperty('--accent-h', t.accent);
   if (t.btnAccent) {
     document.documentElement.setAttribute('data-btn-accent', '1');
     document.querySelector(`#tweak-swatches-accent .swatch[data-h="${t.accent}"]`)?.classList.add('active');
@@ -6065,7 +6112,7 @@ async function cocoVerify(answer, passages) {
   }
 }
 
-async function cocoAsk(question, contextText) {
+async function cocoAsk(question, contextText, history) {
   if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
 
   const hits = cocoRetrieve(question, contextText, 3);
@@ -6078,6 +6125,14 @@ async function cocoAsk(question, contextText) {
 
   const passages = hits.map(h => h.seg);
   const contextBlock = passages.map((p, i) => `[${i + 1}] ${p}`).join('\n');
+
+  // Prior turns (this session only, never persisted) let a vague follow-up
+  // like "what about extra credit?" resolve against what was just discussed,
+  // instead of every question being answered in total isolation.
+  const historyMessages = (history || []).flatMap(h => [
+    { role: 'user', content: h.q },
+    { role: 'assistant', content: h.a },
+  ]);
 
   const messages = [
     {
@@ -6093,8 +6148,10 @@ async function cocoAsk(question, contextText) {
         'These excerpts were pre-selected as the most relevant lines in the syllabus, so they usually DO contain the answer. ' +
         'If any excerpt addresses the topic — even partially, or in different words than the question — answer from it. ' +
         'Only fall back to the "doesn\'t cover that" reply when the excerpts are genuinely about something else.\n' +
-        'Reply with one or two plain sentences. No preamble, no restating the question, no citation markers, no formatting.',
+        'Reply with one or two plain sentences. No preamble, no restating the question, no citation markers, no formatting.' +
+        (historyMessages.length ? ' You may see earlier turns in this conversation -- use them only to understand what "it"/"that" refers to, never as a source of facts; facts must still come only from the excerpts below.' : ''),
     },
+    ...historyMessages,
     {
       role: 'user',
       content: `Syllabus excerpts:\n${contextBlock}\n\nStudent's question: ${question}`,
@@ -6144,6 +6201,30 @@ function cocoPickCitation(answer, passages) {
   const contains = passages.find(p => a.includes(p.toLowerCase()));
   if (contains) return contains;
   return passages[0] || '';
+}
+
+/* ---- Feedback -----------------------------------------------------------
+   The one thing missing from the analytics we already log: whether an
+   answer was actually good. Counts only (feature + thumb), never the
+   question or answer text -- same privacy line as the rest of analytics.
+   A thumbs-down offers, but never forces, a path into the existing
+   Report-a-problem flow if the student wants to say more. */
+let cocoFeedbackSeq = 0;
+function cocoFeedbackHTML(feature) {
+  const id = 'coco-fb-' + (++cocoFeedbackSeq);
+  return `<div class="coco-feedback-row" id="${id}">
+    <span class="coco-feedback-label">Was this helpful?</span>
+    <button class="coco-feedback-btn" onclick="cocoRate('${id}','${feature}',true)" title="Helpful">👍</button>
+    <button class="coco-feedback-btn" onclick="cocoRate('${id}','${feature}',false)" title="Not helpful">👎</button>
+  </div>`;
+}
+function cocoRate(rowId, feature, positive) {
+  trackEvent('coco_feedback', { feature, positive });
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  row.innerHTML = positive
+    ? `<span class="coco-feedback-label">Thanks for the feedback.</span>`
+    : `<span class="coco-feedback-label">Thanks -- sorry it missed the mark. <a onclick="jumpToReportProblem()">Tell us what's wrong</a></span>`;
 }
 
 /* ---- Rendering ------------------------------------------------------- */
@@ -6212,6 +6293,24 @@ function cocoPlanningContext(limit = 20) {
   if (overdue.length) text += `OVERDUE — ALREADY LATE, the deadline has PASSED (handle these first):\n${overdue.map(fmtLine).join('\n')}\n\n`;
   if (upcoming.length) text += `Upcoming:\n${upcoming.map(fmtLine).join('\n')}`;
 
+  // Current grades and stated goals -- without this, "which class needs the
+  // most attention" was pure guesswork from due dates alone. A class you're
+  // already at 95% in and a class you're failing can have the same due date
+  // this week; only the grade tells you which one actually needs the time.
+  const gradedCourses = (typeof cachedGrades !== 'undefined' ? cachedGrades : [])
+    .filter(g => g.current_score != null || g.final_score != null || g.current_grade || g.final_grade);
+  const gradeLines = gradedCourses
+    .map(g => {
+      const pct = g.current_score != null ? g.current_score : g.final_score;
+      const letter = g.current_grade || g.final_grade || '';
+      const bits = [pct != null ? `${pct}%` : '', letter].filter(Boolean).join(' / ');
+      return `- ${g.course_name}: ${bits || 'no grade posted yet'}`;
+    });
+  if (gradeLines.length) text += `\n\nCurrent grades:\n${gradeLines.join('\n')}`;
+
+  const goalLines = (typeof userGoals !== 'undefined' ? userGoals : []).filter(Boolean);
+  if (goalLines.length) text += `\n\nStudent's stated goals this semester:\n${goalLines.map(g => `- ${g}`).join('\n')}`;
+
   const weekOut = new Date(today); weekOut.setDate(weekOut.getDate() + 7);
   const studyLines = cachedStudySessions.filter(s => {
     const sd = new Date(s.session_date + 'T00:00:00');
@@ -6246,7 +6345,7 @@ function cocoPlanningContext(limit = 20) {
     if (s.title) itemDays.push({ title: s.title, day });
   });
 
-  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays, itemDays };
+  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays, itemDays, grades: gradedCourses };
 }
 
 /* ---- Planning-mode verification -------------------------------------
@@ -6284,6 +6383,10 @@ function cocoExtractCourseCodes(text) {
   let m;
   while ((m = re.exec(text)) !== null) {
     if (COCO_NOT_COURSE_CODES.has(m[1].toLowerCase())) continue;
+    // A number immediately followed by "%" is a grade, not a course code --
+    // without this, "At 92%..." (capitalized only because it starts the
+    // sentence) false-positives as a fabricated course "AT 92".
+    if (text[m.index + m[0].length] === '%') continue;
     out.push({ raw: m[0], alpha: m[1], num: m[2] });
   }
   return out;
@@ -6404,6 +6507,16 @@ function cocoVerifyPlanning(answer, ctx) {
     }
   }
 
+  // 8. Grade percentage that isn't in the real data. Shaped as NN% or NN.N%,
+  //    which never collides with "3 days" / "2 blocks" style mentions, so this
+  //    can't misfire on legitimate scheduling language.
+  const pctMentions = answer.match(/\b\d{1,3}(?:\.\d+)?%/g) || [];
+  for (const pct of pctMentions) {
+    if (!haystack.includes(cocoNormalize(pct))) {
+      return { ok: false, reason: `grade percentage not in real data: ${pct}` };
+    }
+  }
+
   return { ok: true, reason: '' };
 }
 
@@ -6438,6 +6551,25 @@ function cocoDeterministicPlan(ctx) {
       : `Start with ${described.join('; then ')}.`);
   }
 
+  // Flag a course that's grade-at-risk and also has work coming up, so a
+  // struggling class gets called out even when its next due date isn't the
+  // soonest -- due-date order alone would silently bury it.
+  if (ctx.grades && ctx.grades.length) {
+    const atRisk = ctx.grades.find(g => {
+      const pct = g.current_score != null ? g.current_score : g.final_score;
+      return pct != null && pct < 70;
+    });
+    // Assignments and grades both come from the same Canvas course.name in
+    // the common case, but a fallback path in the sync function can source
+    // a grade's course name differently -- normalize instead of trusting
+    // exact string equality, or a real at-risk grade silently never surfaces.
+    const norm = s => (s || '').trim().toLowerCase();
+    if (atRisk && ctx.upcoming.some(a => norm(a.course) === norm(atRisk.course_name))) {
+      const pct = atRisk.current_score != null ? atRisk.current_score : atRisk.final_score;
+      parts.push(`Also worth extra time: you're at ${pct}% in ${atRisk.course_name}, so don't let that slip.`);
+    }
+  }
+
   if (!parts.length) return "You don't have any dated work coming up right now.";
   return parts.join(' ');
 }
@@ -6464,7 +6596,8 @@ async function cocoAskPlanning(question) {
         '4. Sound like an encouraging friend, not a corporate assistant — warm and calm, never guilt-trippy about overdue work, never generic filler like "stay positive!".\n' +
         '5. Weave any acknowledgment of stress INTO the same sentence as the plan, or keep it to a short clause at the start. Never spend a whole separate sentence just on feelings before getting to the plan.\n' +
         '6. If the student already has study time scheduled, build on it rather than ignoring it.\n' +
-        '7. Reply in 2-4 plain sentences, as ONE continuous paragraph with no blank lines. No markdown, no bullet lists, no restating the whole list back verbatim.',
+        '7. Reply in 2-4 plain sentences, as ONE continuous paragraph with no blank lines. No markdown, no bullet lists, no restating the whole list back verbatim.\n' +
+        '8. If current grades or stated goals are listed below, weigh them: a class where the grade is low, borderline, or below a stated goal deserves more attention than its due date alone would suggest -- even over a closer deadline in a class that\'s already in good shape. Never state a grade percentage that isn\'t literally listed below.',
     },
     { role: 'user', content: `Today is ${todayStr}.\n\nUpcoming work:\n${text}\n\nStudent's question: ${question}` },
   ];
@@ -6516,10 +6649,10 @@ async function askCocoPlanning() {
     return;
   }
   trackEvent('coco_ask', { feature: 'planning' });
-  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Thinking…</div>`;
+  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Looking at what's due…</div>`;
   try {
     const { answer, confidence } = await cocoAskPlanning(q);
-    resultEl.innerHTML = cocoPlanningAnswerHTML(answer, confidence);
+    resultEl.innerHTML = cocoPlanningAnswerHTML(answer, confidence) + cocoFeedbackHTML('planning');
   } catch (err) {
     resultEl.innerHTML = `<div class="card-sub">coco.1 error: ${escapeHtml(err.message)}</div>`;
   }
@@ -7901,7 +8034,7 @@ async function askSearchWithinSyllabus() {
 async function askSchoolAIWithinSyllabus(q, raw) {
   const myRequestId = ++sylAskRequestId;
   const answerEl = document.getElementById('syl-ai-answer');
-  if (answerEl) answerEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Thinking…</div>`;
+  if (answerEl) answerEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Reading this syllabus…</div>`;
   try {
     const { answer, citation, confidence } = await cocoAsk(q, raw);
     if (myRequestId !== sylAskRequestId) return; // a newer request superseded this one — discard
@@ -7912,7 +8045,7 @@ async function askSchoolAIWithinSyllabus(q, raw) {
     const highlighted = citation ? highlightExactPassage(citation) : false;
     if (!highlighted && viewEl) viewEl.innerHTML = escapeHtml(raw);
     if (counterEl) counterEl.textContent = '';
-    if (currentAnswerEl) currentAnswerEl.innerHTML = cocoAnswerHTML(answer, confidence);
+    if (currentAnswerEl) currentAnswerEl.innerHTML = cocoAnswerHTML(answer, confidence) + cocoFeedbackHTML('syllabus_detail');
   } catch (err) {
     if (myRequestId !== sylAskRequestId) return;
     const viewEl = document.getElementById('syl-view');
@@ -8157,6 +8290,16 @@ function highlightAskKeywords(text, keywords) {
   return escaped;
 }
 
+// One tap answers the questions almost every student actually has, for
+// whoever's staring at a blank box unsure what to even ask -- especially
+// useful under deadline stress, when typing out a question is one more step.
+function askSyllabiSuggested(text) {
+  const input = document.getElementById('syllabus-ask-input');
+  if (!input) return;
+  input.value = text;
+  askSyllabi();
+}
+
 async function askSyllabi() {
   const input = document.getElementById('syllabus-ask-input');
   const resultEl = document.getElementById('syllabus-ask-result');
@@ -8174,10 +8317,24 @@ async function askSyllabi() {
 
 let listAskRequestId = 0;
 
+// Session-only conversation memory (never persisted -- cleared on refresh)
+// so a vague follow-up like "what about extra credit?" can lean on what was
+// just discussed instead of starting from zero every time. Capped at 2 turns
+// so an old exchange doesn't keep steering answers on an unrelated question.
+let cocoSyllabusChat = { courseId: null, history: [] };
+// Visible + reversible: a student asking something genuinely new on the same
+// course shouldn't be silently steered by an unrelated earlier answer, and
+// shouldn't have to guess that memory is even active to get out of it.
+function cocoClearSyllabusChat() {
+  cocoSyllabusChat = { courseId: null, history: [] };
+  const note = document.querySelector('.coco-chat-note');
+  if (note) note.remove();
+}
+
 async function askSyllabiWithAI(q) {
   const myRequestId = ++listAskRequestId;
   const resultEl = document.getElementById('syllabus-ask-result');
-  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Thinking…</div>`;
+  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Reading your syllabus…</div>`;
 
   // Pick which course to answer from by scoring each syllabus with the same
   // synonym-aware retrieval used inside the answer step, so the course choice
@@ -8189,17 +8346,33 @@ async function askSyllabiWithAI(q) {
     const score = hits.reduce((sum, h) => sum + h.score, 0);
     if (score > bestScore) { bestScore = score; best = s; }
   });
+  // A weak match plus an existing conversation usually means this is a
+  // follow-up ("what about that") that doesn't carry its own keywords --
+  // stick with the course just discussed instead of a low-confidence guess.
+  if ((!best || bestScore < 0.3) && cocoSyllabusChat.courseId) {
+    const prior = cachedSyllabi.find(s => String(s.course_id) === String(cocoSyllabusChat.courseId) && s.content);
+    if (prior) best = prior;
+  }
   if (!best) best = cachedSyllabi.find(s => s.content);
   if (!best) {
     resultEl.innerHTML = `<div class="card-sub">You don't have any syllabi with content yet.</div>`;
     return;
   }
+  // Switched topics/courses -- carrying the old conversation forward would
+  // just confuse the next answer, so start fresh instead.
+  if (String(best.course_id) !== String(cocoSyllabusChat.courseId)) {
+    cocoSyllabusChat = { courseId: best.course_id, history: [] };
+  }
   const course = syllabusCourses.find(c => String(c.id) === String(best.course_id));
   const courseName = course ? cleanCourseName(course.name) : (best.course_name || 'Course');
 
   try {
-    const { answer, citation, confidence } = await cocoAsk(q, best.content);
+    const { answer, citation, confidence } = await cocoAsk(q, best.content, cocoSyllabusChat.history);
     if (myRequestId !== listAskRequestId) return;
+    if (confidence !== 'none') {
+      cocoSyllabusChat.history.push({ q, a: answer });
+      cocoSyllabusChat.history = cocoSyllabusChat.history.slice(-2);
+    }
     lastAskResults = citation ? [{ courseId: best.course_id, courseName, line: citation }] : [];
     resultEl.innerHTML = cocoAnswerHTML(answer, confidence) + (citation ? `
       <button class="ask-source-chip" onclick="openSyllabusAtPassage(0)">
@@ -8207,7 +8380,9 @@ async function askSyllabiWithAI(q) {
         <span>Source: ${escapeHtml(courseName)}</span>
         <span class="ask-source-arrow">→</span>
       </button>
-    ` : '');
+    ` : '') + cocoFeedbackHTML('syllabus_ask') + (cocoSyllabusChat.history.length > 0
+      ? `<div class="coco-chat-note">Remembering this conversation. <a onclick="cocoClearSyllabusChat()">Start fresh</a></div>`
+      : '');
   } catch (err) {
     if (myRequestId !== listAskRequestId) return;
     resultEl.innerHTML = `<div class="card-sub">coco.1 hit an error (${escapeHtml(err.message)}) - falling back to keyword search.</div>`;
@@ -9533,6 +9708,22 @@ function renderAllWork(assignments) {
   document.getElementById('allwork-list').innerHTML = html || '<div class="empty-box"><div class="empty-title">No assignments</div></div>';
 }
 
+// First concrete step toward priority that actually accounts for grades, not
+// just due dates: a class you're barely passing gets nudged up the list even
+// when its next deadline isn't the closest one. Capped well below the
+// overdue baseline (1000+) so overdue work always still wins regardless of
+// grade, and small enough to reorder among similarly-urgent items rather
+// than bury something due today under something due next week.
+function priorityGradeRiskBoost(course) {
+  if (!course) return 0;
+  const norm = s => (s || '').trim().toLowerCase();
+  const g = cachedGrades.find(x => norm(x.course_name) === norm(course));
+  if (!g) return 0;
+  const pct = g.current_score != null ? g.current_score : g.final_score;
+  if (pct == null || pct >= 70) return 0;
+  return Math.min(35, (70 - pct) * 1.2);
+}
+
 function renderPriority(assignments) {
   const planBannerHost = document.getElementById('planning-ai-banner-host');
   if (planBannerHost) planBannerHost.innerHTML = schoolAIBannerHTML('planning-ai');
@@ -9570,6 +9761,7 @@ function renderPriority(assignments) {
       const g = goal.toLowerCase().split(' ')[0];
       if ((a.course||'').toLowerCase().includes(g) || a.title.toLowerCase().includes(g)) score += (userPrefs.priorityGoalBoost ?? 50);
     }
+    score += priorityGradeRiskBoost(a.course);
     return { ...a, score, d };
   }).sort((a, b) => b.score - a.score);
 
@@ -9612,10 +9804,12 @@ function renderPriority(assignments) {
   if (scored.length > 0) {
     const top = scored[0];
     const matchingGoal = userGoals.find(g => (top.course||'').toLowerCase().includes(g.toLowerCase().split(' ')[0]));
+    const gradeAtRisk = priorityGradeRiskBoost(top.course) > 0;
     let aiText = matchingGoal
       ? `"${top.title}" is your top priority - and it's in a class tied to your goal: "${matchingGoal}". Start here.`
       : top.d < 0 ? `"${top.title}" is overdue. Take care of that first.`
       : top.d <= 1 ? `"${top.title}" is due ${top.d===0?'today':'tomorrow'} - that's your top priority.`
+      : gradeAtRisk ? `"${top.title}" is your top priority - your grade in ${top.course} could use the attention.`
       : `Your most urgent assignment is "${top.title}", due in ${top.d} days. Start there.`;
     document.getElementById('priority-ai-text').textContent = aiText;
   }

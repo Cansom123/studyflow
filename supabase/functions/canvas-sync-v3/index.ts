@@ -314,6 +314,12 @@ Deno.serve(async (req) => {
           is_locked: isLocked,
           lock_reason: lockReason,
           description: htmlToText(a.description),
+          // Feeds the Grades page's "what's affecting this grade" breakdown --
+          // score/missing/excused already come back on `submission` (we already
+          // request include[]=submission above), just weren't persisted before.
+          score: sub?.score ?? null,
+          is_missing: !!sub?.missing,
+          is_excused: !!sub?.excused,
         });
         kept++;
       }

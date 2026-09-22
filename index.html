@@ -909,7 +909,12 @@ body {
   background: var(--surface); border-radius: var(--card-radius);
   border: 1px solid var(--border); box-shadow: var(--shadow-sm);
   animation: cardIn 0.55s cubic-bezier(.16,1,.3,1) both;
+  cursor: pointer; transition: border-color 0.15s, transform 0.1s;
 }
+.grade-card:hover { border-color: var(--accent); }
+.grade-card:active { transform: scale(0.99); }
+.grade-breakdown-hint { font-size: 10.5px; color: var(--text2); margin-top: 4px; }
+.grade-tips-box { margin-top: 18px; padding: 14px; }
 .grade-card:nth-of-type(1) { animation-delay: 0ms; }
 .grade-card:nth-of-type(2) { animation-delay: 70ms; }
 .grade-card:nth-of-type(3) { animation-delay: 140ms; }
@@ -2608,6 +2613,17 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
     </div>
   </div>
 
+  <!-- GRADE BREAKDOWN -->
+  <div id="grade-detail-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title" id="grade-detail-title"></div>
+        <button class="detail-close" onclick="closeGradeDetail()" title="Close">✕</button>
+      </div>
+      <div id="grade-detail-body"></div>
+    </div>
+  </div>
+
   <!-- ASSIGNMENT DETAIL -->
   <div id="assignment-detail-overlay" class="detail-overlay">
     <div class="detail-inner">
@@ -3977,6 +3993,7 @@ function isCourseTermConcluded(name) {
 }
 let doneSet = new Set();
 let cachedAssignments = [];
+let cachedGradedAssignments = [];
 let cachedGrades = [];
 let cachedAnnouncements = [];
 let syncInProgress = false;
@@ -5617,6 +5634,15 @@ async function loadGrades() {
   renderGoalsTab(); // refresh action plans with grade data
   renderHome();
 
+  // Per-assignment scores for the "what's affecting this grade" breakdown --
+  // a separate fetch because loadAssignments() only pulls completed=false
+  // rows (it's feeding Priority/Due Soon), so graded/missing work never
+  // lands in cachedAssignments at all.
+  const { ok: okScored, data: scoredData } = await sbFetchWithRetry(
+    `/rest/v1/assignments?user_id=eq.${USER_ID}&select=title,course,points_possible,score,is_missing,is_excused,due_date,assignment_type`
+  );
+  cachedGradedAssignments = (okScored && Array.isArray(scoredData)) ? scoredData : [];
+
   // Only show courses that actually have a grade published
   const withGrades = grades.filter(g =>
     g.current_score != null || g.final_score != null || g.current_grade || g.final_grade
@@ -5637,10 +5663,11 @@ async function loadGrades() {
       const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
       const barColor = barColors[letterClass] || 'var(--accent)';
       const barWidth = !isNaN(score) ? Math.min(Math.max(score, 0), 100) : 0;
-      return `<div class="card grade-card">
+      return `<div class="card grade-card" data-course="${escapeHtml(g.course_name)}" onclick="openGradeDetail(this.dataset.course)">
         <div class="grade-card-left">
           <div class="grade-card-name">${cleanName}</div>
           ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="--w:${barWidth}%;background:${barColor}"></div></div>` : ''}
+          <div class="grade-breakdown-hint">Tap to see what's affecting this grade</div>
         </div>
         <div class="grade-card-right">
           <div class="grade-card-letter ${letterClass}">${letter || '-'}</div>
@@ -5754,6 +5781,98 @@ function openCompletedAssignments() {
 }
 function closeCompletedAssignments() {
   document.getElementById('completed-detail-overlay').style.display = 'none';
+}
+
+/* ===========================
+   GRADE BREAKDOWN
+   "What's affecting this grade" -- built from per-assignment scores synced
+   from Canvas (cachedGradedAssignments), separate from the course-level
+   current_score/final_score already in cachedGrades. Also the data source
+   for the coco.1 grade-tips ask box below.
+=========================== */
+function gradeBreakdownForCourse(courseName) {
+  const norm = s => (s || '').trim().toLowerCase();
+  const rows = cachedGradedAssignments.filter(a => norm(a.course) === norm(courseName));
+  const graded = rows.filter(a => a.score != null && a.points_possible);
+  const missing = rows.filter(a => a.is_missing && !a.is_excused);
+  const lowPerformers = graded
+    .map(a => ({ ...a, pct: (a.score / a.points_possible) * 100, lost: a.points_possible - a.score }))
+    .filter(a => a.lost > 0)
+    .sort((a, b) => b.lost - a.lost)
+    .slice(0, 6);
+  // "Open and gradable" = not done, and not locked -- a due-but-not-yet-graded
+  // item is still open; a past-due locked one is not, regardless of whether
+  // the student ever submitted it.
+  const openWork = cachedAssignments.filter(a =>
+    norm(a.course) === norm(courseName) && !a.completed && !a.is_locked
+  );
+  return { graded, missing, lowPerformers, openWork, allClosed: openWork.length === 0 };
+}
+
+let currentGradeDetailCourse = null;
+
+function openGradeDetail(courseName) {
+  const overlay = document.getElementById('grade-detail-overlay');
+  const titleEl = document.getElementById('grade-detail-title');
+  const body = document.getElementById('grade-detail-body');
+  if (!overlay || !body) return;
+  currentGradeDetailCourse = courseName;
+
+  const norm = s => (s || '').trim().toLowerCase();
+  const grade = cachedGrades.find(g => norm(g.course_name) === norm(courseName));
+  const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
+  const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
+  const { missing, lowPerformers, allClosed } = gradeBreakdownForCourse(courseName);
+
+  if (titleEl) titleEl.textContent = cleanCourseName(courseName);
+
+  let html = '';
+  if (pct != null || letter) {
+    html += `<div class="card-sub" style="margin-bottom:16px;">Current grade: <strong style="color:var(--text1);">${pct != null ? escapeHtml(String(pct)) + '%' : ''}${letter ? ' (' + escapeHtml(letter) + ')' : ''}</strong></div>`;
+  }
+
+  if (!lowPerformers.length && !missing.length) {
+    html += `<div class="empty-box"><div class="empty-title">No graded work synced yet</div><div class="empty-sub">Once a few assignments are graded in Canvas, this'll show what's pulling the grade up or down.</div></div>`;
+  } else {
+    if (lowPerformers.length) {
+      html += `<div class="section-label" style="margin-top:0;">Points lost</div><div class="card" style="padding:4px 16px;">` +
+        lowPerformers.map(a => {
+          const cls = a.pct >= 90 ? 'good' : a.pct >= 70 ? 'warn' : 'bad';
+          return `<div class="grade-row"><span class="grade-name">${escapeHtml(a.title)}</span><span class="grade-score ${cls}">${a.score}/${a.points_possible}</span></div>`;
+        }).join('') + `</div>`;
+    }
+    if (missing.length) {
+      html += `<div class="section-label">Missing (counted as 0)</div><div class="card" style="padding:4px 16px;">` +
+        missing.map(a => `<div class="grade-row"><span class="grade-name">${escapeHtml(a.title)}</span><span class="grade-score bad">Missing</span></div>`).join('') +
+        `</div>`;
+    }
+  }
+
+  const chip2 = allClosed
+    ? `<button class="coco-suggest-chip" onclick="askCocoGradeTipsSuggested('Everything left in this class is closed -- what should I do now?')">Everything's closed — now what?</button>`
+    : `<button class="coco-suggest-chip" onclick="askCocoGradeTipsSuggested('What should I focus on to raise this grade?')">What should I focus on?</button>`;
+
+  html += `<div class="card grade-tips-box">
+    <div class="section-label" style="margin-top:0;">Ask coco.1 for tips</div>
+    <div id="grade-tips-banner-host">${schoolAIBannerHTML('grade-tips')}</div>
+    <div class="study-form-row" style="margin-bottom:0;">
+      <input class="settings-input" id="grade-tips-input" placeholder='e.g. "how do I bring this grade up?"' style="margin-bottom:0;" onkeydown="if(event.key==='Enter'){askCocoGradeTips();}" />
+      <button class="goal-add-btn" onclick="askCocoGradeTips()">Ask</button>
+    </div>
+    <div class="coco-suggest-row">
+      <button class="coco-suggest-chip" onclick="askCocoGradeTipsSuggested('What is bringing this grade down?')">What's bringing it down?</button>
+      ${chip2}
+    </div>
+    <div id="grade-tips-result" style="margin-top:10px;"></div>
+  </div>`;
+
+  body.innerHTML = html;
+  overlay.style.display = 'block';
+}
+
+function closeGradeDetail() {
+  document.getElementById('grade-detail-overlay').style.display = 'none';
+  currentGradeDetailCourse = null;
 }
 
 function finishDismissAnnouncement(id) {
@@ -6748,6 +6867,219 @@ async function askCocoPlanning() {
 }
 
 /* ===========================
+   GRADE TIPS (coco.1)
+   Same shape as planning mode: a structured, real-data-only context, a
+   narrow verifier, and a deterministic fallback -- reusing the course-code
+   /quoted-title/percentage checks from cocoVerifyPlanning since the failure
+   modes (inventing a class, inventing a number) are identical here.
+=========================== */
+// Canvas doesn't give us a real difficulty rating, so this is a deliberately
+// rough, deterministic proxy from what we do have (assignment type + points)
+// rather than letting the model freely guess "this one seems harder" --
+// grounded signal in, reasoning about sequencing out, same split as
+// everything else coco.1 does.
+function estimateAssignmentEffort(a) {
+  const type = (a.assignment_type || '').toLowerCase();
+  let weight = 2; // medium by default
+  if (/exam|final|midterm|project|paper|essay|presentation/.test(type)) weight = 3;
+  else if (/quiz|discussion|reading|reflection/.test(type)) weight = 1;
+  const pts = a.points_possible || 0;
+  if (pts >= 100) weight += 0.5;
+  else if (pts > 0 && pts <= 10) weight -= 0.25;
+  return Math.max(1, Math.min(3, weight));
+}
+function effortLabel(weight) {
+  return weight <= 1.25 ? 'quick' : weight <= 2.5 ? 'moderate' : 'heavy';
+}
+
+function cocoGradeContext(courseName) {
+  const norm = s => (s || '').trim().toLowerCase();
+  const grade = cachedGrades.find(g => norm(g.course_name) === norm(courseName));
+  const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
+  const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
+  const { graded, missing, lowPerformers, openWork, allClosed } = gradeBreakdownForCourse(courseName);
+
+  let text = `Course: ${courseName}\n`;
+  text += `Current grade: ${pct != null ? pct + '%' : 'not posted'}${letter ? ' (' + letter + ')' : ''}\n\n`;
+
+  if (lowPerformers.length) {
+    text += `Graded work that lost the most points:\n` +
+      lowPerformers.map(a => `- ${a.title}: ${a.score}/${a.points_possible} pts (lost ${a.lost.toFixed(1)})`).join('\n') + '\n\n';
+  }
+  if (missing.length) {
+    text += `Missing (never submitted, counts as 0):\n` +
+      missing.map(a => `- ${a.title}${a.points_possible ? ' (' + a.points_possible + ' pts)' : ''}`).join('\n') + '\n\n';
+  }
+  // Lightest first -- matches the actual advice this is meant to support
+  // ("knock out the quick one, save the heavy one for a real time block"),
+  // and gives the model the ordering pre-computed instead of asking it to
+  // judge relative effort itself.
+  const openWorkRanked = [...openWork]
+    .map(a => ({ ...a, effortWeight: estimateAssignmentEffort(a) }))
+    .sort((a, b) => a.effortWeight - b.effortWeight);
+
+  if (allClosed) {
+    text += `No open, gradable work remains in this course right now -- everything left is either submitted or past its deadline and locked.\n`;
+  } else if (openWorkRanked.length) {
+    text += `Still open and gradable (ordered lightest to heaviest estimated effort, based on assignment type and points -- not exact, but a real signal):\n` +
+      openWorkRanked.slice(0, 8).map(a =>
+        `- ${a.title}${a.points_possible ? ', ' + a.points_possible + ' pts' : ''}${a.assignment_type ? ', ' + a.assignment_type : ''} -- ${effortLabel(a.effortWeight)}`
+      ).join('\n') + '\n';
+  }
+
+  return {
+    text, courseName, pct, letter, allClosed, lowPerformers, missing,
+    openWork: openWorkRanked,
+    hasData: graded.length > 0 || missing.length > 0,
+  };
+}
+
+function cocoVerifyGradeTips(answer, ctx) {
+  const haystack = cocoNormalize(ctx.text);
+
+  for (const code of cocoExtractCourseCodes(answer)) {
+    const spaced = cocoNormalize(`${code.alpha} ${code.num}`);
+    const tight = cocoNormalize(`${code.alpha}${code.num}`);
+    if (!haystack.includes(spaced) && !haystack.includes(tight)) {
+      return { ok: false, reason: `fabricated course code: ${code.raw}` };
+    }
+  }
+
+  const quoted = answer.match(/"([^"]{8,60})"/g) || [];
+  for (const q of quoted) {
+    const inner = q.slice(1, -1).trim();
+    if (!/^[A-Z]/.test(inner)) continue;
+    if (/\b(you|your|you're|i|we|my|me|us)\b/i.test(inner)) continue;
+    if (!haystack.includes(cocoNormalize(inner))) {
+      return { ok: false, reason: `quoted text not in context: ${q}` };
+    }
+  }
+
+  const pctMentions = answer.match(/\b\d{1,3}(?:\.\d+)?%/g) || [];
+  for (const pct of pctMentions) {
+    if (!haystack.includes(cocoNormalize(pct))) {
+      return { ok: false, reason: `grade percentage not in real data: ${pct}` };
+    }
+  }
+
+  // The one failure mode unique to this mode: telling a student to submit or
+  // redo something when the data says nothing is actually still open. That's
+  // not just wrong, it wastes the exact effort this feature is supposed to
+  // point somewhere useful.
+  if (ctx.allClosed && /\b(submit|turn in|hand in|resubmit|redo|retake)\b/i.test(answer)) {
+    return { ok: false, reason: 'suggested submitting work when nothing is open' };
+  }
+
+  return { ok: true, reason: '' };
+}
+
+function cocoDeterministicGradeTips(ctx) {
+  const parts = [];
+  if (ctx.pct != null) {
+    parts.push(`You're at ${ctx.pct}%${ctx.letter ? ' (' + ctx.letter + ')' : ''} in ${ctx.courseName}.`);
+  }
+  if (ctx.lowPerformers.length) {
+    const worst = ctx.lowPerformers[0];
+    parts.push(`${worst.title} cost you the most points (${worst.score}/${worst.points_possible}), so that's the single biggest factor.`);
+  }
+  if (ctx.missing.length) {
+    parts.push(`${ctx.missing.length} assignment${ctx.missing.length !== 1 ? 's are' : ' is'} still marked missing, which counts as zero until it's turned in or excused.`);
+  }
+  if (ctx.allClosed) {
+    parts.push(`Nothing gradable is still open in this class, so the best move now is asking your teacher directly about extra credit or a regrade, and putting extra focus on this subject going forward.`);
+  } else if (ctx.openWork.length) {
+    const next = ctx.openWork[0];
+    const label = effortLabel(next.effortWeight);
+    const why = label === 'heavy'
+      ? `it's the one open item, so it needs a real focused block of time`
+      : `it's ${label === 'quick' ? 'quick' : 'a moderate amount of work'}, so knock it out and bank the points before tackling anything heavier`;
+    parts.push(`Start with ${next.title} - ${why}.`);
+  }
+  return parts.join(' ') || "There isn't enough graded data synced yet to point to anything specific.";
+}
+
+async function cocoAskGradeTips(courseName, question) {
+  if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
+
+  const ctx = cocoGradeContext(courseName);
+  if (!ctx.hasData) {
+    return { answer: "There's no graded work synced for this class yet, so there's nothing concrete to point to - check back once a few assignments are graded.", confidence: 'none' };
+  }
+
+  const messages = [
+    {
+      role: 'system',
+      content:
+        'You are coco.1, a supportive academic coach helping a student understand and improve ONE specific course grade. Below is their REAL grade data for this course.\n' +
+        'Rules:\n' +
+        '1. Only reference assignments, scores, and points that literally appear below. Never invent one.\n' +
+        '2. If there is still open, gradable work listed, center your advice on that: which piece of open work would help the grade most, and why.\n' +
+        '3. If the data says no open gradable work remains, do NOT suggest submitting, resubmitting, or redoing anything - instead give forward-looking advice: asking the teacher about extra credit or a regrade, how this grade affects their overall standing, and what to do differently in the next unit or term. Never claim something can still be turned in when the context says it cannot.\n' +
+        '4. If more than one thing is open, the list is already ordered lightest to heaviest effort (based on type and points) -- use that. Recommend knocking out the quick/moderate ones first to bank easy points and reduce what is outstanding, saving the heaviest one for a real focused block of time, unless one is clearly more urgent for the grade specifically.\n' +
+        '5. Reply in 2-4 plain sentences, one continuous paragraph, no markdown, no bullet lists, no restating the whole list back verbatim.\n' +
+        '6. Sound like an encouraging, direct coach - honest about what is dragging the grade down, not vague positivity.\n' +
+        '7. Never state a percentage, score, or points value that is not literally in the data below.',
+    },
+    { role: 'user', content: `${ctx.text}\nStudent's question: ${question || 'What is bringing this grade down, and how can I improve it?'}` },
+  ];
+
+  const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.2, max_tokens: 220 });
+  const answer = (reply.choices[0].message.content || '').trim();
+
+  if (!answer) {
+    return { answer: cocoDeterministicGradeTips(ctx), confidence: 'computed', reason: 'empty generation' };
+  }
+
+  const verdict = cocoVerifyGradeTips(answer, ctx);
+  if (!verdict.ok) {
+    console.warn('[coco.1 grade tips] rejected answer —', verdict.reason);
+    return { answer: cocoDeterministicGradeTips(ctx), confidence: 'computed', reason: verdict.reason };
+  }
+
+  return { answer, confidence: 'high', reason: '' };
+}
+
+function cocoGradeTipsAnswerHTML(answer, confidence) {
+  if (confidence === 'none') {
+    return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
+  }
+  if (confidence === 'computed') {
+    return `<div class="school-ai-badge">✨ coco.1</div>` +
+      `<div class="school-ai-disclaimer" style="margin-top:0;">Straight from your grade data:</div>` +
+      `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
+  }
+  return `<div class="school-ai-badge">✨ coco.1</div>` +
+    `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
+    `<div class="school-ai-disclaimer">AI-generated advice based on your synced grades - always confirm anything important with your teacher.</div>`;
+}
+
+async function askCocoGradeTips(presetQuestion) {
+  const input = document.getElementById('grade-tips-input');
+  const resultEl = document.getElementById('grade-tips-result');
+  if (!resultEl || !currentGradeDetailCourse) return;
+  const q = presetQuestion || (input ? input.value.trim() : '');
+  if (!q) return;
+  if (!schoolAIReady()) {
+    resultEl.innerHTML = `<div class="card-sub">Enable coco.1 above first.</div>`;
+    return;
+  }
+  trackEvent('coco_ask', { feature: 'grade_tips' });
+  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Looking at your grade data…</div>`;
+  try {
+    const { answer, confidence } = await cocoAskGradeTips(currentGradeDetailCourse, q);
+    resultEl.innerHTML = cocoGradeTipsAnswerHTML(answer, confidence) + cocoFeedbackHTML('grade_tips');
+  } catch (err) {
+    resultEl.innerHTML = `<div class="card-sub">coco.1 error: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function askCocoGradeTipsSuggested(question) {
+  const input = document.getElementById('grade-tips-input');
+  if (input) input.value = question;
+  askCocoGradeTips(question);
+}
+
+/* ===========================
    ASSIGNMENT CHECKLISTS
    Phase 2 of the notes -> flashcards roadmap, built before flashcards on
    purpose: this needs nothing flashcards need (no notes, no retrieval
@@ -7165,6 +7497,13 @@ function refreshAskPanelsAfterAIReady() {
   // generation is a button click, not a text field.
   const checklistBannerHost = document.getElementById('checklist-ai-banner-host');
   if (checklistBannerHost) checklistBannerHost.innerHTML = schoolAIBannerHTML('checklist-ai');
+
+  if (currentGradeDetailCourse) {
+    const gradeBannerHost = document.getElementById('grade-tips-banner-host');
+    if (gradeBannerHost) gradeBannerHost.innerHTML = schoolAIBannerHTML('grade-tips');
+    const gradeInput = document.getElementById('grade-tips-input');
+    if (gradeInput && gradeInput.value.trim()) askCocoGradeTips();
+  }
 }
 
 function jumpTo(name) {
@@ -9348,6 +9687,7 @@ function showPage(name, el, fromNav) {
   closeSyllabusDetail();
   closeAllAnnouncements();
   closeCompletedAssignments();
+  closeGradeDetail();
   closeClassNotes();
   document.getElementById('links-tutorial-overlay')?.classList.remove('show');
 

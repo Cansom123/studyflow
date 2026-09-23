@@ -2526,19 +2526,8 @@ async function loadMfaStatus() {
     codesOk && Array.isArray(codes) ? `${codes.length} unused code${codes.length === 1 ? '' : 's'} left` : 'Unable to load';
 }
 
-/* ---- Backup codes -- the recovery path when email is too rate-limited
-   to rely on (Supabase's shared sender caps out fast). Codes are random,
-   hashed with SHA-256 before they ever leave the browser, and each is
-   single-use so a leaked code can't be replayed. ---- */
-async function sha256Hex(text) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-function randomBackupCode() {
-  const bytes = crypto.getRandomValues(new Uint8Array(5));
-  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-  return hex.slice(0, 4) + '-' + hex.slice(4, 8) + '-' + hex.slice(8, 10);
-}
+/* sha256Hex and randomBackupCode now live in js/crypto-utils.js -- see the
+   module bridge near the end of this file. */
 let lastGeneratedBackupCodes = [];
 async function generateAndStoreBackupCodes() {
   await sbFetchWithRetry('/rest/v1/mfa_backup_codes?user_id=eq.' + USER_ID, 'DELETE');
@@ -7523,15 +7512,16 @@ if (!checkForPasswordRecovery()) routeUser();
 </script>
 <!-- Real ES modules in the multi-file split (js/coco-core.js,
      js/checklist-core.js, js/format-utils.js, js/search-utils.js,
-     js/coco-verify.js, js/render-utils.js, js/study-utils.js) --
-     re-attached to `window` so the rest of the app's classic script can
-     keep calling these functions exactly as it always has. This bridge is
-     scaffolding for an incremental migration, not the end state: as more
-     logic moves into real modules, code that already imports what it needs
-     stops needing the global at all, and eventually this script (and the
-     other main script block above) goes away entirely. Requires the page
-     be served over http(s) -- see the staging environment, not opened via
-     file://, which browsers block module imports from. -->
+     js/coco-verify.js, js/render-utils.js, js/study-utils.js,
+     js/crypto-utils.js) -- re-attached to `window` so the rest of the
+     app's classic script can keep calling these functions exactly as it
+     always has. This bridge is scaffolding for an incremental migration,
+     not the end state: as more logic moves into real modules, code that
+     already imports what it needs stops needing the global at all, and
+     eventually this script (and the other main script block above) goes
+     away entirely. Requires the page be served over http(s) -- see the
+     staging environment, not opened via file://, which browsers block
+     module imports from. -->
 <script type="module">
   import * as CocoCore from './js/coco-core.js';
   import * as ChecklistCore from './js/checklist-core.js';
@@ -7540,7 +7530,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as CocoVerify from './js/coco-verify.js';
   import * as RenderUtils from './js/render-utils.js';
   import * as StudyUtils from './js/study-utils.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils);
+  import * as CryptoUtils from './js/crypto-utils.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils);
 </script>
 </body>
 </html>

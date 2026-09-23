@@ -6627,21 +6627,10 @@ function renderAllWork(assignments) {
   document.getElementById('allwork-list').innerHTML = html || '<div class="empty-box"><div class="empty-title">No assignments</div></div>';
 }
 
-// First concrete step toward priority that actually accounts for grades, not
-// just due dates: a class you're barely passing gets nudged up the list even
-// when its next deadline isn't the closest one. Capped well below the
-// overdue baseline (1000+) so overdue work always still wins regardless of
-// grade, and small enough to reorder among similarly-urgent items rather
-// than bury something due today under something due next week.
-function priorityGradeRiskBoost(course) {
-  if (!course) return 0;
-  const norm = s => (s || '').trim().toLowerCase();
-  const g = cachedGrades.find(x => norm(x.course_name) === norm(course));
-  if (!g) return 0;
-  const pct = g.current_score != null ? g.current_score : g.final_score;
-  if (pct == null || pct >= 70) return 0;
-  return Math.min(35, (70 - pct) * 1.2);
-}
+/* priorityGradeRiskBoost, computePriorityScores, and priorityAiText now
+   live in js/priority-core.js -- see the module bridge near the end of
+   this file. They used to read cachedGrades directly; now the caller
+   passes it in explicitly. */
 
 function renderPriority(assignments) {
   const planBannerHost = document.getElementById('planning-ai-banner-host');
@@ -6655,34 +6644,18 @@ function renderPriority(assignments) {
     a.completed && a.completed_at && new Date(a.completed_at).toDateString() === todayStr
   );
 
-  // Active: has due date, not completed, not more than 7 days overdue
-  const active = assignments.filter(a => {
-    if (!a.due_date || a.completed) return false;
-    const d = dayDiff(a.due_date, today);
-    return d >= -7;
-  });
+  const scored = computePriorityScores(assignments, today, userGoals, userPrefs.priorityGoalBoost ?? 50, cachedGrades);
 
   const listEl = document.getElementById('priority-list');
   const emptyEl = document.getElementById('priority-empty');
 
-  if (active.length === 0 && completedToday.length === 0) {
+  if (scored.length === 0 && completedToday.length === 0) {
     emptyEl.style.display = 'block';
     listEl.innerHTML = '';
     document.getElementById('priority-ai-text').textContent = 'No upcoming assignments - you\'re all caught up!';
     return;
   }
   emptyEl.style.display = 'none';
-
-  const scored = active.map(a => {
-    const d = dayDiff(a.due_date, today);
-    let score = d < 0 ? 1000 + Math.abs(d) : 100 - d;
-    for (const goal of userGoals) {
-      const g = goal.toLowerCase().split(' ')[0];
-      if ((a.course||'').toLowerCase().includes(g) || a.title.toLowerCase().includes(g)) score += (userPrefs.priorityGoalBoost ?? 50);
-    }
-    score += priorityGradeRiskBoost(a.course);
-    return { ...a, score, d };
-  }).sort((a, b) => b.score - a.score);
 
   const colors = ['p1','p2','p3','p4','p5'];
   let html = scored.slice(0, 5).map((a, i) => {
@@ -6721,16 +6694,7 @@ function renderPriority(assignments) {
   listEl.innerHTML = html;
 
   if (scored.length > 0) {
-    const top = scored[0];
-    const matchingGoal = userGoals.find(g => (top.course||'').toLowerCase().includes(g.toLowerCase().split(' ')[0]));
-    const gradeAtRisk = priorityGradeRiskBoost(top.course) > 0;
-    let aiText = matchingGoal
-      ? `"${top.title}" is your top priority - and it's in a class tied to your goal: "${matchingGoal}". Start here.`
-      : top.d < 0 ? `"${top.title}" is overdue. Take care of that first.`
-      : top.d <= 1 ? `"${top.title}" is due ${top.d===0?'today':'tomorrow'} - that's your top priority.`
-      : gradeAtRisk ? `"${top.title}" is your top priority - your grade in ${top.course} could use the attention.`
-      : `Your most urgent assignment is "${top.title}", due in ${top.d} days. Start there.`;
-    document.getElementById('priority-ai-text').textContent = aiText;
+    document.getElementById('priority-ai-text').textContent = priorityAiText(scored[0], userGoals, cachedGrades);
   }
 }
 
@@ -7351,15 +7315,15 @@ if (!checkForPasswordRecovery()) routeUser();
 <!-- Real ES modules in the multi-file split (js/coco-core.js,
      js/checklist-core.js, js/format-utils.js, js/search-utils.js,
      js/coco-verify.js, js/render-utils.js, js/study-utils.js,
-     js/crypto-utils.js, js/grade-core.js) -- re-attached to `window` so
-     the rest of the app's classic script can keep calling these functions
-     exactly as it always has. This bridge is scaffolding for an
-     incremental migration, not the end state: as more logic moves into
-     real modules, code that already imports what it needs stops needing
-     the global at all, and eventually this script (and the other main
-     script block above) goes away entirely. Requires the page be served
-     over http(s) -- see the staging environment, not opened via file://,
-     which browsers block module imports from. -->
+     js/crypto-utils.js, js/grade-core.js, js/priority-core.js) --
+     re-attached to `window` so the rest of the app's classic script can
+     keep calling these functions exactly as it always has. This bridge is
+     scaffolding for an incremental migration, not the end state: as more
+     logic moves into real modules, code that already imports what it needs
+     stops needing the global at all, and eventually this script (and the
+     other main script block above) goes away entirely. Requires the page
+     be served over http(s) -- see the staging environment, not opened via
+     file://, which browsers block module imports from. -->
 <script type="module">
   import * as CocoCore from './js/coco-core.js';
   import * as ChecklistCore from './js/checklist-core.js';
@@ -7370,7 +7334,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as StudyUtils from './js/study-utils.js';
   import * as CryptoUtils from './js/crypto-utils.js';
   import * as GradeCore from './js/grade-core.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore);
+  import * as PriorityCore from './js/priority-core.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore);
 </script>
 </body>
 </html>

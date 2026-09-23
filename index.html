@@ -4693,13 +4693,8 @@ function jumpToReportProblem() {
 /* ===========================
    HOME
 =========================== */
-function greetingWord() {
-  const h = new Date().getHours();
-  if (h < 5) return 'Still up';
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-}
+/* greetingWord, isAssignmentChecked, and computeHomeDashboard now live in
+   js/home-core.js -- see the module bridge near the end of this file. */
 
 function renderHome() {
   const eyebrowEl = document.getElementById('home-greeting-eyebrow');
@@ -4713,45 +4708,13 @@ function renderHome() {
   eyebrowEl.textContent = `${greetingWord()}${nameSuffix} · ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
 
   const today = new Date(); today.setHours(0,0,0,0);
-  const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate() + 7);
-  // Same "is this actually checked" test aCard() uses -- completion can come
-  // from either a.completed (server-synced) or the local doneSet, and a card
-  // checked either way needs to stop counting as overdue/upcoming here too,
-  // or a completed assignment keeps showing as the featured "Up next" card.
-  const isChecked = a => a.completed || doneSet.has(decodeURIComponent(doneKey(a)));
-  let overdueCount = 0;
-  const soon = [];
-  cachedAssignments.forEach(a => {
-    if (!a.due_date || isChecked(a)) return;
-    const due = new Date(a.due_date); due.setHours(0,0,0,0);
-    if (due < today) overdueCount++;
-    else if (due <= weekFromNow) soon.push(a);
-  });
-
-  // One dominant number instead of a three-box KPI row -- whichever count is
-  // most urgent leads (overdue, then due-this-week, then a calm caught-up
-  // state), with everything else folded into a quiet sentence underneath.
   const completedCount = getCompletedCount();
+  const { overdueCount, soon, withDate, heroValue, heroLabel, heroClass, subParts } =
+    computeHomeDashboard(cachedAssignments, doneSet, completedCount, today);
+
   const numEl = document.getElementById('home-hero-num');
   const labelEl = document.getElementById('home-hero-label');
   const subEl = document.getElementById('home-hero-sub');
-  let heroValue, heroLabel, heroClass = '';
-  const subParts = [];
-  if (overdueCount > 0) {
-    heroValue = String(overdueCount);
-    heroLabel = overdueCount === 1 ? 'assignment overdue' : 'assignments overdue';
-    heroClass = 'hero-overdue';
-    subParts.push(soon.length > 0 ? `${soon.length} more due this week` : 'nothing else due this week');
-  } else if (soon.length > 0) {
-    heroValue = String(soon.length);
-    heroLabel = soon.length === 1 ? 'thing due this week' : 'things due this week';
-    subParts.push('nothing overdue');
-  } else {
-    heroValue = '✓';
-    heroLabel = 'all caught up';
-    heroClass = 'hero-calm';
-  }
-  if (completedCount > 0) subParts.push(`${completedCount} completed`);
   if (numEl && numEl.textContent !== heroValue) {
     numEl.textContent = heroValue;
     numEl.classList.remove('stat-pop');
@@ -4765,7 +4728,6 @@ function renderHome() {
   if (labelEl) labelEl.textContent = heroLabel;
   if (subEl) subEl.textContent = subParts.join(' · ');
 
-  const withDate = cachedAssignments.filter(a => a.due_date && !isChecked(a)).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
   const upnextEl = document.getElementById('home-upnext');
   if (upnextEl) {
     if (withDate.length === 0) {
@@ -7315,15 +7277,16 @@ if (!checkForPasswordRecovery()) routeUser();
 <!-- Real ES modules in the multi-file split (js/coco-core.js,
      js/checklist-core.js, js/format-utils.js, js/search-utils.js,
      js/coco-verify.js, js/render-utils.js, js/study-utils.js,
-     js/crypto-utils.js, js/grade-core.js, js/priority-core.js) --
-     re-attached to `window` so the rest of the app's classic script can
-     keep calling these functions exactly as it always has. This bridge is
-     scaffolding for an incremental migration, not the end state: as more
-     logic moves into real modules, code that already imports what it needs
-     stops needing the global at all, and eventually this script (and the
-     other main script block above) goes away entirely. Requires the page
-     be served over http(s) -- see the staging environment, not opened via
-     file://, which browsers block module imports from. -->
+     js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
+     js/home-core.js) -- re-attached to `window` so the rest of the app's
+     classic script can keep calling these functions exactly as it always
+     has. This bridge is scaffolding for an incremental migration, not the
+     end state: as more logic moves into real modules, code that already
+     imports what it needs stops needing the global at all, and eventually
+     this script (and the other main script block above) goes away
+     entirely. Requires the page be served over http(s) -- see the staging
+     environment, not opened via file://, which browsers block module
+     imports from. -->
 <script type="module">
   import * as CocoCore from './js/coco-core.js';
   import * as ChecklistCore from './js/checklist-core.js';
@@ -7335,7 +7298,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as CryptoUtils from './js/crypto-utils.js';
   import * as GradeCore from './js/grade-core.js';
   import * as PriorityCore from './js/priority-core.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore);
+  import * as HomeCore from './js/home-core.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore);
 </script>
 </body>
 </html>

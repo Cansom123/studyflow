@@ -5873,28 +5873,8 @@ async function retryAutoFetchSyllabus(courseId) {
   if (syllabusDetailCourseId === courseId) openSyllabus(courseId);
 }
 
-const ASK_STOPWORDS = new Set([
-  'what','whats',"what's",'is','are','was','were','the','a','an','of','for','my','me','in','on','to','at',
-  'does','do','did','how','when','where','who','which','why','can','i','you','your','about','tell','please',
-  'this','that','it','and','or','be','will','have','has','with','if','so','there','any','our','we','us',
-  'much','many','need','needed','some','out','into','from','also'
-]);
-
-function extractAskKeywords(q) {
-  return q.toLowerCase()
-    .replace(/[^\w\s%]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 1 && !ASK_STOPWORDS.has(w));
-}
-
-function highlightAskKeywords(text, keywords) {
-  let escaped = escapeHtml(text);
-  keywords.forEach(k => {
-    const rx = new RegExp('(' + escapeRegex(k) + ')', 'ig');
-    escaped = escaped.replace(rx, '<mark>$1</mark>');
-  });
-  return escaped;
-}
+/* ASK_STOPWORDS, extractAskKeywords, and highlightAskKeywords now live in
+   js/search-utils.js -- see the module bridge near the end of this file. */
 
 // One tap answers the questions almost every student actually has, for
 // whoever's staring at a blank box unsure what to even ask -- especially
@@ -8025,20 +8005,21 @@ if (!checkForPasswordRecovery()) routeUser();
 }());
 </script>
 <!-- Real ES modules in the multi-file split (js/coco-core.js,
-     js/checklist-core.js, js/format-utils.js) -- re-attached to `window` so
-     the rest of the app's classic script can keep calling these functions
-     exactly as it always has. This bridge is scaffolding for an incremental
-     migration, not the end state: as more logic moves into real modules,
-     code that already imports what it needs stops needing the global at
-     all, and eventually this script (and the other main script block
-     above) goes away entirely. Requires the page be served over http(s) --
-     see the staging environment, not opened via file://, which browsers
-     block module imports from. -->
+     js/checklist-core.js, js/format-utils.js, js/search-utils.js) --
+     re-attached to `window` so the rest of the app's classic script can
+     keep calling these functions exactly as it always has. This bridge is
+     scaffolding for an incremental migration, not the end state: as more
+     logic moves into real modules, code that already imports what it needs
+     stops needing the global at all, and eventually this script (and the
+     other main script block above) goes away entirely. Requires the page
+     be served over http(s) -- see the staging environment, not opened via
+     file://, which browsers block module imports from. -->
 <script type="module">
   import * as CocoCore from './js/coco-core.js';
   import * as ChecklistCore from './js/checklist-core.js';
   import * as FormatUtils from './js/format-utils.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils);
+  import * as SearchUtils from './js/search-utils.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils);
 </script>
 </body>
 </html>

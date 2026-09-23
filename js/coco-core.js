@@ -13,6 +13,7 @@
 =========================== */
 
 import { escapeRegex } from './format-utils.js';
+import { extractAskKeywords } from './search-utils.js';
 
 /* ---- 1. RETRIEVAL ---------------------------------------------------- */
 
@@ -81,11 +82,6 @@ export function cocoSegments(contextText) {
 //   - Rare terms outweigh common ones (IDF). Without this, a generic word like
 //     "class" — which appears in half a syllabus — drowns out the actual signal,
 //     e.g. "skip class" wrongly matching "...put away during class."
-// Relies on `extractAskKeywords`, which still lives as a global in
-// index.html's classic script (it depends on ASK_STOPWORDS, not yet moved
-// into a module) -- safe, since this module only executes after that
-// script has already run, and this is only ever called later still, from
-// user-triggered event handlers.
 export function cocoRetrieve(question, contextText, limit = 3) {
   const direct = extractAskKeywords(question);
   if (direct.length === 0 || !contextText) return [];

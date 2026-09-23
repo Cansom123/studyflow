@@ -1,19 +1,26 @@
 /* ===========================
-   GRADE BREAKDOWN CORE LOGIC (pure function, no implicit app state)
-   Ninth module in the multi-file split, and the first one that required a
-   real (small) refactor rather than a pure cut-and-paste: this used to read
-   cachedGradedAssignments and cachedAssignments directly. Every call site
-   now passes them in explicitly -- the same "read live state at the call
-   site, compute from a plain parameter" split already used by
-   cocoVerifyPlanning/cocoVerifyGradeTips in coco-verify.js.
+   coco.1 CONTEXT BUILDERS (grade tips + planning mode)
+   Ninth/eleventh modules in the multi-file split, and the ones that
+   required a real (small) refactor rather than a pure cut-and-paste: these
+   used to read cachedGradedAssignments/cachedAssignments/cachedGrades/
+   doneSet/userGoals/cachedStudySessions directly. Every call site now
+   passes them in explicitly -- the same "read live state at the call site,
+   compute from a plain parameter" split already used by
+   cocoVerifyPlanning/cocoVerifyGradeTips in coco-verify.js. Both builders
+   here read live app state and produce a plain context object; the actual
+   verification/generation that reads THAT object stays in coco-verify.js.
 
-   "What's affecting this grade" -- built from per-assignment scores synced
-   from Canvas (cachedGradedAssignments), separate from the course-level
-   current_score/final_score already in cachedGrades. Also the data source
-   for the coco.1 grade-tips ask box.
+   gradeBreakdownForCourse/cocoGradeContext: "what's affecting this grade" --
+   built from per-assignment scores synced from Canvas, separate from the
+   course-level current_score/final_score already in cachedGrades.
+
+   cocoPlanningContext: a structured summary of what's actually due, so
+   coco.1 can't invent assignments, courses, or dates that aren't real.
 =========================== */
 
 import { assignmentDescriptionExcerpt } from './coco-core.js';
+import { dayDiff, doneKey } from './format-utils.js';
+import { fmtTime12 } from './study-utils.js';
 
 export function gradeBreakdownForCourse(courseName, cachedGradedAssignments, cachedAssignments) {
   const norm = s => (s || '').trim().toLowerCase();
@@ -100,4 +107,103 @@ export function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignmen
     openWork: openWorkRanked, undatedOpenWork, undescribedOpenWork,
     hasData: graded.length > 0 || missing.length > 0,
   };
+}
+
+// Structured summary of what's actually due, so coco.1 can't invent assignments,
+// courses, or dates that aren't real. Capped so a heavy course load doesn't
+// blow the small model's context window.
+export function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, limit = 20) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const active = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a))));
+  const sorted = [...active].sort((a, b) => {
+    const ad = a.due_date ? new Date(a.due_date) : new Date('9999-01-01');
+    const bd = b.due_date ? new Date(b.due_date) : new Date('9999-01-01');
+    return ad - bd;
+  }).slice(0, limit);
+
+  // Overdue work gets its own labeled block. A single date-sorted list blends it in
+  // next to "due today" and the model consistently fails to treat it as more urgent —
+  // a dedicated, explicitly-labeled section fixes that in testing.
+  const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  // Spell the weekday out rather than making the model derive it from a date.
+  // Asked to compute "2026-09-02 -> Wednesday" it answered Friday often enough
+  // to matter; given the word, it just copies it.
+  // Overdue work is spelled out the long way ("was due Monday, now 1 day LATE").
+  // A/B tested against the terser "1d overdue": the short form got described as
+  // still-upcoming in ~37% of generations, the explicit form in 0 of 26.
+  const fmtLine = a => {
+    const d = a.due_date ? dayDiff(a.due_date, today) : null;
+    const dow = a.due_date ? DOW[new Date(a.due_date).getDay()] : '';
+    const points = a.points_possible ? `, ${a.points_possible} pts` : '';
+    let dueStr;
+    if (d === null) dueStr = 'no due date';
+    else if (d < 0) {
+      const n = Math.abs(d);
+      dueStr = `was due ${dow}, now ${n} day${n !== 1 ? 's' : ''} LATE (deadline passed, not submitted)`;
+    }
+    else if (d === 0) dueStr = `due today (${dow})`;
+    else if (d === 1) dueStr = `due tomorrow (${dow})`;
+    else dueStr = `due in ${d} days (${dow})`;
+    return `- ${a.title} (${a.course || 'unknown course'}, ${a.assignment_type || 'assignment'}${points}) — ${dueStr}`;
+  };
+  const overdue = sorted.filter(a => a.due_date && new Date(a.due_date) < today);
+  const upcoming = sorted.filter(a => !a.due_date || new Date(a.due_date) >= today);
+
+  let text = '';
+  if (overdue.length) text += `OVERDUE — ALREADY LATE, the deadline has PASSED (handle these first):\n${overdue.map(fmtLine).join('\n')}\n\n`;
+  if (upcoming.length) text += `Upcoming:\n${upcoming.map(fmtLine).join('\n')}`;
+
+  // Current grades and stated goals -- without this, "which class needs the
+  // most attention" was pure guesswork from due dates alone. A class you're
+  // already at 95% in and a class you're failing can have the same due date
+  // this week; only the grade tells you which one actually needs the time.
+  const gradedCourses = (cachedGrades || [])
+    .filter(g => g.current_score != null || g.final_score != null || g.current_grade || g.final_grade);
+  const gradeLines = gradedCourses
+    .map(g => {
+      const pct = g.current_score != null ? g.current_score : g.final_score;
+      const letter = g.current_grade || g.final_grade || '';
+      const bits = [pct != null ? `${pct}%` : '', letter].filter(Boolean).join(' / ');
+      return `- ${g.course_name}: ${bits || 'no grade posted yet'}`;
+    });
+  if (gradeLines.length) text += `\n\nCurrent grades:\n${gradeLines.join('\n')}`;
+
+  const goalLines = (userGoals || []).filter(Boolean);
+  if (goalLines.length) text += `\n\nStudent's stated goals this semester:\n${goalLines.map(g => `- ${g}`).join('\n')}`;
+
+  const weekOut = new Date(today); weekOut.setDate(weekOut.getDate() + 7);
+  const studyLines = cachedStudySessions.filter(s => {
+    const sd = new Date(s.session_date + 'T00:00:00');
+    return sd >= today && sd <= weekOut;
+  }).map(s => {
+    const sd = new Date(s.session_date + 'T00:00:00');
+    return `- Study block: ${s.title}${s.course ? ' (' + s.course + ')' : ''} on ${DOW[sd.getDay()]} ${s.session_date}${s.start_time ? ' at ' + fmtTime12(s.start_time) : ''}`;
+  });
+
+  if (studyLines.length) text += `\n\nAlready scheduled study time this week:\n${studyLines.join('\n')}`;
+
+  // Every weekday the student actually has something on. The model likes to
+  // translate dates into weekday names and gets them wrong ("Chem review on
+  // Friday" for a Thursday block), so the verifier needs the real set.
+  const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const validWeekdays = new Set();
+  // itemDays lets the verifier check not just that a weekday exists somewhere,
+  // but that it's attached to the right thing.
+  const itemDays = [];
+  sorted.forEach(a => {
+    if (!a.due_date || !a.title) return;
+    const day = DAY_NAMES[new Date(a.due_date).getDay()];
+    validWeekdays.add(day);
+    itemDays.push({ title: a.title, day });
+  });
+  cachedStudySessions.forEach(s => {
+    if (!s.session_date) return;
+    const sd = new Date(s.session_date + 'T00:00:00');
+    if (sd < today || sd > weekOut) return;
+    const day = DAY_NAMES[sd.getDay()];
+    validWeekdays.add(day);
+    if (s.title) itemDays.push({ title: s.title, day });
+  });
+
+  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays, itemDays, grades: gradedCourses };
 }

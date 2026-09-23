@@ -4132,104 +4132,12 @@ function cocoRate(rowId, feature, positive) {
 
 /* ---- Planning mode: advice over the whole assignment list, not one doc --- */
 
-// Structured summary of what's actually due, so coco.1 can't invent assignments,
-// courses, or dates that aren't real. Capped so a heavy course load doesn't
-// blow the small model's context window.
-function cocoPlanningContext(limit = 20) {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const active = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a))));
-  const sorted = [...active].sort((a, b) => {
-    const ad = a.due_date ? new Date(a.due_date) : new Date('9999-01-01');
-    const bd = b.due_date ? new Date(b.due_date) : new Date('9999-01-01');
-    return ad - bd;
-  }).slice(0, limit);
-
-  // Overdue work gets its own labeled block. A single date-sorted list blends it in
-  // next to "due today" and the model consistently fails to treat it as more urgent —
-  // a dedicated, explicitly-labeled section fixes that in testing.
-  const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  // Spell the weekday out rather than making the model derive it from a date.
-  // Asked to compute "2026-09-02 -> Wednesday" it answered Friday often enough
-  // to matter; given the word, it just copies it.
-  // Overdue work is spelled out the long way ("was due Monday, now 1 day LATE").
-  // A/B tested against the terser "1d overdue": the short form got described as
-  // still-upcoming in ~37% of generations, the explicit form in 0 of 26.
-  const fmtLine = a => {
-    const d = a.due_date ? dayDiff(a.due_date, today) : null;
-    const dow = a.due_date ? DOW[new Date(a.due_date).getDay()] : '';
-    const points = a.points_possible ? `, ${a.points_possible} pts` : '';
-    let dueStr;
-    if (d === null) dueStr = 'no due date';
-    else if (d < 0) {
-      const n = Math.abs(d);
-      dueStr = `was due ${dow}, now ${n} day${n !== 1 ? 's' : ''} LATE (deadline passed, not submitted)`;
-    }
-    else if (d === 0) dueStr = `due today (${dow})`;
-    else if (d === 1) dueStr = `due tomorrow (${dow})`;
-    else dueStr = `due in ${d} days (${dow})`;
-    return `- ${a.title} (${a.course || 'unknown course'}, ${a.assignment_type || 'assignment'}${points}) — ${dueStr}`;
-  };
-  const overdue = sorted.filter(a => a.due_date && new Date(a.due_date) < today);
-  const upcoming = sorted.filter(a => !a.due_date || new Date(a.due_date) >= today);
-
-  let text = '';
-  if (overdue.length) text += `OVERDUE — ALREADY LATE, the deadline has PASSED (handle these first):\n${overdue.map(fmtLine).join('\n')}\n\n`;
-  if (upcoming.length) text += `Upcoming:\n${upcoming.map(fmtLine).join('\n')}`;
-
-  // Current grades and stated goals -- without this, "which class needs the
-  // most attention" was pure guesswork from due dates alone. A class you're
-  // already at 95% in and a class you're failing can have the same due date
-  // this week; only the grade tells you which one actually needs the time.
-  const gradedCourses = (typeof cachedGrades !== 'undefined' ? cachedGrades : [])
-    .filter(g => g.current_score != null || g.final_score != null || g.current_grade || g.final_grade);
-  const gradeLines = gradedCourses
-    .map(g => {
-      const pct = g.current_score != null ? g.current_score : g.final_score;
-      const letter = g.current_grade || g.final_grade || '';
-      const bits = [pct != null ? `${pct}%` : '', letter].filter(Boolean).join(' / ');
-      return `- ${g.course_name}: ${bits || 'no grade posted yet'}`;
-    });
-  if (gradeLines.length) text += `\n\nCurrent grades:\n${gradeLines.join('\n')}`;
-
-  const goalLines = (typeof userGoals !== 'undefined' ? userGoals : []).filter(Boolean);
-  if (goalLines.length) text += `\n\nStudent's stated goals this semester:\n${goalLines.map(g => `- ${g}`).join('\n')}`;
-
-  const weekOut = new Date(today); weekOut.setDate(weekOut.getDate() + 7);
-  const studyLines = cachedStudySessions.filter(s => {
-    const sd = new Date(s.session_date + 'T00:00:00');
-    return sd >= today && sd <= weekOut;
-  }).map(s => {
-    const sd = new Date(s.session_date + 'T00:00:00');
-    return `- Study block: ${s.title}${s.course ? ' (' + s.course + ')' : ''} on ${DOW[sd.getDay()]} ${s.session_date}${s.start_time ? ' at ' + fmtTime12(s.start_time) : ''}`;
-  });
-
-  if (studyLines.length) text += `\n\nAlready scheduled study time this week:\n${studyLines.join('\n')}`;
-
-  // Every weekday the student actually has something on. The model likes to
-  // translate dates into weekday names and gets them wrong ("Chem review on
-  // Friday" for a Thursday block), so the verifier needs the real set.
-  const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-  const validWeekdays = new Set();
-  // itemDays lets the verifier check not just that a weekday exists somewhere,
-  // but that it's attached to the right thing.
-  const itemDays = [];
-  sorted.forEach(a => {
-    if (!a.due_date || !a.title) return;
-    const day = DAY_NAMES[new Date(a.due_date).getDay()];
-    validWeekdays.add(day);
-    itemDays.push({ title: a.title, day });
-  });
-  cachedStudySessions.forEach(s => {
-    if (!s.session_date) return;
-    const sd = new Date(s.session_date + 'T00:00:00');
-    if (sd < today || sd > weekOut) return;
-    const day = DAY_NAMES[sd.getDay()];
-    validWeekdays.add(day);
-    if (s.title) itemDays.push({ title: s.title, day });
-  });
-
-  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays, itemDays, grades: gradedCourses };
-}
+/* cocoPlanningContext now lives in js/grade-core.js (alongside
+   cocoGradeContext -- both are "build the coco.1 context object from live
+   app state" functions) -- see the module bridge near the end of this
+   file. Same refactor as before: it used to read cachedAssignments/
+   doneSet/cachedGrades/userGoals/cachedStudySessions directly, now the
+   caller passes them all in explicitly. */
 
 /* ---- Planning-mode verification -------------------------------------
    Syllabus mode refuses to trust the model: it checks numbers against the
@@ -4253,7 +4161,7 @@ function cocoPlanningContext(limit = 20) {
 async function cocoAskPlanning(question) {
   if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
 
-  const ctx = cocoPlanningContext();
+  const ctx = cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions);
   const { text, count } = ctx;
   if (count === 0) {
     return { answer: "You don't have any upcoming assignments synced right now - nothing to plan around yet.", confidence: 'none' };

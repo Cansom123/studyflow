@@ -4,7 +4,38 @@ const corsHeaders = {
 };
 
 function preserveIds(jsonText: string): string {
-  return jsonText.replace(/:( *)(\d{16,})/g, ':$1"$2"');
+  // Walk the raw JSON text character-by-character so we can track whether we're
+  // inside a string value. Only replace bare 16+-digit numbers that appear as JSON
+  // property values (after a colon, outside of any string), never text inside strings.
+  let result = '';
+  let inString = false;
+  let i = 0;
+  while (i < jsonText.length) {
+    const ch = jsonText[i];
+    if (inString) {
+      result += ch;
+      if (ch === '\\') {
+        i++;
+        if (i < jsonText.length) result += jsonText[i]; // escaped char, pass through
+      } else if (ch === '"') {
+        inString = false;
+      }
+      i++;
+      continue;
+    }
+    if (ch === '"') { inString = true; result += ch; i++; continue; }
+    if (ch === ':') {
+      result += ch; i++;
+      let spaces = '';
+      while (i < jsonText.length && jsonText[i] === ' ') { spaces += jsonText[i++]; }
+      let digits = '';
+      while (i < jsonText.length && jsonText[i] >= '0' && jsonText[i] <= '9') { digits += jsonText[i++]; }
+      result += digits.length >= 16 ? spaces + '"' + digits + '"' : spaces + digits;
+      continue;
+    }
+    result += ch; i++;
+  }
+  return result;
 }
 
 function extractCode(name: string | null | undefined): string | null {
@@ -21,6 +52,27 @@ function isTermConcluded(courseName: string, now: Date): boolean {
   const endMonth: Record<string, number> = { FAL: 11, SPR: 4, SUM: 7, WIN: 1 };
   const termEnd = new Date(termYear, endMonth[termType] ?? 11, 28);
   return termEnd < now;
+}
+
+function htmlToText(html: string | null | undefined): string | null {
+  if (!html) return null;
+  let text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!text) return null;
+  if (text.length > 4000) text = text.slice(0, 4000).trim() + "…";
+  return text;
 }
 
 async function fetchAllPages(url: string, auth: string): Promise<any[] | null> {
@@ -172,7 +224,7 @@ Deno.serve(async (req) => {
             const matchingSc = currentSel.find((sc) => extractCode(sc.name) === code);
             if (!matchingSc) return false;
             const selectedTerm = extractTerm(matchingSc.name);
-            return !candidateTerm || !selectedTerm || candidateTerm === selectedTerm;
+            if (!candidateTerm || !selectedTerm || candidateTerm === selectedTerm) return true;
           }
           if (concludedCodeSet.has(code) && !isTermConcluded(c.name || "", now)) return true;
           return false;
@@ -223,9 +275,9 @@ Deno.serve(async (req) => {
         // Skip non-gradable assignment types
         if (types.includes("not_graded") || types.includes("none") || types.includes("wiki_page")) continue;
 
-        // Skip assignments Canvas explicitly marks as locked — only when confirmed locked
-        if (a.locked_for_user === true) continue;
-        if (a.lock_at != null && new Date(a.lock_at) < now) continue;
+        // Drop dated assignments more than 90 days past due (truly stale, no action possible)
+        const dueCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        if (a.due_at != null && new Date(a.due_at) < dueCutoff) continue;
 
         if (a.due_at === null || a.due_at === undefined) {
           const createdAt = a.created_at ? new Date(a.created_at) : null;
@@ -235,8 +287,18 @@ Deno.serve(async (req) => {
         const sub = a.submission;
         const state = String(sub?.workflow_state ?? "null");
         debugStates[state] = (debugStates[state] ?? 0) + 1;
-        const isSubmitted = !!(sub?.submitted_at || state === "submitted" || state === "graded" ||
+        const isSubmitted = !!(sub?.submitted_at || state === "submitted" ||
           state === "complete" || state === "pending_review");
+
+        // Canvas's locked_for_user is ambiguous: it's true both when the deadline
+        // has passed (closed) AND when the assignment simply isn't available yet
+        // (a future unlock_at, or a module prerequisite not yet met). Those need
+        // opposite messaging to the student, so don't collapse them into one flag.
+        // lock_at having actually passed is ground truth we can compute ourselves,
+        // independent of whatever Canvas's own flag says.
+        const lockAtPassed = a.lock_at != null && new Date(a.lock_at) < now;
+        const isLocked = a.locked_for_user === true || lockAtPassed;
+        const lockReason = !isLocked ? null : (lockAtPassed ? "closed" : "unavailable");
 
         if (isSubmitted) completedCount++;
         allAssignments.push({
@@ -249,7 +311,15 @@ Deno.serve(async (req) => {
           completed: isSubmitted,
           completed_at: isSubmitted ? (sub?.submitted_at ?? null) : null,
           assignment_url: a.html_url ?? null,
-          is_locked: false,
+          is_locked: isLocked,
+          lock_reason: lockReason,
+          description: htmlToText(a.description),
+          // Feeds the Grades page's "what's affecting this grade" breakdown --
+          // score/missing/excused already come back on `submission` (we already
+          // request include[]=submission above), just weren't persisted before.
+          score: sub?.score ?? null,
+          is_missing: !!sub?.missing,
+          is_excused: !!sub?.excused,
         });
         kept++;
       }
@@ -289,6 +359,44 @@ Deno.serve(async (req) => {
       console.warn(`[run ${runId}] grades error: ${e?.message}`);
     }
 
+    // Announcements -- one call across all active courses (Canvas's
+    // /announcements endpoint takes a context_codes[] list) rather than a
+    // per-course request. Upserted (not delete-then-reinsert like
+    // assignments/grades above) so a student's read/unread state survives
+    // the next sync instead of resetting every time.
+    const allAnnouncements: any[] = [];
+    try {
+      if (activeCourses.length > 0) {
+        const announceCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const contextParams = activeCourses
+          .map((c: any) => `context_codes[]=course_${c.id}`)
+          .join("&");
+        const rawAnnouncements = await fetchAllPages(
+          `${canvasUrl}/api/v1/announcements?${contextParams}&per_page=50&start_date=${announceCutoff.toISOString()}`,
+          canvasAuth,
+        ) ?? [];
+        const courseIdToName = new Map(activeCourses.map((c: any) => [String(c.id), c.name as string]));
+        for (const an of rawAnnouncements) {
+          const courseId = String(an.context_code ?? "").replace(/^course_/, "");
+          const courseName = courseIdToName.get(courseId);
+          if (!courseName || !an.id || !an.title) continue;
+          allAnnouncements.push({
+            user_id: userId,
+            canvas_announcement_id: String(an.id),
+            course_name: courseName,
+            title: an.title,
+            message: htmlToText(an.message),
+            author_name: an.author?.display_name ?? null,
+            posted_at: an.posted_at ?? an.delayed_post_at ?? null,
+            announcement_url: an.html_url ?? null,
+          });
+        }
+        console.log(`[run ${runId}] announcements: ${allAnnouncements.length}`);
+      }
+    } catch (e: any) {
+      console.warn(`[run ${runId}] announcements error: ${e?.message}`);
+    }
+
     if (syncAll && activeCourses.length > 0) {
       const discovered = activeCourses.map((c: any) => ({ id: String(c.id), name: c.name }));
       await fetch(`${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}`, {
@@ -316,6 +424,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Upsert (not delete-then-reinsert) so a previously-read announcement
+    // doesn't flip back to unread just because it came back in this sync.
+    if (allAnnouncements.length > 0) {
+      await fetch(`${supabaseUrl}/rest/v1/announcements?on_conflict=user_id,canvas_announcement_id`, {
+        method: "POST",
+        headers: { ...svcHdr, Prefer: "return=minimal,resolution=merge-duplicates" },
+        body: JSON.stringify(allAnnouncements),
+      });
+    }
+    // Prune announcements Canvas no longer returns for this user's active
+    // window (unposted/deleted upstream, or older than the 30-day fetch cutoff).
+    const keepIds = allAnnouncements.map((a) => a.canvas_announcement_id);
+    const keepList = keepIds.length > 0 ? `(${keepIds.map((id) => `"${id}"`).join(",")})` : "()";
+    await fetch(
+      `${supabaseUrl}/rest/v1/announcements?user_id=eq.${userId}&canvas_announcement_id=not.in.${keepList}`,
+      { method: "DELETE", headers: svcHdr },
+    );
+
     const effectiveCourses = syncAll ? activeCourses.map((c: any) => ({ id: String(c.id), name: c.name })) : activeSel;
     const assignmentsByCourse = new Map<string, any[]>();
     for (const a of allAssignments) {
@@ -339,6 +465,7 @@ Deno.serve(async (req) => {
         assignments: allAssignments.length,
         active_assignments: activeCount,
         grades: allGrades.length,
+        announcements: allAnnouncements.length,
         blocked_courses: blockedCourseCount,
         courses: courseSummaries,
         sync_all: syncAll,

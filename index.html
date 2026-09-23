@@ -6656,47 +6656,25 @@ function showPage(name, el, fromNav) {
 
 function calculateFinal() {
   const current = parseFloat(document.getElementById('calc-current').value);
-  const weight  = parseFloat(document.getElementById('calc-weight').value) / 100;
+  const weightPercent = parseFloat(document.getElementById('calc-weight').value);
   const target  = parseFloat(document.getElementById('calc-target').value);
   const resultEl = document.getElementById('calc-result');
   const labelEl  = document.getElementById('calc-result-label');
   const scoreEl  = document.getElementById('calc-result-score');
   const msgEl    = document.getElementById('calc-result-msg');
 
-  if (isNaN(current) || isNaN(weight) || isNaN(target) || weight <= 0) {
-    resultEl.style.display = 'none'; return;
-  }
+  // Pure needed-grade math + messaging lives in js/grade-calc-core.js.
+  const r = calculateNeededGrade(current, weightPercent, target);
+  if (!r.visible) { resultEl.style.display = 'none'; return; }
 
-  const needed = (target - (1 - weight) * current) / weight;
   resultEl.style.display = 'block';
-
-  if (needed < 0) {
-    resultEl.style.background = 'var(--connected-bg)';
-    labelEl.style.color = scoreEl.style.color = msgEl.style.color = 'var(--connected-color)';
-    labelEl.textContent = 'Already secured';
-    scoreEl.textContent = '🎉';
-    msgEl.textContent = "You've already hit your target - even a 0% on the final keeps you there.";
-  } else if (needed > 100) {
-    resultEl.style.background = 'var(--error-bg)';
-    labelEl.style.color = scoreEl.style.color = msgEl.style.color = 'var(--error-color)';
-    labelEl.textContent = 'Not possible';
-    scoreEl.textContent = `${needed.toFixed(1)}%`;
-    msgEl.textContent = "Even a perfect score won't get you there. Aim as high as you can.";
-  } else if (needed >= 90) {
-    resultEl.style.background = 'var(--ai-bg)';
-    labelEl.style.color = 'var(--ai-label)';
-    scoreEl.style.color = 'var(--ai-label)';
-    msgEl.style.color = 'var(--ai-text)';
-    labelEl.textContent = 'You need';
-    scoreEl.textContent = `${needed.toFixed(1)}%`;
-    msgEl.textContent = "Challenging - you'll need to bring your A-game.";
-  } else {
-    resultEl.style.background = 'var(--connected-bg)';
-    labelEl.style.color = scoreEl.style.color = msgEl.style.color = 'var(--connected-color)';
-    labelEl.textContent = 'You need';
-    scoreEl.textContent = `${needed.toFixed(1)}%`;
-    msgEl.textContent = needed < 60 ? "You're in great shape - very achievable." : "Totally doable. You've got this.";
-  }
+  resultEl.style.background = r.background;
+  labelEl.style.color = r.labelColor;
+  scoreEl.style.color = r.scoreColor;
+  msgEl.style.color = r.msgColor;
+  labelEl.textContent = r.label;
+  scoreEl.textContent = r.score;
+  msgEl.textContent = r.msg;
 }
 
 function updateLastSyncedLabel() {
@@ -7180,7 +7158,8 @@ if (!checkForPasswordRecovery()) routeUser();
      js/checklist-core.js, js/format-utils.js, js/search-utils.js,
      js/coco-verify.js, js/render-utils.js, js/study-utils.js,
      js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
-     js/home-core.js, js/goals-core.js, js/term-utils.js) -- re-attached
+     js/home-core.js, js/goals-core.js, js/term-utils.js,
+     js/grade-calc-core.js) -- re-attached
      to `window` so the rest of the app's classic script can keep calling
      these functions exactly as it always has. This bridge is scaffolding
      for an incremental migration, not the end state: as more logic moves
@@ -7203,7 +7182,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as HomeCore from './js/home-core.js';
   import * as GoalsCore from './js/goals-core.js';
   import * as TermUtils from './js/term-utils.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils);
+  import * as GradeCalcCore from './js/grade-calc-core.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore);
 </script>
 </body>
 </html>

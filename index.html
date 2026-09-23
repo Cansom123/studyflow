@@ -6268,29 +6268,8 @@ function renderDueCalSelected() {
   renderStudySessionsForDay();
 }
 
-function fmtTime12(t) {
-  if (!t) return '';
-  const [h, m] = t.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
-}
-
-function studySessionCardHTML(s) {
-  const timeRange = s.start_time
-    ? `${fmtTime12(s.start_time)}${s.end_time ? ' – ' + fmtTime12(s.end_time) : ''}`
-    : '';
-  const meta = [s.course, timeRange].filter(Boolean).join(' · ');
-  return `<div class="study-session-card${s.completed ? ' done' : ''}">
-    <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleStudySessionDone('${s.id}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
-    <div class="study-session-info">
-      <div class="study-session-title">${escapeHtml(s.title)}</div>
-      ${meta ? `<div class="study-session-meta">${escapeHtml(meta)}</div>` : ''}
-    </div>
-    ${!s.completed ? `<button class="study-session-start" onclick="openFocusTimer('${s.id}')" title="Start focus timer">▶ Start</button>` : ''}
-    <button class="study-session-del" onclick="deleteStudySession('${s.id}')" title="Remove">✕</button>
-  </div>`;
-}
+/* fmtTime12 and studySessionCardHTML now live in js/study-utils.js -- see
+   the module bridge near the end of this file. */
 
 function renderStudySessionsForDay() {
   const listEl = document.getElementById('study-sessions-list');
@@ -6302,17 +6281,8 @@ function renderStudySessionsForDay() {
 
 /* ===== Study tab: totals + goals + today's sessions ===== */
 
-function startOfWeek(d) {
-  const start = new Date(d);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - start.getDay()); // back to Sunday
-  return start;
-}
-
-function fmtHoursMinutes(totalMin) {
-  const h = Math.floor(totalMin / 60), m = totalMin % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
+/* startOfWeek and fmtHoursMinutes now live in js/study-utils.js -- see the
+   module bridge near the end of this file. */
 
 function renderStudyTab() {
   const totalEl = document.getElementById('study-stat-total');
@@ -7553,15 +7523,15 @@ if (!checkForPasswordRecovery()) routeUser();
 </script>
 <!-- Real ES modules in the multi-file split (js/coco-core.js,
      js/checklist-core.js, js/format-utils.js, js/search-utils.js,
-     js/coco-verify.js, js/render-utils.js) -- re-attached to `window` so
-     the rest of the app's classic script can keep calling these functions
-     exactly as it always has. This bridge is scaffolding for an
-     incremental migration, not the end state: as more logic moves into
-     real modules, code that already imports what it needs stops needing
-     the global at all, and eventually this script (and the other main
-     script block above) goes away entirely. Requires the page be served
-     over http(s) -- see the staging environment, not opened via file://,
-     which browsers block module imports from. -->
+     js/coco-verify.js, js/render-utils.js, js/study-utils.js) --
+     re-attached to `window` so the rest of the app's classic script can
+     keep calling these functions exactly as it always has. This bridge is
+     scaffolding for an incremental migration, not the end state: as more
+     logic moves into real modules, code that already imports what it needs
+     stops needing the global at all, and eventually this script (and the
+     other main script block above) goes away entirely. Requires the page
+     be served over http(s) -- see the staging environment, not opened via
+     file://, which browsers block module imports from. -->
 <script type="module">
   import * as CocoCore from './js/coco-core.js';
   import * as ChecklistCore from './js/checklist-core.js';
@@ -7569,7 +7539,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as SearchUtils from './js/search-utils.js';
   import * as CocoVerify from './js/coco-verify.js';
   import * as RenderUtils from './js/render-utils.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils);
+  import * as StudyUtils from './js/study-utils.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils);
 </script>
 </body>
 </html>

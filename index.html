@@ -1840,6 +1840,11 @@ let cachedAnnouncements = [];
 let syncInProgress = false;
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+// Kept here (not moved to a module) on purpose: updateLastSyncedLabel() is
+// called synchronously right below, at classic-script top-level parse time
+// -- before any deferred `type="module"` script has run -- so `months`
+// needs to already exist. render-utils.js keeps its own small copy for
+// announcementTimeAgo, which is never called this early.
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 updateLastSyncedLabel();
 
@@ -3527,19 +3532,8 @@ async function loadAnnouncements() {
   renderAnnouncements();
 }
 
-function announcementTimeAgo(iso) {
-  if (!iso) return '';
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const daysAgo = Math.floor(hrs / 24);
-  if (daysAgo < 7) return `${daysAgo}d ago`;
-  const d = new Date(iso);
-  return `${months[d.getMonth()]} ${d.getDate()}`;
-}
+/* announcementTimeAgo now lives in js/render-utils.js -- see the module
+   bridge near the end of this file. */
 
 function renderAnnouncements() {
   const section = document.getElementById('home-announcements-section');
@@ -3566,25 +3560,8 @@ function renderAnnouncements() {
   if (detailBody) detailBody.innerHTML = cachedAnnouncements.map(announcementCardHTML).join('');
 }
 
-function announcementCardHTML(a) {
-  const expanded = a._expanded ? ' expanded' : '';
-  const unread = !a.read ? ' unread' : '';
-  const readCls = a.read ? ' read' : '';
-  const body = a._expanded
-    ? `<div class="announcement-body">${escapeHtml(a.message || 'No additional details.')}</div>
-       ${a.announcement_url ? `<a href="${a.announcement_url}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>` : ''}`
-    : '';
-  return `<div class="announcement-card${expanded}${unread}${readCls}" onclick="toggleAnnouncement('${a.id}')">
-    <div class="announcement-unread-dot"></div>
-    <div class="announcement-main">
-      <div class="announcement-course">${escapeHtml(cleanCourseName(a.course_name))}</div>
-      <div class="announcement-title">${escapeHtml(a.title)}</div>
-      <div class="announcement-meta">${announcementTimeAgo(a.posted_at)}${a.author_name ? ` · ${escapeHtml(a.author_name)}` : ''}</div>
-      ${body}
-    </div>
-    ${a.read ? `<button class="announcement-dismiss" title="Done with this, remove it" onclick="dismissAnnouncement('${a.id}', event)">✕</button>` : ''}
-  </div>`;
-}
+/* announcementCardHTML now lives in js/render-utils.js -- see the module
+   bridge near the end of this file. */
 
 function openAllAnnouncements() {
   const overlay = document.getElementById('announcements-detail-overlay');
@@ -4173,20 +4150,8 @@ function cocoRate(rowId, feature, positive) {
 // Renders an answer according to how much coco.1 actually trusts it. A 'quoted'
 // result is a verbatim line from the syllabus, so it's labelled as a direct
 // quote rather than dressed up as an AI answer — honest about what it is.
-function cocoAnswerHTML(answer, confidence) {
-  if (confidence === 'none') {
-    return `<div class="school-ai-badge">✨ coco.1</div>` +
-           `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
-  }
-  if (confidence === 'quoted') {
-    return `<div class="school-ai-badge">✨ coco.1</div>` +
-           `<div class="school-ai-disclaimer" style="margin-top:0;">Quoting the syllabus directly:</div>` +
-           `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
-  }
-  return `<div class="school-ai-badge">✨ coco.1</div>` +
-         `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
-         `<div class="school-ai-disclaimer">AI-generated - check it against the highlighted source.</div>`;
-}
+/* cocoAnswerHTML now lives in js/render-utils.js -- see the module bridge
+   near the end of this file. */
 
 /* ---- Planning mode: advice over the whole assignment list, not one doc --- */
 
@@ -4354,23 +4319,8 @@ async function cocoAskPlanning(question) {
   return { answer, confidence: 'high', reason: '' };
 }
 
-function cocoPlanningAnswerHTML(answer, confidence) {
-  if (confidence === 'none') {
-    return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
-  }
-  // 'computed' means the generated answer failed verification and this plan was
-  // built straight from the assignment rows instead. Label it as what it is
-  // rather than dressing it up as an AI answer — same honesty rule as the
-  // syllabus 'quoted' state.
-  if (confidence === 'computed') {
-    return `<div class="school-ai-badge">✨ coco.1</div>` +
-      `<div class="school-ai-disclaimer" style="margin-top:0;">Straight from your assignment list:</div>` +
-      `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
-  }
-  return `<div class="school-ai-badge">✨ coco.1</div>` +
-    `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
-    `<div class="school-ai-disclaimer">AI-generated planning advice based on your synced assignments - always double-check deadlines yourself.</div>`;
-}
+/* cocoPlanningAnswerHTML now lives in js/render-utils.js -- see the module
+   bridge near the end of this file. */
 
 async function askCocoPlanning() {
   const input = document.getElementById('planning-ai-input');
@@ -4517,19 +4467,8 @@ async function cocoAskGradeTips(courseName, question) {
   return { answer, confidence: 'high', reason: '' };
 }
 
-function cocoGradeTipsAnswerHTML(answer, confidence) {
-  if (confidence === 'none') {
-    return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
-  }
-  if (confidence === 'computed') {
-    return `<div class="school-ai-badge">✨ coco.1</div>` +
-      `<div class="school-ai-disclaimer" style="margin-top:0;">Straight from your grade data:</div>` +
-      `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
-  }
-  return `<div class="school-ai-badge">✨ coco.1</div>` +
-    `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
-    `<div class="school-ai-disclaimer">AI-generated advice based on your synced grades - always confirm anything important with your teacher.</div>`;
-}
+/* cocoGradeTipsAnswerHTML now lives in js/render-utils.js -- see the
+   module bridge near the end of this file. */
 
 async function askCocoGradeTips(presetQuestion) {
   const input = document.getElementById('grade-tips-input');
@@ -7614,22 +7553,23 @@ if (!checkForPasswordRecovery()) routeUser();
 </script>
 <!-- Real ES modules in the multi-file split (js/coco-core.js,
      js/checklist-core.js, js/format-utils.js, js/search-utils.js,
-     js/coco-verify.js) -- re-attached to `window` so the rest of the app's
-     classic script can keep calling these functions exactly as it always
-     has. This bridge is scaffolding for an incremental migration, not the
-     end state: as more logic moves into real modules, code that already
-     imports what it needs stops needing the global at all, and eventually
-     this script (and the other main script block above) goes away
-     entirely. Requires the page be served over http(s) -- see the staging
-     environment, not opened via file://, which browsers block module
-     imports from. -->
+     js/coco-verify.js, js/render-utils.js) -- re-attached to `window` so
+     the rest of the app's classic script can keep calling these functions
+     exactly as it always has. This bridge is scaffolding for an
+     incremental migration, not the end state: as more logic moves into
+     real modules, code that already imports what it needs stops needing
+     the global at all, and eventually this script (and the other main
+     script block above) goes away entirely. Requires the page be served
+     over http(s) -- see the staging environment, not opened via file://,
+     which browsers block module imports from. -->
 <script type="module">
   import * as CocoCore from './js/coco-core.js';
   import * as ChecklistCore from './js/checklist-core.js';
   import * as FormatUtils from './js/format-utils.js';
   import * as SearchUtils from './js/search-utils.js';
   import * as CocoVerify from './js/coco-verify.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify);
+  import * as RenderUtils from './js/render-utils.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils);
 </script>
 </body>
 </html>

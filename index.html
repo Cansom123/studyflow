@@ -2922,70 +2922,9 @@ function onboardTourBack() {
   renderOnboardTourSlide();
 }
 
-function buildActionPlan(goalText) {
-  const steps = [];
-  const text = goalText.toLowerCase();
-  const today = new Date(); today.setHours(0,0,0,0);
-
-  // Extract a subject keyword from the goal
-  const subjects = [
-    'english','math','science','history','biology','chemistry','physics',
-    'spanish','french','art','pe','health','economics','econ','data',
-    'sports','algebra','calculus','stats','statistics','writing','reading'
-  ];
-  const matchedSubject = subjects.find(s => text.includes(s));
-
-  // Match assignments to the subject keyword
-  const matchingAssignments = cachedAssignments.filter(a =>
-    !a.completed && a.due_date && matchedSubject &&
-    ((a.course||'').toLowerCase().includes(matchedSubject) || a.title.toLowerCase().includes(matchedSubject))
-  ).sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
-
-  // Match grade to the subject keyword
-  const matchingGrade = matchedSubject
-    ? cachedGrades.find(g => cleanCourseName(g.course_name).toLowerCase().includes(matchedSubject))
-    : null;
-
-  // Step 1: current grade if found
-  if (matchingGrade) {
-    const score = matchingGrade.current_score != null ? parseFloat(matchingGrade.current_score) : null;
-    const letter = matchingGrade.current_grade || matchingGrade.final_grade || '';
-    const cn = cleanCourseName(matchingGrade.course_name);
-    steps.push(`Currently at ${score != null ? score.toFixed(1)+'% ' : ''}${letter ? '('+letter+')' : ''} in ${cn}`);
-  }
-
-  // Step 2: overdue assignments
-  const overdue = matchingAssignments.filter(a => new Date(a.due_date) < today);
-  if (overdue.length) {
-    steps.push(`Complete ${overdue.length} overdue item${overdue.length > 1 ? 's' : ''} - start with "${overdue[0].title}"`);
-  }
-
-  // Step 3: next upcoming assignments (up to 3)
-  const upcoming = matchingAssignments.filter(a => new Date(a.due_date) >= today).slice(0, 3);
-  for (const a of upcoming) {
-    const d = dayDiff(a.due_date, today);
-    const dueStr = d === 0 ? 'today' : d === 1 ? 'tomorrow'
-      : new Date(a.due_date).toLocaleDateString('en-US', {month:'short',day:'numeric'});
-    steps.push(`Prepare "${a.title}" - due ${dueStr}`);
-  }
-
-  // Fallback generic advice
-  if (steps.length === 0) {
-    if (text.includes('raise') || text.includes('improve') || text.includes('better')) {
-      steps.push('Sync Canvas to pull your latest assignments');
-      steps.push('Check Assignments for any overdue items');
-      steps.push('Mark assignments done as you finish them to track progress');
-    } else if (text.includes('miss') || text.includes('deadline') || text.includes('on top')) {
-      steps.push('Check Upcoming daily for what\'s coming up');
-      steps.push('Use Priority tab to focus on the most urgent work first');
-    } else {
-      steps.push('Sync Canvas in Settings to see your latest assignments');
-      steps.push('Check the Priority tab for what to tackle first');
-    }
-  }
-
-  return steps;
-}
+/* buildActionPlan now lives in js/goals-core.js -- see the module bridge
+   near the end of this file. It used to read cachedAssignments and
+   cachedGrades directly; now the caller passes them in explicitly. */
 
 function renderGoalsTab() {
   const el = document.getElementById('goals-display');
@@ -2996,7 +2935,7 @@ function renderGoalsTab() {
   }
   const colors = ['#d85a30','#007aff','#3b6d11','#854f0b','#534ab7'];
   el.innerHTML = userGoals.map((g, i) => {
-    const plan = buildActionPlan(g);
+    const plan = buildActionPlan(g, cachedAssignments, cachedGrades);
     const stepsHtml = plan.map(s =>
       `<div class="goal-step"><span class="goal-step-arrow">→</span>${s}</div>`
     ).join('');
@@ -7278,15 +7217,15 @@ if (!checkForPasswordRecovery()) routeUser();
      js/checklist-core.js, js/format-utils.js, js/search-utils.js,
      js/coco-verify.js, js/render-utils.js, js/study-utils.js,
      js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
-     js/home-core.js) -- re-attached to `window` so the rest of the app's
-     classic script can keep calling these functions exactly as it always
-     has. This bridge is scaffolding for an incremental migration, not the
-     end state: as more logic moves into real modules, code that already
-     imports what it needs stops needing the global at all, and eventually
-     this script (and the other main script block above) goes away
-     entirely. Requires the page be served over http(s) -- see the staging
-     environment, not opened via file://, which browsers block module
-     imports from. -->
+     js/home-core.js, js/goals-core.js) -- re-attached to `window` so the
+     rest of the app's classic script can keep calling these functions
+     exactly as it always has. This bridge is scaffolding for an
+     incremental migration, not the end state: as more logic moves into
+     real modules, code that already imports what it needs stops needing
+     the global at all, and eventually this script (and the other main
+     script block above) goes away entirely. Requires the page be served
+     over http(s) -- see the staging environment, not opened via file://,
+     which browsers block module imports from. -->
 <script type="module">
   import * as CocoCore from './js/coco-core.js';
   import * as ChecklistCore from './js/checklist-core.js';
@@ -7299,7 +7238,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as GradeCore from './js/grade-core.js';
   import * as PriorityCore from './js/priority-core.js';
   import * as HomeCore from './js/home-core.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore);
+  import * as GoalsCore from './js/goals-core.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore);
 </script>
 </body>
 </html>

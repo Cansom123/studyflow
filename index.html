@@ -939,6 +939,15 @@ body {
 .grade-score.good { color: var(--green); }
 .grade-score.warn { color: var(--amber); }
 .grade-score.bad  { color: var(--red);   }
+.effort-badge {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+  padding: 2px 7px; border-radius: 99px; flex-shrink: 0; margin-left: 8px;
+  color: var(--text2); background: var(--border2); white-space: nowrap;
+}
+.grade-open-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--grade-sep); gap: 8px; }
+.grade-open-row:last-child { border-bottom: none; }
+.grade-open-name { font-size: 13px; color: var(--text1); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grade-open-pts { font-size: 11px; color: var(--text2); flex-shrink: 0; }
 .grade-letter { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background: var(--grade-letter-bg); color: var(--text2); margin-left: 6px; }
 
 /* Final calc */
@@ -2621,6 +2630,17 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
         <button class="detail-close" onclick="closeGradeDetail()" title="Close">✕</button>
       </div>
       <div id="grade-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- ALL GRADED WORK (every graded assignment for one course, not just the ones that lost points) -->
+  <div id="grade-all-overlay" class="detail-overlay">
+    <div class="detail-inner">
+      <div class="detail-header">
+        <div class="detail-title" id="grade-all-title"></div>
+        <button class="detail-close" onclick="closeAllGraded()" title="Close">✕</button>
+      </div>
+      <div id="grade-all-body"></div>
     </div>
   </div>
 
@@ -4335,8 +4355,13 @@ async function showApp() {
   maybeShowAdminAnalytics();
   maybeShowAdminPreviewTour();
   loadMfaStatus();
-  await autoSync();
-  maybeShowWelcome();
+  // The welcome screen's "Sync assignments" button IS the sync trigger --
+  // syncing silently in the background first would mean the student's data
+  // already changed before they ever got a say. Only fall back to a silent
+  // autoSync() when the welcome screen itself isn't going to show (e.g. the
+  // student turned it off in Settings).
+  const showedWelcome = maybeShowWelcome();
+  if (!showedWelcome) await autoSync();
 }
 
 // The "Reports" entry in More only ever appears for the app owner's own
@@ -5822,7 +5847,16 @@ function openGradeDetail(courseName) {
   const grade = cachedGrades.find(g => norm(g.course_name) === norm(courseName));
   const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
   const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
-  const { missing, lowPerformers, allClosed } = gradeBreakdownForCourse(courseName);
+  const { graded, missing, lowPerformers, openWork, allClosed } = gradeBreakdownForCourse(courseName);
+  // Soonest due first -- a higher point value doesn't help a student get
+  // ahead of anything if it isn't due for weeks. Undated items (not yet
+  // scheduled by the teacher) sort last since there's nothing to act on yet.
+  const openWorkRanked = [...openWork]
+    .sort((a, b) => {
+      const da = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+      const db = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+      return da - db;
+    });
 
   if (titleEl) titleEl.textContent = cleanCourseName(courseName);
 
@@ -5831,7 +5865,7 @@ function openGradeDetail(courseName) {
     html += `<div class="card-sub" style="margin-bottom:16px;">Current grade: <strong style="color:var(--text1);">${pct != null ? escapeHtml(String(pct)) + '%' : ''}${letter ? ' (' + escapeHtml(letter) + ')' : ''}</strong></div>`;
   }
 
-  if (!lowPerformers.length && !missing.length) {
+  if (!lowPerformers.length && !missing.length && !openWorkRanked.length && !graded.length) {
     html += `<div class="empty-box"><div class="empty-title">No graded work synced yet</div><div class="empty-sub">Once a few assignments are graded in Canvas, this'll show what's pulling the grade up or down.</div></div>`;
   } else {
     if (lowPerformers.length) {
@@ -5841,10 +5875,22 @@ function openGradeDetail(courseName) {
           return `<div class="grade-row"><span class="grade-name">${escapeHtml(a.title)}</span><span class="grade-score ${cls}">${a.score}/${a.points_possible}</span></div>`;
         }).join('') + `</div>`;
     }
+    if (graded.length) {
+      html += `<button class="settings-btn" style="margin-top:8px;" data-course="${escapeHtml(courseName)}" onclick="openAllGraded(this.dataset.course)">See all graded work (${graded.length})</button>`;
+    }
     if (missing.length) {
       html += `<div class="section-label">Missing (counted as 0)</div><div class="card" style="padding:4px 16px;">` +
         missing.map(a => `<div class="grade-row"><span class="grade-name">${escapeHtml(a.title)}</span><span class="grade-score bad">Missing</span></div>`).join('') +
         `</div>`;
+    }
+    if (openWorkRanked.length) {
+      html += `<div class="section-label">Not yet graded <span style="font-weight:400;color:var(--text2);text-transform:none;">- soonest due first</span></div><div class="card" style="padding:4px 16px;">` +
+        openWorkRanked.map(a => {
+          const hasDesc = !!(a.description && a.description.trim());
+          return `<div class="grade-open-row"><span class="grade-open-name">${escapeHtml(a.title)}</span><span style="display:flex;align-items:center;flex-shrink:0;">${a.points_possible ? `<span class="grade-open-pts">${a.points_possible} pts</span>` : ''}${hasDesc ? `<span class="effort-badge">has description</span>` : ''}</span></div>`;
+        }).join('') + `</div>`;
+    } else if (allClosed && (lowPerformers.length || missing.length)) {
+      html += `<div class="section-label">Not yet graded</div><div class="card" style="padding:12px 16px;"><span style="font-size:13px;color:var(--text2);">Nothing open left in this class - everything's either submitted or past due.</span></div>`;
     }
   }
 
@@ -5873,6 +5919,48 @@ function openGradeDetail(courseName) {
 function closeGradeDetail() {
   document.getElementById('grade-detail-overlay').style.display = 'none';
   currentGradeDetailCourse = null;
+}
+
+// Every graded assignment for a course, not just the ones that lost points --
+// "Points lost" deliberately only shows the worst offenders, so a student
+// with a mostly-good record (or who just wants their full grade history)
+// had no way to see everything that's actually been graded.
+function openAllGraded(courseName) {
+  const overlay = document.getElementById('grade-all-overlay');
+  const titleEl = document.getElementById('grade-all-title');
+  const body = document.getElementById('grade-all-body');
+  if (!overlay || !body) return;
+
+  const { graded } = gradeBreakdownForCourse(courseName);
+  if (titleEl) titleEl.textContent = `${cleanCourseName(courseName)} — All graded work`;
+
+  // Most recently graded first -- that's what a student checking back in
+  // actually wants to see, not their oldest quiz from week one.
+  const sorted = [...graded].sort((a, b) => {
+    const da = a.due_date ? new Date(a.due_date).getTime() : -Infinity;
+    const db = b.due_date ? new Date(b.due_date).getTime() : -Infinity;
+    return db - da;
+  });
+
+  let html = `<div class="card-sub" style="margin-bottom:14px;">${sorted.length} graded assignment${sorted.length !== 1 ? 's' : ''}</div>`;
+  if (!sorted.length) {
+    html += `<div class="empty-box"><div class="empty-title">Nothing graded yet</div><div class="empty-sub">Once Canvas grades something in this class, it'll show up here.</div></div>`;
+  } else {
+    html += `<div class="card" style="padding:4px 16px;">` +
+      sorted.map(a => {
+        const pct = (a.score / a.points_possible) * 100;
+        const cls = pct >= 90 ? 'good' : pct >= 70 ? 'warn' : 'bad';
+        const dateStr = a.due_date ? new Date(a.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+        return `<div class="grade-row"><span class="grade-name">${escapeHtml(a.title)}${dateStr ? ` <span style="color:var(--text2);font-weight:400;">(${dateStr})</span>` : ''}</span><span class="grade-score ${cls}">${a.score}/${a.points_possible} <span style="font-weight:400;color:var(--text2);">(${pct.toFixed(0)}%)</span></span></div>`;
+      }).join('') + `</div>`;
+  }
+
+  body.innerHTML = html;
+  overlay.style.display = 'block';
+}
+
+function closeAllGraded() {
+  document.getElementById('grade-all-overlay').style.display = 'none';
 }
 
 function finishDismissAnnouncement(id) {
@@ -6290,6 +6378,40 @@ function cocoRetrieve(question, contextText, limit = 3) {
 
 const COCO_UNKNOWN = "The syllabus doesn't cover that - worth asking your instructor.";
 
+// Real incident: the on-device model occasionally degenerates into fluent-
+// looking but meaningless token soup -- mixed scripts, fused non-words, code
+// fragments -- instead of failing outright, and it reached a student
+// verbatim because none of the grounding checks below catch it (garbage text
+// has no numbers/course-codes/quotes to be wrong about, so it sails through).
+// This is a cheap, local sanity gate that runs before any of those checks,
+// shared by every coco.1 answer path (syllabus Q&A, planning, grade tips).
+function cocoIsCoherentText(text) {
+  const s = (text || '').trim();
+  if (!s) return false;
+  const words = s.split(/\s+/).filter(Boolean);
+  if (words.length < 3) return false;
+
+  // A real sentence-length answer should hit several common English function
+  // words; gibberish token-soup almost never does.
+  const STOPWORDS = /^(the|a|an|to|of|in|on|is|are|was|were|you|your|it|this|that|and|or|for|with|at|be|so|not|no|do|does|did|can|could|would|should|will|if|as|from|by|out|up|its|it's|get|got|has|have)$/i;
+  const stopwordHits = words.filter(w => STOPWORDS.test(w.replace(/[^a-zA-Z']/g, ''))).length;
+  if (stopwordHits < Math.min(3, Math.ceil(words.length * 0.08))) return false;
+
+  // coco only ever answers in English -- any real volume of non-Latin script
+  // mixed in is a strong signal of degenerated output, not a real reply.
+  const nonLatin = (s.match(/[^\x00-\x7F‘’“”–—]/g) || []).length;
+  if (nonLatin / s.length > 0.05) return false;
+
+  // Real words don't run this long -- concatenated-token garbage does
+  // ("workaroundgalementmultiline", "ProtectITS_dash").
+  if (words.some(w => w.replace(/[^a-zA-Z]/g, '').length > 22)) return false;
+
+  // Code-shaped fragments have no place in conversational advice.
+  if (/=>|\(\)|::|\{[^}]*\}|\b[A-Z][a-z]+[A-Z]\w*\(/.test(s)) return false;
+
+  return true;
+}
+
 // Every number in an answer must exist in the source we gave the model.
 // This is the single highest-value check: fabricated specifics (a "90% for an A"
 // that was never written down) are the most damaging kind of wrong answer.
@@ -6377,6 +6499,9 @@ async function cocoAsk(question, contextText, history) {
 
   // 4. Verification + graceful degradation.
   if (!answer) {
+    return { answer: bestPassage, citation: bestPassage, confidence: 'quoted' };
+  }
+  if (!cocoIsCoherentText(answer)) {
     return { answer: bestPassage, citation: bestPassage, confidence: 'quoted' };
   }
   if (answer.includes(COCO_UNKNOWN) || /doesn'?t (say|cover|specify|mention)/i.test(answer)) {
@@ -6625,6 +6750,10 @@ function cocoClauseWindow(ans, title, ctx, span = 80) {
 
 // Returns { ok, reason }. `reason` is for logging/eval, never shown to students.
 function cocoVerifyPlanning(answer, ctx) {
+  if (!cocoIsCoherentText(answer)) {
+    return { ok: false, reason: 'incoherent/garbled generation' };
+  }
+
   const haystack = cocoNormalize(ctx.text);
   const ans = cocoNormalize(answer);
 
@@ -6873,23 +7002,19 @@ async function askCocoPlanning() {
    /quoted-title/percentage checks from cocoVerifyPlanning since the failure
    modes (inventing a class, inventing a number) are identical here.
 =========================== */
-// Canvas doesn't give us a real difficulty rating, so this is a deliberately
-// rough, deterministic proxy from what we do have (assignment type + points)
-// rather than letting the model freely guess "this one seems harder" --
-// grounded signal in, reasoning about sequencing out, same split as
-// everything else coco.1 does.
-function estimateAssignmentEffort(a) {
-  const type = (a.assignment_type || '').toLowerCase();
-  let weight = 2; // medium by default
-  if (/exam|final|midterm|project|paper|essay|presentation/.test(type)) weight = 3;
-  else if (/quiz|discussion|reading|reflection/.test(type)) weight = 1;
-  const pts = a.points_possible || 0;
-  if (pts >= 100) weight += 0.5;
-  else if (pts > 0 && pts <= 10) weight -= 0.25;
-  return Math.max(1, Math.min(3, weight));
-}
-function effortLabel(weight) {
-  return weight <= 1.25 ? 'quick' : weight <= 2.5 ? 'moderate' : 'heavy';
+// Difficulty is a genuine unknown without real information -- guessing it
+// from assignment type keywords ("exam" = hard, "quiz" = easy) produced the
+// same flat, repetitive line every time and was often just wrong. The only
+// real signal we have for difficulty is the assignment's own description
+// (synced from Canvas as plain text), which the model can actually read and
+// reason about. When there's no description, we're honest that difficulty
+// is unknown and reason about points value instead -- a real number, not a
+// guess -- since a higher-point item has more effect on the grade regardless
+// of how hard it turns out to be.
+function assignmentDescriptionExcerpt(a, maxLen) {
+  const d = (a.description || '').trim();
+  if (!d) return '';
+  return d.length > maxLen ? d.slice(0, maxLen).trim() + '...' : d;
 }
 
 function cocoGradeContext(courseName) {
@@ -6910,31 +7035,57 @@ function cocoGradeContext(courseName) {
     text += `Missing (never submitted, counts as 0):\n` +
       missing.map(a => `- ${a.title}${a.points_possible ? ' (' + a.points_possible + ' pts)' : ''}`).join('\n') + '\n\n';
   }
-  // Lightest first -- matches the actual advice this is meant to support
-  // ("knock out the quick one, save the heavy one for a real time block"),
-  // and gives the model the ordering pre-computed instead of asking it to
-  // judge relative effort itself.
+  // Soonest due first -- points value alone told a student to prioritize a
+  // 104-point item that wasn't due for weeks over a 75-point item due much
+  // sooner, which isn't actually useful: you can't get ahead on something by
+  // being told it's worth more if there's nothing urgent to act on yet.
+  // Due-date proximity is the real actionable signal ("get a jump on what's
+  // coming up next"); points value is still worth mentioning, but only as
+  // context, never as what decides the order. Only assignments with an
+  // actual due date are candidates for "do this next" -- an open item with
+  // no due date usually means the teacher hasn't scheduled or covered it
+  // yet, so recommending it as the next thing to do is bad advice no matter
+  // what it's worth. (Real incident: coco told a student to start a
+  // not-yet-covered, ungraded section instead of the one they'd already
+  // scored lowest on.)
+  const now = Date.now();
   const openWorkRanked = [...openWork]
-    .map(a => ({ ...a, effortWeight: estimateAssignmentEffort(a) }))
-    .sort((a, b) => a.effortWeight - b.effortWeight);
+    .filter(a => a.due_date)
+    .map(a => ({ ...a, descriptionExcerpt: assignmentDescriptionExcerpt(a, 240) }))
+    .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+  const undatedOpenWork = openWork.filter(a => !a.due_date);
+  const undescribedOpenWork = openWorkRanked.filter(a => !a.descriptionExcerpt);
 
   if (allClosed) {
     text += `No open, gradable work remains in this course right now -- everything left is either submitted or past its deadline and locked.\n`;
   } else if (openWorkRanked.length) {
-    text += `Still open and gradable (ordered lightest to heaviest estimated effort, based on assignment type and points -- not exact, but a real signal):\n` +
-      openWorkRanked.slice(0, 8).map(a =>
-        `- ${a.title}${a.points_possible ? ', ' + a.points_possible + ' pts' : ''}${a.assignment_type ? ', ' + a.assignment_type : ''} -- ${effortLabel(a.effortWeight)}`
-      ).join('\n') + '\n';
+    text += `Still open, gradable, and actually due (ordered by due date, soonest first -- this is what "next" should mean, since getting a jump on the nearest deadline is the only genuinely actionable move; points value is extra context you can mention but should never override due-date order. There is no real difficulty rating either, so judge actual difficulty ONLY from each item's description below when one is given; when a description is missing, do not guess difficulty at all):\n` +
+      openWorkRanked.slice(0, 6).map(a => {
+        const daysOut = Math.round((new Date(a.due_date).getTime() - now) / 86400000);
+        const dueLabel = daysOut <= 0 ? 'due today or already passed' : daysOut === 1 ? 'due in 1 day' : `due in ${daysOut} days`;
+        const desc = a.descriptionExcerpt
+          ? `\n  Description: "${a.descriptionExcerpt}"`
+          : `\n  (No description synced for this one -- difficulty is genuinely unknown, only its point value is a real signal.)`;
+        return `- ${a.title}${a.points_possible ? ', ' + a.points_possible + ' pts' : ''}${a.assignment_type ? ', ' + a.assignment_type : ''}, ${dueLabel}${desc}`;
+      }).join('\n') + '\n';
+  }
+  if (undatedOpenWork.length) {
+    text += `Also on Canvas but with no due date scheduled yet, so likely not yet covered by the teacher -- do NOT recommend starting these, only the dated items above:\n` +
+      undatedOpenWork.map(a => `- ${a.title}`).join('\n') + '\n';
   }
 
   return {
     text, courseName, pct, letter, allClosed, lowPerformers, missing,
-    openWork: openWorkRanked,
+    openWork: openWorkRanked, undatedOpenWork, undescribedOpenWork,
     hasData: graded.length > 0 || missing.length > 0,
   };
 }
 
 function cocoVerifyGradeTips(answer, ctx) {
+  if (!cocoIsCoherentText(answer)) {
+    return { ok: false, reason: 'incoherent/garbled generation' };
+  }
+
   const haystack = cocoNormalize(ctx.text);
 
   for (const code of cocoExtractCourseCodes(answer)) {
@@ -6970,31 +7121,179 @@ function cocoVerifyGradeTips(answer, ctx) {
     return { ok: false, reason: 'suggested submitting work when nothing is open' };
   }
 
+  // Real incident: coco recommended a not-yet-due, not-yet-covered
+  // assignment as the next thing to do just because it looked "quick".
+  // These titles are only in the context so the model knows they exist and
+  // is told explicitly not to push them -- if the model names one anyway,
+  // treat that as a failure and fall back to the deterministic answer,
+  // which never recommends undated work.
+  const answerNorm = cocoNormalize(answer);
+  for (const u of (ctx.undatedOpenWork || [])) {
+    if (answerNorm.includes(cocoNormalize(u.title))) {
+      return { ok: false, reason: `recommended undated/not-yet-covered work: ${u.title}` };
+    }
+  }
+
+  // Difficulty must come from a real description, never a guess. If the
+  // model calls an item easy/hard/etc. anywhere in the answer while ALSO
+  // naming one with no synced description, that's a fabricated difficulty
+  // claim -- coarse (whole-answer, not per-sentence) on purpose, since the
+  // failure being guarded against is exactly this codebase's worst kind:
+  // stating something confidently that isn't actually known.
+  // "Hard to say/tell/know/gauge/judge" is honest uncertainty about
+  // difficulty, not a difficulty claim -- strip that phrasing before
+  // checking, or it would wrongly punish coco for admitting it doesn't know.
+  const difficultyCheckText = answer.replace(/\b(?:hard|difficult)\s+to\s+(?:say|tell|know|gauge|judge)\b/gi, '');
+  const claimsDifficulty = /\b(difficult|difficulty|hard|harder|hardest|easy|easier|easiest|tough|toughest|challenging|simple|straightforward|complex|complicated)\b/i.test(difficultyCheckText);
+  if (claimsDifficulty) {
+    for (const u of (ctx.undescribedOpenWork || [])) {
+      if (answerNorm.includes(cocoNormalize(u.title))) {
+        return { ok: false, reason: `claimed difficulty for an item with no description: ${u.title}` };
+      }
+    }
+  }
+
+  // Real incident: the model justified recommending an item using a points
+  // comparison ("worth more than the other one") while ignoring that a
+  // different item was actually due sooner -- points aren't due-date
+  // urgency. If the answer argues from a points comparison and doesn't even
+  // mention the item that's genuinely soonest due, that's the same wrong
+  // reasoning shape happening again.
+  if (ctx.openWork.length >= 2) {
+    const soonest = ctx.openWork[0];
+    const pointsComparisonLanguage = /\bworth more\b[^.]*\bthan\b|\bmore weight\b|\d+\s*(?:vs\.?|versus)\s*\d+\s*(?:pts|points)/i.test(answer);
+    if (pointsComparisonLanguage && !answerNorm.includes(cocoNormalize(soonest.title))) {
+      return { ok: false, reason: `used a points comparison to justify skipping the actual soonest-due item: ${soonest.title}` };
+    }
+  }
+
   return { ok: true, reason: '' };
 }
 
+// Wording pass: the original version was true but read like a report --
+// short, disconnected facts stapled together with periods ("You're at X%.
+// Y cost you points. Z is next, worth W points. No description exists.").
+// That's a lot to land on someone at once. This keeps every real fact (the
+// grade, the actual weak spot, the actual next-due item, its real points
+// value, whether a description exists) but connects them into fewer,
+// warmer sentences and closes on something genuinely earned rather than
+// generic hype -- tied to whatever's actually true about the situation,
+// not a stock "you've got this!" tacked on regardless of context.
+function gradeToneOpening(pct, letter, courseName) {
+  const gradeStr = pct != null ? `${pct}%${letter ? ' (' + letter + ')' : ''}` : null;
+  if (gradeStr == null) return `Let's take a look at ${courseName}.`;
+  if (pct >= 90) return `You're doing great in ${courseName}, sitting at ${gradeStr} right now.`;
+  if (pct >= 80) return `You're in solid shape in ${courseName} at ${gradeStr}.`;
+  if (pct >= 70) return `You're holding a decent ${gradeStr} in ${courseName}, with real room to push it higher.`;
+  return `You're at ${gradeStr} in ${courseName} right now -- the good news is there's a clear, specific way to bring it up.`;
+}
+
+// Deterministic (not random) pick from real data -- same assignment always
+// gets the same phrasing, but different students/assignments land on
+// different ones instead of everyone hearing "move the needle" verbatim.
+function stablePick(list, seed) {
+  let h = 0;
+  const s = String(seed || '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return list[h % list.length];
+}
+
+const LOW_PERFORMER_PHRASES = [
+  (worst) => `so a little review on that one could genuinely move the needle`,
+  (worst) => `so revisiting that topic is probably the highest-leverage thing you can do right now`,
+  (worst) => `so going back over that material could make a real difference`,
+  (worst) => `so that's the one area most worth actually spending time on`,
+  (worst) => `so brushing up there could turn this grade around faster than anything else open`,
+];
+const MISSING_PHRASES = [
+  (n) => `closing that out is an easy win`,
+  (n) => `turning that in is one of the simplest ways to boost this grade`,
+  (n) => `getting that submitted is low-effort, high-reward`,
+  (n) => `that's essentially free points sitting on the table until it's turned in`,
+];
+const CLOSING_BOTH = [
+  `Tackle those two in order and this grade has real room to climb.`,
+  `Handle those two and there's a solid path back up from here.`,
+  `Both of those are concrete and doable -- work through them in order and you'll feel the difference.`,
+];
+const CLOSING_WEAK_SPOT_ONLY = [
+  `That's a specific, fixable thing -- not a mystery.`,
+  `Nothing vague about it -- you know exactly what to work on.`,
+  `That's one clear target, not a dozen scattered ones.`,
+];
+const CLOSING_OPEN_WORK_ONLY = [
+  `You're not behind on anything here, just staying ahead of it.`,
+  `Nothing urgent gone wrong yet -- this is just good timing.`,
+  `You're in front of this one, not chasing it.`,
+];
+const CLOSING_ALL_GOOD = [
+  `Overall you're in a good spot in this one.`,
+  `This class is in good shape overall.`,
+  `Nothing pulling this one down right now.`,
+];
+
 function cocoDeterministicGradeTips(ctx) {
-  const parts = [];
-  if (ctx.pct != null) {
-    parts.push(`You're at ${ctx.pct}%${ctx.letter ? ' (' + ctx.letter + ')' : ''} in ${ctx.courseName}.`);
-  }
+  const parts = [gradeToneOpening(ctx.pct, ctx.letter, ctx.courseName)];
+
+  let hasWeakSpot = false;
   if (ctx.lowPerformers.length) {
+    hasWeakSpot = true;
     const worst = ctx.lowPerformers[0];
-    parts.push(`${worst.title} cost you the most points (${worst.score}/${worst.points_possible}), so that's the single biggest factor.`);
+    const reasonPhrase = stablePick(LOW_PERFORMER_PHRASES, worst.title + worst.score)(worst);
+    parts.push(`${worst.title} is what's pulling it down the most (you scored ${worst.score}/${worst.points_possible} there), ${reasonPhrase}.`);
   }
   if (ctx.missing.length) {
-    parts.push(`${ctx.missing.length} assignment${ctx.missing.length !== 1 ? 's are' : ' is'} still marked missing, which counts as zero until it's turned in or excused.`);
+    hasWeakSpot = true;
+    const missingPhrase = stablePick(MISSING_PHRASES, ctx.courseName + ctx.missing.length)(ctx.missing.length);
+    parts.push(`${ctx.missing.length} assignment${ctx.missing.length !== 1 ? 's are' : ' is'} still sitting as missing, which counts as a zero until it's turned in or excused -- ${missingPhrase}.`);
   }
+
   if (ctx.allClosed) {
-    parts.push(`Nothing gradable is still open in this class, so the best move now is asking your teacher directly about extra credit or a regrade, and putting extra focus on this subject going forward.`);
+    parts.push(`Nothing gradable is still open in this class right now, so the best move is asking your teacher about extra credit or a regrade, and carrying what you've learned into what's next.`);
   } else if (ctx.openWork.length) {
     const next = ctx.openWork[0];
-    const label = effortLabel(next.effortWeight);
-    const why = label === 'heavy'
-      ? `it's the one open item, so it needs a real focused block of time`
-      : `it's ${label === 'quick' ? 'quick' : 'a moderate amount of work'}, so knock it out and bank the points before tackling anything heavier`;
-    parts.push(`Start with ${next.title} - ${why}.`);
+    // Due-date proximity is the real actionable signal -- a higher point
+    // value doesn't help if there's nothing to act on yet because it isn't
+    // due for weeks. Real incident: coco told a student to prioritize a
+    // 104-point item over a 75-point one purely by points, when the
+    // 75-point item was actually due much sooner and gettable-ahead-of.
+    const daysOut = Math.round((new Date(next.due_date).getTime() - Date.now()) / 86400000);
+    const urgencyClause = daysOut <= 0
+      ? `is due today (or already past due)`
+      : daysOut === 1
+        ? `is due tomorrow`
+        : daysOut <= 3
+          ? `is due in ${daysOut} days`
+          : `is the soonest of what's left, due in ${daysOut} days`;
+
+    const ptsClause = next.points_possible ? `, worth ${next.points_possible} points` : '';
+
+    // Difficulty is only ever real when there's an actual description to
+    // point at -- never guessed, never claimed outright, since a
+    // deterministic template has no way to genuinely read and judge one.
+    const descClause = next.descriptionExcerpt
+      ? `, and it has a description on Canvas worth reading so you know exactly what it involves`
+      : `; there's no description synced for it yet, so it's hard to say exactly what it'll take, but getting ahead of it now beats scrambling later`;
+
+    const lead = hasWeakSpot ? `Once that's sorted, ${next.title}` : `${next.title}`;
+    parts.push(`${lead} ${urgencyClause}${ptsClause}${descClause}.`);
   }
+
+  // A closing note earned by what's actually true here, not filler --
+  // varies with the real situation instead of repeating the same line, and
+  // rotates within each situation too so the exact same case doesn't always
+  // land on the exact same sentence.
+  const closingSeed = ctx.courseName + (ctx.pct != null ? ctx.pct : '');
+  if (ctx.allClosed && !hasWeakSpot) {
+    parts.push(stablePick(CLOSING_ALL_GOOD, closingSeed));
+  } else if (hasWeakSpot && ctx.openWork.length) {
+    parts.push(stablePick(CLOSING_BOTH, closingSeed));
+  } else if (hasWeakSpot) {
+    parts.push(stablePick(CLOSING_WEAK_SPOT_ONLY, closingSeed));
+  } else if (ctx.openWork.length) {
+    parts.push(stablePick(CLOSING_OPEN_WORK_ONLY, closingSeed));
+  }
+
   return parts.join(' ') || "There isn't enough graded data synced yet to point to anything specific.";
 }
 
@@ -7013,12 +7312,17 @@ async function cocoAskGradeTips(courseName, question) {
         'You are coco.1, a supportive academic coach helping a student understand and improve ONE specific course grade. Below is their REAL grade data for this course.\n' +
         'Rules:\n' +
         '1. Only reference assignments, scores, and points that literally appear below. Never invent one.\n' +
-        '2. If there is still open, gradable work listed, center your advice on that: which piece of open work would help the grade most, and why.\n' +
-        '3. If the data says no open gradable work remains, do NOT suggest submitting, resubmitting, or redoing anything - instead give forward-looking advice: asking the teacher about extra credit or a regrade, how this grade affects their overall standing, and what to do differently in the next unit or term. Never claim something can still be turned in when the context says it cannot.\n' +
-        '4. If more than one thing is open, the list is already ordered lightest to heaviest effort (based on type and points) -- use that. Recommend knocking out the quick/moderate ones first to bank easy points and reduce what is outstanding, saving the heaviest one for a real focused block of time, unless one is clearly more urgent for the grade specifically.\n' +
-        '5. Reply in 2-4 plain sentences, one continuous paragraph, no markdown, no bullet lists, no restating the whole list back verbatim.\n' +
-        '6. Sound like an encouraging, direct coach - honest about what is dragging the grade down, not vague positivity.\n' +
-        '7. Never state a percentage, score, or points value that is not literally in the data below.',
+        '2. If something already lost real points (graded work that cost points, or missing work), lead with that - it is the most certain, most useful thing you know. Treat it as the priority over anything not yet due.\n' +
+        '3. There may be a separate list of assignments with no due date scheduled yet. Those almost always mean the teacher has not covered or assigned that material yet. NEVER recommend, suggest starting, or say to work on anything from that list, even if it looks quick or easy. If asked directly about one, you can say it is not due yet rather than pushing it as a next step.\n' +
+        '4. If the data says no open gradable work remains, do NOT suggest submitting, resubmitting, or redoing anything - instead give forward-looking advice: asking the teacher about extra credit or a regrade, how this grade affects their overall standing, and what to do differently in the next unit or term. Never claim something can still be turned in when the context says it cannot.\n' +
+        '5. Only the "still open, gradable, and actually due" list (if present) is fair game to recommend as a next step, already ordered by due date, soonest first. Due-date proximity is what "next" should mean here - a higher-point item that is not due for weeks is NOT more urgent than a lower-point item due soon, and you should never recommend the bigger one just because it is worth more when something else is due sooner. Points value is extra context to mention, never the reason to reorder ahead of due date. If there is also a clear graded weak point (rule 2), mention the open item as a secondary, later note ("once that is handled...") rather than the headline.\n' +
+        '6. Difficulty is NEVER a guess. Judge how hard an open item actually is ONLY from its own "Description" text if one is given below - reference something real from it. If an item has no description, say plainly that its difficulty is not known - do not use points value as a difficulty stand-in, only as a "here is what it is worth" fact.\n' +
+        '7. Vary your reasoning based on what is actually different about this situation - do not default to a generic line every time. Lead with WHY something is next: how soon it is due (getting a jump on it), not just what it is worth.\n' +
+        '8. Reply in 2-4 plain sentences, one continuous paragraph, no markdown, no bullet lists, no restating the whole list back verbatim.\n' +
+        '9. Phrase recommendations as suggestions, not commands - "it might be worth", "probably", "could help" rather than flat orders like "start with X". You are inferring the best move from partial data, not stating a certainty.\n' +
+        '10. Do not just stack facts back to back with periods (grade, then weak spot, then next item, then points, then description) - that reads like a report, not a conversation. Connect them with real transitions ("since", "which means", "so") so it flows as a few warm sentences, not a list of disconnected statements.\n' +
+        '11. Sound like an encouraging, direct coach - honest about what is dragging the grade down, not vague positivity. End on something that feels genuinely earned by this specific situation (a real strength, a real fixable weak point, a real reason the next step is manageable) - never a generic "you got this!" tacked on regardless of what the data actually says.\n' +
+        '12. Never state a percentage, score, or points value that is not literally in the data below.',
     },
     { role: 'user', content: `${ctx.text}\nStudent's question: ${question || 'What is bringing this grade down, and how can I improve it?'}` },
   ];
@@ -7126,6 +7430,54 @@ function classifyAssignmentWork(a) {
   return 'ambiguous';
 }
 
+// Real incident-driven: generic "Outline / Draft / Revise / Submit" steps
+// looked like a plan but told the student nothing they didn't already know.
+// When Canvas gives us an actual description with its own bullet/numbered
+// list of requirements, that list IS the real plan -- pulling it out
+// directly beats guessing generic steps from the assignment's type. Handles
+// both "• text" on one line and Canvas's common split form where the bullet
+// glyph sits alone on its own line and the item's text follows on the next
+// line(s) until a blank line or the next bullet.
+function extractDescriptionSteps(description) {
+  if (!description) return [];
+  const BULLET_CHARS = new Set(['•', '➝', '✓', '✔', '①', '②', '③', '④', '⑤', '❌', '➤', '▪']);
+  const BULLET_START = /^([•➝✓✔①②③④⑤❌➤▪]|[-*]\s|\d+[.)]\s)/;
+  const lines = description.split('\n').map(l => l.trim());
+  const steps = [];
+  let buffer = '';
+  let inBullet = false;
+
+  function flush() {
+    const cleaned = buffer.replace(BULLET_START, '').trim();
+    if (cleaned.length >= 8 && cleaned.length <= 400) steps.push(cleaned);
+    buffer = '';
+  }
+
+  for (const line of lines) {
+    if (!line) {
+      if (inBullet) { flush(); inBullet = false; }
+      continue;
+    }
+    if (BULLET_CHARS.has(line) || /^\d+[.)]$/.test(line)) {
+      if (inBullet) flush();
+      inBullet = true;
+      buffer = '';
+      continue;
+    }
+    if (BULLET_START.test(line)) {
+      if (inBullet) flush();
+      inBullet = true;
+      buffer = line;
+      continue;
+    }
+    if (inBullet) {
+      buffer += (buffer ? ' ' : '') + line;
+    }
+  }
+  if (inBullet) flush();
+  return steps;
+}
+
 // Always available, no model required -- the checklist equivalent of
 // quoting the syllabus or computing a plan straight from the assignment
 // rows: never wrong about the one thing that actually matters (the dates),
@@ -7140,22 +7492,49 @@ function deterministicChecklist(a, today) {
   // something a student can actually act on, without needing coco.1 enabled.
   const rawTitle = (a.title || 'this assignment').trim();
   const shortTitle = rawTitle.length > 48 ? rawTitle.slice(0, 45).trim() + '…' : rawTitle;
-  const workType = classifyAssignmentWork(a);
 
   let templates;
-  if (workType === 'content') {
-    if (totalDays <= 1) templates = [`Go through "${shortTitle}"`, 'Complete and submit'];
-    else if (totalDays <= 3) templates = [`Go through "${shortTitle}"`, 'Review the key points', 'Complete and submit'];
-    else templates = [`Go through "${shortTitle}"`, 'Take notes on the key points', 'Review before the deadline', 'Complete and submit'];
-  } else if (workType === 'task') {
-    if (totalDays <= 1) templates = [`Work on "${shortTitle}"`, 'Submit'];
+  const realSteps = extractDescriptionSteps(a.description);
+  if (realSteps.length >= 2) {
+    // The description already lists the real requirements -- use those
+    // directly instead of guessing generic steps from the assignment type.
+    // Capped so the checklist stays skimmable rather than reprinting the
+    // whole assignment, and wrapped with the read-first/notes/review
+    // structure that makes it an actual guide, not just a copy of the list.
+    // When there's more real content than fits, keep a couple of early
+    // items for context but bias toward the TAIL of the list -- real
+    // assignments consistently front-load background/tips and put the
+    // actual deliverable ("What to Submit", the graded questions) last, so
+    // a naive first-N cut silently drops the one part that matters most.
+    const MAX_STEPS = 8;
+    let selected;
+    if (realSteps.length <= MAX_STEPS) {
+      selected = realSteps;
+    } else {
+      const tailCount = Math.min(realSteps.length, Math.ceil(MAX_STEPS * 0.7));
+      const headCount = MAX_STEPS - tailCount;
+      selected = [...realSteps.slice(0, headCount), ...realSteps.slice(realSteps.length - tailCount)];
+    }
+    const capped = selected.map(s => s.length > 90 ? s.slice(0, 87).trim() + '…' : s);
+    templates = [`Read through "${shortTitle}" once fully before starting`, ...capped];
+    if (totalDays > 1) templates.push('Take notes as you go through each part above -- easier to write the final submission from notes than from scratch');
+    templates.push('Review everything against the assignment description, then submit');
+  } else {
+    const workType = classifyAssignmentWork(a);
+    if (workType === 'content') {
+      if (totalDays <= 1) templates = [`Go through "${shortTitle}"`, 'Complete and submit'];
+      else if (totalDays <= 3) templates = [`Go through "${shortTitle}"`, 'Review the key points', 'Complete and submit'];
+      else templates = [`Go through "${shortTitle}"`, 'Take notes on the key points', 'Review before the deadline', 'Complete and submit'];
+    } else if (workType === 'task') {
+      if (totalDays <= 1) templates = [`Work on "${shortTitle}"`, 'Submit'];
+      else if (totalDays <= 3) templates = [`Draft "${shortTitle}"`, 'Revise', 'Submit'];
+      else if (totalDays <= 7) templates = [`Outline "${shortTitle}"`, 'Write a draft', 'Revise', 'Submit'];
+      else templates = [`Outline "${shortTitle}"`, 'Research or gather materials', 'Write a draft', 'Revise', 'Final review', 'Submit'];
+    } else if (totalDays <= 1) templates = [`Work on "${shortTitle}"`, 'Submit'];
     else if (totalDays <= 3) templates = [`Draft "${shortTitle}"`, 'Revise', 'Submit'];
-    else if (totalDays <= 7) templates = [`Outline "${shortTitle}"`, 'Write a draft', 'Revise', 'Submit'];
-    else templates = [`Outline "${shortTitle}"`, 'Research or gather materials', 'Write a draft', 'Revise', 'Final review', 'Submit'];
-  } else if (totalDays <= 1) templates = [`Work on "${shortTitle}"`, 'Submit'];
-  else if (totalDays <= 3) templates = [`Draft "${shortTitle}"`, 'Revise', 'Submit'];
-  else if (totalDays <= 7) templates = [`Plan "${shortTitle}"`, 'Draft', 'Revise', 'Submit'];
-  else templates = [`Plan "${shortTitle}"`, 'Research or gather materials', 'Draft', 'Revise', 'Final review', 'Submit'];
+    else if (totalDays <= 7) templates = [`Plan "${shortTitle}"`, 'Draft', 'Revise', 'Submit'];
+    else templates = [`Plan "${shortTitle}"`, 'Research or gather materials', 'Draft', 'Revise', 'Final review', 'Submit'];
+  }
 
   return templates.map((text, i) => {
     const frac = (i + 1) / templates.length;
@@ -7181,17 +7560,20 @@ async function generateChecklistViaAI(a, todayStr, dueStr) {
     {
       role: 'system',
       content:
-        'You are coco.1, breaking a school assignment into a short work plan.\n' +
+        'You are coco.1, breaking a school assignment into a real, detailed work plan the student can actually follow.\n' +
         'Rules:\n' +
-        '1. Produce 3-6 concrete steps, working backward from the due date.\n' +
-        '2. Each step needs a target date on or between today and the due date -- never after the due date, never before today.\n' +
-        '3. Steps must be in chronological order, each on the same day or later than the one before.\n' +
-        '4. Output ONLY lines in the exact format: YYYY-MM-DD | step text\n' +
-        '5. No other text, no numbering, no markdown, nothing before or after the list.',
+        '1. If a description is given below, build the steps FROM its actual content -- name the real parts/requirements it lists, not generic filler like "Work on it" or "Complete and submit". Reading the description and copying its real structure into concrete steps is the entire point.\n' +
+        '2. Never reduce this to just "do the assignment, then turn it in". Include how to actually approach it: what to read or research first, taking notes as you go, drafting or working through the real requirements, then a final review before submitting.\n' +
+        '3. If no description is given, you genuinely cannot know the specifics -- write general but still concrete process steps (what to look up, note-taking, drafting, reviewing), and say nothing about content you were not given.\n' +
+        '4. Produce 4-7 concrete steps, working backward from the due date.\n' +
+        '5. Each step needs a target date on or between today and the due date -- never after the due date, never before today.\n' +
+        '6. Steps must be in chronological order, each on the same day or later than the one before.\n' +
+        '7. Output ONLY lines in the exact format: YYYY-MM-DD | step text\n' +
+        '8. No other text, no numbering, no markdown, nothing before or after the list.',
     },
     {
       role: 'user',
-      content: `Today: ${todayLabel} (${todayStr})\nDue: ${dueLabel} (${dueStr})\nAssignment: ${a.title}${a.course ? ' (' + a.course + ')' : ''}\n${a.description ? 'Description: ' + a.description.slice(0, 600) : ''}`,
+      content: `Today: ${todayLabel} (${todayStr})\nDue: ${dueLabel} (${dueStr})\nAssignment: ${a.title}${a.course ? ' (' + a.course + ')' : ''}${a.points_possible ? ', ' + a.points_possible + ' pts' : ''}\n${a.description ? 'Full description:\n"""\n' + a.description.slice(0, 2200) + '\n"""' : 'No description was synced for this assignment.'}`,
     },
   ];
   const reply = await schoolAIEngine.chat.completions.create({ messages, temperature: 0.3, max_tokens: 300 });
@@ -7216,6 +7598,32 @@ function verifyChecklistDates(steps, todayStr, dueStr) {
   return { ok: true, reason: '' };
 }
 
+// Catches the same failure classes seen elsewhere in coco.1: garbled/
+// incoherent generation, and -- specific to this feature -- a checklist so
+// generic it ignores a real description that was handed to it. If Canvas
+// gave us an actual structured list of requirements, the generated steps
+// should touch at least some of that real content, not just restate
+// "work on it, then submit" in different words.
+function verifyChecklistContent(steps, a) {
+  for (const s of steps) {
+    if (!cocoIsCoherentText(s.step_text)) {
+      return { ok: false, reason: `incoherent step text: ${s.step_text}` };
+    }
+  }
+  const realSteps = extractDescriptionSteps(a.description);
+  if (realSteps.length >= 2) {
+    const descWords = [...new Set(cocoNormalize(realSteps.join(' ')).split(' ').filter(w => w.length > 5))];
+    if (descWords.length > 3) {
+      const allText = cocoNormalize(steps.map(s => s.step_text).join(' '));
+      const overlap = descWords.filter(w => allText.includes(w)).length;
+      if (overlap === 0) {
+        return { ok: false, reason: 'checklist ignores the real description content' };
+      }
+    }
+  }
+  return { ok: true, reason: '' };
+}
+
 async function generateChecklist(assignmentId) {
   const a = cachedAssignments.find(x => String(x.id) === String(assignmentId));
   if (!a || !a.due_date) return;
@@ -7229,7 +7637,8 @@ async function generateChecklist(assignmentId) {
   if (schoolAIReady()) {
     try {
       const aiSteps = await generateChecklistViaAI(a, todayStr, dueStr);
-      const verdict = verifyChecklistDates(aiSteps, todayStr, dueStr);
+      const dateVerdict = verifyChecklistDates(aiSteps, todayStr, dueStr);
+      const verdict = dateVerdict.ok ? verifyChecklistContent(aiSteps, a) : dateVerdict;
       if (verdict.ok) { steps = aiSteps; source = 'ai'; }
       else console.warn('[checklist] rejected AI output —', verdict.reason);
     } catch (err) {
@@ -9688,6 +10097,7 @@ function showPage(name, el, fromNav) {
   closeAllAnnouncements();
   closeCompletedAssignments();
   closeGradeDetail();
+  closeAllGraded();
   closeClassNotes();
   document.getElementById('links-tutorial-overlay')?.classList.remove('show');
 
@@ -9912,9 +10322,9 @@ if (!checkForPasswordRecovery()) routeUser();
 
   // Replaces the existing maybeShowWelcome (assignment wins over hoisted declaration)
   window.maybeShowWelcome = function () {
-    if (userPrefs.welcomeToastEnabled === false) return;
+    if (userPrefs.welcomeToastEnabled === false) return false;
     const last = parseInt(localStorage.getItem(wsKey()) || '0', 10);
-    if (Date.now() - last < DAY_MS) return;
+    if (Date.now() - last < DAY_MS) return false;
     trackEvent('welcome_shown');
 
     wsPopulateHeader();
@@ -9940,6 +10350,7 @@ if (!checkForPasswordRecovery()) routeUser();
     overlay.style.display = 'flex';
     requestAnimationFrame(() => { overlay.style.opacity = '1'; });
     setTimeout(() => { overlay.style.removeProperty('opacity'); }, 750);
+    return true;
   };
 
   window.wsClose = function () {

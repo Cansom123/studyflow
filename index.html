@@ -3589,24 +3589,12 @@ function closeCompletedAssignments() {
    current_score/final_score already in cachedGrades. Also the data source
    for the coco.1 grade-tips ask box below.
 =========================== */
-function gradeBreakdownForCourse(courseName) {
-  const norm = s => (s || '').trim().toLowerCase();
-  const rows = cachedGradedAssignments.filter(a => norm(a.course) === norm(courseName));
-  const graded = rows.filter(a => a.score != null && a.points_possible);
-  const missing = rows.filter(a => a.is_missing && !a.is_excused);
-  const lowPerformers = graded
-    .map(a => ({ ...a, pct: (a.score / a.points_possible) * 100, lost: a.points_possible - a.score }))
-    .filter(a => a.lost > 0)
-    .sort((a, b) => b.lost - a.lost)
-    .slice(0, 6);
-  // "Open and gradable" = not done, and not locked -- a due-but-not-yet-graded
-  // item is still open; a past-due locked one is not, regardless of whether
-  // the student ever submitted it.
-  const openWork = cachedAssignments.filter(a =>
-    norm(a.course) === norm(courseName) && !a.completed && !a.is_locked
-  );
-  return { graded, missing, lowPerformers, openWork, allClosed: openWork.length === 0 };
-}
+/* gradeBreakdownForCourse now lives in js/grade-core.js -- see the module
+   bridge near the end of this file. It used to read cachedGradedAssignments
+   and cachedAssignments directly; now every call site passes them in
+   explicitly, same pattern already used by cocoVerifyPlanning/
+   cocoVerifyGradeTips (read live state at the call site, compute from a
+   plain parameter). */
 
 let currentGradeDetailCourse = null;
 
@@ -3621,7 +3609,7 @@ function openGradeDetail(courseName) {
   const grade = cachedGrades.find(g => norm(g.course_name) === norm(courseName));
   const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
   const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
-  const { graded, missing, lowPerformers, openWork, allClosed } = gradeBreakdownForCourse(courseName);
+  const { graded, missing, lowPerformers, openWork, allClosed } = gradeBreakdownForCourse(courseName, cachedGradedAssignments, cachedAssignments);
   // Soonest due first -- a higher point value doesn't help a student get
   // ahead of anything if it isn't due for weeks. Undated items (not yet
   // scheduled by the teacher) sort last since there's nothing to act on yet.
@@ -3705,7 +3693,7 @@ function openAllGraded(courseName) {
   const body = document.getElementById('grade-all-body');
   if (!overlay || !body) return;
 
-  const { graded } = gradeBreakdownForCourse(courseName);
+  const { graded } = gradeBreakdownForCourse(courseName, cachedGradedAssignments, cachedAssignments);
   if (titleEl) titleEl.textContent = `${cleanCourseName(courseName)} — All graded work`;
 
   // Most recently graded first -- that's what a student checking back in
@@ -4346,7 +4334,7 @@ function cocoGradeContext(courseName) {
   const grade = cachedGrades.find(g => norm(g.course_name) === norm(courseName));
   const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
   const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
-  const { graded, missing, lowPerformers, openWork, allClosed } = gradeBreakdownForCourse(courseName);
+  const { graded, missing, lowPerformers, openWork, allClosed } = gradeBreakdownForCourse(courseName, cachedGradedAssignments, cachedAssignments);
 
   let text = `Course: ${courseName}\n`;
   text += `Current grade: ${pct != null ? pct + '%' : 'not posted'}${letter ? ' (' + letter + ')' : ''}\n\n`;
@@ -7513,15 +7501,15 @@ if (!checkForPasswordRecovery()) routeUser();
 <!-- Real ES modules in the multi-file split (js/coco-core.js,
      js/checklist-core.js, js/format-utils.js, js/search-utils.js,
      js/coco-verify.js, js/render-utils.js, js/study-utils.js,
-     js/crypto-utils.js) -- re-attached to `window` so the rest of the
-     app's classic script can keep calling these functions exactly as it
-     always has. This bridge is scaffolding for an incremental migration,
-     not the end state: as more logic moves into real modules, code that
-     already imports what it needs stops needing the global at all, and
-     eventually this script (and the other main script block above) goes
-     away entirely. Requires the page be served over http(s) -- see the
-     staging environment, not opened via file://, which browsers block
-     module imports from. -->
+     js/crypto-utils.js, js/grade-core.js) -- re-attached to `window` so
+     the rest of the app's classic script can keep calling these functions
+     exactly as it always has. This bridge is scaffolding for an
+     incremental migration, not the end state: as more logic moves into
+     real modules, code that already imports what it needs stops needing
+     the global at all, and eventually this script (and the other main
+     script block above) goes away entirely. Requires the page be served
+     over http(s) -- see the staging environment, not opened via file://,
+     which browsers block module imports from. -->
 <script type="module">
   import * as CocoCore from './js/coco-core.js';
   import * as ChecklistCore from './js/checklist-core.js';
@@ -7531,7 +7519,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as RenderUtils from './js/render-utils.js';
   import * as StudyUtils from './js/study-utils.js';
   import * as CryptoUtils from './js/crypto-utils.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils);
+  import * as GradeCore from './js/grade-core.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore);
 </script>
 </body>
 </html>

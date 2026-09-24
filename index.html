@@ -6079,39 +6079,8 @@ function closeFocusTimer() {
 function renderAllWork(assignments) {
   document.getElementById('allwork-list').style.display = '';
   const today = new Date(); today.setHours(0,0,0,0);
-  const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate()+7);
-  let overdue=[], soon=[], upcoming=[];
-  assignments.forEach(a => {
-    if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
-    if (!a.due_date) { upcoming.push(a); return; }
-    const due = new Date(a.due_date); due.setHours(0,0,0,0);
-    if (due < today) overdue.push(a);
-    else if (due <= weekFromNow) soon.push(a);
-    else upcoming.push(a);
-  });
-  // Within each group: undone first, done last; overdue sorted most overdue first
-  const sortGroup = (arr, reverseDate=false) => [...arr].sort((a, b) => {
-    const aDone = doneSet.has(decodeURIComponent(doneKey(a))) ? 1 : 0;
-    const bDone = doneSet.has(decodeURIComponent(doneKey(b))) ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone;
-    const aD = a.due_date ? new Date(a.due_date) : new Date('9999');
-    const bD = b.due_date ? new Date(b.due_date) : new Date('9999');
-    return reverseDate ? aD - bD : aD - bD;
-  });
-  let html = '';
-  if (overdue.length) {
-    html += `<div class="section-label" style="color:var(--error-color);">Overdue</div>`;
-    html += sortGroup(overdue).map(a => aCard(a, true, true, doneSet)).join('');
-  }
-  if (soon.length) {
-    html += `<div class="section-label">Due Soon</div>`;
-    html += sortGroup(soon).map(a => aCard(a, false, false, doneSet)).join('');
-  }
-  if (upcoming.length) {
-    html += `<div class="section-label">Upcoming</div>`;
-    html += sortGroup(upcoming).map(a => aCard(a, false, false, doneSet)).join('');
-  }
-  document.getElementById('allwork-list').innerHTML = html || '<div class="empty-box"><div class="empty-title">No assignments</div></div>';
+  // Pure bucketing/sorting/HTML building lives in js/render-utils.js.
+  document.getElementById('allwork-list').innerHTML = allWorkBodyHTML(assignments, doneSet, today);
 }
 
 /* priorityGradeRiskBoost, computePriorityScores, and priorityAiText now

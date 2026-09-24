@@ -307,6 +307,47 @@ export function assignmentDetailBodyHTML(a) {
   `;
 }
 
+// Body HTML for the All Work tab: buckets assignments into
+// overdue/due-soon(within 7 days)/upcoming (skipping anything done),
+// sorts each bucket undone-first then soonest-due-first, and renders each
+// with aCard. Falls back to an empty-state box when nothing's left to show.
+export function allWorkBodyHTML(assignments, doneSet, today) {
+  const ref = today || (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
+  const weekFromNow = new Date(ref); weekFromNow.setDate(ref.getDate() + 7);
+  const overdue = [], soon = [], upcoming = [];
+  assignments.forEach(a => {
+    if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
+    if (!a.due_date) { upcoming.push(a); return; }
+    const due = new Date(a.due_date); due.setHours(0, 0, 0, 0);
+    if (due < ref) overdue.push(a);
+    else if (due <= weekFromNow) soon.push(a);
+    else upcoming.push(a);
+  });
+  const sortGroup = arr => [...arr].sort((a, b) => {
+    const aDone = doneSet.has(decodeURIComponent(doneKey(a))) ? 1 : 0;
+    const bDone = doneSet.has(decodeURIComponent(doneKey(b))) ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    const aD = a.due_date ? new Date(a.due_date) : new Date('9999');
+    const bD = b.due_date ? new Date(b.due_date) : new Date('9999');
+    return aD - bD;
+  });
+
+  let html = '';
+  if (overdue.length) {
+    html += `<div class="section-label" style="color:var(--error-color);">Overdue</div>`;
+    html += sortGroup(overdue).map(a => aCard(a, true, true, doneSet)).join('');
+  }
+  if (soon.length) {
+    html += `<div class="section-label">Due Soon</div>`;
+    html += sortGroup(soon).map(a => aCard(a, false, false, doneSet)).join('');
+  }
+  if (upcoming.length) {
+    html += `<div class="section-label">Upcoming</div>`;
+    html += sortGroup(upcoming).map(a => aCard(a, false, false, doneSet)).join('');
+  }
+  return html || '<div class="empty-box"><div class="empty-title">No assignments</div></div>';
+}
+
 export function cocoGradeTipsAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;

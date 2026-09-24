@@ -6146,48 +6146,31 @@ function renderFocusViews() {
 // timer is minimized — which is now the normal way to run a session.
 function updateFocusDocTitle() {
   if (!focusState) return;
-  if (focusState.awaiting) { document.title = focusOriginalTitle || 'StudyFlow'; return; }
-  const label = focusState.phase === 'study' ? 'Studying' : 'Break';
-  document.title = focusState.paused
-    ? `⏸ ${fmtClock(focusState.remainingSec)} - StudyFlow`
-    : `${fmtClock(focusState.remainingSec)} · ${label} - StudyFlow`;
+  // Pure title derivation lives in js/focus-core.js.
+  document.title = computeFocusDocTitle(focusState, focusOriginalTitle);
 }
 
 function renderFocusMiniBar() {
   const bar = document.getElementById('focus-minibar');
   if (!bar) return;
-  if (!focusState || !focusState.minimized) { bar.style.display = 'none'; return; }
+  // Pure view-model derivation lives in js/focus-core.js.
+  const v = computeFocusMiniBarView(focusState);
+  if (!v.visible) { bar.style.display = 'none'; return; }
 
-  const isStudy = focusState.phase === 'study';
   bar.style.display = 'flex';
-  bar.classList.toggle('is-paused', !!focusState.paused);
-  document.getElementById('focus-minibar-label').textContent =
-    focusState.awaiting ? 'Round done - tap to continue'
-      : focusState.paused ? `Paused · ${isStudy ? 'focus' : 'break'}`
-      : (isStudy ? `Focus · ${focusState.sessionTitle}` : 'Break');
-  document.getElementById('focus-minibar-time').textContent =
-    focusState.awaiting ? '' : fmtClock(focusState.remainingSec);
+  bar.classList.toggle('is-paused', v.isPaused);
+  document.getElementById('focus-minibar-label').textContent = v.label;
+  document.getElementById('focus-minibar-time').textContent = v.time;
 
   const pauseBtn = document.getElementById('focus-minibar-pause');
-  pauseBtn.style.display = focusState.awaiting ? 'none' : '';
-  pauseBtn.textContent = focusState.paused ? '▶' : '❚❚';
-  pauseBtn.title = focusState.paused ? 'Resume' : 'Pause';
+  pauseBtn.style.display = v.pauseBtnVisible ? '' : 'none';
+  pauseBtn.textContent = v.pauseBtnLabel;
+  pauseBtn.title = v.pauseBtnTitle;
 }
 
 function renderFocusTimer() {
   const body = document.getElementById('focus-body');
-  const isStudy = focusState.phase === 'study';
-  body.innerHTML = `
-    <div class="focus-phase-label">${isStudy ? `Round ${focusState.round} - focus` : 'Break'}${focusState.paused ? ' · paused' : ''}</div>
-    <div class="focus-title" style="margin-bottom:0;">${escapeHtml(focusState.sessionTitle)}</div>
-    <div class="focus-timer-display">${fmtClock(focusState.remainingSec)}</div>
-    ${!isStudy && focusState.breakActivity ? `<div class="focus-sub">You said you'd: "${escapeHtml(focusState.breakActivity)}"</div>` : ''}
-    <div class="focus-sub" style="margin-bottom:14px;">Close this to keep the timer running while you use the app.</div>
-    <div class="focus-btn-row">
-      <button class="sync-btn" style="width:auto;margin-bottom:0;" onclick="toggleFocusPause()">${focusState.paused ? 'Resume' : 'Pause'}</button>
-      <button class="sync-btn" style="width:auto;margin-bottom:0;" onclick="focusEndEarly()">End session</button>
-    </div>
-  `;
+  body.innerHTML = focusTimerBodyHTML(focusState);
 }
 
 function onFocusStudyComplete() {
@@ -6997,8 +6980,8 @@ if (!checkForPasswordRecovery()) routeUser();
      js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
      js/home-core.js, js/goals-core.js, js/term-utils.js,
      js/grade-calc-core.js, js/link-utils.js, js/coco-citation.js,
-     js/due-core.js, js/due-calendar-core.js, js/streak-core.js) --
-     re-attached to `window` so the rest of the app's classic script can keep calling
+     js/due-core.js, js/due-calendar-core.js, js/streak-core.js,
+     js/focus-core.js) -- re-attached to `window` so the rest of the app's classic script can keep calling
      these functions exactly as it always has. This bridge is scaffolding
      for an incremental migration, not the end state: as more logic moves
      into real modules, code that already imports what it needs stops
@@ -7026,7 +7009,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as DueCore from './js/due-core.js';
   import * as DueCalendarCore from './js/due-calendar-core.js';
   import * as StreakCore from './js/streak-core.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils, CocoCitation, DueCore, DueCalendarCore, StreakCore);
+  import * as FocusCore from './js/focus-core.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils, CocoCitation, DueCore, DueCalendarCore, StreakCore, FocusCore);
 </script>
 </body>
 </html>

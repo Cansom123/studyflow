@@ -1,3 +1,5 @@
+import { extractSectionCode } from './format-utils.js';
+
 export function getSchoolYear(now = new Date()) {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -34,4 +36,27 @@ export function isCourseTermConcluded(name, now = new Date()) {
   const endMonth = { FAL: 11, SPR: 4, SUM: 7, WIN: 1 };
   const termEnd = new Date(2000 + parseInt(m[2], 10), endMonth[m[1]] ?? 11, 28);
   return termEnd < now;
+}
+
+// Filters raw Canvas courses down to the current school year (courses with
+// no term tag are always kept -- their term can't be determined from the
+// name alone) and works out which ones should start pre-checked: directly
+// in the user's existing selection, or the current-semester equivalent of
+// a concluded selection (same section code, different semester tag).
+// Returns [{ course, preSelected }] so the caller can build DOM nodes
+// without redoing this logic.
+export function computeSelectableCourses(courses, existingIds, concludedCodes, schoolYear) {
+  const filtered = (courses || []).filter(c => {
+    const n = (c.name || '').toUpperCase();
+    const hasTag = /\b(FAL|SPR|SUM|WIN)\d{2}\b/.test(n);
+    if (!hasTag) return true;
+    return isCurrentYearCourse(c.name, schoolYear) && !isCourseTermConcluded(c.name);
+  });
+
+  return filtered.map(course => {
+    const sectionCode = extractSectionCode(course.name);
+    const preSelected = existingIds.has(String(course.id)) ||
+      (sectionCode !== null && concludedCodes.has(sectionCode));
+    return { course, preSelected };
+  });
 }

@@ -2642,17 +2642,11 @@ function renderCoursesForSelection(courses, existingIds = new Set(), concludedCo
   const listEl = document.getElementById('course-list');
   listEl.innerHTML = '';
 
-  // Keep only courses from the current school year that are not concluded.
-  // Courses with no term tag (e.g. "Speech and Debate") are always shown.
+  // Pure filtering/pre-selection computation lives in js/term-utils.js.
   const sy = getSchoolYear();
-  const filtered = (courses || []).filter(c => {
-    const n = (c.name || '').toUpperCase();
-    const hasTag = /\b(FAL|SPR|SUM|WIN)\d{2}\b/.test(n);
-    if (!hasTag) return true;
-    return isCurrentYearCourse(c.name, sy) && !isCourseTermConcluded(c.name);
-  });
+  const items = computeSelectableCourses(courses, existingIds, concludedCodes, sy);
 
-  if (filtered.length === 0) {
+  if (items.length === 0) {
     listEl.innerHTML = '<div class="course-loading">No current classes found in Canvas.</div>';
     return;
   }
@@ -2662,13 +2656,8 @@ function renderCoursesForSelection(courses, existingIds = new Set(), concludedCo
   title.textContent = `Current classes (${sy.schoolYearShort})`;
   listEl.appendChild(title);
 
-  filtered.forEach(course => {
+  items.forEach(({ course, preSelected }) => {
     const item = document.createElement('div');
-    const sectionCode = extractSectionCode(course.name);
-    // Pre-check if: directly in existing selection, OR is the current-semester equivalent
-    // of a concluded selection (same section code, different semester tag).
-    const preSelected = existingIds.has(String(course.id)) ||
-      (sectionCode !== null && concludedCodes.has(sectionCode));
     item.className = 'course-item' + (preSelected ? ' selected' : '');
     if (preSelected) selectedCoursesTemp.push({ id: String(course.id), name: course.name });
     item.innerHTML = `<div class="course-check"><div class="course-check-inner"></div></div><div class="course-name">${course.name}</div>`;

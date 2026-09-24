@@ -6,7 +6,7 @@
    highlight matched terms.
 =========================== */
 
-import { escapeHtml, escapeRegex } from './format-utils.js';
+import { escapeHtml, escapeRegex, cleanCourseName } from './format-utils.js';
 
 const ASK_STOPWORDS = new Set([
   'what','whats',"what's",'is','are','was','were','the','a','an','of','for','my','me','in','on','to','at',
@@ -45,4 +45,63 @@ export function markLiteralMatchesHTML(rawText, query) {
   let n = 0;
   const html = escapedRaw.replace(rx, match => `<mark id="syl-mark-${n++}">${match}</mark>`);
   return { html, matchCount: n };
+}
+
+// Answers a free-text "ask my syllabi" query by keyword-matching lines
+// across every syllabus and picking the top 3 by match count (ties broken
+// by shorter line first). Returns { html, top } where `top` is the
+// candidate list the caller should store for later "jump to source
+// passage" clicks -- or `null` when there was nothing to update (too-vague
+// query, or no candidates found), matching the original code's behavior
+// of leaving the previous result list alone in those cases rather than
+// clearing it.
+export function syllabiKeywordAnswer(cachedSyllabi, syllabusCourses, q) {
+  const keywords = extractAskKeywords(q);
+
+  if (keywords.length === 0) {
+    return {
+      html: `<div class="card-sub">Try adding a word or two about the topic - e.g. "grading policy" or "late work".</div>`,
+      top: null,
+    };
+  }
+
+  const candidates = [];
+  cachedSyllabi.forEach(s => {
+    if (!s.content) return;
+    const course = syllabusCourses.find(c => String(c.id) === String(s.course_id));
+    const courseName = course ? cleanCourseName(course.name) : (s.course_name || 'Course');
+    s.content.split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
+      const matched = keywords.filter(k => new RegExp('\\b' + escapeRegex(k) + '\\b', 'i').test(line));
+      if (matched.length === 0) return;
+      candidates.push({ courseId: s.course_id, courseName, line, score: matched.length, len: line.length });
+    });
+  });
+
+  if (candidates.length === 0) {
+    return {
+      html: `<div class="card-sub">Couldn't find anything about that in your syllabi. Try different words, or check the syllabus yourself if it's still missing.</div>`,
+      top: null,
+    };
+  }
+
+  candidates.sort((a, b) => b.score - a.score || a.len - b.len);
+  const top = candidates.slice(0, 3);
+
+  const html = `
+    <div class="ask-answer-text">${highlightAskKeywords(top[0].line, keywords)}</div>
+    <button class="ask-source-chip" onclick="openSyllabusAtPassage(0)">
+      <span class="ask-source-icon">📄</span>
+      <span>Source: ${escapeHtml(top[0].courseName)}</span>
+      <span class="ask-source-arrow">→</span>
+    </button>
+    ${top.length > 1 ? `
+    <div class="ask-more-label">Also mentioned in</div>
+    ${top.slice(1).map((c, i) => `
+      <button class="ask-source-chip-secondary" onclick="openSyllabusAtPassage(${i + 1})">
+        <div class="ask-source-chip-course">${escapeHtml(c.courseName)}</div>
+        <div class="ask-source-snippet">${highlightAskKeywords(c.line, keywords)}</div>
+      </button>`).join('')}
+    ` : ''}
+  `;
+  return { html, top };
 }

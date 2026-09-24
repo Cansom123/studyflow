@@ -218,6 +218,32 @@ export function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
   return html;
 }
 
+// Body HTML for the "all graded work" overlay, most recently graded first.
+export function gradeAllBodyHTML(graded) {
+  // Most recently graded first -- that's what a student checking back in
+  // actually wants to see, not their oldest quiz from week one.
+  const sorted = [...graded].sort((a, b) => {
+    const da = a.due_date ? new Date(a.due_date).getTime() : -Infinity;
+    const db = b.due_date ? new Date(b.due_date).getTime() : -Infinity;
+    return db - da;
+  });
+
+  let html = `<div class="card-sub" style="margin-bottom:14px;">${sorted.length} graded assignment${sorted.length !== 1 ? 's' : ''}</div>`;
+  if (!sorted.length) {
+    html += `<div class="empty-box"><div class="empty-title">Nothing graded yet</div><div class="empty-sub">Once Canvas grades something in this class, it'll show up here.</div></div>`;
+  } else {
+    html += `<div class="card" style="padding:4px 16px;">` +
+      sorted.map(a => {
+        const pct = (a.score / a.points_possible) * 100;
+        const cls = pct >= 90 ? 'good' : pct >= 70 ? 'warn' : 'bad';
+        const dateStr = a.due_date ? new Date(a.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+        return `<div class="grade-row"><span class="grade-name">${escapeHtml(a.title)}${dateStr ? ` <span style="color:var(--text2);font-weight:400;">(${dateStr})</span>` : ''}</span><span class="grade-score ${cls}">${a.score}/${a.points_possible} <span style="font-weight:400;color:var(--text2);">(${pct.toFixed(0)}%)</span></span></div>`;
+      }).join('') + `</div>`;
+  }
+
+  return html;
+}
+
 export function cocoGradeTipsAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;

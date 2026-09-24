@@ -10,7 +10,7 @@
    they genuinely aren't pure.
 =========================== */
 
-import { escapeHtml, cleanCourseName, getBadge, getDueText, doneKey } from './format-utils.js';
+import { escapeHtml, escapeRegex, cleanCourseName, getBadge, getDueText, doneKey } from './format-utils.js';
 
 // Deliberately NOT the same binding as index.html's classic-script `months`
 // (which is called synchronously at page load, before any module runs, so
@@ -360,4 +360,37 @@ export function cocoGradeTipsAnswerHTML(answer, confidence) {
   return `<div class="school-ai-badge">✨ coco.1</div>` +
     `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
     `<div class="school-ai-disclaimer">AI-generated advice based on your synced grades - always confirm anything important with your teacher.</div>`;
+}
+
+// Body HTML for the plain-text syllabus search results: for each syllabus
+// containing a literal (case-insensitive) match, a short snippet around
+// the first occurrence with the match highlighted. query should already
+// be trimmed and lowercased by the caller.
+export function syllabusSearchResultsHTML(cachedSyllabi, syllabusCourses, query) {
+  const rx = new RegExp(escapeRegex(query), 'ig');
+  const matches = [];
+  cachedSyllabi.forEach(s => {
+    if (!s.content) return;
+    const idx = s.content.toLowerCase().indexOf(query);
+    if (idx === -1) return;
+    const start = Math.max(0, idx - 40);
+    const end = Math.min(s.content.length, idx + query.length + 60);
+    let snippet = s.content.slice(start, end);
+    if (start > 0) snippet = '…' + snippet;
+    if (end < s.content.length) snippet += '…';
+    const course = syllabusCourses.find(c => String(c.id) === String(s.course_id));
+    matches.push({ courseId: s.course_id, name: course ? cleanCourseName(course.name) : (s.course_name || 'Course'), snippet });
+  });
+
+  if (matches.length === 0) {
+    return `<div class="empty-box"><div class="empty-title">No matches</div><div class="empty-sub">Try a different word - like "office hours," "late policy," or "grading."</div></div>`;
+  }
+
+  return matches.map(m => {
+    const highlighted = escapeHtml(m.snippet).replace(rx, match => `<mark>${match}</mark>`);
+    return `<div class="card syllabus-card" onclick="openSyllabus('${m.courseId}')">
+      <div class="card-title">${escapeHtml(m.name)}</div>
+      <div class="card-sub syllabus-preview">${highlighted}</div>
+    </div>`;
+  }).join('');
 }

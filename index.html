@@ -5043,31 +5043,8 @@ function searchSyllabi() {
   if (!q) { resultsEl.style.display = 'none'; resultsEl.innerHTML = ''; listEl.style.display = ''; return; }
   listEl.style.display = 'none';
   resultsEl.style.display = 'block';
-  const rx = new RegExp(escapeRegex(q), 'ig');
-  const matches = [];
-  cachedSyllabi.forEach(s => {
-    if (!s.content) return;
-    const idx = s.content.toLowerCase().indexOf(q);
-    if (idx === -1) return;
-    const start = Math.max(0, idx - 40);
-    const end = Math.min(s.content.length, idx + q.length + 60);
-    let snippet = s.content.slice(start, end);
-    if (start > 0) snippet = '…' + snippet;
-    if (end < s.content.length) snippet += '…';
-    const course = syllabusCourses.find(c => String(c.id) === String(s.course_id));
-    matches.push({ courseId: s.course_id, name: course ? cleanCourseName(course.name) : (s.course_name || 'Course'), snippet });
-  });
-  if (matches.length === 0) {
-    resultsEl.innerHTML = `<div class="empty-box"><div class="empty-title">No matches</div><div class="empty-sub">Try a different word - like "office hours," "late policy," or "grading."</div></div>`;
-    return;
-  }
-  resultsEl.innerHTML = matches.map(m => {
-    const highlighted = escapeHtml(m.snippet).replace(rx, match => `<mark>${match}</mark>`);
-    return `<div class="card syllabus-card" onclick="openSyllabus('${m.courseId}')">
-      <div class="card-title">${escapeHtml(m.name)}</div>
-      <div class="card-sub syllabus-preview">${highlighted}</div>
-    </div>`;
-  }).join('');
+  // Pure match-finding/snippet/HTML building lives in js/render-utils.js.
+  resultsEl.innerHTML = syllabusSearchResultsHTML(cachedSyllabi, syllabusCourses, q);
 }
 
 /* ===========================

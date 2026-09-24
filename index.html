@@ -5850,65 +5850,41 @@ function renderStudyTab() {
   const totalEl = document.getElementById('study-stat-total');
   if (!totalEl) return; // page not in DOM yet (shouldn't happen, but stay safe)
 
+  // Pure totals/goal-progress computation lives in js/study-utils.js.
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const todayKey = ymd(today);
-  const weekStart = startOfWeek(today);
+  const r = computeStudyStats(cachedStudySessions, userPrefs, today);
 
-  let todayMin = 0, weekMin = 0, totalMin = 0;
-  cachedStudySessions.forEach(s => {
-    const min = s.minutes_studied || 0;
-    totalMin += min;
-    if (!s.session_date) return;
-    const d = new Date(s.session_date + 'T00:00:00');
-    if (s.session_date === todayKey) todayMin += min;
-    if (d >= weekStart) weekMin += min;
-  });
-
-  document.getElementById('study-stat-today').textContent = fmtHoursMinutes(todayMin);
-  document.getElementById('study-stat-week').textContent = fmtHoursMinutes(weekMin);
-  totalEl.textContent = fmtHoursMinutes(totalMin);
-
-  const dailyGoal = userPrefs.studyGoalDailyMin ?? 60;
-  const weeklyGoal = userPrefs.studyGoalWeeklyMin ?? 300;
+  document.getElementById('study-stat-today').textContent = r.todayFmt;
+  document.getElementById('study-stat-week').textContent = r.weekFmt;
+  totalEl.textContent = r.totalFmt;
 
   const todayFill = document.getElementById('study-goal-today-fill');
   const weekFill = document.getElementById('study-goal-week-fill');
   const todayText = document.getElementById('study-goal-today-text');
   const weekText = document.getElementById('study-goal-week-text');
   if (todayFill) {
-    const pct = dailyGoal > 0 ? Math.min(100, (todayMin / dailyGoal) * 100) : 0;
-    todayFill.style.width = pct + '%';
-    todayFill.classList.toggle('goal-met', todayMin >= dailyGoal && dailyGoal > 0);
-    todayText.textContent = `${todayMin} / ${dailyGoal} min`;
+    todayFill.style.width = r.todayPct + '%';
+    todayFill.classList.toggle('goal-met', r.todayGoalMet);
+    todayText.textContent = `${r.todayMin} / ${r.dailyGoal} min`;
   }
   if (weekFill) {
-    const pct = weeklyGoal > 0 ? Math.min(100, (weekMin / weeklyGoal) * 100) : 0;
-    weekFill.style.width = pct + '%';
-    weekFill.classList.toggle('goal-met', weekMin >= weeklyGoal && weeklyGoal > 0);
-    weekText.textContent = `${weekMin} / ${weeklyGoal} min`;
+    weekFill.style.width = r.weekPct + '%';
+    weekFill.classList.toggle('goal-met', r.weekGoalMet);
+    weekText.textContent = `${r.weekMin} / ${r.weeklyGoal} min`;
   }
 
   const nudgeEl = document.getElementById('study-goal-nudge');
-  if (nudgeEl) {
-    if (dailyGoal > 0 && todayMin >= dailyGoal) {
-      nudgeEl.textContent = "🎉 You've hit today's study goal - anything more is a bonus.";
-    } else if (dailyGoal > 0) {
-      nudgeEl.textContent = `${dailyGoal - todayMin} minutes left to hit today's goal.`;
-    } else {
-      nudgeEl.textContent = '';
-    }
-  }
+  if (nudgeEl) nudgeEl.textContent = r.nudgeText;
 
   const dailyInput = document.getElementById('study-goal-daily-input');
   const weeklyInput = document.getElementById('study-goal-weekly-input');
-  if (dailyInput && document.activeElement !== dailyInput) dailyInput.value = dailyGoal;
-  if (weeklyInput && document.activeElement !== weeklyInput) weeklyInput.value = weeklyGoal;
+  if (dailyInput && document.activeElement !== dailyInput) dailyInput.value = r.dailyGoal;
+  if (weeklyInput && document.activeElement !== weeklyInput) weeklyInput.value = r.weeklyGoal;
 
-  const todayItems = cachedStudySessions.filter(s => s.session_date === todayKey);
   const todayListEl = document.getElementById('study-today-list');
   const todayEmptyEl = document.getElementById('study-today-empty');
-  if (todayListEl) todayListEl.innerHTML = todayItems.map(studySessionCardHTML).join('');
-  if (todayEmptyEl) todayEmptyEl.style.display = todayItems.length ? 'none' : 'block';
+  if (todayListEl) todayListEl.innerHTML = r.todayItems.map(studySessionCardHTML).join('');
+  if (todayEmptyEl) todayEmptyEl.style.display = r.todayItems.length ? 'none' : 'block';
 }
 
 function toggleStudyGoalEdit() {

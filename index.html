@@ -2681,11 +2681,7 @@ function renderCoursesForSelection(courses, existingIds = new Set(), concludedCo
   });
 }
 
-function extractSectionCode(name) {
-  if (!name) return null;
-  const m = name.match(/\|\s*(\S+)\s+--/);
-  return m ? m[1] : null;
-}
+// extractSectionCode moved to js/format-utils.js (twenty-first module)
 
 async function loadCoursesForSelection() {
   document.getElementById('course-list-loading').style.display = 'block';
@@ -4908,9 +4904,7 @@ function downloadTextFile(filename, text) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function safeFileName(name) {
-  return (name || 'Syllabus').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
-}
+// safeFileName moved to js/format-utils.js (twenty-first module)
 
 function downloadSyllabus(courseId) {
   const course = syllabusCourses.find(c => String(c.id) === String(courseId));
@@ -6155,10 +6149,7 @@ function focusStartStudy() {
   startFocusCountdown(focusState.studyMin * 60, onFocusStudyComplete);
 }
 
-function fmtClock(totalSec) {
-  const m = Math.floor(totalSec / 60), s = totalSec % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
+// fmtClock moved to js/format-utils.js (twenty-first module)
 
 // Deadline-based rather than counting ticks down. Once the timer keeps running
 // while the student navigates, a tick-counting loop drifts whenever the browser

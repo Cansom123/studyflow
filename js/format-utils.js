@@ -86,3 +86,22 @@ export function getDueText(due_date, isOverdue, isLocked, lockReason) {
 // with an apostrophe -- silently killing the click handler. %27 round-trips through
 // decodeURIComponent fine, so escape it too.
 export function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`).replace(/'/g, '%27'); }
+
+// Canvas course names encode the section as "... | SECTION -- ..."; pulls
+// just the section token so a concluded course's selection can be
+// carried over to its current-semester equivalent by matching sections.
+export function extractSectionCode(name) {
+  if (!name) return null;
+  const m = name.match(/\|\s*(\S+)\s+--/);
+  return m ? m[1] : null;
+}
+
+// Strips characters that are illegal (or awkward) in a downloaded filename.
+export function safeFileName(name) {
+  return (name || 'Syllabus').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+export function fmtClock(totalSec) {
+  const m = Math.floor(totalSec / 60), s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}

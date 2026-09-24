@@ -5644,16 +5644,13 @@ function celebrateFromElement(el) {
 function bumpDailyStreak() {
   const key = 'sf_streak_' + USER_ID;
   const todayKey = ymd(new Date());
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) {}
-  if (raw && raw.lastDate === todayKey) return raw.count;
-  let count = 1;
-  if (raw) {
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-    if (raw.lastDate === ymd(yesterday)) count = raw.count + 1;
-  }
-  localStorage.setItem(key, JSON.stringify({ count, lastDate: todayKey }));
-  return count;
+  // Pure streak-advancement logic (shared with bumpStudyStreak) lives in js/streak-core.js.
+  const result = computeNextStreak(raw, todayKey, ymd(yesterday));
+  if (result.changed) localStorage.setItem(key, JSON.stringify(result.next));
+  return result.count;
 }
 
 // Lifetime count of assignments marked done, independent of Canvas sync state
@@ -5689,16 +5686,12 @@ function setStatValue(el, value) {
 function bumpStudyStreak() {
   const key = 'sf_study_streak_' + USER_ID;
   const todayKey = ymd(new Date());
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) {}
-  if (raw && raw.lastDate === todayKey) return raw.count;
-  let count = 1;
-  if (raw) {
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-    if (raw.lastDate === ymd(yesterday)) count = raw.count + 1;
-  }
-  localStorage.setItem(key, JSON.stringify({ count, lastDate: todayKey }));
-  return count;
+  const result = computeNextStreak(raw, todayKey, ymd(yesterday));
+  if (result.changed) localStorage.setItem(key, JSON.stringify(result.next));
+  return result.count;
 }
 
 const SYNC_REWARD_MESSAGES = [
@@ -7004,8 +6997,8 @@ if (!checkForPasswordRecovery()) routeUser();
      js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
      js/home-core.js, js/goals-core.js, js/term-utils.js,
      js/grade-calc-core.js, js/link-utils.js, js/coco-citation.js,
-     js/due-core.js, js/due-calendar-core.js) -- re-attached to `window`
-     so the rest of the app's classic script can keep calling
+     js/due-core.js, js/due-calendar-core.js, js/streak-core.js) --
+     re-attached to `window` so the rest of the app's classic script can keep calling
      these functions exactly as it always has. This bridge is scaffolding
      for an incremental migration, not the end state: as more logic moves
      into real modules, code that already imports what it needs stops
@@ -7032,7 +7025,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as CocoCitation from './js/coco-citation.js';
   import * as DueCore from './js/due-core.js';
   import * as DueCalendarCore from './js/due-calendar-core.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils, CocoCitation, DueCore, DueCalendarCore);
+  import * as StreakCore from './js/streak-core.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils, CocoCitation, DueCore, DueCalendarCore, StreakCore);
 </script>
 </body>
 </html>

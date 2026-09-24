@@ -4684,12 +4684,12 @@ function literalSearchWithinSyllabus() {
     return;
   }
 
-  const rx = new RegExp(escapeRegex(q), 'ig');
-  let n = 0;
-  viewEl.innerHTML = escapeHtml(raw).replace(rx, match => `<mark id="syl-mark-${n++}">${match}</mark>`);
+  // Shared literal-match-marking logic lives in js/search-utils.js.
+  const { html, matchCount } = markLiteralMatchesHTML(raw, q);
+  viewEl.innerHTML = html;
   syllabusInlineMatches = [...viewEl.querySelectorAll('mark')];
 
-  if (syllabusInlineMatches.length === 0) {
+  if (matchCount === 0) {
     if (counterEl) counterEl.textContent = 'No matches';
     return;
   }
@@ -4725,11 +4725,11 @@ function highlightExactPassage(text) {
   syllabusInlineMatches = [];
   syllabusInlineMatchIdx = -1;
 
-  const rx = new RegExp(escapeRegex(text), 'ig');
-  let n = 0;
-  viewEl.innerHTML = escapeHtml(raw).replace(rx, m => `<mark id="syl-mark-${n++}">${m}</mark>`);
+  // Shared literal-match-marking logic lives in js/search-utils.js.
+  const { html, matchCount } = markLiteralMatchesHTML(raw, text);
+  viewEl.innerHTML = html;
   syllabusInlineMatches = [...viewEl.querySelectorAll('mark')];
-  if (syllabusInlineMatches.length === 0) return false;
+  if (matchCount === 0) return false;
   syllabusInlineMatchIdx = 0;
   setActiveSyllabusMatch();
   if (counterEl) counterEl.textContent = 'Jumped to source passage';

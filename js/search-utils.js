@@ -30,3 +30,19 @@ export function highlightAskKeywords(text, keywords) {
   });
   return escaped;
 }
+
+// Wraps every literal (case-insensitive) occurrence of `query` in raw text
+// with a numbered <mark id="syl-mark-N"> so the caller can build a
+// prev/next match list from the DOM. Shared by the syllabus inline search
+// box and the "jump to source passage" citation click (previously
+// duplicated verbatim between literalSearchWithinSyllabus and
+// highlightExactPassage). Returns escaped HTML either way, even with no
+// query or no matches, so the caller can always set it directly.
+export function markLiteralMatchesHTML(rawText, query) {
+  const escapedRaw = escapeHtml(rawText);
+  if (!query) return { html: escapedRaw, matchCount: 0 };
+  const rx = new RegExp(escapeRegex(query), 'ig');
+  let n = 0;
+  const html = escapedRaw.replace(rx, match => `<mark id="syl-mark-${n++}">${match}</mark>`);
+  return { html, matchCount: n };
+}

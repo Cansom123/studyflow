@@ -244,6 +244,31 @@ export function gradeAllBodyHTML(graded) {
   return html;
 }
 
+// Card list for the syllabus tab: one card per course, showing whether a
+// syllabus was found on Canvas, added manually, or not found yet, with a
+// short content preview. cachedSyllabi is passed in explicitly rather than
+// looked up per course via a global.
+export function syllabusListHTML(syllabusCourses, cachedSyllabi) {
+  return syllabusCourses.map(c => {
+    const s = cachedSyllabi.find(x => String(x.course_id) === String(c.id));
+    const name = escapeHtml(cleanCourseName(c.name));
+    let badge, badgeClass, sub;
+    if (s && s.content) {
+      badge = s.source === 'canvas' ? 'Found on Canvas' : 'Added by you';
+      badgeClass = s.source === 'canvas' ? 'badge-hw' : 'badge-essay';
+      sub = escapeHtml(s.content).slice(0, 110) + (s.content.length > 110 ? '…' : '');
+    } else {
+      badge = 'Not found yet';
+      badgeClass = 'badge-test';
+      sub = 'Tap to add it yourself';
+    }
+    return `<div class="card syllabus-card" onclick="openSyllabus('${c.id}')">
+      <div class="card-row"><div class="card-title">${name}</div><span class="badge ${badgeClass}">${badge}</span></div>
+      <div class="card-sub syllabus-preview">${sub}</div>
+    </div>`;
+  }).join('');
+}
+
 export function cocoGradeTipsAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;

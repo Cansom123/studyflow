@@ -4548,24 +4548,8 @@ async function loadSyllabi() {
 function renderSyllabusList() {
   const listEl = document.getElementById('syllabus-list');
   if (!listEl) return;
-  listEl.innerHTML = syllabusCourses.map(c => {
-    const s = syllabusFor(c.id);
-    const name = escapeHtml(cleanCourseName(c.name));
-    let badge, badgeClass, sub;
-    if (s && s.content) {
-      badge = s.source === 'canvas' ? 'Found on Canvas' : 'Added by you';
-      badgeClass = s.source === 'canvas' ? 'badge-hw' : 'badge-essay';
-      sub = escapeHtml(s.content).slice(0, 110) + (s.content.length > 110 ? '…' : '');
-    } else {
-      badge = 'Not found yet';
-      badgeClass = 'badge-test';
-      sub = 'Tap to add it yourself';
-    }
-    return `<div class="card syllabus-card" onclick="openSyllabus('${c.id}')">
-      <div class="card-row"><div class="card-title">${name}</div><span class="badge ${badgeClass}">${badge}</span></div>
-      <div class="card-sub syllabus-preview">${sub}</div>
-    </div>`;
-  }).join('');
+  // Pure HTML building lives in js/render-utils.js.
+  listEl.innerHTML = syllabusListHTML(syllabusCourses, cachedSyllabi);
 }
 
 function openSyllabus(courseId) {

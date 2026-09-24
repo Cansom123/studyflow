@@ -269,6 +269,44 @@ export function syllabusListHTML(syllabusCourses, cachedSyllabi) {
   }).join('');
 }
 
+// Body HTML for the assignment-detail overlay: due date, badge, locked
+// notice, description (or its placeholder), and the action row. The
+// done-button's own label/state and the checklist section are filled in
+// separately by the caller (updateAssignmentDetailDoneButton,
+// renderChecklistSection), since those depend on live state this function
+// doesn't need.
+export function assignmentDetailBodyHTML(a) {
+  const [bc, bl] = getBadge(a.assignment_type);
+  const dueStr = a.due_date
+    ? new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+    : 'No due date';
+  const lockedNotice = a.is_locked
+    ? (a.lock_reason === 'unavailable'
+        ? `<div class="due-locked" style="margin-top:6px;">🔒 Not yet available - check Canvas for what's required to unlock it.</div>`
+        : `<div class="due-locked" style="margin-top:6px;">🔒 Locked - Canvas is no longer accepting submissions for this assignment.</div>`)
+    : '';
+  const canvasBtn = a.assignment_url
+    ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="sync-btn" style="width:auto;flex:1;text-decoration:none;text-align:center;display:inline-block;">Open in Canvas →</a>`
+    : '';
+  return `
+    <div class="card-row" style="margin-bottom:14px;">
+      <div>
+        <div class="card-sub">${escapeHtml(a.course || '')} · Due ${dueStr}</div>
+        ${lockedNotice}
+      </div>
+      <span class="badge ${bc}">${bl}</span>
+    </div>
+    ${a.description
+      ? `<div class="syllabus-text">${escapeHtml(a.description)}</div>`
+      : `<div class="card-sub">No description was provided for this assignment.</div>`}
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+      ${canvasBtn}
+      <button class="sync-btn" id="a-detail-done-btn" style="width:auto;flex:1;" onclick="toggleDoneFromDetail('${a.id}')"></button>
+    </div>
+    <div id="a-checklist-section"></div>
+  `;
+}
+
 export function cocoGradeTipsAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;

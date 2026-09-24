@@ -3570,35 +3570,8 @@ function openAssignmentDetail(id) {
   const a = cachedAssignments.find(x => String(x.id) === String(id));
   if (!a) return;
   document.getElementById('a-detail-title').textContent = a.title;
-  const [bc, bl] = getBadge(a.assignment_type);
-  const dueStr = a.due_date
-    ? new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
-    : 'No due date';
-  const lockedNotice = a.is_locked
-    ? (a.lock_reason === 'unavailable'
-        ? `<div class="due-locked" style="margin-top:6px;">🔒 Not yet available - check Canvas for what's required to unlock it.</div>`
-        : `<div class="due-locked" style="margin-top:6px;">🔒 Locked - Canvas is no longer accepting submissions for this assignment.</div>`)
-    : '';
-  const canvasBtn = a.assignment_url
-    ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="sync-btn" style="width:auto;flex:1;text-decoration:none;text-align:center;display:inline-block;">Open in Canvas →</a>`
-    : '';
-  document.getElementById('a-detail-body').innerHTML = `
-    <div class="card-row" style="margin-bottom:14px;">
-      <div>
-        <div class="card-sub">${escapeHtml(a.course || '')} · Due ${dueStr}</div>
-        ${lockedNotice}
-      </div>
-      <span class="badge ${bc}">${bl}</span>
-    </div>
-    ${a.description
-      ? `<div class="syllabus-text">${escapeHtml(a.description)}</div>`
-      : `<div class="card-sub">No description was provided for this assignment.</div>`}
-    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
-      ${canvasBtn}
-      <button class="sync-btn" id="a-detail-done-btn" style="width:auto;flex:1;" onclick="toggleDoneFromDetail('${a.id}')"></button>
-    </div>
-    <div id="a-checklist-section"></div>
-  `;
+  // Pure HTML building lives in js/render-utils.js.
+  document.getElementById('a-detail-body').innerHTML = assignmentDetailBodyHTML(a);
   updateAssignmentDetailDoneButton(a);
   renderChecklistSection(a);
   document.getElementById('assignment-detail-overlay').style.display = 'block';

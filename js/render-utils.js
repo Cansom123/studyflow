@@ -10,7 +10,7 @@
    they genuinely aren't pure.
 =========================== */
 
-import { escapeHtml, cleanCourseName } from './format-utils.js';
+import { escapeHtml, cleanCourseName, getBadge, getDueText, doneKey } from './format-utils.js';
 
 // Deliberately NOT the same binding as index.html's classic-script `months`
 // (which is called synchronously at page load, before any module runs, so
@@ -86,6 +86,34 @@ export function cocoPlanningAnswerHTML(answer, confidence) {
   return `<div class="school-ai-badge">✨ coco.1</div>` +
     `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
     `<div class="school-ai-disclaimer">AI-generated planning advice based on your synced assignments - always double-check deadlines yourself.</div>`;
+}
+
+// Assignment card HTML used across Home, Upcoming, Priority, and All Work.
+// doneSet (which assignments the user has checked off client-side, keyed by
+// doneKey) is passed in explicitly rather than read as a global -- this is
+// the same pattern used for isAssignmentChecked in home-core.js.
+export function aCard(a, isOverdue, redTint = false, doneSet) {
+  const [bc, bl] = getBadge(a.assignment_type);
+  const key = doneKey(a);
+  const isDone = a.completed || doneSet.has(decodeURIComponent(key));
+  const cardClass = `card${isDone ? ' done' : ''}${redTint && !isDone ? ' overdue-card' : ''}`;
+  const overdueTag = redTint && !isDone ? `<span class="overdue-pill">OVERDUE</span>` : '';
+  const titleInner = a.id
+    ? `<span class="card-title-link" onclick="event.stopPropagation();openAssignmentDetail('${a.id}')">${a.title}${overdueTag}</span>`
+    : `${a.title}${overdueTag}`;
+  const canvasLink = a.assignment_url
+    ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>`
+    : '';
+  return `<div class="${cardClass}" data-done-key="${key}">
+    <div class="card-row" style="gap:10px;align-items:center;">
+      <button class="done-check${isDone ? ' checked' : ''}" onclick="toggleDone('${key}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
+      <div style="flex:1;min-width:0;">
+        <div class="card-row"><div style="flex:1;min-width:0;"><div class="card-title">${titleInner}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>
+        ${getDueText(a.due_date, isOverdue, a.is_locked, a.lock_reason)}
+        ${canvasLink}
+      </div>
+    </div>
+  </div>`;
 }
 
 export function cocoGradeTipsAnswerHTML(answer, confidence) {

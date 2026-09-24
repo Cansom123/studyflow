@@ -75,3 +75,23 @@ export function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
 
   return steps;
 }
+
+// Card list for the Goals tab: one card per goal, with its action plan
+// (from buildActionPlan) rendered underneath when it has steps.
+export function goalsListHTML(userGoals, cachedAssignments, cachedGrades) {
+  const colors = ['#d85a30', '#007aff', '#3b6d11', '#854f0b', '#534ab7'];
+  return userGoals.map((g, i) => {
+    const plan = buildActionPlan(g, cachedAssignments, cachedGrades);
+    const stepsHtml = plan.map(s =>
+      `<div class="goal-step"><span class="goal-step-arrow">→</span>${s}</div>`
+    ).join('');
+    return `<div class="goal-card">
+      <div class="goal-row">
+        <div class="goal-dot" style="background:${colors[i % colors.length]};"></div>
+        <div class="goal-text">${g}</div>
+        <button class="goal-remove" onclick="removeGoalMain(${i})">×</button>
+      </div>
+      ${stepsHtml ? `<div class="goal-plan">${stepsHtml}</div>` : ''}
+    </div>`;
+  }).join('');
+}

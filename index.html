@@ -2874,21 +2874,8 @@ function renderGoalsTab() {
     el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:14px 0;">No goals set yet. Add one below!</div>';
     return;
   }
-  const colors = ['#d85a30','#007aff','#3b6d11','#854f0b','#534ab7'];
-  el.innerHTML = userGoals.map((g, i) => {
-    const plan = buildActionPlan(g, cachedAssignments, cachedGrades);
-    const stepsHtml = plan.map(s =>
-      `<div class="goal-step"><span class="goal-step-arrow">→</span>${s}</div>`
-    ).join('');
-    return `<div class="goal-card">
-      <div class="goal-row">
-        <div class="goal-dot" style="background:${colors[i % colors.length]};"></div>
-        <div class="goal-text">${g}</div>
-        <button class="goal-remove" onclick="removeGoalMain(${i})">×</button>
-      </div>
-      ${stepsHtml ? `<div class="goal-plan">${stepsHtml}</div>` : ''}
-    </div>`;
-  }).join('');
+  // Pure HTML building lives in js/goals-core.js.
+  el.innerHTML = goalsListHTML(userGoals, cachedAssignments, cachedGrades);
 }
 
 async function addGoalMain() {

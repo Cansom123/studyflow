@@ -3973,14 +3973,7 @@ async function cocoAsk(question, contextText, history) {
 
 // Which source line to highlight. Prefer a passage the answer quotes verbatim;
 // otherwise the top-retrieved passage, which is what the model was reading.
-function cocoPickCitation(answer, passages) {
-  const a = answer.trim().toLowerCase();
-  const verbatim = passages.find(p => p.toLowerCase().includes(a) && a.length > 8);
-  if (verbatim) return verbatim;
-  const contains = passages.find(p => a.includes(p.toLowerCase()));
-  if (contains) return contains;
-  return passages[0] || '';
-}
+// cocoPickCitation moved to js/coco-citation.js (eighteenth module)
 
 /* ---- Feedback -----------------------------------------------------------
    The one thing missing from the analytics we already log: whether an
@@ -4468,16 +4461,7 @@ async function askSchoolAI(question, contextText) {
   const r = await cocoAsk(question, contextText);
   return r.answer;
 }
-function findBestPassage(question, contextText) {
-  const hits = cocoRetrieve(question, contextText, 1);
-  return hits.length ? hits[0].seg : '';
-}
-function findCitationText(answer, question, contextText) {
-  if (answer && contextText && contextText.toLowerCase().includes(answer.trim().toLowerCase()) && answer.trim().length > 8) {
-    return answer.trim();
-  }
-  return findBestPassage(question, contextText) || answer || '';
-}
+// findBestPassage, findCitationText moved to js/coco-citation.js (eighteenth module)
 
 function schoolAIBannerHTML(idPrefix) {
   if (schoolAIReady()) return '';
@@ -7141,8 +7125,8 @@ if (!checkForPasswordRecovery()) routeUser();
      js/coco-verify.js, js/render-utils.js, js/study-utils.js,
      js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
      js/home-core.js, js/goals-core.js, js/term-utils.js,
-     js/grade-calc-core.js, js/link-utils.js) -- re-attached
-     to `window` so the rest of the app's classic script can keep calling
+     js/grade-calc-core.js, js/link-utils.js, js/coco-citation.js) --
+     re-attached to `window` so the rest of the app's classic script can keep calling
      these functions exactly as it always has. This bridge is scaffolding
      for an incremental migration, not the end state: as more logic moves
      into real modules, code that already imports what it needs stops
@@ -7166,7 +7150,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as TermUtils from './js/term-utils.js';
   import * as GradeCalcCore from './js/grade-calc-core.js';
   import * as LinkUtils from './js/link-utils.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils);
+  import * as CocoCitation from './js/coco-citation.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils, CocoCitation);
 </script>
 </body>
 </html>

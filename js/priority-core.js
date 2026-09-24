@@ -7,7 +7,7 @@
    only the DOM rendering around it isn't.
 =========================== */
 
-import { dayDiff } from './format-utils.js';
+import { dayDiff, getBadge } from './format-utils.js';
 
 // First concrete step toward priority that actually accounts for grades, not
 // just due dates: a class you're barely passing gets nudged up the list even
@@ -55,4 +55,47 @@ export function priorityAiText(top, userGoals, cachedGrades) {
   if (top.d <= 1) return `"${top.title}" is due ${top.d === 0 ? 'today' : 'tomorrow'} - that's your top priority.`;
   if (gradeAtRisk) return `"${top.title}" is your top priority - your grade in ${top.course} could use the attention.`;
   return `Your most urgent assignment is "${top.title}", due in ${top.d} days. Start there.`;
+}
+
+// Body HTML for the Priority tab: the top-5 ranked cards (numbered, with a
+// due-text derived from the scored item's precomputed `d` day-diff), plus a
+// "Completed today" section with undo buttons when there's anything in it.
+// scored is the computePriorityScores() result; completedToday is plain
+// assignment objects.
+export function priorityListHTML(scored, completedToday) {
+  const colors = ['p1', 'p2', 'p3', 'p4', 'p5'];
+  let html = scored.slice(0, 5).map((a, i) => {
+    const [bc, bl] = getBadge(a.assignment_type);
+    const dueText = a.d < 0 ? `<span style="color:var(--error-color);">${Math.abs(a.d)}d overdue</span>`
+      : a.d === 0 ? `<span style="color:var(--error-color);">due today</span>`
+      : a.d === 1 ? `<span style="color:var(--error-color);">due tomorrow</span>`
+      : `due ${new Date(a.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    return `<div class="priority-card" data-assignment-id="${a.id}">
+      <button class="priority-check" onclick="markPriorityDone('${a.id}')" title="Mark as done">✓</button>
+      <div class="priority-num ${colors[i] || 'p5'}">${i + 1}</div>
+      <div class="priority-info">
+        <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
+        <div class="card-sub" style="margin-top:3px;">${a.course || ''} · ${dueText}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (completedToday.length > 0) {
+    html += `<div class="priority-completed-section">
+      <div class="priority-completed-label">Completed today</div>
+      ${completedToday.map(a => {
+        const [bc, bl] = getBadge(a.assignment_type);
+        return `<div class="priority-card completed-card" data-assignment-id="${a.id}">
+          <button class="priority-check" style="border-color:var(--green);color:var(--green);" onclick="undoPriorityDone('${a.id}')" title="Undo">✓</button>
+          <div class="priority-num p5" style="opacity:0.5;">✓</div>
+          <div class="priority-info">
+            <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
+            <div class="card-sub" style="margin-top:3px;">${a.course || ''}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  return html;
 }

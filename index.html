@@ -6144,41 +6144,8 @@ function renderPriority(assignments) {
   }
   emptyEl.style.display = 'none';
 
-  const colors = ['p1','p2','p3','p4','p5'];
-  let html = scored.slice(0, 5).map((a, i) => {
-    const [bc, bl] = getBadge(a.assignment_type);
-    const dueText = a.d < 0 ? `<span style="color:var(--error-color);">${Math.abs(a.d)}d overdue</span>`
-      : a.d===0 ? `<span style="color:var(--error-color);">due today</span>`
-      : a.d===1 ? `<span style="color:var(--error-color);">due tomorrow</span>`
-      : `due ${new Date(a.due_date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
-    return `<div class="priority-card" data-assignment-id="${a.id}">
-      <button class="priority-check" onclick="markPriorityDone('${a.id}')" title="Mark as done">✓</button>
-      <div class="priority-num ${colors[i]||'p5'}">${i+1}</div>
-      <div class="priority-info">
-        <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
-        <div class="card-sub" style="margin-top:3px;">${a.course||''} · ${dueText}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  if (completedToday.length > 0) {
-    html += `<div class="priority-completed-section">
-      <div class="priority-completed-label">Completed today</div>
-      ${completedToday.map(a => {
-        const [bc, bl] = getBadge(a.assignment_type);
-        return `<div class="priority-card completed-card" data-assignment-id="${a.id}">
-          <button class="priority-check" style="border-color:var(--green);color:var(--green);" onclick="undoPriorityDone('${a.id}')" title="Undo">✓</button>
-          <div class="priority-num p5" style="opacity:0.5;">✓</div>
-          <div class="priority-info">
-            <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
-            <div class="card-sub" style="margin-top:3px;">${a.course||''}</div>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-  }
-
-  listEl.innerHTML = html;
+  // Pure HTML building lives in js/priority-core.js.
+  listEl.innerHTML = priorityListHTML(scored, completedToday);
 
   if (scored.length > 0) {
     document.getElementById('priority-ai-text').textContent = priorityAiText(scored[0], userGoals, cachedGrades);

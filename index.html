@@ -4369,30 +4369,7 @@ async function addChecklistToCalendar(assignmentId) {
   showReward('Added to your calendar.', 'calendar');
 }
 
-function checklistStepCardHTML(s) {
-  if (s.id === editingChecklistStepId) {
-    return `<div class="study-session-card">
-      <div class="study-session-info" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <input type="text" id="checklist-edit-text-${s.id}" value="${escapeHtml(s.step_text)}" class="settings-input" style="flex:1;min-width:140px;margin-bottom:0;">
-        <input type="date" id="checklist-edit-date-${s.id}" value="${s.target_date || ''}" class="settings-input" style="width:auto;margin-bottom:0;">
-      </div>
-      <button class="study-session-start" onclick="saveEditChecklistStep('${s.id}')" title="Save">✓</button>
-      <button class="study-session-del" onclick="cancelEditChecklistStep('${s.id}')" title="Cancel">✕</button>
-    </div>`;
-  }
-  const dateStr = s.target_date
-    ? new Date(s.target_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    : '';
-  return `<div class="study-session-card${s.completed ? ' done' : ''}">
-    <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleChecklistStep('${s.id}', this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
-    <div class="study-session-info">
-      <div class="study-session-title">${escapeHtml(s.step_text)}</div>
-      ${dateStr ? `<div class="study-session-meta">${dateStr}</div>` : ''}
-    </div>
-    <button class="study-session-start" onclick="startEditChecklistStep('${s.id}')" title="Edit">✏️</button>
-    <button class="study-session-del" onclick="deleteChecklistStep('${s.id}')" title="Remove">✕</button>
-  </div>`;
-}
+// checklistStepCardHTML moved to js/render-utils.js (twentieth module); now takes editingChecklistStepId explicitly
 
 function renderChecklistSection(a) {
   const el = document.getElementById('a-checklist-section');
@@ -4411,7 +4388,7 @@ function renderChecklistSection(a) {
     return;
   }
 
-  const stepsHTML = steps.map(s => checklistStepCardHTML(s)).join('');
+  const stepsHTML = steps.map(s => checklistStepCardHTML(s, editingChecklistStepId)).join('');
 
   el.innerHTML = `
     <div class="section-label" style="margin-top:20px;">Study plan</div>

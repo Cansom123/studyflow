@@ -116,6 +116,35 @@ export function aCard(a, isOverdue, redTint = false, doneSet) {
   </div>`;
 }
 
+// Renders one checklist step, or its inline edit form when it's the step
+// currently being edited. editingChecklistStepId is passed in explicitly
+// (same "push state-reads up to the caller" pattern as aCard's doneSet)
+// rather than read as a global.
+export function checklistStepCardHTML(s, editingChecklistStepId) {
+  if (s.id === editingChecklistStepId) {
+    return `<div class="study-session-card">
+      <div class="study-session-info" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input type="text" id="checklist-edit-text-${s.id}" value="${escapeHtml(s.step_text)}" class="settings-input" style="flex:1;min-width:140px;margin-bottom:0;">
+        <input type="date" id="checklist-edit-date-${s.id}" value="${s.target_date || ''}" class="settings-input" style="width:auto;margin-bottom:0;">
+      </div>
+      <button class="study-session-start" onclick="saveEditChecklistStep('${s.id}')" title="Save">✓</button>
+      <button class="study-session-del" onclick="cancelEditChecklistStep('${s.id}')" title="Cancel">✕</button>
+    </div>`;
+  }
+  const dateStr = s.target_date
+    ? new Date(s.target_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : '';
+  return `<div class="study-session-card${s.completed ? ' done' : ''}">
+    <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleChecklistStep('${s.id}', this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
+    <div class="study-session-info">
+      <div class="study-session-title">${escapeHtml(s.step_text)}</div>
+      ${dateStr ? `<div class="study-session-meta">${dateStr}</div>` : ''}
+    </div>
+    <button class="study-session-start" onclick="startEditChecklistStep('${s.id}')" title="Edit">✏️</button>
+    <button class="study-session-del" onclick="deleteChecklistStep('${s.id}')" title="Remove">✕</button>
+  </div>`;
+}
+
 export function cocoGradeTipsAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;

@@ -5773,51 +5773,18 @@ function renderDueCalendar() {
   const month = dueCalMonth.getMonth();
   titleEl.textContent = `${months[month]} ${year}`;
 
-  const startDow = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  // Pure cell-grid computation (date math, assignment/study grouping) lives
+  // in js/due-calendar-core.js.
   const todayStr = ymd(new Date());
+  const cells = buildDueCalendarCells(year, month, dueCalAssignments, cachedStudySessions, todayStr, dueCalSelectedDate);
 
-  const byDate = {};
-  dueCalAssignments.forEach(a => {
-    const d = new Date(a.due_date); d.setHours(0,0,0,0);
-    const key = ymd(d);
-    (byDate[key] = byDate[key] || []).push(a);
-  });
-
-  const studyByDate = {};
-  cachedStudySessions.forEach(s => {
-    (studyByDate[s.session_date] = studyByDate[s.session_date] || []).push(s);
-  });
-
-  const cells = [];
-  for (let i = startDow - 1; i >= 0; i--) {
-    const dnum = daysInPrevMonth - i;
-    cells.push({ dnum, dateObj: new Date(year, month - 1, dnum), otherMonth: true });
-  }
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ dnum: d, dateObj: new Date(year, month, d), otherMonth: false });
-  }
-  let trail = 1;
-  while (cells.length % 7 !== 0) {
-    cells.push({ dnum: trail, dateObj: new Date(year, month + 1, trail), otherMonth: true });
-    trail++;
-  }
-
-  gridEl.innerHTML = cells.map(c => {
-    const key = ymd(c.dateObj);
-    const count = (byDate[key] || []).length;
-    const hasStudy = !!(studyByDate[key] || []).length;
-    const isToday = key === todayStr;
-    const isSelected = key === dueCalSelectedDate;
-    return `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" onclick="selectDueCalDate('${key}')">
+  gridEl.innerHTML = cells.map(c => `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${c.isToday ? ' today' : ''}${c.isSelected ? ' selected' : ''}" onclick="selectDueCalDate('${c.key}')">
       <div class="cal-day-num">${c.dnum}</div>
       <div class="cal-day-dots">
-        ${count ? `<div class="cal-day-count">${count}</div>` : ''}
-        ${hasStudy ? `<div class="cal-day-study-dot" title="Study time scheduled"></div>` : ''}
+        ${c.count ? `<div class="cal-day-count">${c.count}</div>` : ''}
+        ${c.hasStudy ? `<div class="cal-day-study-dot" title="Study time scheduled"></div>` : ''}
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 
   renderDueCalSelected();
 }
@@ -7061,7 +7028,8 @@ if (!checkForPasswordRecovery()) routeUser();
      js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
      js/home-core.js, js/goals-core.js, js/term-utils.js,
      js/grade-calc-core.js, js/link-utils.js, js/coco-citation.js,
-     js/due-core.js) -- re-attached to `window` so the rest of the app's classic script can keep calling
+     js/due-core.js, js/due-calendar-core.js) -- re-attached to `window`
+     so the rest of the app's classic script can keep calling
      these functions exactly as it always has. This bridge is scaffolding
      for an incremental migration, not the end state: as more logic moves
      into real modules, code that already imports what it needs stops
@@ -7087,7 +7055,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as LinkUtils from './js/link-utils.js';
   import * as CocoCitation from './js/coco-citation.js';
   import * as DueCore from './js/due-core.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils, CocoCitation, DueCore);
+  import * as DueCalendarCore from './js/due-calendar-core.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils, CocoCitation, DueCore, DueCalendarCore);
 </script>
 </body>
 </html>

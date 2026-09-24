@@ -1613,25 +1613,7 @@ function applyUserPrefsToUI() {
    shortcut. Managed on their own Links tab; Home shows whichever ones were
    opened most recently so the dashboard surfaces what's actually in use.
 =========================== */
-function normalizeLinkUrl(raw) {
-  const trimmed = (raw || '').trim();
-  if (!trimmed) return '';
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-}
-
-function faviconFor(url) {
-  try {
-    const host = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?sz=32&domain=${host}`;
-  } catch (_) {
-    return '';
-  }
-}
-
-function linkIconHTML(url) {
-  const fav = faviconFor(url);
-  return fav ? `<img src="${fav}" alt="" width="16" height="16">` : '↗';
-}
+// normalizeLinkUrl, faviconFor, linkIconHTML moved to js/link-utils.js (seventeenth module)
 
 function openCustomLink(index) {
   const links = userPrefs.customLinks || [];
@@ -7159,7 +7141,7 @@ if (!checkForPasswordRecovery()) routeUser();
      js/coco-verify.js, js/render-utils.js, js/study-utils.js,
      js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
      js/home-core.js, js/goals-core.js, js/term-utils.js,
-     js/grade-calc-core.js) -- re-attached
+     js/grade-calc-core.js, js/link-utils.js) -- re-attached
      to `window` so the rest of the app's classic script can keep calling
      these functions exactly as it always has. This bridge is scaffolding
      for an incremental migration, not the end state: as more logic moves
@@ -7183,7 +7165,8 @@ if (!checkForPasswordRecovery()) routeUser();
   import * as GoalsCore from './js/goals-core.js';
   import * as TermUtils from './js/term-utils.js';
   import * as GradeCalcCore from './js/grade-calc-core.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore);
+  import * as LinkUtils from './js/link-utils.js';
+  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils);
 </script>
 </body>
 </html>

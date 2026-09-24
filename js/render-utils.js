@@ -145,6 +145,79 @@ export function checklistStepCardHTML(s, editingChecklistStepId) {
   </div>`;
 }
 
+// Body HTML for the grade-detail overlay: points lost, missing work, and
+// not-yet-graded work ranked soonest-due-first, plus the "ask coco.1"
+// panel. grade and breakdown (the gradeBreakdownForCourse() result) are
+// passed in already-computed rather than read from cached state here.
+export function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
+  const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
+  const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
+  const { graded, missing, lowPerformers, openWork, allClosed } = breakdown;
+  // Soonest due first -- a higher point value doesn't help a student get
+  // ahead of anything if it isn't due for weeks. Undated items (not yet
+  // scheduled by the teacher) sort last since there's nothing to act on yet.
+  const openWorkRanked = [...openWork]
+    .sort((a, b) => {
+      const da = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+      const db = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+      return da - db;
+    });
+
+  let html = '';
+  if (pct != null || letter) {
+    html += `<div class="card-sub" style="margin-bottom:16px;">Current grade: <strong style="color:var(--text1);">${pct != null ? escapeHtml(String(pct)) + '%' : ''}${letter ? ' (' + escapeHtml(letter) + ')' : ''}</strong></div>`;
+  }
+
+  if (!lowPerformers.length && !missing.length && !openWorkRanked.length && !graded.length) {
+    html += `<div class="empty-box"><div class="empty-title">No graded work synced yet</div><div class="empty-sub">Once a few assignments are graded in Canvas, this'll show what's pulling the grade up or down.</div></div>`;
+  } else {
+    if (lowPerformers.length) {
+      html += `<div class="section-label" style="margin-top:0;">Points lost</div><div class="card" style="padding:4px 16px;">` +
+        lowPerformers.map(a => {
+          const cls = a.pct >= 90 ? 'good' : a.pct >= 70 ? 'warn' : 'bad';
+          return `<div class="grade-row"><span class="grade-name">${escapeHtml(a.title)}</span><span class="grade-score ${cls}">${a.score}/${a.points_possible}</span></div>`;
+        }).join('') + `</div>`;
+    }
+    if (graded.length) {
+      html += `<button class="settings-btn" style="margin-top:8px;" data-course="${escapeHtml(courseName)}" onclick="openAllGraded(this.dataset.course)">See all graded work (${graded.length})</button>`;
+    }
+    if (missing.length) {
+      html += `<div class="section-label">Missing (counted as 0)</div><div class="card" style="padding:4px 16px;">` +
+        missing.map(a => `<div class="grade-row"><span class="grade-name">${escapeHtml(a.title)}</span><span class="grade-score bad">Missing</span></div>`).join('') +
+        `</div>`;
+    }
+    if (openWorkRanked.length) {
+      html += `<div class="section-label">Not yet graded <span style="font-weight:400;color:var(--text2);text-transform:none;">- soonest due first</span></div><div class="card" style="padding:4px 16px;">` +
+        openWorkRanked.map(a => {
+          const hasDesc = !!(a.description && a.description.trim());
+          return `<div class="grade-open-row"><span class="grade-open-name">${escapeHtml(a.title)}</span><span style="display:flex;align-items:center;flex-shrink:0;">${a.points_possible ? `<span class="grade-open-pts">${a.points_possible} pts</span>` : ''}${hasDesc ? `<span class="effort-badge">has description</span>` : ''}</span></div>`;
+        }).join('') + `</div>`;
+    } else if (allClosed && (lowPerformers.length || missing.length)) {
+      html += `<div class="section-label">Not yet graded</div><div class="card" style="padding:12px 16px;"><span style="font-size:13px;color:var(--text2);">Nothing open left in this class - everything's either submitted or past due.</span></div>`;
+    }
+  }
+
+  const chip2 = allClosed
+    ? `<button class="coco-suggest-chip" onclick="askCocoGradeTipsSuggested('Everything left in this class is closed -- what should I do now?')">Everything's closed — now what?</button>`
+    : `<button class="coco-suggest-chip" onclick="askCocoGradeTipsSuggested('What should I focus on to raise this grade?')">What should I focus on?</button>`;
+
+  html += `<div class="card grade-tips-box">
+    <div class="section-label" style="margin-top:0;">Ask coco.1 for tips</div>
+    <div id="grade-tips-banner-host">${bannerHTML}</div>
+    <div class="study-form-row" style="margin-bottom:0;">
+      <input class="settings-input" id="grade-tips-input" placeholder='e.g. "how do I bring this grade up?"' style="margin-bottom:0;" onkeydown="if(event.key==='Enter'){askCocoGradeTips();}" />
+      <button class="goal-add-btn" onclick="askCocoGradeTips()">Ask</button>
+    </div>
+    <div class="coco-suggest-row">
+      <button class="coco-suggest-chip" onclick="askCocoGradeTipsSuggested('What is bringing this grade down?')">What's bringing it down?</button>
+      ${chip2}
+    </div>
+    <div id="grade-tips-result" style="margin-top:10px;"></div>
+  </div>`;
+
+  return html;
+}
+
 export function cocoGradeTipsAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;

@@ -11,6 +11,7 @@
 =========================== */
 
 import { escapeHtml, escapeRegex, cleanCourseName, getBadge, getDueText, doneKey, letterGradeClass } from './format-utils.js';
+import { linkIconHTML } from './link-utils.js';
 
 // Deliberately NOT the same binding as index.html's classic-script `months`
 // (which is called synchronously at page load, before any module runs, so
@@ -455,4 +456,42 @@ export function wsAssignmentListHTML(assignments) {
       ${wsLink}
     </div>`;
   }).join('');
+}
+
+// Home's mini quick-links grid: an "add a link" prompt when there are none,
+// otherwise the 4 most-recently-opened (never-opened links sort after,
+// newest-added first).
+export function homeCustomLinksHTML(links) {
+  if (links.length === 0) {
+    return `<button class="home-qlink" style="grid-column:1 / -1;" onclick="jumpTo('links')">
+        <div class="home-qlink-icon">+</div>
+        <span>Add a link</span>
+      </button>`;
+  }
+  const recent = links
+    .map((l, i) => ({ ...l, i }))
+    .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0))
+    .slice(0, 4);
+  return recent.map(l => `
+        <button class="home-qlink" onclick="openCustomLink(${l.i})">
+          <div class="home-qlink-icon">${linkIconHTML(l.url)}</div>
+          <span>${escapeHtml(l.label)}</span>
+        </button>`).join('');
+}
+
+// The full Links tab list: newest-added first, each with a remove button.
+export function linksTabListHTML(links) {
+  if (links.length === 0) {
+    return `<div class="empty-box"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M8.5 11.5a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24l-1 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M11.5 8.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l1-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div class="empty-title">No links yet</div><div class="empty-sub">Add a Google Doc, NotebookLM notebook, class site - anything you use for school - below.</div></div>`;
+  }
+  const ordered = links.map((l, i) => ({ ...l, i })).reverse();
+  return ordered.map(l => `
+        <div class="card link-card" style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openCustomLink(${l.i})">
+          <div class="home-qlink-icon" style="flex-shrink:0;">${linkIconHTML(l.url)}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="card-title">${escapeHtml(l.label)}</div>
+            <div class="card-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(l.url)}</div>
+          </div>
+          <button class="goal-remove" title="Remove" onclick="event.stopPropagation();removeCustomLink(${l.i}, this)">✕</button>
+        </div>`).join('');
 }

@@ -48,3 +48,23 @@ export function focusTimerBodyHTML(focusState) {
     </div>
   `;
 }
+
+// The focus timer's setup screen: pick a study length and break length
+// before starting. studyDurations/breakDurations are passed in rather
+// than hardcoded, since they're the classic script's FOCUS_STUDY_DURATIONS/
+// FOCUS_BREAK_DURATIONS constants.
+export function focusSetupHTML(focusState, studyDurations, breakDurations) {
+  return `
+    <div class="focus-title">Ready to study?</div>
+    <div class="focus-sub">${escapeHtml(focusState.sessionTitle)}</div>
+    <div class="focus-phase-label">Focus length</div>
+    <div class="focus-duration-row">
+      ${studyDurations.map(m => `<button class="focus-duration-btn${m === focusState.studyMin ? ' active' : ''}" onclick="focusPickDuration('study',${m})">${m} min</button>`).join('')}
+    </div>
+    <div class="focus-phase-label">Break length</div>
+    <div class="focus-duration-row">
+      ${breakDurations.map(m => `<button class="focus-duration-btn${m === focusState.breakMin ? ' active' : ''}" onclick="focusPickDuration('break',${m})">${m} min</button>`).join('')}
+    </div>
+    <button class="settings-btn" onclick="focusGoToCommit()">Continue</button>
+  `;
+}

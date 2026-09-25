@@ -4179,28 +4179,9 @@ async function addChecklistToCalendar(assignmentId) {
 function renderChecklistSection(a) {
   const el = document.getElementById('a-checklist-section');
   if (!el) return;
-  const workType = classifyAssignmentWork(a);
-  const eligible = workType !== 'content' && !!a.due_date && !a.completed;
-  if (!eligible) { el.innerHTML = ''; return; }
-
   const steps = checklistForAssignment(a.id);
-  if (steps.length === 0) {
-    el.innerHTML = `
-      <div class="section-label" style="margin-top:20px;">Study plan</div>
-      <div id="checklist-ai-banner-host">${schoolAIBannerHTML('checklist-ai')}</div>
-      <button class="settings-btn" onclick="handleGenerateChecklistClick('${a.id}', this)">🗓️ Generate a study checklist</button>
-    `;
-    return;
-  }
-
-  const stepsHTML = steps.map(s => checklistStepCardHTML(s, editingChecklistStepId)).join('');
-
-  el.innerHTML = `
-    <div class="section-label" style="margin-top:20px;">Study plan</div>
-    ${stepsHTML}
-    <button class="settings-btn" style="margin-top:8px;" onclick="addManualChecklistStep('${a.id}')">+ Add a step</button>
-    <button class="sync-btn" style="margin-top:8px;" onclick="addChecklistToCalendar('${a.id}')">📅 Add these to my calendar</button>
-  `;
+  // Pure HTML building lives in js/render-utils.js.
+  el.innerHTML = checklistSectionHTML(a, steps, editingChecklistStepId, schoolAIBannerHTML('checklist-ai'));
 }
 
 async function handleGenerateChecklistClick(assignmentId, btn) {

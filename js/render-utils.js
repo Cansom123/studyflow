@@ -12,6 +12,7 @@
 
 import { escapeHtml, escapeRegex, cleanCourseName, getBadge, getDueText, doneKey, letterGradeClass } from './format-utils.js';
 import { linkIconHTML } from './link-utils.js';
+import { classifyAssignmentWork } from './checklist-core.js';
 
 // Deliberately NOT the same binding as index.html's classic-script `months`
 // (which is called synchronously at page load, before any module runs, so
@@ -494,4 +495,34 @@ export function linksTabListHTML(links) {
           </div>
           <button class="goal-remove" title="Remove" onclick="event.stopPropagation();removeCustomLink(${l.i}, this)">✕</button>
         </div>`).join('');
+}
+
+// The assignment detail overlay's "Study plan" checklist section: empty
+// (assignment not eligible for a checklist), a "generate one" prompt when
+// eligible but no steps exist yet, or the step cards plus their action
+// buttons. steps should already be checklistForAssignment(a.id)'s result;
+// bannerHTML is the caller's schoolAIBannerHTML('checklist-ai') output,
+// passed in rather than called here since that reads live model-ready
+// state and isn't pure.
+export function checklistSectionHTML(a, steps, editingChecklistStepId, bannerHTML) {
+  const workType = classifyAssignmentWork(a);
+  const eligible = workType !== 'content' && !!a.due_date && !a.completed;
+  if (!eligible) return '';
+
+  if (steps.length === 0) {
+    return `
+      <div class="section-label" style="margin-top:20px;">Study plan</div>
+      <div id="checklist-ai-banner-host">${bannerHTML}</div>
+      <button class="settings-btn" onclick="handleGenerateChecklistClick('${a.id}', this)">🗓️ Generate a study checklist</button>
+    `;
+  }
+
+  const stepsHTML = steps.map(s => checklistStepCardHTML(s, editingChecklistStepId)).join('');
+
+  return `
+    <div class="section-label" style="margin-top:20px;">Study plan</div>
+    ${stepsHTML}
+    <button class="settings-btn" style="margin-top:8px;" onclick="addManualChecklistStep('${a.id}')">+ Add a step</button>
+    <button class="sync-btn" style="margin-top:8px;" onclick="addChecklistToCalendar('${a.id}')">📅 Add these to my calendar</button>
+  `;
 }

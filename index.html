@@ -6564,21 +6564,8 @@ if (!checkForPasswordRecovery()) routeUser();
   };
 
   window.wsViewNew = function () {
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    document.getElementById('ws-list-items').innerHTML = wsNewAssignments.map(a => {
-      const due = a.due_date ? new Date(a.due_date) : null;
-      const dueStr = due
-        ? `${monthNames[due.getMonth()]} ${due.getDate()}`
-        : 'No due date';
-      const wsLink = a.assignment_url
-        ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="canvas-link">Open in Canvas →</a>`
-        : '';
-      return `<div class="ws-a-card">
-        <div class="ws-a-title">${a.title}</div>
-        <div class="ws-a-meta">${a.course || ''} · Due ${dueStr}</div>
-        ${wsLink}
-      </div>`;
-    }).join('');
+    // Pure HTML building lives in js/render-utils.js.
+    document.getElementById('ws-list-items').innerHTML = wsAssignmentListHTML(wsNewAssignments);
     const overlay = document.getElementById('ws-list-overlay');
     overlay.style.display = 'block';
     overlay.classList.remove('ws-anim-in');

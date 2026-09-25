@@ -436,3 +436,23 @@ export function homeGradesListHTML(cachedGrades, limit = 4) {
     return `<div class="grade-row"><span class="grade-name">${escapeHtml(cleanCourseName(g.course_name))}</span><span class="grade-letter ${letterClass}" style="background:transparent;">${escapeHtml(letter || '-')}</span></div>`;
   }).join('');
 }
+
+// Card list for the "what's new since your last visit" overlay. Uses its
+// own small abbreviated month array rather than the classic script's
+// `months` (full names) -- same "small local duplicate over a cross-file
+// format mismatch" call as elsewhere in this module.
+export function wsAssignmentListHTML(assignments) {
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return assignments.map(a => {
+    const due = a.due_date ? new Date(a.due_date) : null;
+    const dueStr = due ? `${monthNames[due.getMonth()]} ${due.getDate()}` : 'No due date';
+    const wsLink = a.assignment_url
+      ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="canvas-link">Open in Canvas →</a>`
+      : '';
+    return `<div class="ws-a-card">
+      <div class="ws-a-title">${a.title}</div>
+      <div class="ws-a-meta">${a.course || ''} · Due ${dueStr}</div>
+      ${wsLink}
+    </div>`;
+  }).join('');
+}

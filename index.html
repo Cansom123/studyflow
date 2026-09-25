@@ -2187,21 +2187,8 @@ async function loadAdminReports() {
   const reports = (ok && Array.isArray(data)) ? data : [];
   if (reports.length === 0) { emptyEl.style.display = 'block'; return; }
   listEl.style.display = 'block';
-  listEl.innerHTML = reports.map(r => {
-    const when = new Date(r.created_at);
-    const timeStr = `${months[when.getMonth()]} ${when.getDate()}, ${when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-    return `<div class="card report-card">
-      <div class="report-card-top">
-        <span class="report-type-badge type-${r.report_type}">${r.report_type}</span>
-        <span class="report-card-time">${timeStr}</span>
-      </div>
-      <div class="report-card-message">${escapeHtml(r.message)}</div>
-      ${r.email ? `<div class="report-card-email">${escapeHtml(r.email)}</div>` : ''}
-      <div class="report-card-actions">
-        <button class="report-delete-btn" onclick="deleteAdminReport('${r.id}', this)">Delete</button>
-      </div>
-    </div>`;
-  }).join('');
+  // Pure HTML building lives in js/render-utils.js.
+  listEl.innerHTML = adminReportsListHTML(reports);
   loadAdminReportsBadge();
 }
 

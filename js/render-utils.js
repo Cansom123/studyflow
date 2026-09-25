@@ -641,3 +641,23 @@ export function analyticsRowsHTML(events, eventLabels) {
     </div>
   `).join('');
 }
+
+// Admin problem-reports list: one card per report with its type badge,
+// timestamp, message, optional reporter email, and a delete button.
+export function adminReportsListHTML(reports) {
+  return reports.map(r => {
+    const when = new Date(r.created_at);
+    const timeStr = `${months[when.getMonth()]} ${when.getDate()}, ${when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    return `<div class="card report-card">
+      <div class="report-card-top">
+        <span class="report-type-badge type-${r.report_type}">${r.report_type}</span>
+        <span class="report-card-time">${timeStr}</span>
+      </div>
+      <div class="report-card-message">${escapeHtml(r.message)}</div>
+      ${r.email ? `<div class="report-card-email">${escapeHtml(r.email)}</div>` : ''}
+      <div class="report-card-actions">
+        <button class="report-delete-btn" onclick="deleteAdminReport('${r.id}', this)">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}

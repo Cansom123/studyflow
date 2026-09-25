@@ -2165,39 +2165,8 @@ async function loadAdminAnalytics() {
   const allUsers = new Set(events.map(e => e.user_id).filter(Boolean));
   document.getElementById('admin-analytics-active-users').textContent = String(allUsers.size);
 
-  // Split page_view and coco_ask by their tag (which page, which feature) so
-  // "Home" and "Priority" don't get flattened into one meaningless "Tab
-  // opened" bucket -- that's the whole point of this view.
-  const byKey = new Map();
-  events.forEach(e => {
-    let key = e.event;
-    if (e.event === 'page_view' && e.meta?.page) key = `page_view:${e.meta.page}`;
-    if (e.event === 'coco_ask' && e.meta?.feature) key = `coco_ask:${e.meta.feature}`;
-    if (!byKey.has(key)) byKey.set(key, { count: 0, users: new Set() });
-    const bucket = byKey.get(key);
-    bucket.count++;
-    if (e.user_id) bucket.users.add(e.user_id);
-  });
-
-  const rows = [...byKey.entries()].sort((a, b) => b[1].count - a[1].count);
-  const maxCount = rows[0]?.[1].count || 1;
-  const labelFor = (key) => {
-    const [base, tag] = key.split(':');
-    const label = ANALYTICS_EVENT_LABELS[base] || base;
-    return tag ? `${label} (${tag})` : label;
-  };
-
-  document.getElementById('admin-analytics-list').innerHTML = rows.map(([key, { count, users }]) => `
-    <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:4px;">
-      <div style="display:flex;justify-content:space-between;gap:8px;">
-        <div class="toggle-row-label">${escapeHtml(labelFor(key))}</div>
-        <div class="card-sub" style="white-space:nowrap;">${count} &middot; ${users.size} student${users.size === 1 ? '' : 's'}</div>
-      </div>
-      <div style="height:5px;border-radius:99px;background:var(--surface2);overflow:hidden;">
-        <div style="height:100%;border-radius:99px;background:var(--accent);width:${Math.max(4, Math.round(count / maxCount * 100))}%;"></div>
-      </div>
-    </div>
-  `).join('');
+  // Pure grouping/sorting/HTML building lives in js/render-utils.js.
+  document.getElementById('admin-analytics-list').innerHTML = analyticsRowsHTML(events, ANALYTICS_EVENT_LABELS);
 }
 
 async function loadAdminReportsBadge() {

@@ -602,3 +602,42 @@ export function dueCalSelectedBodyHTML(dueCalAssignments, dueCalSelectedDate, do
 
   return { label, itemsHTML };
 }
+
+// Admin analytics: groups raw events by key (splitting page_view/coco_ask
+// by their tag so "Home" and "Priority" don't flatten into one meaningless
+// bucket), sorts most-frequent first, and renders each as a labeled row
+// with a usage bar scaled to the top row's count. eventLabels is the
+// classic script's ANALYTICS_EVENT_LABELS map, passed in rather than
+// duplicated here.
+export function analyticsRowsHTML(events, eventLabels) {
+  const byKey = new Map();
+  events.forEach(e => {
+    let key = e.event;
+    if (e.event === 'page_view' && e.meta?.page) key = `page_view:${e.meta.page}`;
+    if (e.event === 'coco_ask' && e.meta?.feature) key = `coco_ask:${e.meta.feature}`;
+    if (!byKey.has(key)) byKey.set(key, { count: 0, users: new Set() });
+    const bucket = byKey.get(key);
+    bucket.count++;
+    if (e.user_id) bucket.users.add(e.user_id);
+  });
+
+  const rows = [...byKey.entries()].sort((a, b) => b[1].count - a[1].count);
+  const maxCount = rows[0]?.[1].count || 1;
+  const labelFor = (key) => {
+    const [base, tag] = key.split(':');
+    const label = eventLabels[base] || base;
+    return tag ? `${label} (${tag})` : label;
+  };
+
+  return rows.map(([key, { count, users }]) => `
+    <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:4px;">
+      <div style="display:flex;justify-content:space-between;gap:8px;">
+        <div class="toggle-row-label">${escapeHtml(labelFor(key))}</div>
+        <div class="card-sub" style="white-space:nowrap;">${count} &middot; ${users.size} student${users.size === 1 ? '' : 's'}</div>
+      </div>
+      <div style="height:5px;border-radius:99px;background:var(--surface2);overflow:hidden;">
+        <div style="height:100%;border-radius:99px;background:var(--accent);width:${Math.max(4, Math.round(count / maxCount * 100))}%;"></div>
+      </div>
+    </div>
+  `).join('');
+}

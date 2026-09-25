@@ -397,6 +397,40 @@ Deno.serve(async (req) => {
       console.warn(`[run ${runId}] announcements error: ${e?.message}`);
     }
 
+    // Canvas Inbox/Conversations -- a separate feature from announcements
+    // (private messages, not course-wide posts), not gated on selected
+    // courses since a conversation isn't necessarily tied to one. `read` is
+    // deliberately NOT set here (see the canvas_messages migration): it's
+    // tracked as StudyFlow's own app state, upserted-around the same way
+    // announcements.read already is, so marking it read in the app doesn't
+    // get overwritten by Canvas's own workflow_state on the next sync.
+    const allMessages: any[] = [];
+    try {
+      const rawConversations = await fetchAllPages(
+        `${canvasUrl}/api/v1/conversations?scope=inbox&per_page=50`,
+        canvasAuth,
+      ) ?? [];
+      for (const c of rawConversations) {
+        if (!c.id) continue;
+        const participantNames = Array.isArray(c.participants)
+          ? c.participants.map((p: any) => p.name).filter(Boolean)
+          : [];
+        allMessages.push({
+          user_id: userId,
+          canvas_conversation_id: String(c.id),
+          subject: c.subject || "(no subject)",
+          last_message: htmlToText(c.last_message) ?? c.last_message ?? null,
+          participants: participantNames.length > 0 ? participantNames.join(", ") : null,
+          message_count: c.message_count ?? 1,
+          last_message_at: c.last_message_at ?? null,
+          conversation_url: `${canvasUrl}/conversations/${c.id}`,
+        });
+      }
+      console.log(`[run ${runId}] messages: ${allMessages.length}`);
+    } catch (e: any) {
+      console.warn(`[run ${runId}] messages error: ${e?.message}`);
+    }
+
     if (syncAll && activeCourses.length > 0) {
       const discovered = activeCourses.map((c: any) => ({ id: String(c.id), name: c.name }));
       await fetch(`${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}`, {
@@ -442,6 +476,25 @@ Deno.serve(async (req) => {
       { method: "DELETE", headers: svcHdr },
     );
 
+    // Upsert (not delete-then-reinsert) so `read` -- StudyFlow's own state,
+    // not part of this payload -- survives the next sync the same way
+    // announcements.read does.
+    if (allMessages.length > 0) {
+      await fetch(`${supabaseUrl}/rest/v1/canvas_messages?on_conflict=user_id,canvas_conversation_id`, {
+        method: "POST",
+        headers: { ...svcHdr, Prefer: "return=minimal,resolution=merge-duplicates" },
+        body: JSON.stringify(allMessages),
+      });
+    }
+    // Prune conversations Canvas's inbox no longer returns (archived, deleted,
+    // or otherwise fallen out of scope).
+    const keepMsgIds = allMessages.map((m) => m.canvas_conversation_id);
+    const keepMsgList = keepMsgIds.length > 0 ? `(${keepMsgIds.map((id) => `"${id}"`).join(",")})` : "()";
+    await fetch(
+      `${supabaseUrl}/rest/v1/canvas_messages?user_id=eq.${userId}&canvas_conversation_id=not.in.${keepMsgList}`,
+      { method: "DELETE", headers: svcHdr },
+    );
+
     const effectiveCourses = syncAll ? activeCourses.map((c: any) => ({ id: String(c.id), name: c.name })) : activeSel;
     const assignmentsByCourse = new Map<string, any[]>();
     for (const a of allAssignments) {
@@ -466,6 +519,7 @@ Deno.serve(async (req) => {
         active_assignments: activeCount,
         grades: allGrades.length,
         announcements: allAnnouncements.length,
+        messages: allMessages.length,
         blocked_courses: blockedCourseCount,
         courses: courseSummaries,
         sync_all: syncAll,

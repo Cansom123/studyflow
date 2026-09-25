@@ -10,7 +10,7 @@
    they genuinely aren't pure.
 =========================== */
 
-import { escapeHtml, escapeRegex, cleanCourseName, getBadge, getDueText, doneKey } from './format-utils.js';
+import { escapeHtml, escapeRegex, cleanCourseName, getBadge, getDueText, doneKey, letterGradeClass } from './format-utils.js';
 
 // Deliberately NOT the same binding as index.html's classic-script `months`
 // (which is called synchronously at page load, before any module runs, so
@@ -392,5 +392,47 @@ export function syllabusSearchResultsHTML(cachedSyllabi, syllabusCourses, query)
       <div class="card-title">${escapeHtml(m.name)}</div>
       <div class="card-sub syllabus-preview">${highlighted}</div>
     </div>`;
+  }).join('');
+}
+
+// Card list for the Grades tab: one card per graded course, with a color
+// bar (A/B/C/other) and either a percentage or a bare letter when only one
+// is available. withGrades should already be filtered to courses that
+// have a published grade.
+export function gradeCardsHTML(withGrades) {
+  const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
+  return withGrades.map(g => {
+    const score = g.current_score != null ? parseFloat(g.current_score) : parseFloat(g.final_score);
+    const letter = g.current_grade || g.final_grade || '';
+    const cleanName = cleanCourseName(g.course_name);
+    const letterClass = letterGradeClass(letter);
+    const scoreText = !isNaN(score) ? `${score.toFixed(1)}%` : '';
+    const barColor = barColors[letterClass] || 'var(--accent)';
+    const barWidth = !isNaN(score) ? Math.min(Math.max(score, 0), 100) : 0;
+    return `<div class="card grade-card" data-course="${escapeHtml(g.course_name)}" onclick="openGradeDetail(this.dataset.course)">
+      <div class="grade-card-left">
+        <div class="grade-card-name">${cleanName}</div>
+        ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="--w:${barWidth}%;background:${barColor}"></div></div>` : ''}
+        <div class="grade-breakdown-hint">Tap to see what's affecting this grade</div>
+      </div>
+      <div class="grade-card-right">
+        <div class="grade-card-letter ${letterClass}">${letter || '-'}</div>
+        ${scoreText ? `<div class="grade-card-pct">${scoreText}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Home's compact grade list: just name + letter, capped at `limit` courses,
+// with the same empty-state message as the original.
+export function homeGradesListHTML(cachedGrades, limit = 4) {
+  const withGrades = cachedGrades.filter(g => g.current_score != null || g.final_score != null || g.current_grade || g.final_grade);
+  if (withGrades.length === 0) {
+    return `<div style="color:var(--text2);font-size:13px;">No grades published yet.</div>`;
+  }
+  return withGrades.slice(0, limit).map(g => {
+    const letter = g.current_grade || g.final_grade || '';
+    const letterClass = letterGradeClass(letter);
+    return `<div class="grade-row"><span class="grade-name">${escapeHtml(cleanCourseName(g.course_name))}</span><span class="grade-letter ${letterClass}" style="background:transparent;">${escapeHtml(letter || '-')}</span></div>`;
   }).join('');
 }

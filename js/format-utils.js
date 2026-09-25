@@ -105,3 +105,13 @@ export function fmtClock(totalSec) {
   const m = Math.floor(totalSec / 60), s = totalSec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+
+// CSS class for a letter grade's A/B/C/other color coding. Shared by the
+// Grades tab's course cards and Home's mini grade list (previously
+// duplicated verbatim between them).
+export function letterGradeClass(letter) {
+  if (letter.startsWith('A')) return 'grade-a';
+  if (letter.startsWith('B')) return 'grade-b';
+  if (letter.startsWith('C')) return 'grade-c';
+  return 'grade-df';
+}

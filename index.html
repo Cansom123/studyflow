@@ -3333,32 +3333,8 @@ async function loadGrades() {
 
   if (withGrades.length === 0) { if (emptyEl) emptyEl.style.display = 'block'; return; }
 
-  if (cardsEl) {
-    cardsEl.innerHTML = withGrades.map(g => {
-      const score = g.current_score != null ? parseFloat(g.current_score) : parseFloat(g.final_score);
-      const letter = g.current_grade || g.final_grade || '';
-      const cleanName = cleanCourseName(g.course_name);
-      let letterClass = 'grade-df';
-      if (letter.startsWith('A')) letterClass = 'grade-a';
-      else if (letter.startsWith('B')) letterClass = 'grade-b';
-      else if (letter.startsWith('C')) letterClass = 'grade-c';
-      const scoreText = !isNaN(score) ? `${score.toFixed(1)}%` : '';
-      const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
-      const barColor = barColors[letterClass] || 'var(--accent)';
-      const barWidth = !isNaN(score) ? Math.min(Math.max(score, 0), 100) : 0;
-      return `<div class="card grade-card" data-course="${escapeHtml(g.course_name)}" onclick="openGradeDetail(this.dataset.course)">
-        <div class="grade-card-left">
-          <div class="grade-card-name">${cleanName}</div>
-          ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="--w:${barWidth}%;background:${barColor}"></div></div>` : ''}
-          <div class="grade-breakdown-hint">Tap to see what's affecting this grade</div>
-        </div>
-        <div class="grade-card-right">
-          <div class="grade-card-letter ${letterClass}">${letter || '-'}</div>
-          ${scoreText ? `<div class="grade-card-pct">${scoreText}</div>` : ''}
-        </div>
-      </div>`;
-    }).join('');
-  }
+  // Pure HTML building lives in js/render-utils.js.
+  if (cardsEl) cardsEl.innerHTML = gradeCardsHTML(withGrades);
   if (listEl) listEl.style.display = 'block';
 }
 
@@ -4435,21 +4411,8 @@ function renderHome() {
   }
 
   const gradesEl = document.getElementById('home-grades');
-  if (gradesEl) {
-    const withGrades = cachedGrades.filter(g => g.current_score != null || g.final_score != null || g.current_grade || g.final_grade);
-    if (withGrades.length === 0) {
-      gradesEl.innerHTML = `<div style="color:var(--text2);font-size:13px;">No grades published yet.</div>`;
-    } else {
-      gradesEl.innerHTML = withGrades.slice(0, 4).map(g => {
-        const letter = g.current_grade || g.final_grade || '';
-        let letterClass = 'grade-df';
-        if (letter.startsWith('A')) letterClass = 'grade-a';
-        else if (letter.startsWith('B')) letterClass = 'grade-b';
-        else if (letter.startsWith('C')) letterClass = 'grade-c';
-        return `<div class="grade-row"><span class="grade-name">${escapeHtml(cleanCourseName(g.course_name))}</span><span class="grade-letter ${letterClass}" style="background:transparent;">${escapeHtml(letter || '-')}</span></div>`;
-      }).join('');
-    }
-  }
+  // Pure HTML building lives in js/render-utils.js.
+  if (gradesEl) gradesEl.innerHTML = homeGradesListHTML(cachedGrades);
 }
 
 /* ===========================

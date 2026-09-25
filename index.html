@@ -5676,12 +5676,8 @@ function focusPickDuration(kind, min) {
 
 function focusGoToCommit() {
   const body = document.getElementById('focus-body');
-  body.innerHTML = `
-    <div class="focus-title">One more thing</div>
-    <div class="focus-sub">What will you actually do on your ${focusState.breakMin}-minute break? Naming it now makes it easier to stick to it later.</div>
-    <input class="settings-input" id="focus-break-activity" placeholder='e.g. "stretch, grab water"' style="text-align:center;" onkeydown="if(event.key==='Enter'){focusStartStudy();}" />
-    <button class="settings-btn" onclick="focusStartStudy()">Start studying</button>
-  `;
+  // Pure HTML building lives in js/focus-core.js.
+  body.innerHTML = focusCommitHTML(focusState);
   setTimeout(() => { const el = document.getElementById('focus-break-activity'); if (el) el.focus(); }, 50);
 }
 
@@ -5800,16 +5796,8 @@ function onFocusStudyComplete() {
   // minimized and wandered off into their assignments.
   if (focusState.minimized) expandFocusTimer();
   const body = document.getElementById('focus-body');
-  const offeredBreak = focusState.nextBreakMin;
-  const escalatedBreak = focusState.nextBreakMin + focusState.breakMin;
-  body.innerHTML = `
-    <div class="focus-title">Nice work!</div>
-    <div class="focus-sub">You focused for ${focusState.studyMin} minutes. Take your ${offeredBreak}-minute break now, or keep studying ${focusState.studyMin} more minutes and get a ${escalatedBreak}-minute break after.</div>
-    <div class="focus-btn-row stack">
-      <button class="settings-btn" onclick="focusTakeBreak()">Take ${offeredBreak} min break now</button>
-      <button class="sync-btn" onclick="focusKeepStudying()">Keep studying - get ${escalatedBreak} min break after</button>
-    </div>
-  `;
+  // Pure HTML building lives in js/focus-core.js.
+  body.innerHTML = focusStudyCompleteHTML(focusState);
 }
 
 function focusTakeBreak() {
@@ -5830,14 +5818,8 @@ function onFocusBreakComplete() {
   showReward(`Break's over - ${focusState.breakActivity ? 'hope it helped' : 'back at it?'}`, 'bell');
   if (focusState.minimized) expandFocusTimer();
   const body = document.getElementById('focus-body');
-  body.innerHTML = `
-    <div class="focus-title">Break's over</div>
-    <div class="focus-sub">Ready for another round, or done for now?</div>
-    <div class="focus-btn-row stack">
-      <button class="settings-btn" onclick="focusAnotherRound()">Another round</button>
-      <button class="sync-btn" onclick="focusFinish()">I'm done - mark as complete</button>
-    </div>
-  `;
+  // Pure HTML building lives in js/focus-core.js.
+  body.innerHTML = focusBreakCompleteHTML();
 }
 
 function focusAnotherRound() {

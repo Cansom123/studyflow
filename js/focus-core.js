@@ -68,3 +68,43 @@ export function focusSetupHTML(focusState, studyDurations, breakDurations) {
     <button class="settings-btn" onclick="focusGoToCommit()">Continue</button>
   `;
 }
+
+// The "name your break activity" prompt shown between setup and starting
+// the timer.
+export function focusCommitHTML(focusState) {
+  return `
+    <div class="focus-title">One more thing</div>
+    <div class="focus-sub">What will you actually do on your ${focusState.breakMin}-minute break? Naming it now makes it easier to stick to it later.</div>
+    <input class="settings-input" id="focus-break-activity" placeholder='e.g. "stretch, grab water"' style="text-align:center;" onkeydown="if(event.key==='Enter'){focusStartStudy();}" />
+    <button class="settings-btn" onclick="focusStartStudy()">Start studying</button>
+  `;
+}
+
+// Shown when a study round finishes: offers the break earned so far, or
+// escalates it by studying another round. escalatedBreak grows by
+// breakMin each time nextBreakMin carries over uncollected.
+export function focusStudyCompleteHTML(focusState) {
+  const offeredBreak = focusState.nextBreakMin;
+  const escalatedBreak = focusState.nextBreakMin + focusState.breakMin;
+  return `
+    <div class="focus-title">Nice work!</div>
+    <div class="focus-sub">You focused for ${focusState.studyMin} minutes. Take your ${offeredBreak}-minute break now, or keep studying ${focusState.studyMin} more minutes and get a ${escalatedBreak}-minute break after.</div>
+    <div class="focus-btn-row stack">
+      <button class="settings-btn" onclick="focusTakeBreak()">Take ${offeredBreak} min break now</button>
+      <button class="sync-btn" onclick="focusKeepStudying()">Keep studying - get ${escalatedBreak} min break after</button>
+    </div>
+  `;
+}
+
+// Shown when a break finishes: another round, or call it done. Static --
+// doesn't depend on focusState.
+export function focusBreakCompleteHTML() {
+  return `
+    <div class="focus-title">Break's over</div>
+    <div class="focus-sub">Ready for another round, or done for now?</div>
+    <div class="focus-btn-row stack">
+      <button class="settings-btn" onclick="focusAnotherRound()">Another round</button>
+      <button class="sync-btn" onclick="focusFinish()">I'm done - mark as complete</button>
+    </div>
+  `;
+}

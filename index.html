@@ -5223,17 +5223,6 @@ function renderCompletedCount() {
   renderHome();
 }
 
-// Only replays the pop-in animation when the displayed value actually changes,
-// so re-renders that don't touch a stat don't keep re-triggering its animation.
-function setStatValue(el, value) {
-  if (!el) return;
-  if (el.textContent === String(value)) return;
-  el.textContent = value;
-  el.classList.remove('stat-pop');
-  void el.offsetWidth;
-  el.classList.add('stat-pop');
-}
-
 // Days (not sessions) with at least one completed study block — same idea,
 // separate counter, so scheduling time and actually using it are rewarded distinctly.
 function bumpStudyStreak() {

@@ -526,3 +526,43 @@ export function checklistSectionHTML(a, steps, editingChecklistStepId, bannerHTM
     <button class="sync-btn" style="margin-top:8px;" onclick="addChecklistToCalendar('${a.id}')">📅 Add these to my calendar</button>
   `;
 }
+
+// Body HTML for the syllabus detail overlay: source label, the ask/search
+// toggle + coco.1 banner + search box (when there's content to search),
+// the syllabus text itself, and the edit/save/download/retry action row.
+// s is the syllabusFor()-style record (or undefined/null when nothing's
+// been found yet); bannerHTML is the caller's
+// schoolAIBannerHTML('syl-ai') output, passed in for the same
+// not-pure-so-push-it-up reason as checklistSectionHTML's banner.
+export function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
+  const hasContent = !!(s && s.content);
+  const sourceLabel = hasContent
+    ? (s.source === 'canvas' ? 'Pulled automatically from Canvas' : 'Added manually')
+    : "StudyFlow couldn't find this on Canvas. Paste it in yourself below.";
+  return `
+    <div class="card-sub" style="margin-bottom:14px;">${escapeHtml(sourceLabel)}</div>
+    ${hasContent ? `
+    <div class="seg-control" id="syl-mode-toggle" style="margin-bottom:10px;">
+      <button class="seg-btn active" data-mode="ask" onclick="setSylSearchMode('ask')">✨ Ask</button>
+      <button class="seg-btn" data-mode="literal" onclick="setSylSearchMode('literal')">Search</button>
+    </div>
+    <div id="syl-ai-banner-host">${bannerHTML}</div>
+    <div class="syl-inline-search-row">
+      <input class="settings-input" id="syl-inline-search" oninput="handleSylSearchInput()" onkeydown="if(event.key==='Enter'){searchWithinSyllabus();}" placeholder='Ask about this syllabus - "what is the grading policy?"' style="margin-bottom:0;flex:1;" />
+      ${sylSearchMode === 'ask' ? `<button class="goal-add-btn" style="flex-shrink:0;" onclick="searchWithinSyllabus()">Ask</button>` : ''}
+      <button class="detail-close" style="width:30px;height:30px;flex-shrink:0;" onclick="jumpSyllabusMatch(-1)" title="Previous match">‹</button>
+      <button class="detail-close" style="width:30px;height:30px;flex-shrink:0;" onclick="jumpSyllabusMatch(1)" title="Next match">›</button>
+    </div>
+    <div id="syl-inline-counter" style="font-size:12px;color:var(--text2);margin:6px 0 10px;"></div>
+    <div id="syl-ai-answer"></div>
+    <div class="syllabus-text" id="syl-view">${escapeHtml(s.content)}</div>` : ''}
+    <textarea class="syllabus-textarea" id="syl-edit-input" style="display:${hasContent ? 'none' : 'block'};margin-top:${hasContent ? '12px' : '0'};" placeholder="Paste your syllabus text here...">${hasContent ? escapeHtml(s.content) : ''}</textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      ${hasContent ? `<button class="sync-btn" id="syl-edit-toggle-btn" style="width:auto;flex:1;" onclick="toggleSyllabusEdit()">Edit</button>` : ''}
+      <button class="sync-btn" style="width:auto;flex:1;" onclick="saveSyllabusManual()">${hasContent ? 'Save changes' : 'Save'}</button>
+      ${hasContent ? `<button class="change-courses-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="downloadSyllabus('${courseId}')">Download</button>` : ''}
+      <button class="change-courses-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="retryAutoFetchSyllabus('${courseId}')">Try Canvas again</button>
+    </div>
+    <div id="syl-save-msg" style="margin-top:10px;"></div>
+  `;
+}

@@ -105,3 +105,44 @@ export function syllabiKeywordAnswer(cachedSyllabi, syllabusCourses, q) {
   `;
   return { html, top };
 }
+
+// Keyword-ranks every line of the syllabus against the query and re-renders
+// the whole passage with matching lines' keywords highlighted, each <mark>
+// tagged with data-rank so the caller can build a best-match-first
+// prev/next list. status is 'vague' (query had no real keywords), 'none'
+// (no line matched), or 'found'. In the 'vague'/'none' cases html is just
+// the escaped, unmarked raw text -- matching the original's behavior of
+// falling back to plain text rather than leaving the view untouched.
+export function rankedKeywordSearchHTML(raw, q) {
+  const keywords = extractAskKeywords(q);
+  if (keywords.length === 0) {
+    return { html: escapeHtml(raw), status: 'vague' };
+  }
+
+  const lines = raw.split('\n');
+  const scored = lines
+    .map((line, i) => ({
+      i, line,
+      score: keywords.filter(k => new RegExp('\\b' + escapeRegex(k) + '\\b', 'i').test(line)).length,
+    }))
+    .filter(l => l.score > 0)
+    .sort((a, b) => b.score - a.score || a.line.length - b.line.length);
+
+  if (scored.length === 0) {
+    return { html: escapeHtml(raw), status: 'none' };
+  }
+
+  const rankOf = new Map(scored.map((row, rank) => [row.i, rank]));
+  let markCounter = 0;
+  const html = lines.map((line, i) => {
+    if (!rankOf.has(i)) return escapeHtml(line);
+    let h = escapeHtml(line);
+    keywords.forEach(k => {
+      const rx = new RegExp('(' + escapeRegex(k) + ')', 'ig');
+      h = h.replace(rx, m => `<mark id="syl-mark-${markCounter++}" data-rank="${rankOf.get(i)}">${m}</mark>`);
+    });
+    return h;
+  }).join('\n');
+
+  return { html, status: 'found' };
+}

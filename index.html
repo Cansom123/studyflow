@@ -4562,39 +4562,17 @@ async function askSearchWithinSyllabus() {
     return;
   }
 
-  const keywords = extractAskKeywords(q);
-  if (keywords.length === 0) {
-    viewEl.innerHTML = escapeHtml(raw);
+  // Pure keyword-ranking/highlighting lives in js/search-utils.js.
+  const r = rankedKeywordSearchHTML(raw, q);
+  viewEl.innerHTML = r.html;
+  if (r.status === 'vague') {
     if (counterEl) counterEl.textContent = 'Try a word or two about the topic';
     return;
   }
-
-  const lines = raw.split('\n');
-  const scored = lines
-    .map((line, i) => ({
-      i, line,
-      score: keywords.filter(k => new RegExp('\\b' + escapeRegex(k) + '\\b', 'i').test(line)).length,
-    }))
-    .filter(l => l.score > 0)
-    .sort((a, b) => b.score - a.score || a.line.length - b.line.length);
-
-  if (scored.length === 0) {
-    viewEl.innerHTML = escapeHtml(raw);
+  if (r.status === 'none') {
     if (counterEl) counterEl.textContent = "Couldn't find anything about that - try different words";
     return;
   }
-
-  const rankOf = new Map(scored.map((row, rank) => [row.i, rank]));
-  let markCounter = 0;
-  viewEl.innerHTML = lines.map((line, i) => {
-    if (!rankOf.has(i)) return escapeHtml(line);
-    let html = escapeHtml(line);
-    keywords.forEach(k => {
-      const rx = new RegExp('(' + escapeRegex(k) + ')', 'ig');
-      html = html.replace(rx, m => `<mark id="syl-mark-${markCounter++}" data-rank="${rankOf.get(i)}">${m}</mark>`);
-    });
-    return html;
-  }).join('\n');
 
   syllabusInlineMatches = [...viewEl.querySelectorAll('mark')].sort((a, b) => Number(a.dataset.rank) - Number(b.dataset.rank));
   if (syllabusInlineMatches.length === 0) {

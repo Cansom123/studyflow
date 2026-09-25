@@ -3015,6 +3015,17 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
         </div>
       </div>
 
+      <!-- MESSAGES (Canvas Inbox/Conversations) -->
+      <div class="page" id="page-messages">
+        <div id="messages-loading" class="loading-box">Loading messages...</div>
+        <div id="messages-empty" class="empty-box" style="display:none;">
+          <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M4 6l6 5 6-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="empty-title">No messages</div>
+          <div class="empty-sub">Messages from teachers and classmates on Canvas will show up here.</div>
+        </div>
+        <div id="messages-list" style="display:none;"></div>
+      </div>
+
       <!-- GOALS -->
       <div class="page" id="page-goals">
         <div class="section-label">Your goals</div>
@@ -3120,6 +3131,9 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
         </div>
         <div class="card syllabus-card" onclick="jumpTo('grades')">
           <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3.5" y="10" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="8.5" y="6" width="3" height="10.5" rx="1" fill="currentColor"/><rect x="13.5" y="3" width="3" height="13.5" rx="1" fill="currentColor"/></svg></span>Grades</div><span class="more-chevron">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('messages')">
+          <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M4 6l6 5 6-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Messages<span class="admin-reports-badge" id="messages-badge"></span></div><span class="more-chevron">›</span></div>
         </div>
         <div class="card syllabus-card" onclick="jumpTo('goals')">
           <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="3.2" stroke="currentColor" stroke-width="1.6"/></svg></span>Goals</div><span class="more-chevron">›</span></div>
@@ -3298,6 +3312,11 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
             </div>
             <div class="card-sub" style="line-height:1.5;">Needs email delivery configured on the backend before it actually sends - this saves your preference now, ask to finish wiring it up when ready.</div>
           </div>
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Browser notifications</div><div class="toggle-row-sub">Focus timer alerts and due-soon reminders, right in your browser</div></div>
+            <label class="switch"><input type="checkbox" id="pref-browser-notifications" onchange="onBrowserNotificationsToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="card-sub" style="line-height:1.5;">Only fires while StudyFlow is open in a tab (even in the background) - not when the browser itself is closed.</div>
         </div>
 
         <div class="section-label" style="margin-top:20px;">Academic</div>
@@ -3700,6 +3719,7 @@ const DEFAULT_PREFS = {
   defaultLandingTab: 'home',
   emailRemindersEnabled: false,
   reminderDaysBefore: 1,
+  browserNotificationsEnabled: false,
   defaultFinalWeight: 30,
   priorityGoalBoost: 50,
   studyGoalDailyMin: 60,
@@ -3729,6 +3749,39 @@ function onPrefToggle(key, value) {
 function onPrefInput(key, value) {
   userPrefs[key] = value;
   saveUserPrefs();
+}
+
+// Turning this on requires a real permission prompt, which browsers only
+// honor from a direct user gesture (this checkbox's own click) -- can't be
+// requested ahead of time or from a background call. If the student denies
+// it (or the browser doesn't support Notification at all), the toggle
+// reverts instead of silently saving a preference that can never fire.
+async function onBrowserNotificationsToggle(checked) {
+  if (checked) {
+    if (typeof Notification === 'undefined') {
+      alert("This browser doesn't support notifications.");
+      const el = document.getElementById('pref-browser-notifications');
+      if (el) el.checked = false;
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      const el = document.getElementById('pref-browser-notifications');
+      if (el) el.checked = false;
+      return;
+    }
+  }
+  onPrefToggle('browserNotificationsEnabled', checked);
+}
+
+// Single gate for every browser notification StudyFlow fires -- respects
+// the user's saved preference and the browser's actual permission state,
+// so callers (the focus timer, due-soon checks) don't have to repeat those
+// checks themselves.
+function notifyBrowser(title, options) {
+  if (!userPrefs.browserNotificationsEnabled) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  try { new Notification(title, options); } catch (e) {}
 }
 function onPrefSeg(key, value, el) {
   userPrefs[key] = value;
@@ -3762,6 +3815,7 @@ function applyUserPrefsToUI() {
   setSwitch('pref-welcome', userPrefs.welcomeToastEnabled !== false);
   setSwitch('pref-ask-box', userPrefs.showAskBox !== false);
   setSwitch('pref-email-reminders', !!userPrefs.emailRemindersEnabled);
+  setSwitch('pref-browser-notifications', !!userPrefs.browserNotificationsEnabled);
 
   const daysRow = document.getElementById('reminder-days-row');
   if (daysRow) daysRow.style.display = userPrefs.emailRemindersEnabled ? 'flex' : 'none';
@@ -4016,6 +4070,7 @@ let cachedAssignments = [];
 let cachedGradedAssignments = [];
 let cachedGrades = [];
 let cachedAnnouncements = [];
+let cachedMessages = [];
 let syncInProgress = false;
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -4345,6 +4400,7 @@ async function showApp() {
   loadStudySessions();
   loadGrades();
   loadAnnouncements();
+  loadMessages();
   loadSyllabi();
   loadAssignmentChecklists();
   renderGoalsTab();
@@ -5540,7 +5596,7 @@ async function syncCanvas({ silent = false } = {}) {
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.message || result.error || 'Sync failed');
-    await Promise.all([loadAssignments(), loadGrades(), loadAnnouncements()]);
+    await Promise.all([loadAssignments(), loadGrades(), loadAnnouncements(), loadMessages()]);
     localStorage.setItem('sf_last_sync_' + USER_ID, Date.now());
     updateLastSyncedLabel();
     syncInProgress = false;
@@ -5619,6 +5675,7 @@ async function loadAssignments() {
   }
   console.log('[loadAssignments] rendering', assignments.length, 'assignments');
   cachedAssignments = assignments;
+  checkDueSoonNotifications(assignments);
   renderDueSoon(assignments);
   renderAllWork(assignments);
   renderPriority(assignments);
@@ -5713,9 +5770,27 @@ function dismissedAnnouncementIds() {
 }
 
 async function loadAnnouncements() {
-  const { ok, data } = await sbFetchWithRetry(`/rest/v1/announcements?user_id=eq.${USER_ID}&order=posted_at.desc.nullslast&limit=20`);
-  const dismissed = dismissedAnnouncementIds();
-  cachedAnnouncements = (ok && Array.isArray(data)) ? data.filter(a => !dismissed.has(String(a.id))) : [];
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/announcements?user_id=eq.${USER_ID}&dismissed=eq.false&order=posted_at.desc.nullslast&limit=20`);
+  let fetched = (ok && Array.isArray(data)) ? data : [];
+
+  // One-time migration: announcements dismissed before "dismissed" was a
+  // real server-side column (previously tracked only in this browser's
+  // localStorage) still have dismissed=false in the DB, so the filter above
+  // wouldn't catch them. Push the dismissal through for real, then drop the
+  // local copy so this only runs once.
+  const legacyDismissed = dismissedAnnouncementIds();
+  if (legacyDismissed.size > 0) {
+    const stillPresent = fetched.filter(a => legacyDismissed.has(String(a.id)));
+    if (stillPresent.length > 0) {
+      await Promise.all(stillPresent.map(a =>
+        sbFetchWithRetry(`/rest/v1/announcements?id=eq.${a.id}`, 'PATCH', { dismissed: true })
+      ));
+      fetched = fetched.filter(a => !legacyDismissed.has(String(a.id)));
+    }
+    localStorage.removeItem('sf_dismissed_announcements_' + USER_ID);
+  }
+
+  cachedAnnouncements = fetched;
   renderAnnouncements();
 }
 
@@ -5966,10 +6041,11 @@ function closeAllGraded() {
 function finishDismissAnnouncement(id) {
   trackEvent('announcement_dismissed');
   cachedAnnouncements = cachedAnnouncements.filter(a => String(a.id) !== String(id));
-  const dismissed = dismissedAnnouncementIds();
-  dismissed.add(String(id));
-  localStorage.setItem('sf_dismissed_announcements_' + USER_ID, JSON.stringify([...dismissed]));
   renderAnnouncements();
+  // Persisted server-side (like the read flag above it) so the dismissal
+  // survives the next Canvas sync's upsert, a different device, or a
+  // cleared browser profile -- unlike the old localStorage-only version.
+  sbFetchWithRetry(`/rest/v1/announcements?id=eq.${id}`, 'PATCH', { dismissed: true });
 }
 
 function dismissAnnouncement(id, event) {
@@ -5996,6 +6072,77 @@ async function toggleAnnouncement(id) {
   renderAnnouncements();
   if (wasUnread) {
     sbFetchWithRetry(`/rest/v1/announcements?id=eq.${id}`, 'PATCH', { read: true });
+  }
+}
+
+/* ===========================
+   MESSAGES (Canvas Inbox/Conversations)
+   A separate Canvas feature from announcements -- private messages rather
+   than course-wide posts. Reuses the announcement-card styling and
+   announcementTimeAgo() since the shape (course/sender line, title, meta,
+   expand-to-read body) is the same.
+=========================== */
+async function loadMessages() {
+  const loadEl = document.getElementById('messages-loading');
+  const emptyEl = document.getElementById('messages-empty');
+  const listEl = document.getElementById('messages-list');
+  if (loadEl) loadEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (listEl) listEl.style.display = 'none';
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/canvas_messages?user_id=eq.${USER_ID}&order=last_message_at.desc.nullslast&limit=50`);
+  if (loadEl) loadEl.style.display = 'none';
+  cachedMessages = (ok && Array.isArray(data)) ? data : [];
+  renderMessagesList();
+}
+
+function messageCardHTML(m) {
+  const unread = !m.read ? ' unread' : '';
+  const expanded = m._expanded ? ' expanded' : '';
+  const body = m._expanded
+    ? `<div class="announcement-body">${escapeHtml(m.last_message || 'No preview available.')}</div>
+       ${m.conversation_url ? `<a href="${m.conversation_url}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>` : ''}`
+    : '';
+  return `<div class="announcement-card${expanded}${unread}" onclick="toggleMessage('${m.id}')">
+    <div class="announcement-unread-dot"></div>
+    <div class="announcement-main">
+      <div class="announcement-course">${escapeHtml(m.participants || 'Canvas')}</div>
+      <div class="announcement-title">${escapeHtml(m.subject || '(no subject)')}</div>
+      <div class="announcement-meta">${announcementTimeAgo(m.last_message_at)}${m.message_count > 1 ? ` · ${m.message_count} messages` : ''}</div>
+      ${body}
+    </div>
+  </div>`;
+}
+
+function renderMessagesList() {
+  const emptyEl = document.getElementById('messages-empty');
+  const listEl = document.getElementById('messages-list');
+  if (!listEl) return;
+  const badge = document.getElementById('messages-badge');
+  if (badge) {
+    const unreadCount = cachedMessages.filter(m => !m.read).length;
+    badge.textContent = unreadCount > 0 ? String(unreadCount) : '';
+  }
+  if (cachedMessages.length === 0) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    listEl.style.display = 'none';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  listEl.style.display = 'block';
+  listEl.innerHTML = cachedMessages.map(messageCardHTML).join('');
+}
+
+async function toggleMessage(id) {
+  const m = cachedMessages.find(x => String(x.id) === String(id));
+  if (!m) return;
+  m._expanded = !m._expanded;
+  const wasUnread = !m.read;
+  if (wasUnread) m.read = true;
+  renderMessagesList();
+  if (wasUnread) {
+    // Tracked as StudyFlow's own state (see the canvas_messages migration) --
+    // never sent back to Canvas, so this can't get overwritten by the next sync.
+    sbFetchWithRetry(`/rest/v1/canvas_messages?id=eq.${id}`, 'PATCH', { read: true });
   }
 }
 
@@ -6057,6 +6204,33 @@ function getDueText(due_date, isOverdue, isLocked, lockReason) {
 // with an apostrophe -- silently killing the click handler. %27 round-trips through
 // decodeURIComponent fine, so escape it too.
 function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`).replace(/'/g, '%27'); }
+
+// Notifies once per assignment when it's due today or tomorrow, tracked by
+// doneKey (title+course) rather than the DB row's own id -- Canvas sync
+// deletes and reinserts assignments every run, so a fresh id every sync
+// would otherwise mean re-notifying about the same assignment forever.
+// Also prunes stale entries so this doesn't grow without bound.
+function checkDueSoonNotifications(assignments) {
+  const notifiedKey = 'sf_notified_due_' + USER_ID;
+  let notified;
+  try { notified = new Set(JSON.parse(localStorage.getItem(notifiedKey) || '[]')); } catch (e) { notified = new Set(); }
+
+  const currentKeys = new Set(assignments.map(a => doneKey(a)));
+  [...notified].forEach(k => { if (!currentKeys.has(k)) notified.delete(k); });
+
+  assignments.forEach(a => {
+    if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
+    if (!a.due_date) return;
+    const d = dayDiff(a.due_date);
+    if (d !== 0 && d !== 1) return;
+    const key = doneKey(a);
+    if (notified.has(key)) return;
+    notifyBrowser(`Due ${d === 0 ? 'today' : 'tomorrow'}: ${a.title}`, { body: a.course || 'StudyFlow', tag: 'sf-due-' + key });
+    notified.add(key);
+  });
+
+  localStorage.setItem(notifiedKey, JSON.stringify([...notified]));
+}
 
 function aCard(a, isOverdue, redTint=false) {
   const [bc, bl] = getBadge(a.assignment_type);
@@ -9787,6 +9961,11 @@ function onFocusStudyComplete() {
   // The round is over and there's a choice to make, so surface it even if they
   // minimized and wandered off into their assignments.
   if (focusState.minimized) expandFocusTimer();
+  // Only fire the OS-level notification if they've actually wandered off --
+  // the in-app reward above already covers the case where they're watching.
+  if (document.visibilityState !== 'visible') {
+    notifyBrowser(`Round ${focusState.round} done!`, { body: `Time for a ${focusState.nextBreakMin}-minute break, or keep studying.`, tag: 'sf-focus' });
+  }
   const body = document.getElementById('focus-body');
   const offeredBreak = focusState.nextBreakMin;
   const escalatedBreak = focusState.nextBreakMin + focusState.breakMin;
@@ -9817,6 +9996,9 @@ function onFocusBreakComplete() {
   document.title = focusOriginalTitle;
   showReward(`Break's over - ${focusState.breakActivity ? 'hope it helped' : 'back at it?'}`, 'bell');
   if (focusState.minimized) expandFocusTimer();
+  if (document.visibilityState !== 'visible') {
+    notifyBrowser("Break's over", { body: 'Ready for another round, or done for now?', tag: 'sf-focus' });
+  }
   const body = document.getElementById('focus-body');
   body.innerHTML = `
     <div class="focus-title">Break's over</div>

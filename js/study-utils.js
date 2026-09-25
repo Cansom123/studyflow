@@ -25,7 +25,7 @@ export function studySessionCardHTML(s) {
       <div class="study-session-title">${escapeHtml(s.title)}</div>
       ${meta ? `<div class="study-session-meta">${escapeHtml(meta)}</div>` : ''}
     </div>
-    ${!s.completed ? `<button class="study-session-start" onclick="openFocusTimer('${s.id}')" title="Start focus timer">▶ Start</button>` : ''}
+    ${!s.completed ? `<button class="study-session-start" onclick="${s.session_type === 'deep_work' ? `openDeepWorkTimer('${s.id}')` : `openFocusTimer('${s.id}')`}" title="Start ${s.session_type === 'deep_work' ? 'deep work' : 'focus'} timer">▶ Start</button>` : ''}
     <button class="study-session-del" onclick="deleteStudySession('${s.id}')" title="Remove">✕</button>
   </div>`;
 }
@@ -49,10 +49,11 @@ export function computeStudyStats(cachedStudySessions, userPrefs, today) {
   const todayKey = ymd(ref);
   const weekStart = startOfWeek(ref);
 
-  let todayMin = 0, weekMin = 0, totalMin = 0;
+  let todayMin = 0, weekMin = 0, totalMin = 0, deepWorkTotalMin = 0;
   cachedStudySessions.forEach(s => {
     const min = s.minutes_studied || 0;
     totalMin += min;
+    if (s.session_type === 'deep_work') deepWorkTotalMin += min;
     if (!s.session_date) return;
     const d = new Date(s.session_date + 'T00:00:00');
     if (s.session_date === todayKey) todayMin += min;
@@ -76,8 +77,9 @@ export function computeStudyStats(cachedStudySessions, userPrefs, today) {
   const todayItems = cachedStudySessions.filter(s => s.session_date === todayKey);
 
   return {
-    todayMin, weekMin, totalMin,
+    todayMin, weekMin, totalMin, deepWorkTotalMin,
     todayFmt: fmtHoursMinutes(todayMin), weekFmt: fmtHoursMinutes(weekMin), totalFmt: fmtHoursMinutes(totalMin),
+    deepWorkTotalFmt: fmtHoursMinutes(deepWorkTotalMin),
     dailyGoal, weeklyGoal, todayPct, weekPct, todayGoalMet, weekGoalMet,
     nudgeText, todayItems,
   };

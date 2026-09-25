@@ -1911,6 +1911,24 @@ mark.syl-mark-active { background: var(--accent); color: var(--on-accent); }
   .cal-day-num { font-size: 13px; }
 }
 
+/* ===== STUDY CHAIN (Seinfeld "don't break the chain" calendar) =====
+   A thin X marks a day that hit the 15-minute study threshold (the lead
+   measure — consistent daily input). A thick X marks a day that included a
+   deep-work block, so the chain visually distinguishes the two without a
+   separate calendar. */
+.cal-day-chain-x { font-weight: 700; font-size: 15px; line-height: 1; color: var(--accent); }
+.cal-day-chain-x.thick { font-weight: 900; font-size: 18px; color: var(--orange, #d85a30); text-shadow: 0 0 0 currentColor; }
+.chain-lead-lag-row { display: flex; gap: 10px; margin-top: 14px; }
+.chain-lead-lag-card {
+  flex: 1; background: var(--surface2); border-radius: 12px; padding: 12px 14px; cursor: default;
+}
+.chain-lead-lag-card.clickable { cursor: pointer; }
+.chain-lead-lag-card.clickable:hover { background: var(--btn-secondary-bg); }
+.chain-lead-lag-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text2); margin-bottom: 3px; }
+.chain-lead-lag-value { font-size: 15px; font-weight: 700; color: var(--text1); }
+.chain-lead-lag-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+#study-chain-detail { font-size: 12.5px; color: var(--text2); text-align: center; min-height: 16px; margin-top: 10px; }
+
 /* ===== STUDY SESSIONS ===== */
 .study-session-card {
   display: flex; align-items: center; gap: 10px;
@@ -1934,55 +1952,58 @@ mark.syl-mark-active { background: var(--accent); color: var(--on-accent); }
 .study-session-start:hover { filter: brightness(1.08); }
 
 /* ===== FOCUS TIMER ===== */
-#focus-overlay {
+#focus-overlay, #deepwork-overlay {
   display: none; position: fixed; inset: 0; z-index: 10001;
   background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 16px;
 }
-#focus-card {
+#focus-card, #deepwork-card {
   background: var(--surface); border-radius: 20px; max-width: 380px; width: 100%;
   padding: 30px 24px 26px; text-align: center; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
 }
-#focus-close {
+#focus-close, #deepwork-close {
   position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%;
   background: var(--surface2); border: none; cursor: pointer; color: var(--text2); font-family: inherit; font-size: 14px;
 }
 
 /* ===== PERSISTENT TIMER BAR =====
    Sits above the mobile nav so a running session stays visible and pausable
-   while the student browses assignments — the whole reason they're in the app. */
-#focus-minibar {
+   while the student browses assignments — the whole reason they're in the app.
+   Shared rules also drive the deep-work minibar (#deepwork-minibar etc.). */
+#focus-minibar, #deepwork-minibar {
   position: fixed; z-index: 9998;
   left: 12px; right: 12px;
   bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   display: flex; align-items: stretch; gap: 6px;
 }
-#focus-minibar-main {
+#focus-minibar-main, #deepwork-minibar-main {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius);
   padding: 11px 14px; cursor: pointer; font-family: inherit; text-align: left;
   box-shadow: 0 6px 24px rgba(0,0,0,0.22);
 }
-#focus-minibar-dot {
+#focus-minibar-dot, #deepwork-minibar-dot {
   width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
   animation: focusPulse 2s ease-in-out infinite;
 }
-#focus-minibar.is-paused #focus-minibar-dot { background: var(--text2); animation: none; }
+#focus-minibar.is-paused #focus-minibar-dot,
+#deepwork-minibar.is-paused #deepwork-minibar-dot { background: var(--text2); animation: none; }
 @keyframes focusPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
-#focus-minibar-label {
+#focus-minibar-label, #deepwork-minibar-label {
   flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text1);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-#focus-minibar-time {
+#focus-minibar-time, #deepwork-minibar-time {
   font-size: 15px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; flex-shrink: 0;
 }
-#focus-minibar-pause {
+#focus-minibar-pause, #deepwork-minibar-pause {
   width: 46px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border);
   border-radius: 14px; cursor: pointer; font-family: inherit; font-size: 15px; color: var(--text1);
   box-shadow: 0 6px 24px rgba(0,0,0,0.22);
 }
-#focus-minibar-pause:hover, #focus-minibar-main:hover { border-color: var(--accent); }
+#focus-minibar-pause:hover, #focus-minibar-main:hover,
+#deepwork-minibar-pause:hover, #deepwork-minibar-main:hover { border-color: var(--accent); }
 @media (min-width: 601px) {
-  #focus-minibar { left: auto; right: 20px; bottom: 20px; width: 320px; }
+  #focus-minibar, #deepwork-minibar { left: auto; right: 20px; bottom: 20px; width: 320px; }
 }
 
 /* ===== STUDY GOAL ONBOARDING (blocking, like the sync welcome screen) ===== */
@@ -1997,7 +2018,7 @@ mark.syl-mark-active { background: var(--accent); color: var(--on-accent); }
   width: 100%; max-width: 420px; padding: 32px 28px 28px;
   animation: fadeUp 0.25s ease;
 }
-#focus-close:hover { background: var(--border); color: var(--text1); }
+#focus-close:hover, #deepwork-close:hover { background: var(--border); color: var(--text1); }
 .focus-title { font-size: 18px; font-weight: 700; color: var(--text1); margin-bottom: 6px; }
 .focus-sub { font-size: 13px; color: var(--text2); margin-bottom: 18px; line-height: 1.5; }
 .focus-phase-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text2); margin-bottom: 8px; margin-top: 4px; }

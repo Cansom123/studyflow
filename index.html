@@ -512,6 +512,23 @@
     <button id="focus-minibar-pause" onclick="toggleFocusPause()" title="Pause"></button>
   </div>
 
+  <!-- DEEP WORK TIMER (Cal Newport style: one long uninterrupted block, no breaks) -->
+  <div id="deepwork-overlay">
+    <div id="deepwork-card">
+      <button id="deepwork-close" onclick="minimizeDeepWorkTimer()" title="Keep timer running and go back to the app">✕</button>
+      <div id="deepwork-body"></div>
+    </div>
+  </div>
+
+  <div id="deepwork-minibar" style="display:none;">
+    <button id="deepwork-minibar-main" onclick="expandDeepWorkTimer()">
+      <span id="deepwork-minibar-dot"></span>
+      <span id="deepwork-minibar-label"></span>
+      <span id="deepwork-minibar-time"></span>
+    </button>
+    <button id="deepwork-minibar-pause" onclick="toggleDeepWorkPause()" title="Pause"></button>
+  </div>
+
   <!-- STUDY GOAL ONBOARDING (blocks the app like the sync welcome screen — answer or skip) -->
   <div id="study-goal-onboard-overlay" style="display:none;">
     <div id="study-goal-onboard-card">
@@ -779,18 +796,55 @@
           <div class="study-hero-row">
             <div class="study-hero-mini"><span class="study-hero-mini-val" id="study-stat-week">0m</span><span class="study-hero-mini-label">this week</span></div>
             <div class="study-hero-mini"><span class="study-hero-mini-val" id="study-stat-total">0h 0m</span><span class="study-hero-mini-label">all-time</span></div>
+            <div class="study-hero-mini"><span class="study-hero-mini-val" id="study-stat-deepwork-total">0h 0m</span><span class="study-hero-mini-label">deep work</span></div>
           </div>
         </div>
 
         <div class="section-label" style="margin-top:0;">Quick start</div>
-        <div class="card" style="padding:20px;margin-bottom:28px;">
+        <div class="card" style="padding:20px;margin-bottom:16px;">
           <input class="settings-input" id="quick-study-title" placeholder="What are you studying?" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){quickStartFocus();}" />
           <button class="settings-btn" onclick="quickStartFocus()">▶ Start focus session</button>
+        </div>
+
+        <div class="card" style="padding:20px;margin-bottom:28px;">
+          <div class="focus-phase-label" style="margin-bottom:8px;">Deep work</div>
+          <input class="settings-input" id="quick-deepwork-title" placeholder="What are you doing deep work on?" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){quickStartDeepWork();}" />
+          <button class="settings-btn" onclick="quickStartDeepWork()" style="background:var(--orange, #d85a30);">⬛ Start deep work block</button>
+          <div class="card-sub" style="margin-top:10px;font-size:12px;">One long uninterrupted block, no breaks — pick a length and name what you're avoiding before you start.</div>
         </div>
 
         <div class="section-label">Today's scheduled study time</div>
         <div id="study-today-empty" class="card-sub" style="padding:2px 2px 8px;">Nothing scheduled for today. Add study time from the Due Soon calendar, or start a quick session above.</div>
         <div id="study-today-list" style="margin-bottom:28px;"></div>
+
+        <div class="section-label">Study chain</div>
+        <div class="card" style="padding:16px;margin-bottom:28px;">
+          <div class="cal-header">
+            <button class="cal-nav-btn" onclick="shiftStudyChainMonth(-1)" title="Previous month">‹</button>
+            <div class="cal-title" id="study-chain-title"></div>
+            <div style="display:flex;gap:6px;">
+              <button class="cal-today-btn" onclick="studyChainToday()">Today</button>
+              <button class="cal-nav-btn" onclick="shiftStudyChainMonth(1)" title="Next month">›</button>
+            </div>
+          </div>
+          <div class="cal-grid cal-dow-row">
+            <div class="cal-dow">S</div><div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
+          </div>
+          <div class="cal-grid" id="study-chain-grid"></div>
+          <div id="study-chain-detail"></div>
+          <div class="chain-lead-lag-row">
+            <div class="chain-lead-lag-card">
+              <div class="chain-lead-lag-label">Lead measure</div>
+              <div class="chain-lead-lag-value" id="chain-lead-value">0 day chain</div>
+              <div class="chain-lead-lag-sub">what you're doing right now</div>
+            </div>
+            <div class="chain-lead-lag-card clickable" onclick="jumpTo('goals')">
+              <div class="chain-lead-lag-label">Lag measure</div>
+              <div class="chain-lead-lag-value" id="chain-lag-value">0 goals</div>
+              <div class="chain-lead-lag-sub">what it's building toward</div>
+            </div>
+          </div>
+        </div>
 
         <div class="section-label">Study goals</div>
         <div class="card" style="padding:24px;margin-bottom:16px;">
@@ -5556,6 +5610,9 @@ function renderStudyTab() {
   document.getElementById('study-stat-today').textContent = r.todayFmt;
   document.getElementById('study-stat-week').textContent = r.weekFmt;
   totalEl.textContent = r.totalFmt;
+  const deepTotalEl = document.getElementById('study-stat-deepwork-total');
+  if (deepTotalEl) deepTotalEl.textContent = r.deepWorkTotalFmt;
+  renderStudyChain();
 
   const todayFill = document.getElementById('study-goal-today-fill');
   const weekFill = document.getElementById('study-goal-week-fill');
@@ -5956,6 +6013,386 @@ function closeFocusTimer() {
   document.getElementById('focus-overlay').style.display = 'none';
   focusState = null;
   renderFocusMiniBar();
+}
+
+/* ===== Deep work timer (Cal Newport's "Deep Work") =====
+   Deliberately the opposite shape of the focus timer above: one long
+   uninterrupted block instead of short escalating rounds, no break offered
+   mid-session, and a short pre-session ritual (name the task, name what
+   you're explicitly avoiding) instead of a post-round reward loop. Shares
+   the study_sessions table (session_type: 'deep_work') so it shows up on
+   the same chain calendar and goal-progress totals as regular study. */
+let deepWorkState = null;
+let deepWorkOriginalTitle = null;
+const DEEP_WORK_DURATIONS = [60, 90, 120, 180];
+
+function fmtDeepWorkDuration(min) {
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+async function quickStartDeepWork() {
+  const input = document.getElementById('quick-deepwork-title');
+  const title = (input.value.trim() || 'Deep work session');
+  const { ok, data } = await sbFetchWithRetry('/rest/v1/study_sessions', 'POST', {
+    user_id: USER_ID, title, session_date: ymd(new Date()), completed: false, session_type: 'deep_work',
+  }, true);
+  await loadStudySessions();
+  input.value = '';
+  const created = ok && Array.isArray(data) && data[0]
+    ? data[0]
+    : cachedStudySessions.find(s => s.title === title && s.session_date === ymd(new Date()) && !s.completed && s.session_type === 'deep_work');
+  if (created) openDeepWorkTimer(created.id);
+}
+
+function openDeepWorkTimer(sessionId) {
+  const s = cachedStudySessions.find(x => x.id === sessionId);
+  if (!s) return;
+  deepWorkState = {
+    sessionId,
+    sessionTitle: s.title,
+    blockMin: 90,
+    avoiding: '',
+    phase: 'setup',
+    remainingSec: 0,
+    timerHandle: null,
+    deadline: 0,
+    paused: false,
+    minimized: false,
+    awaiting: false,
+    completedMin: 0,
+  };
+  document.getElementById('deepwork-overlay').style.display = 'flex';
+  renderDeepWorkMiniBar();
+  renderDeepWorkSetup();
+}
+
+function renderDeepWorkSetup() {
+  const body = document.getElementById('deepwork-body');
+  body.innerHTML = `
+    <div class="focus-title">Deep work block</div>
+    <div class="focus-sub">${escapeHtml(deepWorkState.sessionTitle)}</div>
+    <div class="focus-phase-label">Block length</div>
+    <div class="focus-duration-row">
+      ${DEEP_WORK_DURATIONS.map(m => `<button class="focus-duration-btn${m === deepWorkState.blockMin ? ' active' : ''}" onclick="deepWorkPickDuration(${m})">${fmtDeepWorkDuration(m)}</button>`).join('')}
+    </div>
+    <div class="focus-sub" style="margin-top:10px;">One uninterrupted block — no breaks until it's done.</div>
+    <button class="settings-btn" onclick="deepWorkGoToCommit()">Continue</button>
+  `;
+}
+
+function deepWorkPickDuration(min) {
+  deepWorkState.blockMin = min;
+  renderDeepWorkSetup();
+}
+
+function deepWorkGoToCommit() {
+  const body = document.getElementById('deepwork-body');
+  body.innerHTML = `
+    <div class="focus-title">Before you start</div>
+    <div class="focus-sub">What are you explicitly avoiding this block — phone, tabs, notifications? Naming it now makes it easier to hold the line.</div>
+    <input class="settings-input" id="deepwork-avoiding" placeholder='e.g. "phone in another room, no email"' style="text-align:center;" onkeydown="if(event.key==='Enter'){deepWorkStart();}" />
+    <button class="settings-btn" onclick="deepWorkStart()">Start deep work</button>
+  `;
+  const el = document.getElementById('deepwork-avoiding');
+  if (el) el.focus();
+}
+
+function deepWorkStart() {
+  const input = document.getElementById('deepwork-avoiding');
+  deepWorkState.avoiding = input ? input.value.trim() : '';
+  deepWorkState.phase = 'active';
+  startDeepWorkCountdown(deepWorkState.blockMin * 60);
+  renderDeepWorkActive();
+}
+
+function startDeepWorkCountdown(seconds) {
+  clearInterval(deepWorkState.timerHandle);
+  deepWorkState.remainingSec = seconds;
+  deepWorkState.deadline = Date.now() + seconds * 1000;
+  deepWorkState.paused = false;
+  deepWorkState.awaiting = false;
+  if (!deepWorkOriginalTitle) deepWorkOriginalTitle = document.title;
+  deepWorkState.timerHandle = setInterval(deepWorkTick, 250);
+  deepWorkTick();
+}
+
+function deepWorkTick() {
+  if (!deepWorkState || deepWorkState.paused) return;
+  const remaining = Math.max(0, Math.round((deepWorkState.deadline - Date.now()) / 1000));
+  if (remaining === deepWorkState.remainingSec) return; // same displayed second — skip re-render
+  deepWorkState.remainingSec = remaining;
+  if (remaining <= 0) {
+    clearInterval(deepWorkState.timerHandle);
+    deepWorkState.timerHandle = null;
+    onDeepWorkComplete();
+    return;
+  }
+  updateDeepWorkTitle();
+  if (!deepWorkState.minimized) renderDeepWorkActive();
+  renderDeepWorkMiniBar();
+}
+
+function toggleDeepWorkPause() {
+  if (!deepWorkState || deepWorkState.awaiting) return;
+  if (deepWorkState.paused) {
+    deepWorkState.deadline = Date.now() + deepWorkState.remainingSec * 1000;
+    deepWorkState.paused = false;
+  } else {
+    deepWorkState.remainingSec = Math.max(0, Math.round((deepWorkState.deadline - Date.now()) / 1000));
+    deepWorkState.paused = true;
+  }
+  renderDeepWorkActive();
+  renderDeepWorkMiniBar();
+}
+
+function minimizeDeepWorkTimer() {
+  if (!deepWorkState) return;
+  deepWorkState.minimized = true;
+  document.getElementById('deepwork-overlay').style.display = 'none';
+  renderDeepWorkMiniBar();
+}
+
+function expandDeepWorkTimer() {
+  if (!deepWorkState) return;
+  deepWorkState.minimized = false;
+  document.getElementById('deepwork-overlay').style.display = 'flex';
+  if (deepWorkState.awaiting) renderDeepWorkComplete(); else renderDeepWorkActive();
+  renderDeepWorkMiniBar();
+}
+
+function updateDeepWorkTitle() {
+  if (!deepWorkState) return;
+  if (deepWorkState.awaiting) { document.title = deepWorkOriginalTitle || 'StudyFlow'; return; }
+  document.title = deepWorkState.paused
+    ? `⏸ ${fmtClock(deepWorkState.remainingSec)} - StudyFlow`
+    : `${fmtClock(deepWorkState.remainingSec)} · Deep work - StudyFlow`;
+}
+
+function renderDeepWorkMiniBar() {
+  const bar = document.getElementById('deepwork-minibar');
+  if (!deepWorkState || !deepWorkState.minimized) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.classList.toggle('is-paused', !!deepWorkState.paused);
+  const label = document.getElementById('deepwork-minibar-label');
+  const time = document.getElementById('deepwork-minibar-time');
+  label.textContent = deepWorkState.awaiting ? 'Block done - tap to continue'
+    : deepWorkState.paused ? 'Paused · deep work'
+    : `Deep work · ${deepWorkState.sessionTitle}`;
+  time.textContent = deepWorkState.awaiting ? '' : fmtClock(deepWorkState.remainingSec);
+  const pauseBtn = document.getElementById('deepwork-minibar-pause');
+  pauseBtn.style.display = deepWorkState.awaiting ? 'none' : '';
+  pauseBtn.textContent = deepWorkState.paused ? '▶' : '❚❚';
+  pauseBtn.title = deepWorkState.paused ? 'Resume' : 'Pause';
+}
+
+function renderDeepWorkActive() {
+  const body = document.getElementById('deepwork-body');
+  body.innerHTML = `
+    <div class="focus-phase-label">Deep work${deepWorkState.paused ? ' · paused' : ''}</div>
+    <div class="focus-title" style="margin-bottom:0;">${escapeHtml(deepWorkState.sessionTitle)}</div>
+    <div class="focus-timer-display">${fmtClock(deepWorkState.remainingSec)}</div>
+    ${deepWorkState.avoiding ? `<div class="focus-sub">Avoiding: "${escapeHtml(deepWorkState.avoiding)}"</div>` : ''}
+    <div class="focus-btn-row stack" style="margin-top:14px;">
+      <button class="sync-btn" onclick="toggleDeepWorkPause()">${deepWorkState.paused ? 'Resume' : 'Pause'}</button>
+      <button class="help-toggle-btn" onclick="deepWorkEndEarly()"><span style="font-size:13px;color:var(--text2);">End session early</span></button>
+    </div>
+  `;
+}
+
+function onDeepWorkComplete() {
+  deepWorkState.awaiting = true;
+  deepWorkState.completedMin = deepWorkState.blockMin;
+  updateDeepWorkTitle();
+  showReward(`Deep work block done - ${fmtDeepWorkDuration(deepWorkState.blockMin)}, no breaks.`, 'focus');
+  if (deepWorkState.minimized) expandDeepWorkTimer();
+  if (document.visibilityState !== 'visible') {
+    notifyBrowser('Deep work block done!', { body: `${fmtDeepWorkDuration(deepWorkState.blockMin)} of uninterrupted work complete.`, tag: 'sf-deepwork' });
+  }
+  renderDeepWorkComplete();
+  renderDeepWorkMiniBar();
+}
+
+function renderDeepWorkComplete() {
+  const body = document.getElementById('deepwork-body');
+  body.innerHTML = `
+    <div class="focus-title">Block complete</div>
+    <div class="focus-sub">${fmtDeepWorkDuration(deepWorkState.blockMin)} of uninterrupted deep work. That's a thick X on the chain today.</div>
+    <button class="settings-btn" onclick="deepWorkFinish()">Finish</button>
+  `;
+}
+
+// Same "credit whatever real progress happened" rule as persistFocusProgress —
+// bailing early on a deep work block still logs the minutes actually spent.
+async function persistDeepWorkProgress(minutesEarned, markComplete) {
+  const id = deepWorkState.sessionId;
+  const s = cachedStudySessions.find(x => x.id === id);
+  if (!s) return;
+  s.minutes_studied = (s.minutes_studied || 0) + minutesEarned;
+  if (markComplete) s.completed = true;
+  renderStudySessionsForDay();
+  renderStudyTab();
+  const patch = { minutes_studied: s.minutes_studied };
+  if (markComplete) patch.completed = true;
+  await sbFetchWithRetry(`/rest/v1/study_sessions?id=eq.${id}`, 'PATCH', patch, true);
+}
+
+async function deepWorkFinish() {
+  const minutesEarned = deepWorkState.completedMin || 0;
+  await persistDeepWorkProgress(minutesEarned, true);
+  closeDeepWorkTimer();
+  showReward(`Deep work logged - ${fmtDeepWorkDuration(minutesEarned)}.`, 'focus');
+}
+
+async function deepWorkEndEarly() {
+  if (!deepWorkState) return;
+  const elapsedMin = Math.round((deepWorkState.blockMin * 60 - deepWorkState.remainingSec) / 60);
+  if (elapsedMin > 0) {
+    await persistDeepWorkProgress(elapsedMin, false);
+    showReward(`Saved - ${fmtDeepWorkDuration(elapsedMin)} of deep work logged.`, 'focus');
+  }
+  closeDeepWorkTimer();
+}
+
+function closeDeepWorkTimer() {
+  if (deepWorkState && deepWorkState.timerHandle) clearInterval(deepWorkState.timerHandle);
+  if (deepWorkOriginalTitle) { document.title = deepWorkOriginalTitle; deepWorkOriginalTitle = null; }
+  document.getElementById('deepwork-overlay').style.display = 'none';
+  deepWorkState = null;
+  renderDeepWorkMiniBar();
+}
+
+/* ===== Study chain calendar =====
+   The Seinfeld "don't break the chain" method, made real from actual logged
+   minutes instead of a manual checkbox: a day counts once it has 15+ minutes
+   of study, and gets a thicker X if any of that was a deep-work block — so
+   the type of studying is visible at a glance, not just that it happened.
+   Doubles as the lead/lag measure pairing from The 4 Disciplines of
+   Execution: the chain is the lead measure (what you did today, which you
+   fully control), the goals list is the lag measure (the future outcome the
+   chain is building toward). */
+const STUDY_CHAIN_THRESHOLD_MIN = 15;
+let studyChainMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
+let studyChainSelectedDate = null;
+
+function studyChainDayTotals() {
+  const byDate = {};
+  cachedStudySessions.forEach(s => {
+    if (!s.session_date) return;
+    const min = s.minutes_studied || 0;
+    const entry = byDate[s.session_date] || (byDate[s.session_date] = { studyMin: 0, deepMin: 0 });
+    if (s.session_type === 'deep_work') entry.deepMin += min; else entry.studyMin += min;
+  });
+  return byDate;
+}
+
+// Consecutive days ending today (or yesterday, so an unstarted "today" doesn't
+// zero out an otherwise-live chain) that hit the threshold — derived straight
+// from real logged minutes rather than a separate counter that can drift.
+function computeStudyChainLength(byDate) {
+  const todayKey = ymd(new Date());
+  const cursor = new Date(); cursor.setHours(0, 0, 0, 0);
+  const startKey = ymd(cursor);
+  const startTotal = byDate[startKey] ? byDate[startKey].studyMin + byDate[startKey].deepMin : 0;
+  if (startTotal < STUDY_CHAIN_THRESHOLD_MIN) cursor.setDate(cursor.getDate() - 1);
+  let count = 0;
+  while (true) {
+    const key = ymd(cursor);
+    const total = byDate[key] ? byDate[key].studyMin + byDate[key].deepMin : 0;
+    if (total < STUDY_CHAIN_THRESHOLD_MIN) break;
+    count++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return count;
+}
+
+function renderStudyChain() {
+  const gridEl = document.getElementById('study-chain-grid');
+  const titleEl = document.getElementById('study-chain-title');
+  if (!gridEl || !titleEl) return;
+
+  const year = studyChainMonth.getFullYear();
+  const month = studyChainMonth.getMonth();
+  titleEl.textContent = `${months[month]} ${year}`;
+
+  const startDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const todayStr = ymd(new Date());
+  const byDate = studyChainDayTotals();
+
+  const cells = [];
+  for (let i = startDow - 1; i >= 0; i--) {
+    const dnum = daysInPrevMonth - i;
+    cells.push({ dnum, dateObj: new Date(year, month - 1, dnum), otherMonth: true });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ dnum: d, dateObj: new Date(year, month, d), otherMonth: false });
+  }
+  let trail = 1;
+  while (cells.length % 7 !== 0) {
+    cells.push({ dnum: trail, dateObj: new Date(year, month + 1, trail), otherMonth: true });
+    trail++;
+  }
+
+  gridEl.innerHTML = cells.map(c => {
+    const key = ymd(c.dateObj);
+    const entry = byDate[key];
+    const total = entry ? entry.studyMin + entry.deepMin : 0;
+    const chained = total >= STUDY_CHAIN_THRESHOLD_MIN;
+    const thick = !!entry && entry.deepMin > 0;
+    const isToday = key === todayStr;
+    const isSelected = key === studyChainSelectedDate;
+    return `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" onclick="selectStudyChainDate('${key}')">
+      <div class="cal-day-num">${c.dnum}</div>
+      <div class="cal-day-dots">
+        ${chained ? `<div class="cal-day-chain-x${thick ? ' thick' : ''}" title="${thick ? 'Deep work' : 'Study'} day">✕</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const chainLen = computeStudyChainLength(byDate);
+  const leadEl = document.getElementById('chain-lead-value');
+  if (leadEl) leadEl.textContent = `${chainLen} day chain${chainLen >= 1 ? ' 🔥' : ''}`;
+  const lagEl = document.getElementById('chain-lag-value');
+  if (lagEl) lagEl.textContent = `${userGoals.length} goal${userGoals.length !== 1 ? 's' : ''}`;
+
+  renderStudyChainDetail(byDate);
+}
+
+function renderStudyChainDetail(byDate) {
+  const el = document.getElementById('study-chain-detail');
+  if (!el) return;
+  if (!studyChainSelectedDate) { el.textContent = ''; return; }
+  const entry = byDate[studyChainSelectedDate];
+  const d = new Date(studyChainSelectedDate + 'T00:00:00');
+  const dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (!entry || (entry.studyMin + entry.deepMin) === 0) {
+    el.textContent = `${dateLabel} — no study logged`;
+    return;
+  }
+  const parts = [];
+  if (entry.studyMin > 0) parts.push(`${entry.studyMin}m study`);
+  if (entry.deepMin > 0) parts.push(`${entry.deepMin}m deep work`);
+  el.textContent = `${dateLabel} — ${parts.join(' + ')}`;
+}
+
+function selectStudyChainDate(key) {
+  studyChainSelectedDate = studyChainSelectedDate === key ? null : key;
+  renderStudyChain();
+}
+
+function shiftStudyChainMonth(delta) {
+  studyChainMonth = new Date(studyChainMonth.getFullYear(), studyChainMonth.getMonth() + delta, 1);
+  renderStudyChain();
+}
+
+function studyChainToday() {
+  const t = new Date();
+  studyChainMonth = new Date(t.getFullYear(), t.getMonth(), 1);
+  studyChainSelectedDate = ymd(t);
+  renderStudyChain();
 }
 
 function renderAllWork(assignments) {

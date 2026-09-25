@@ -3369,12 +3369,8 @@ function openCompletedAssignments() {
   const overlay = document.getElementById('completed-detail-overlay');
   const body = document.getElementById('completed-detail-body');
   if (!overlay || !body) return;
-  const done = cachedAssignments
-    .filter(a => a.completed || doneSet.has(decodeURIComponent(doneKey(a))))
-    .sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0));
-  body.innerHTML = done.length
-    ? done.map(a => aCard(a, false, false, doneSet)).join('')
-    : `<div class="empty-box"><div class="empty-title">Nothing completed yet</div><div class="empty-sub">Assignments you check off will show up here.</div></div>`;
+  // Pure HTML building lives in js/render-utils.js.
+  body.innerHTML = completedAssignmentsBodyHTML(cachedAssignments, doneSet);
   overlay.style.display = 'block';
 }
 function closeCompletedAssignments() {

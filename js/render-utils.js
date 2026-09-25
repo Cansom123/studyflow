@@ -566,3 +566,15 @@ export function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
     <div id="syl-save-msg" style="margin-top:10px;"></div>
   `;
 }
+
+// Body HTML for the "completed assignments" overlay: everything marked
+// done (either Canvas-completed or checked off in doneSet), most recently
+// completed first, or the empty-state box.
+export function completedAssignmentsBodyHTML(assignments, doneSet) {
+  const done = assignments
+    .filter(a => a.completed || doneSet.has(decodeURIComponent(doneKey(a))))
+    .sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0));
+  return done.length
+    ? done.map(a => aCard(a, false, false, doneSet)).join('')
+    : `<div class="empty-box"><div class="empty-title">Nothing completed yet</div><div class="empty-sub">Assignments you check off will show up here.</div></div>`;
+}

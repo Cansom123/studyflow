@@ -12,13 +12,14 @@
 
 import { escapeHtml, escapeRegex, cleanCourseName, getBadge, getDueText, doneKey, letterGradeClass } from './format-utils.js';
 import { linkIconHTML } from './link-utils.js';
-import { classifyAssignmentWork } from './checklist-core.js';
+import { classifyAssignmentWork, ymd } from './checklist-core.js';
 
 // Deliberately NOT the same binding as index.html's classic-script `months`
 // (which is called synchronously at page load, before any module runs, so
 // it has to stay put) -- a tiny duplicated data array is far safer than a
 // load-order dependency between a module and the classic script.
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 export function announcementTimeAgo(iso) {
   if (!iso) return '';
@@ -577,4 +578,27 @@ export function completedAssignmentsBodyHTML(assignments, doneSet) {
   return done.length
     ? done.map(a => aCard(a, false, false, doneSet)).join('')
     : `<div class="empty-box"><div class="empty-title">Nothing completed yet</div><div class="empty-sub">Assignments you check off will show up here.</div></div>`;
+}
+
+// The Upcoming tab's "selected day" panel: a label (full weekday + month +
+// day, or "Today" when the selected date is today) plus the assignment
+// cards due that day, or the "nothing due" message. dueCalSelectedDate is
+// a "YYYY-MM-DD" key; todayStr is ymd(new Date()) computed by the caller.
+export function dueCalSelectedBodyHTML(dueCalAssignments, dueCalSelectedDate, doneSet, todayStr) {
+  const items = dueCalAssignments.filter(a => {
+    const d = new Date(a.due_date); d.setHours(0, 0, 0, 0);
+    return ymd(d) === dueCalSelectedDate;
+  });
+
+  const [y, m, d] = dueCalSelectedDate.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const label = dueCalSelectedDate === todayStr
+    ? 'Today'
+    : `${days[dateObj.getDay()]}, ${months[dateObj.getMonth()]} ${dateObj.getDate()}`;
+
+  const itemsHTML = items.length
+    ? items.map(a => aCard(a, false, false, doneSet)).join('')
+    : `<div class="card-sub" style="padding:4px 2px;">Nothing due this day.</div>`;
+
+  return { label, itemsHTML };
 }

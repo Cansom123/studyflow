@@ -5401,21 +5401,10 @@ function renderDueCalSelected() {
   const labelEl = document.getElementById('due-cal-selected-label');
   if (!listEl || !labelEl || !dueCalSelectedDate) return;
 
-  const items = dueCalAssignments.filter(a => {
-    const d = new Date(a.due_date); d.setHours(0,0,0,0);
-    return ymd(d) === dueCalSelectedDate;
-  });
-
-  const [y, m, d] = dueCalSelectedDate.split('-').map(Number);
-  const dateObj = new Date(y, m - 1, d);
-  const todayStr = ymd(new Date());
-  labelEl.textContent = dueCalSelectedDate === todayStr
-    ? 'Today'
-    : `${days[dateObj.getDay()]}, ${months[dateObj.getMonth()]} ${dateObj.getDate()}`;
-
-  listEl.innerHTML = items.length
-    ? items.map(a => aCard(a, false, false, doneSet)).join('')
-    : `<div class="card-sub" style="padding:4px 2px;">Nothing due this day.</div>`;
+  // Pure filtering/label/HTML building lives in js/render-utils.js.
+  const r = dueCalSelectedBodyHTML(dueCalAssignments, dueCalSelectedDate, doneSet, ymd(new Date()));
+  labelEl.textContent = r.label;
+  listEl.innerHTML = r.itemsHTML;
 
   renderStudySessionsForDay();
 }

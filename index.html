@@ -1869,9 +1869,10 @@ const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 updateLastSyncedLabel();
 
-async function sbFetch(path, method='GET', body=null, useAuth=true) {
+async function sbFetch(path, method='GET', body=null, useAuth=true, extraHeaders=null) {
   const headers = { 'Content-Type': 'application/json', 'apikey': SB_KEY };
   if (useAuth && ACCESS_TOKEN) headers['Authorization'] = `Bearer ${ACCESS_TOKEN}`;
+  if (extraHeaders) Object.assign(headers, extraHeaders);
   const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(`${SB_URL}${path}`, opts);
@@ -1895,11 +1896,11 @@ async function refreshSession() {
   return false;
 }
 
-async function sbFetchWithRetry(path, method='GET', body=null, useAuth=true) {
-  let result = await sbFetch(path, method, body, useAuth);
+async function sbFetchWithRetry(path, method='GET', body=null, useAuth=true, extraHeaders=null) {
+  let result = await sbFetch(path, method, body, useAuth, extraHeaders);
   if (result.status === 401 && REFRESH_TOKEN) {
     const refreshed = await refreshSession();
-    if (refreshed) result = await sbFetch(path, method, body, useAuth);
+    if (refreshed) result = await sbFetch(path, method, body, useAuth, extraHeaders);
     else { clearSession(); showLoginScreen(); }
   }
   return result;
@@ -5342,6 +5343,7 @@ const REWARD_ICONS = {
   target:   '<circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="10" cy="10" r="3.5" stroke="currentColor" stroke-width="1.6" fill="none"/>',
   focus:    '<circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6" fill="none"/><polygon points="8.5 6.5 14 10 8.5 13.5 8.5 6.5" fill="currentColor"/>',
   bell:     '<path d="M6 8a4 4 0 0 1 8 0c0 3 1 4 1.5 4.5H4.5C5 12 6 11 6 8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/><path d="M8.3 15a1.8 1.8 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>',
+  error:    '<circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6" fill="none"/><line x1="10" y1="6" x2="10" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="14" r="1" fill="currentColor"/>',
 };
 
 // Small pop-in toast for an instant positive reaction to an action — opening the
@@ -6035,15 +6037,26 @@ function fmtDeepWorkDuration(min) {
 async function quickStartDeepWork() {
   const input = document.getElementById('quick-deepwork-title');
   const title = (input.value.trim() || 'Deep work session');
+  // Ask Postgres for the row it just created instead of reloading the whole
+  // list and guessing which one is ours by title/date -- that guess can
+  // silently miss (stale cache, a same-titled row from an earlier attempt),
+  // leaving the button looking like it does nothing.
   const { ok, data } = await sbFetchWithRetry('/rest/v1/study_sessions', 'POST', {
     user_id: USER_ID, title, session_date: ymd(new Date()), completed: false, session_type: 'deep_work',
-  }, true);
+  }, true, { 'Prefer': 'return=representation' });
   await loadStudySessions();
   input.value = '';
-  const created = ok && Array.isArray(data) && data[0]
-    ? data[0]
-    : cachedStudySessions.find(s => s.title === title && s.session_date === ymd(new Date()) && !s.completed && s.session_type === 'deep_work');
-  if (created) openDeepWorkTimer(created.id);
+  const created = ok && Array.isArray(data) && data[0] ? data[0] : null;
+  if (created) {
+    // openDeepWorkTimer looks the session up in cachedStudySessions -- make
+    // sure it's actually there rather than trusting the reload above to have
+    // included it (read-after-write timing isn't guaranteed).
+    if (!cachedStudySessions.some(s => s.id === created.id)) cachedStudySessions.push(created);
+    openDeepWorkTimer(created.id);
+  } else {
+    console.error('quickStartDeepWork: insert did not return the created row', { ok, data });
+    showReward("Couldn't start deep work - try again in a second.", 'error');
+  }
 }
 
 function openDeepWorkTimer(sessionId) {

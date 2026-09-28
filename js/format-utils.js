@@ -6,13 +6,13 @@
    they get their own module rather than living inside either of those.
 =========================== */
 
-export function escapeHtml(str) {
+function escapeHtml(str) {
   return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-export function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
-export function cleanCourseName(name) {
+function cleanCourseName(name) {
   // Strip common Canvas administrative suffixes, preserve the actual course title.
   // Handles formats like:
   //   "English 12 H - S2 - TEACHER, F | section -- SPR26 - P01"  → "English 12 H"
@@ -33,7 +33,7 @@ export function cleanCourseName(name) {
 // timestamp diff makes a due time later today (e.g. 11:59pm) round up to
 // "1 day away" and get mislabeled "due tomorrow" — this always answers 0 for
 // anything still due today, no matter what time it's due.
-export function dayDiff(due_date, ref) {
+function dayDiff(due_date, ref) {
   const today = ref || (() => { const t = new Date(); t.setHours(0,0,0,0); return t; })();
   // A bare "YYYY-MM-DD" (no time) is parsed as UTC midnight by the Date
   // constructor; reinterpreting that instant in local time can silently
@@ -47,7 +47,7 @@ export function dayDiff(due_date, ref) {
   return Math.round((dueMidnight - today) / (1000*60*60*24));
 }
 
-export function getBadge(type) {
+function getBadge(type) {
   const t = (type || '').toLowerCase();
   if (t.includes('quiz')) return ['badge-quiz','Quiz'];
   if (t.includes('online_upload')||t.includes('test')||t.includes('exam')) return ['badge-test','Test'];
@@ -56,7 +56,7 @@ export function getBadge(type) {
   return ['badge-hw','Homework'];
 }
 
-export function getDueText(due_date, isOverdue, isLocked, lockReason) {
+function getDueText(due_date, isOverdue, isLocked, lockReason) {
   // Canvas's "locked" covers two opposite situations: the deadline already
   // passed (closed -- can't submit) and the assignment isn't available yet
   // (a future unlock date or an unmet module prerequisite -- can't submit
@@ -85,23 +85,23 @@ export function getDueText(due_date, isOverdue, isLocked, lockReason) {
 // out of the single-quoted onclick="toggleDone('${key}',this)" JS string for any title/course
 // with an apostrophe -- silently killing the click handler. %27 round-trips through
 // decodeURIComponent fine, so escape it too.
-export function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`).replace(/'/g, '%27'); }
+function doneKey(a) { return encodeURIComponent(`${a.title}||${a.course}`).replace(/'/g, '%27'); }
 
 // Canvas course names encode the section as "... | SECTION -- ..."; pulls
 // just the section token so a concluded course's selection can be
 // carried over to its current-semester equivalent by matching sections.
-export function extractSectionCode(name) {
+function extractSectionCode(name) {
   if (!name) return null;
   const m = name.match(/\|\s*(\S+)\s+--/);
   return m ? m[1] : null;
 }
 
 // Strips characters that are illegal (or awkward) in a downloaded filename.
-export function safeFileName(name) {
+function safeFileName(name) {
   return (name || 'Syllabus').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-export function fmtClock(totalSec) {
+function fmtClock(totalSec) {
   const m = Math.floor(totalSec / 60), s = totalSec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
@@ -109,7 +109,7 @@ export function fmtClock(totalSec) {
 // CSS class for a letter grade's A/B/C/other color coding. Shared by the
 // Grades tab's course cards and Home's mini grade list (previously
 // duplicated verbatim between them).
-export function letterGradeClass(letter) {
+function letterGradeClass(letter) {
   if (letter.startsWith('A')) return 'grade-a';
   if (letter.startsWith('B')) return 'grade-b';
   if (letter.startsWith('C')) return 'grade-c';

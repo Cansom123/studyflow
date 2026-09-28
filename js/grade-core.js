@@ -18,11 +18,8 @@
    coco.1 can't invent assignments, courses, or dates that aren't real.
 =========================== */
 
-import { assignmentDescriptionExcerpt } from './coco-core.js';
-import { dayDiff, doneKey } from './format-utils.js';
-import { fmtTime12 } from './study-utils.js';
 
-export function gradeBreakdownForCourse(courseName, cachedGradedAssignments, cachedAssignments) {
+function gradeBreakdownForCourse(courseName, cachedGradedAssignments, cachedAssignments) {
   const norm = s => (s || '').trim().toLowerCase();
   const rows = cachedGradedAssignments.filter(a => norm(a.course) === norm(courseName));
   const graded = rows.filter(a => a.score != null && a.points_possible);
@@ -45,7 +42,7 @@ export function gradeBreakdownForCourse(courseName, cachedGradedAssignments, cac
 // from and is verified against (see cocoVerifyGradeTips in coco-verify.js).
 // Same refactor as gradeBreakdownForCourse above: used to read cachedGrades
 // directly, now every dependency is a plain parameter.
-export function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cachedAssignments) {
+function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cachedAssignments) {
   const norm = s => (s || '').trim().toLowerCase();
   const grade = cachedGrades.find(g => norm(g.course_name) === norm(courseName));
   const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
@@ -112,7 +109,7 @@ export function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignmen
 // Structured summary of what's actually due, so coco.1 can't invent assignments,
 // courses, or dates that aren't real. Capped so a heavy course load doesn't
 // blow the small model's context window.
-export function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, limit = 20) {
+function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, limit = 20) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const active = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a))));
   const sorted = [...active].sort((a, b) => {

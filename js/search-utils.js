@@ -6,7 +6,6 @@
    highlight matched terms.
 =========================== */
 
-import { escapeHtml, escapeRegex, cleanCourseName } from './format-utils.js';
 
 const ASK_STOPWORDS = new Set([
   'what','whats',"what's",'is','are','was','were','the','a','an','of','for','my','me','in','on','to','at',
@@ -15,14 +14,14 @@ const ASK_STOPWORDS = new Set([
   'much','many','need','needed','some','out','into','from','also'
 ]);
 
-export function extractAskKeywords(q) {
+function extractAskKeywords(q) {
   return q.toLowerCase()
     .replace(/[^\w\s%]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length > 1 && !ASK_STOPWORDS.has(w));
 }
 
-export function highlightAskKeywords(text, keywords) {
+function highlightAskKeywords(text, keywords) {
   let escaped = escapeHtml(text);
   keywords.forEach(k => {
     const rx = new RegExp('(' + escapeRegex(k) + ')', 'ig');
@@ -38,7 +37,7 @@ export function highlightAskKeywords(text, keywords) {
 // duplicated verbatim between literalSearchWithinSyllabus and
 // highlightExactPassage). Returns escaped HTML either way, even with no
 // query or no matches, so the caller can always set it directly.
-export function markLiteralMatchesHTML(rawText, query) {
+function markLiteralMatchesHTML(rawText, query) {
   const escapedRaw = escapeHtml(rawText);
   if (!query) return { html: escapedRaw, matchCount: 0 };
   const rx = new RegExp(escapeRegex(query), 'ig');
@@ -55,7 +54,7 @@ export function markLiteralMatchesHTML(rawText, query) {
 // query, or no candidates found), matching the original code's behavior
 // of leaving the previous result list alone in those cases rather than
 // clearing it.
-export function syllabiKeywordAnswer(cachedSyllabi, syllabusCourses, q) {
+function syllabiKeywordAnswer(cachedSyllabi, syllabusCourses, q) {
   const keywords = extractAskKeywords(q);
 
   if (keywords.length === 0) {
@@ -113,7 +112,7 @@ export function syllabiKeywordAnswer(cachedSyllabi, syllabusCourses, q) {
 // (no line matched), or 'found'. In the 'vague'/'none' cases html is just
 // the escaped, unmarked raw text -- matching the original's behavior of
 // falling back to plain text rather than leaving the view untouched.
-export function rankedKeywordSearchHTML(raw, q) {
+function rankedKeywordSearchHTML(raw, q) {
   const keywords = extractAskKeywords(q);
   if (keywords.length === 0) {
     return { html: escapeHtml(raw), status: 'vague' };

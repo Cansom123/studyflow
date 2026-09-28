@@ -12,15 +12,13 @@
    scaffolding for an incremental migration, not the end state.
 =========================== */
 
-import { escapeRegex } from './format-utils.js';
-import { extractAskKeywords } from './search-utils.js';
 
 /* ---- 1. RETRIEVAL ---------------------------------------------------- */
 
 // Words students use vs. words syllabi use. Each group is bidirectional: any
 // term in a group matches a line containing any other term in that group.
 // This is what lets "what if I skip class" find "unexcused absences".
-export const COCO_TOPICS = [
+const COCO_TOPICS = [
   ['attendance','attend','attends','attending','absence','absences','absent','miss','missed','missing','skip','skipped','skipping','present','showing','show','class','classes','lecture','lectures','session','sessions'],
   ['late','overdue','deadline','deadlines','past','extension','extensions','tardy','delay','delayed','after'],
   ['grade','grades','grading','graded','point','points','percent','percentage','weight','weighted','weighting','worth','score','scores','scoring','curve','curved','gpa','letter','mark','marks','breakdown','count','counts','counted','counting','portion','toward','towards','drop','dropped','lowest','highest'],
@@ -45,7 +43,7 @@ export const COCO_TOPICS = [
   ['schedule','calendar','date','dates','day','days','week','weeks','time','times','when','deadline'],
 ];
 
-export function cocoExpandTerms(keywords) {
+function cocoExpandTerms(keywords) {
   const expanded = new Set(keywords);
   keywords.forEach(k => {
     COCO_TOPICS.forEach(group => {
@@ -58,7 +56,7 @@ export function cocoExpandTerms(keywords) {
 // Splits a syllabus into retrievable units. Lines are the natural unit here
 // (syllabi are line-oriented), but very long lines get sentence-split so we
 // don't hand the model a whole paragraph when one sentence would do.
-export function cocoSegments(contextText) {
+function cocoSegments(contextText) {
   const segments = [];
   (contextText || '').split('\n').forEach(line => {
     // Drop list markers so quoted answers read as sentences, not raw list items.
@@ -82,7 +80,7 @@ export function cocoSegments(contextText) {
 //   - Rare terms outweigh common ones (IDF). Without this, a generic word like
 //     "class" — which appears in half a syllabus — drowns out the actual signal,
 //     e.g. "skip class" wrongly matching "...put away during class."
-export function cocoRetrieve(question, contextText, limit = 3) {
+function cocoRetrieve(question, contextText, limit = 3) {
   const direct = extractAskKeywords(question);
   if (direct.length === 0 || !contextText) return [];
   const expanded = cocoExpandTerms(direct);
@@ -119,7 +117,7 @@ export function cocoRetrieve(question, contextText, limit = 3) {
 
 /* ---- 2 + 3. GENERATE, THEN VERIFY ------------------------------------ */
 
-export const COCO_UNKNOWN = "The syllabus doesn't cover that - worth asking your instructor.";
+const COCO_UNKNOWN = "The syllabus doesn't cover that - worth asking your instructor.";
 
 // Real incident: the on-device model occasionally degenerates into fluent-
 // looking but meaningless token soup -- mixed scripts, fused non-words, code
@@ -128,7 +126,7 @@ export const COCO_UNKNOWN = "The syllabus doesn't cover that - worth asking your
 // has no numbers/course-codes/quotes to be wrong about, so it sails through).
 // This is a cheap, local sanity gate that runs before any of those checks,
 // shared by every coco.1 answer path (syllabus Q&A, planning, grade tips).
-export function cocoIsCoherentText(text) {
+function cocoIsCoherentText(text) {
   const s = (text || '').trim();
   if (!s) return false;
   const words = s.split(/\s+/).filter(Boolean);
@@ -158,7 +156,7 @@ export function cocoIsCoherentText(text) {
 // Every number in an answer must exist in the source we gave the model.
 // This is the single highest-value check: fabricated specifics (a "90% for an A"
 // that was never written down) are the most damaging kind of wrong answer.
-export function cocoIsGrounded(answer, sourceText) {
+function cocoIsGrounded(answer, sourceText) {
   const nums = (answer.match(/\d+(?:\.\d+)?/g) || []);
   if (nums.length === 0) return true;
   const src = sourceText.replace(/\s+/g, ' ');
@@ -167,7 +165,7 @@ export function cocoIsGrounded(answer, sourceText) {
 
 // Tokens shaped like a course code ("CHEM 101") but that are really ordinary
 // phrases a planner would legitimately invent ("Chapter 12", "Week 3").
-export const COCO_NOT_COURSE_CODES = new Set([
+const COCO_NOT_COURSE_CODES = new Set([
   'chapter', 'chapters', 'week', 'weeks', 'day', 'days', 'part', 'parts',
   'section', 'sections', 'unit', 'units', 'page', 'pages', 'step', 'steps',
   'round', 'rounds', 'problem', 'problems', 'question', 'questions',
@@ -181,7 +179,7 @@ export const COCO_NOT_COURSE_CODES = new Set([
 // parses "of 30" as a course code. Course codes are essentially never written
 // lowercase, so requiring the capital costs almost no recall and removes a
 // whole class of false positives that a word blocklist could never cover.
-export function cocoExtractCourseCodes(text) {
+function cocoExtractCourseCodes(text) {
   const out = [];
   const re = /\b([A-Z][A-Za-z]{1,7})\s?(\d{2,4})\b/g;
   let m;
@@ -196,7 +194,7 @@ export function cocoExtractCourseCodes(text) {
   return out;
 }
 
-export function cocoNormalize(s) { return (s || '').toLowerCase().replace(/\s+/g, ' '); }
+function cocoNormalize(s) { return (s || '').toLowerCase().replace(/\s+/g, ' '); }
 
 // Difficulty is a genuine unknown without real information -- guessing it
 // from assignment type keywords ("exam" = hard, "quiz" = easy) produced the
@@ -207,7 +205,7 @@ export function cocoNormalize(s) { return (s || '').toLowerCase().replace(/\s+/g
 // is unknown and reason about points value instead -- a real number, not a
 // guess -- since a higher-point item has more effect on the grade regardless
 // of how hard it turns out to be.
-export function assignmentDescriptionExcerpt(a, maxLen) {
+function assignmentDescriptionExcerpt(a, maxLen) {
   const d = (a.description || '').trim();
   if (!d) return '';
   return d.length > maxLen ? d.slice(0, maxLen).trim() + '...' : d;
@@ -221,7 +219,7 @@ export function assignmentDescriptionExcerpt(a, maxLen) {
 // both "• text" on one line and Canvas's common split form where the bullet
 // glyph sits alone on its own line and the item's text follows on the next
 // line(s) until a blank line or the next bullet.
-export function extractDescriptionSteps(description) {
+function extractDescriptionSteps(description) {
   if (!description) return [];
   const BULLET_CHARS = new Set(['•', '➝', '✓', '✔', '①', '②', '③', '④', '⑤', '❌', '➤', '▪']);
   const BULLET_START = /^([•➝✓✔①②③④⑤❌➤▪]|[-*]\s|\d+[.)]\s)/;

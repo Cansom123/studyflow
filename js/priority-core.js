@@ -7,7 +7,6 @@
    only the DOM rendering around it isn't.
 =========================== */
 
-import { dayDiff, getBadge } from './format-utils.js';
 
 // First concrete step toward priority that actually accounts for grades, not
 // just due dates: a class you're barely passing gets nudged up the list even
@@ -15,7 +14,7 @@ import { dayDiff, getBadge } from './format-utils.js';
 // overdue baseline (1000+) so overdue work always still wins regardless of
 // grade, and small enough to reorder among similarly-urgent items rather
 // than bury something due today under something due next week.
-export function priorityGradeRiskBoost(course, cachedGrades) {
+function priorityGradeRiskBoost(course, cachedGrades) {
   if (!course) return 0;
   const norm = s => (s || '').trim().toLowerCase();
   const g = cachedGrades.find(x => norm(x.course_name) === norm(course));
@@ -28,7 +27,7 @@ export function priorityGradeRiskBoost(course, cachedGrades) {
 // The actual ranking: overdue work always scores highest (1000+, growing
 // with how late it is), otherwise sooner-due beats later-due, with goal
 // matches and grade risk nudging things up within that.
-export function computePriorityScores(assignments, today, userGoals, priorityGoalBoost, cachedGrades) {
+function computePriorityScores(assignments, today, userGoals, priorityGoalBoost, cachedGrades) {
   const active = assignments.filter(a => {
     if (!a.due_date || a.completed) return false;
     const d = dayDiff(a.due_date, today);
@@ -47,7 +46,7 @@ export function computePriorityScores(assignments, today, userGoals, priorityGoa
 }
 
 // The one-line "why this is your top priority" text under the ranked list.
-export function priorityAiText(top, userGoals, cachedGrades) {
+function priorityAiText(top, userGoals, cachedGrades) {
   const matchingGoal = userGoals.find(g => (top.course || '').toLowerCase().includes(g.toLowerCase().split(' ')[0]));
   const gradeAtRisk = priorityGradeRiskBoost(top.course, cachedGrades) > 0;
   if (matchingGoal) return `"${top.title}" is your top priority - and it's in a class tied to your goal: "${matchingGoal}". Start here.`;
@@ -62,7 +61,7 @@ export function priorityAiText(top, userGoals, cachedGrades) {
 // "Completed today" section with undo buttons when there's anything in it.
 // scored is the computePriorityScores() result; completedToday is plain
 // assignment objects.
-export function priorityListHTML(scored, completedToday) {
+function priorityListHTML(scored, completedToday) {
   const colors = ['p1', 'p2', 'p3', 'p4', 'p5'];
   let html = scored.slice(0, 5).map((a, i) => {
     const [bc, bl] = getBadge(a.assignment_type);

@@ -1,5 +1,3 @@
-import { fmtClock } from './format-utils.js';
-import { escapeHtml } from './format-utils.js';
 
 // Focus timer view-model builders: derive what the doc title / mini-bar /
 // full timer body should show from focusState, without touching the DOM.
@@ -7,7 +5,7 @@ import { escapeHtml } from './format-utils.js';
 // classic script reads) rather than closed over as a global, so these are
 // testable without a document.
 
-export function computeFocusDocTitle(focusState, focusOriginalTitle) {
+function computeFocusDocTitle(focusState, focusOriginalTitle) {
   if (focusState.awaiting) return focusOriginalTitle || 'StudyFlow';
   const label = focusState.phase === 'study' ? 'Studying' : 'Break';
   return focusState.paused
@@ -15,7 +13,7 @@ export function computeFocusDocTitle(focusState, focusOriginalTitle) {
     : `${fmtClock(focusState.remainingSec)} · ${label} - StudyFlow`;
 }
 
-export function computeFocusMiniBarView(focusState) {
+function computeFocusMiniBarView(focusState) {
   if (!focusState || !focusState.minimized) return { visible: false };
   const isStudy = focusState.phase === 'study';
   const label = focusState.awaiting
@@ -34,7 +32,7 @@ export function computeFocusMiniBarView(focusState) {
   };
 }
 
-export function focusTimerBodyHTML(focusState) {
+function focusTimerBodyHTML(focusState) {
   const isStudy = focusState.phase === 'study';
   return `
     <div class="focus-phase-label">${isStudy ? `Round ${focusState.round} - focus` : 'Break'}${focusState.paused ? ' · paused' : ''}</div>
@@ -53,7 +51,7 @@ export function focusTimerBodyHTML(focusState) {
 // before starting. studyDurations/breakDurations are passed in rather
 // than hardcoded, since they're the classic script's FOCUS_STUDY_DURATIONS/
 // FOCUS_BREAK_DURATIONS constants.
-export function focusSetupHTML(focusState, studyDurations, breakDurations) {
+function focusSetupHTML(focusState, studyDurations, breakDurations) {
   return `
     <div class="focus-title">Ready to study?</div>
     <div class="focus-sub">${escapeHtml(focusState.sessionTitle)}</div>
@@ -71,7 +69,7 @@ export function focusSetupHTML(focusState, studyDurations, breakDurations) {
 
 // The "name your break activity" prompt shown between setup and starting
 // the timer.
-export function focusCommitHTML(focusState) {
+function focusCommitHTML(focusState) {
   return `
     <div class="focus-title">One more thing</div>
     <div class="focus-sub">What will you actually do on your ${focusState.breakMin}-minute break? Naming it now makes it easier to stick to it later.</div>
@@ -83,7 +81,7 @@ export function focusCommitHTML(focusState) {
 // Shown when a study round finishes: offers the break earned so far, or
 // escalates it by studying another round. escalatedBreak grows by
 // breakMin each time nextBreakMin carries over uncollected.
-export function focusStudyCompleteHTML(focusState) {
+function focusStudyCompleteHTML(focusState) {
   const offeredBreak = focusState.nextBreakMin;
   const escalatedBreak = focusState.nextBreakMin + focusState.breakMin;
   return `
@@ -98,7 +96,7 @@ export function focusStudyCompleteHTML(focusState) {
 
 // Shown when a break finishes: another round, or call it done. Static --
 // doesn't depend on focusState.
-export function focusBreakCompleteHTML() {
+function focusBreakCompleteHTML() {
   return `
     <div class="focus-title">Break's over</div>
     <div class="focus-sub">Ready for another round, or done for now?</div>

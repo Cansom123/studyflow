@@ -10,18 +10,12 @@
    they genuinely aren't pure.
 =========================== */
 
-import { escapeHtml, escapeRegex, cleanCourseName, getBadge, getDueText, doneKey, letterGradeClass } from './format-utils.js';
-import { linkIconHTML } from './link-utils.js';
-import { classifyAssignmentWork, ymd } from './checklist-core.js';
 
-// Deliberately NOT the same binding as index.html's classic-script `months`
-// (which is called synchronously at page load, before any module runs, so
-// it has to stay put) -- a tiny duplicated data array is far safer than a
-// load-order dependency between a module and the classic script.
-const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+// months/days are declared once in index.html's main script, which now
+// always loads before this file (plain <script src>, not an ES module with
+// its own timing) -- so this file just uses those globals directly.
 
-export function announcementTimeAgo(iso) {
+function announcementTimeAgo(iso) {
   if (!iso) return '';
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
@@ -35,7 +29,7 @@ export function announcementTimeAgo(iso) {
   return `${months[d.getMonth()]} ${d.getDate()}`;
 }
 
-export function announcementCardHTML(a) {
+function announcementCardHTML(a) {
   const expanded = a._expanded ? ' expanded' : '';
   const unread = !a.read ? ' unread' : '';
   const readCls = a.read ? ' read' : '';
@@ -58,7 +52,7 @@ export function announcementCardHTML(a) {
 // Renders an answer according to how much coco.1 actually trusts it. A 'quoted'
 // result is a verbatim line from the syllabus, so it's labelled as a direct
 // quote rather than dressed up as an AI answer — honest about what it is.
-export function cocoAnswerHTML(answer, confidence) {
+function cocoAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div>` +
            `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
@@ -73,7 +67,7 @@ export function cocoAnswerHTML(answer, confidence) {
          `<div class="school-ai-disclaimer">AI-generated - check it against the highlighted source.</div>`;
 }
 
-export function cocoPlanningAnswerHTML(answer, confidence) {
+function cocoPlanningAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
@@ -95,7 +89,7 @@ export function cocoPlanningAnswerHTML(answer, confidence) {
 // doneSet (which assignments the user has checked off client-side, keyed by
 // doneKey) is passed in explicitly rather than read as a global -- this is
 // the same pattern used for isAssignmentChecked in home-core.js.
-export function aCard(a, isOverdue, redTint = false, doneSet) {
+function aCard(a, isOverdue, redTint = false, doneSet) {
   const [bc, bl] = getBadge(a.assignment_type);
   const key = doneKey(a);
   const isDone = a.completed || doneSet.has(decodeURIComponent(key));
@@ -123,7 +117,7 @@ export function aCard(a, isOverdue, redTint = false, doneSet) {
 // currently being edited. editingChecklistStepId is passed in explicitly
 // (same "push state-reads up to the caller" pattern as aCard's doneSet)
 // rather than read as a global.
-export function checklistStepCardHTML(s, editingChecklistStepId) {
+function checklistStepCardHTML(s, editingChecklistStepId) {
   if (s.id === editingChecklistStepId) {
     return `<div class="study-session-card">
       <div class="study-session-info" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -152,7 +146,7 @@ export function checklistStepCardHTML(s, editingChecklistStepId) {
 // not-yet-graded work ranked soonest-due-first, plus the "ask coco.1"
 // panel. grade and breakdown (the gradeBreakdownForCourse() result) are
 // passed in already-computed rather than read from cached state here.
-export function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
+function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
   const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
   const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
   const { graded, missing, lowPerformers, openWork, allClosed } = breakdown;
@@ -222,7 +216,7 @@ export function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
 }
 
 // Body HTML for the "all graded work" overlay, most recently graded first.
-export function gradeAllBodyHTML(graded) {
+function gradeAllBodyHTML(graded) {
   // Most recently graded first -- that's what a student checking back in
   // actually wants to see, not their oldest quiz from week one.
   const sorted = [...graded].sort((a, b) => {
@@ -251,7 +245,7 @@ export function gradeAllBodyHTML(graded) {
 // syllabus was found on Canvas, added manually, or not found yet, with a
 // short content preview. cachedSyllabi is passed in explicitly rather than
 // looked up per course via a global.
-export function syllabusListHTML(syllabusCourses, cachedSyllabi) {
+function syllabusListHTML(syllabusCourses, cachedSyllabi) {
   return syllabusCourses.map(c => {
     const s = cachedSyllabi.find(x => String(x.course_id) === String(c.id));
     const name = escapeHtml(cleanCourseName(c.name));
@@ -278,7 +272,7 @@ export function syllabusListHTML(syllabusCourses, cachedSyllabi) {
 // separately by the caller (updateAssignmentDetailDoneButton,
 // renderChecklistSection), since those depend on live state this function
 // doesn't need.
-export function assignmentDetailBodyHTML(a) {
+function assignmentDetailBodyHTML(a) {
   const [bc, bl] = getBadge(a.assignment_type);
   const dueStr = a.due_date
     ? new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
@@ -314,7 +308,7 @@ export function assignmentDetailBodyHTML(a) {
 // overdue/due-soon(within 7 days)/upcoming (skipping anything done),
 // sorts each bucket undone-first then soonest-due-first, and renders each
 // with aCard. Falls back to an empty-state box when nothing's left to show.
-export function allWorkBodyHTML(assignments, doneSet, today) {
+function allWorkBodyHTML(assignments, doneSet, today) {
   const ref = today || (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
   const weekFromNow = new Date(ref); weekFromNow.setDate(ref.getDate() + 7);
   const overdue = [], soon = [], upcoming = [];
@@ -351,7 +345,7 @@ export function allWorkBodyHTML(assignments, doneSet, today) {
   return html || '<div class="empty-box"><div class="empty-title">No assignments</div></div>';
 }
 
-export function cocoGradeTipsAnswerHTML(answer, confidence) {
+function cocoGradeTipsAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
     return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
@@ -369,7 +363,7 @@ export function cocoGradeTipsAnswerHTML(answer, confidence) {
 // containing a literal (case-insensitive) match, a short snippet around
 // the first occurrence with the match highlighted. query should already
 // be trimmed and lowercased by the caller.
-export function syllabusSearchResultsHTML(cachedSyllabi, syllabusCourses, query) {
+function syllabusSearchResultsHTML(cachedSyllabi, syllabusCourses, query) {
   const rx = new RegExp(escapeRegex(query), 'ig');
   const matches = [];
   cachedSyllabi.forEach(s => {
@@ -402,7 +396,7 @@ export function syllabusSearchResultsHTML(cachedSyllabi, syllabusCourses, query)
 // bar (A/B/C/other) and either a percentage or a bare letter when only one
 // is available. withGrades should already be filtered to courses that
 // have a published grade.
-export function gradeCardsHTML(withGrades) {
+function gradeCardsHTML(withGrades) {
   const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
   return withGrades.map(g => {
     const score = g.current_score != null ? parseFloat(g.current_score) : parseFloat(g.final_score);
@@ -428,7 +422,7 @@ export function gradeCardsHTML(withGrades) {
 
 // Home's compact grade list: just name + letter, capped at `limit` courses,
 // with the same empty-state message as the original.
-export function homeGradesListHTML(cachedGrades, limit = 4) {
+function homeGradesListHTML(cachedGrades, limit = 4) {
   const withGrades = cachedGrades.filter(g => g.current_score != null || g.final_score != null || g.current_grade || g.final_grade);
   if (withGrades.length === 0) {
     return `<div style="color:var(--text2);font-size:13px;">No grades published yet.</div>`;
@@ -444,7 +438,7 @@ export function homeGradesListHTML(cachedGrades, limit = 4) {
 // own small abbreviated month array rather than the classic script's
 // `months` (full names) -- same "small local duplicate over a cross-file
 // format mismatch" call as elsewhere in this module.
-export function wsAssignmentListHTML(assignments) {
+function wsAssignmentListHTML(assignments) {
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return assignments.map(a => {
     const due = a.due_date ? new Date(a.due_date) : null;
@@ -463,7 +457,7 @@ export function wsAssignmentListHTML(assignments) {
 // Home's mini quick-links grid: an "add a link" prompt when there are none,
 // otherwise the 4 most-recently-opened (never-opened links sort after,
 // newest-added first).
-export function homeCustomLinksHTML(links) {
+function homeCustomLinksHTML(links) {
   if (links.length === 0) {
     return `<button class="home-qlink" style="grid-column:1 / -1;" onclick="jumpTo('links')">
         <div class="home-qlink-icon">+</div>
@@ -482,7 +476,7 @@ export function homeCustomLinksHTML(links) {
 }
 
 // The full Links tab list: newest-added first, each with a remove button.
-export function linksTabListHTML(links) {
+function linksTabListHTML(links) {
   if (links.length === 0) {
     return `<div class="empty-box"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M8.5 11.5a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24l-1 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M11.5 8.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l1-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div class="empty-title">No links yet</div><div class="empty-sub">Add a Google Doc, NotebookLM notebook, class site - anything you use for school - below.</div></div>`;
   }
@@ -505,7 +499,7 @@ export function linksTabListHTML(links) {
 // bannerHTML is the caller's schoolAIBannerHTML('checklist-ai') output,
 // passed in rather than called here since that reads live model-ready
 // state and isn't pure.
-export function checklistSectionHTML(a, steps, editingChecklistStepId, bannerHTML) {
+function checklistSectionHTML(a, steps, editingChecklistStepId, bannerHTML) {
   const workType = classifyAssignmentWork(a);
   const eligible = workType !== 'content' && !!a.due_date && !a.completed;
   if (!eligible) return '';
@@ -535,7 +529,7 @@ export function checklistSectionHTML(a, steps, editingChecklistStepId, bannerHTM
 // been found yet); bannerHTML is the caller's
 // schoolAIBannerHTML('syl-ai') output, passed in for the same
 // not-pure-so-push-it-up reason as checklistSectionHTML's banner.
-export function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
+function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
   const hasContent = !!(s && s.content);
   const sourceLabel = hasContent
     ? (s.source === 'canvas' ? 'Pulled automatically from Canvas' : 'Added manually')
@@ -571,7 +565,7 @@ export function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
 // Body HTML for the "completed assignments" overlay: everything marked
 // done (either Canvas-completed or checked off in doneSet), most recently
 // completed first, or the empty-state box.
-export function completedAssignmentsBodyHTML(assignments, doneSet) {
+function completedAssignmentsBodyHTML(assignments, doneSet) {
   const done = assignments
     .filter(a => a.completed || doneSet.has(decodeURIComponent(doneKey(a))))
     .sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0));
@@ -584,7 +578,7 @@ export function completedAssignmentsBodyHTML(assignments, doneSet) {
 // day, or "Today" when the selected date is today) plus the assignment
 // cards due that day, or the "nothing due" message. dueCalSelectedDate is
 // a "YYYY-MM-DD" key; todayStr is ymd(new Date()) computed by the caller.
-export function dueCalSelectedBodyHTML(dueCalAssignments, dueCalSelectedDate, doneSet, todayStr) {
+function dueCalSelectedBodyHTML(dueCalAssignments, dueCalSelectedDate, doneSet, todayStr) {
   const items = dueCalAssignments.filter(a => {
     const d = new Date(a.due_date); d.setHours(0, 0, 0, 0);
     return ymd(d) === dueCalSelectedDate;
@@ -609,7 +603,7 @@ export function dueCalSelectedBodyHTML(dueCalAssignments, dueCalSelectedDate, do
 // with a usage bar scaled to the top row's count. eventLabels is the
 // classic script's ANALYTICS_EVENT_LABELS map, passed in rather than
 // duplicated here.
-export function analyticsRowsHTML(events, eventLabels) {
+function analyticsRowsHTML(events, eventLabels) {
   const byKey = new Map();
   events.forEach(e => {
     let key = e.event;
@@ -644,7 +638,7 @@ export function analyticsRowsHTML(events, eventLabels) {
 
 // Admin problem-reports list: one card per report with its type badge,
 // timestamp, message, optional reporter email, and a delete button.
-export function adminReportsListHTML(reports) {
+function adminReportsListHTML(reports) {
   return reports.map(r => {
     const when = new Date(r.created_at);
     const timeStr = `${months[when.getMonth()]} ${when.getDate()}, ${when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;

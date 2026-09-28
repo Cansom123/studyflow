@@ -9,9 +9,8 @@
    rather than logic buried in a render function.
 =========================== */
 
-import { cleanCourseName, dayDiff } from './format-utils.js';
 
-export function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
+function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
   const steps = [];
   const text = goalText.toLowerCase();
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -78,7 +77,7 @@ export function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
 
 // Card list for the Goals tab: one card per goal, with its action plan
 // (from buildActionPlan) rendered underneath when it has steps.
-export function goalsListHTML(userGoals, cachedAssignments, cachedGrades) {
+function goalsListHTML(userGoals, cachedAssignments, cachedGrades) {
   const colors = ['#d85a30', '#007aff', '#3b6d11', '#854f0b', '#534ab7'];
   return userGoals.map((g, i) => {
     const plan = buildActionPlan(g, cachedAssignments, cachedGrades);

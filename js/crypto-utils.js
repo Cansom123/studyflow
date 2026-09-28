@@ -9,12 +9,12 @@
    out, same as every other module in this split.
 =========================== */
 
-export async function sha256Hex(text) {
+async function sha256Hex(text) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function randomBackupCode() {
+function randomBackupCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(5));
   const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
   return hex.slice(0, 4) + '-' + hex.slice(4, 8) + '-' + hex.slice(8, 10);

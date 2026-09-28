@@ -9,17 +9,16 @@
    test instead of a user screenshot.
 =========================== */
 
-import { doneKey } from './format-utils.js';
 
 // The one canonical "is this actually done" check, used everywhere
 // completion state matters -- completion can come from either a.completed
 // (server-synced) or the local doneSet, and BOTH have to be checked or a
 // card checked one way but not the other silently keeps showing as active.
-export function isAssignmentChecked(a, doneSet) {
+function isAssignmentChecked(a, doneSet) {
   return a.completed || doneSet.has(decodeURIComponent(doneKey(a)));
 }
 
-export function greetingWord(now = new Date()) {
+function greetingWord(now = new Date()) {
   const h = now.getHours();
   if (h < 5) return 'Still up';
   if (h < 12) return 'Good morning';
@@ -30,7 +29,7 @@ export function greetingWord(now = new Date()) {
 // Everything the Home dashboard's hero stat, "Up next" card, and "This
 // week" list are computed from. today must already be normalized to local
 // midnight (same convention as every other date computation in this app).
-export function computeHomeDashboard(cachedAssignments, doneSet, completedCount, today) {
+function computeHomeDashboard(cachedAssignments, doneSet, completedCount, today) {
   const weekFromNow = new Date(today); weekFromNow.setDate(today.getDate() + 7);
   const isChecked = a => isAssignmentChecked(a, doneSet);
 

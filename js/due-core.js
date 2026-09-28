@@ -1,11 +1,10 @@
-import { doneKey } from './format-utils.js';
 
 // Splits assignments into overdue / upcoming / no-due-date buckets for the
 // Upcoming tab, skipping anything already done, and counts how many
 // upcoming items fall within the next 7 days. doneSet and today are passed
 // in explicitly rather than read as globals -- same pattern as
 // computeHomeDashboard/computePriorityScores.
-export function categorizeDueSoon(assignments, doneSet, today) {
+function categorizeDueSoon(assignments, doneSet, today) {
   const ref = today || (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
   const weekFromNow = new Date(ref); weekFromNow.setDate(ref.getDate() + 7);
   const overdue = [], upcoming = [], noDate = [];

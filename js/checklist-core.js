@@ -8,13 +8,12 @@
    whole point of writing new code as real modules.
 =========================== */
 
-import { extractDescriptionSteps, cocoIsCoherentText, cocoNormalize } from './coco-core.js';
 
-export function ymd(d) {
+function ymd(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function classifyAssignmentWork(a) {
+function classifyAssignmentWork(a) {
   const type = (a.assignment_type || '').toLowerCase();
   const title = (a.title || '').toLowerCase();
 
@@ -33,7 +32,7 @@ export function classifyAssignmentWork(a) {
 // quoting the syllabus or computing a plan straight from the assignment
 // rows: never wrong about the one thing that actually matters (the dates),
 // even if it's a less specific plan than the AI version would be.
-export function deterministicChecklist(a, today) {
+function deterministicChecklist(a, today) {
   const due = new Date(a.due_date); due.setHours(0, 0, 0, 0);
   const daysUntilDue = Math.max(0, Math.round((due - today) / (1000 * 60 * 60 * 24)));
   const totalDays = Math.max(1, daysUntilDue);
@@ -95,7 +94,7 @@ export function deterministicChecklist(a, today) {
   });
 }
 
-export function parseChecklistLines(raw) {
+function parseChecklistLines(raw) {
   const steps = [];
   raw.split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
     const m = line.match(/^(\d{4}-\d{2}-\d{2})\s*\|\s*(.+)$/);
@@ -108,7 +107,7 @@ export function parseChecklistLines(raw) {
 // or out of order, is worse than no plan at all -- it's the checklist
 // equivalent of coco.1 planning mode's grounding checks, just for dates
 // instead of facts.
-export function verifyChecklistDates(steps, todayStr, dueStr) {
+function verifyChecklistDates(steps, todayStr, dueStr) {
   if (!steps.length) return { ok: false, reason: 'no steps parsed' };
   let prev = null;
   for (const s of steps) {
@@ -128,7 +127,7 @@ export function verifyChecklistDates(steps, todayStr, dueStr) {
 // gave us an actual structured list of requirements, the generated steps
 // should touch at least some of that real content, not just restate
 // "work on it, then submit" in different words.
-export function verifyChecklistContent(steps, a) {
+function verifyChecklistContent(steps, a) {
   for (const s of steps) {
     if (!cocoIsCoherentText(s.step_text)) {
       return { ok: false, reason: `incoherent step text: ${s.step_text}` };

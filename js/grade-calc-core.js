@@ -1,7 +1,7 @@
 // Pure "what do I need on the final" calculator used by the Settings grade calculator.
 // Takes the three raw inputs and returns everything the DOM layer needs to render --
 // no DOM reads/writes here, so this is fully testable without a document.
-export function calculateNeededGrade(current, weightPercent, target) {
+function calculateNeededGrade(current, weightPercent, target) {
   const weight = weightPercent / 100;
   if (isNaN(current) || isNaN(weight) || isNaN(target) || weight <= 0) {
     return { visible: false };

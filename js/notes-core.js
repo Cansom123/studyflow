@@ -1,10 +1,9 @@
-import { escapeHtml, cleanCourseName } from './format-utils.js';
 
 // Card list for the notes course picker: one card per course, with a
 // note-count badge and a preview of the most recent note. cachedClassNotes
 // is passed in explicitly rather than filtered via a global lookup per
 // course.
-export function notesCourseListHTML(notesCourses, cachedClassNotes) {
+function notesCourseListHTML(notesCourses, cachedClassNotes) {
   return notesCourses.map(c => {
     const name = cleanCourseName(c.name);
     const notes = cachedClassNotes.filter(n => String(n.course_id) === String(c.id));
@@ -25,7 +24,7 @@ export function notesCourseListHTML(notesCourses, cachedClassNotes) {
 // "Untagged" when there's more than one group, since a single untagged
 // group needs no heading). notes should already be filtered to the course
 // being viewed.
-export function noteEntriesHTML(notes) {
+function noteEntriesHTML(notes) {
   const sorted = notes.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   if (sorted.length === 0) return { empty: true, html: '' };
 

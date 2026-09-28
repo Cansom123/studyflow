@@ -1,6 +1,5 @@
-import { extractSectionCode } from './format-utils.js';
 
-export function getSchoolYear(now = new Date()) {
+function getSchoolYear(now = new Date()) {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const fallYear = month >= 8 ? year : year - 1;
@@ -15,7 +14,7 @@ export function getSchoolYear(now = new Date()) {
   };
 }
 
-export function isCurrentYearCourse(name, sy) {
+function isCurrentYearCourse(name, sy) {
   if (!name) return false;
   const n = name.toUpperCase();
   // Match FAL/SPR/SUM/WIN abbreviations, full 4-digit years, or 2-digit year codes
@@ -30,7 +29,7 @@ export function isCurrentYearCourse(name, sy) {
 // Returns true only when a course name contains a term tag whose end date is in the past.
 // Courses without any FAL/SPR/SUM/WIN tag (e.g. "Speech and Debate") return false —
 // they are treated as active because we cannot determine their term from the name alone.
-export function isCourseTermConcluded(name, now = new Date()) {
+function isCourseTermConcluded(name, now = new Date()) {
   const m = (name || '').toUpperCase().match(/\b(FAL|SPR|SUM|WIN)(\d{2})\b/);
   if (!m) return false;
   const endMonth = { FAL: 11, SPR: 4, SUM: 7, WIN: 1 };
@@ -45,7 +44,7 @@ export function isCourseTermConcluded(name, now = new Date()) {
 // a concluded selection (same section code, different semester tag).
 // Returns [{ course, preSelected }] so the caller can build DOM nodes
 // without redoing this logic.
-export function computeSelectableCourses(courses, existingIds, concludedCodes, schoolYear) {
+function computeSelectableCourses(courses, existingIds, concludedCodes, schoolYear) {
   const filtered = (courses || []).filter(c => {
     const n = (c.name || '').toUpperCase();
     const hasTag = /\b(FAL|SPR|SUM|WIN)\d{2}\b/.test(n);

@@ -7032,44 +7032,33 @@ if (!checkForPasswordRecovery()) routeUser();
   };
 }());
 </script>
-<!-- Real ES modules in the multi-file split (js/coco-core.js,
-     js/checklist-core.js, js/format-utils.js, js/search-utils.js,
-     js/coco-verify.js, js/render-utils.js, js/study-utils.js,
-     js/crypto-utils.js, js/grade-core.js, js/priority-core.js,
-     js/home-core.js, js/goals-core.js, js/term-utils.js,
-     js/grade-calc-core.js, js/link-utils.js, js/coco-citation.js,
-     js/due-core.js, js/due-calendar-core.js, js/streak-core.js,
-     js/focus-core.js, js/notes-core.js) -- re-attached to `window` so the rest of the app's classic script can keep calling
-     these functions exactly as it always has. This bridge is scaffolding
-     for an incremental migration, not the end state: as more logic moves
-     into real modules, code that already imports what it needs stops
-     needing the global at all, and eventually this script (and the other
-     main script block above) goes away entirely. Requires the page be
-     served over http(s) -- see the staging environment, not opened via
-     file://, which browsers block module imports from. -->
-<script type="module">
-  import * as CocoCore from './js/coco-core.js';
-  import * as ChecklistCore from './js/checklist-core.js';
-  import * as FormatUtils from './js/format-utils.js';
-  import * as SearchUtils from './js/search-utils.js';
-  import * as CocoVerify from './js/coco-verify.js';
-  import * as RenderUtils from './js/render-utils.js';
-  import * as StudyUtils from './js/study-utils.js';
-  import * as CryptoUtils from './js/crypto-utils.js';
-  import * as GradeCore from './js/grade-core.js';
-  import * as PriorityCore from './js/priority-core.js';
-  import * as HomeCore from './js/home-core.js';
-  import * as GoalsCore from './js/goals-core.js';
-  import * as TermUtils from './js/term-utils.js';
-  import * as GradeCalcCore from './js/grade-calc-core.js';
-  import * as LinkUtils from './js/link-utils.js';
-  import * as CocoCitation from './js/coco-citation.js';
-  import * as DueCore from './js/due-core.js';
-  import * as DueCalendarCore from './js/due-calendar-core.js';
-  import * as StreakCore from './js/streak-core.js';
-  import * as FocusCore from './js/focus-core.js';
-  import * as NotesCore from './js/notes-core.js';
-  Object.assign(window, CocoCore, ChecklistCore, FormatUtils, SearchUtils, CocoVerify, RenderUtils, StudyUtils, CryptoUtils, GradeCore, PriorityCore, HomeCore, GoalsCore, TermUtils, GradeCalcCore, LinkUtils, CocoCitation, DueCore, DueCalendarCore, StreakCore, FocusCore, NotesCore);
-</script>
+<!-- The multi-file split (js/*.js), loaded as plain classic scripts rather
+     than ES modules. A classic script-with-src tag loads fine from a
+     double-clicked local file; the browser only blocks type=module
+     imports on file://, which is what made staging require a local server
+     before. Order matters here (a file must load after whatever it calls
+     into), but only for that reason -- once loaded, every function below
+     is just a normal global, exactly as if this were still one file. -->
+<script src="js/format-utils.js"></script>
+<script src="js/link-utils.js"></script>
+<script src="js/grade-calc-core.js"></script>
+<script src="js/streak-core.js"></script>
+<script src="js/crypto-utils.js"></script>
+<script src="js/search-utils.js"></script>
+<script src="js/due-core.js"></script>
+<script src="js/focus-core.js"></script>
+<script src="js/goals-core.js"></script>
+<script src="js/home-core.js"></script>
+<script src="js/notes-core.js"></script>
+<script src="js/priority-core.js"></script>
+<script src="js/term-utils.js"></script>
+<script src="js/coco-core.js"></script>
+<script src="js/checklist-core.js"></script>
+<script src="js/coco-citation.js"></script>
+<script src="js/coco-verify.js"></script>
+<script src="js/due-calendar-core.js"></script>
+<script src="js/study-utils.js"></script>
+<script src="js/render-utils.js"></script>
+<script src="js/grade-core.js"></script>
 </body>
 </html>

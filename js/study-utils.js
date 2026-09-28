@@ -3,10 +3,8 @@
    Seventh module in the multi-file split.
 =========================== */
 
-import { escapeHtml } from './format-utils.js';
-import { ymd } from './checklist-core.js';
 
-export function fmtTime12(t) {
+function fmtTime12(t) {
   if (!t) return '';
   const [h, m] = t.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
@@ -14,7 +12,7 @@ export function fmtTime12(t) {
   return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 
-export function studySessionCardHTML(s) {
+function studySessionCardHTML(s) {
   const timeRange = s.start_time
     ? `${fmtTime12(s.start_time)}${s.end_time ? ' – ' + fmtTime12(s.end_time) : ''}`
     : '';
@@ -30,21 +28,21 @@ export function studySessionCardHTML(s) {
   </div>`;
 }
 
-export function startOfWeek(d) {
+function startOfWeek(d) {
   const start = new Date(d);
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - start.getDay()); // back to Sunday
   return start;
 }
 
-export function fmtHoursMinutes(totalMin) {
+function fmtHoursMinutes(totalMin) {
   const h = Math.floor(totalMin / 60), m = totalMin % 60;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
 // Totals, goal progress, and today's session list for the Study tab.
 // userPrefs and today are passed in explicitly rather than read as globals.
-export function computeStudyStats(cachedStudySessions, userPrefs, today) {
+function computeStudyStats(cachedStudySessions, userPrefs, today) {
   const ref = today || (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
   const todayKey = ymd(ref);
   const weekStart = startOfWeek(ref);

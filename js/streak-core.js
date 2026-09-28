@@ -4,7 +4,7 @@
 // (or null) plus today's and yesterday's ymd keys, and returns what the
 // new persisted record and displayed count should be -- no localStorage
 // reads/writes here.
-export function computeNextStreak(raw, todayKey, yesterdayKey) {
+function computeNextStreak(raw, todayKey, yesterdayKey) {
   if (raw && raw.lastDate === todayKey) {
     return { count: raw.count, changed: false, next: raw };
   }

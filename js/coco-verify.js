@@ -12,14 +12,12 @@
    moves here.
 =========================== */
 
-import { cocoIsCoherentText, cocoNormalize, cocoExtractCourseCodes } from './coco-core.js';
-import { dayDiff } from './format-utils.js';
 
 // Text immediately following a mention of `title`, cut off at the next clause
 // or the next assignment name. Without the cut, a later item's due date or
 // weekday gets read as belonging to this one — which rejected good answers on
 // the first version of these checks.
-export function cocoClauseWindow(ans, title, ctx, span = 80) {
+function cocoClauseWindow(ans, title, ctx, span = 80) {
   const t = cocoNormalize(title);
   const idx = ans.indexOf(t);
   if (idx === -1) return null;
@@ -37,7 +35,7 @@ export function cocoClauseWindow(ans, title, ctx, span = 80) {
 }
 
 // Returns { ok, reason }. `reason` is for logging/eval, never shown to students.
-export function cocoVerifyPlanning(answer, ctx) {
+function cocoVerifyPlanning(answer, ctx) {
   if (!cocoIsCoherentText(answer)) {
     return { ok: false, reason: 'incoherent/garbled generation' };
   }
@@ -151,7 +149,7 @@ export function cocoVerifyPlanning(answer, ctx) {
    wrong about what exists or when it's due. Less warm than a generated
    answer, but always true — the right thing to show when the model's
    version fails verification. */
-export function cocoDeterministicPlan(ctx) {
+function cocoDeterministicPlan(ctx) {
   const name = a => `${a.title}${a.course ? ` (${a.course})` : ''}`;
   const parts = [];
 
@@ -199,7 +197,7 @@ export function cocoDeterministicPlan(ctx) {
   return parts.join(' ');
 }
 
-export function cocoVerifyGradeTips(answer, ctx) {
+function cocoVerifyGradeTips(answer, ctx) {
   if (!cocoIsCoherentText(answer)) {
     return { ok: false, reason: 'incoherent/garbled generation' };
   }
@@ -297,7 +295,7 @@ export function cocoVerifyGradeTips(answer, ctx) {
 // warmer sentences and closes on something genuinely earned rather than
 // generic hype -- tied to whatever's actually true about the situation,
 // not a stock "you've got this!" tacked on regardless of context.
-export function gradeToneOpening(pct, letter, courseName) {
+function gradeToneOpening(pct, letter, courseName) {
   const gradeStr = pct != null ? `${pct}%${letter ? ' (' + letter + ')' : ''}` : null;
   if (gradeStr == null) return `Let's take a look at ${courseName}.`;
   if (pct >= 90) return `You're doing great in ${courseName}, sitting at ${gradeStr} right now.`;
@@ -309,48 +307,48 @@ export function gradeToneOpening(pct, letter, courseName) {
 // Deterministic (not random) pick from real data -- same assignment always
 // gets the same phrasing, but different students/assignments land on
 // different ones instead of everyone hearing "move the needle" verbatim.
-export function stablePick(list, seed) {
+function stablePick(list, seed) {
   let h = 0;
   const s = String(seed || '');
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   return list[h % list.length];
 }
 
-export const LOW_PERFORMER_PHRASES = [
+const LOW_PERFORMER_PHRASES = [
   (worst) => `so a little review on that one could genuinely move the needle`,
   (worst) => `so revisiting that topic is probably the highest-leverage thing you can do right now`,
   (worst) => `so going back over that material could make a real difference`,
   (worst) => `so that's the one area most worth actually spending time on`,
   (worst) => `so brushing up there could turn this grade around faster than anything else open`,
 ];
-export const MISSING_PHRASES = [
+const MISSING_PHRASES = [
   (n) => `closing that out is an easy win`,
   (n) => `turning that in is one of the simplest ways to boost this grade`,
   (n) => `getting that submitted is low-effort, high-reward`,
   (n) => `that's essentially free points sitting on the table until it's turned in`,
 ];
-export const CLOSING_BOTH = [
+const CLOSING_BOTH = [
   `Tackle those two in order and this grade has real room to climb.`,
   `Handle those two and there's a solid path back up from here.`,
   `Both of those are concrete and doable -- work through them in order and you'll feel the difference.`,
 ];
-export const CLOSING_WEAK_SPOT_ONLY = [
+const CLOSING_WEAK_SPOT_ONLY = [
   `That's a specific, fixable thing -- not a mystery.`,
   `Nothing vague about it -- you know exactly what to work on.`,
   `That's one clear target, not a dozen scattered ones.`,
 ];
-export const CLOSING_OPEN_WORK_ONLY = [
+const CLOSING_OPEN_WORK_ONLY = [
   `You're not behind on anything here, just staying ahead of it.`,
   `Nothing urgent gone wrong yet -- this is just good timing.`,
   `You're in front of this one, not chasing it.`,
 ];
-export const CLOSING_ALL_GOOD = [
+const CLOSING_ALL_GOOD = [
   `Overall you're in a good spot in this one.`,
   `This class is in good shape overall.`,
   `Nothing pulling this one down right now.`,
 ];
 
-export function cocoDeterministicGradeTips(ctx) {
+function cocoDeterministicGradeTips(ctx) {
   const parts = [gradeToneOpening(ctx.pct, ctx.letter, ctx.courseName)];
 
   let hasWeakSpot = false;

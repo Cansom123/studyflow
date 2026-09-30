@@ -215,8 +215,7 @@ body.auth-mode .auth-form-col {
      and still centers the card left-to-right same as before. */
   align-items: flex-start;
 }
-body.auth-mode .auth-form-col > .auth-screen,
-body.auth-mode .auth-form-col > .onboard-screen {
+body.auth-mode .auth-form-col > .auth-screen {
   margin: auto 0;
 }
 
@@ -322,17 +321,42 @@ body.auth-mode .auth-form-col > .onboard-screen {
   margin-bottom: 14px; border: 1px solid oklch(0.52 0.16 145 / 0.2);
 }
 
-/* ===== ONBOARDING ===== */
-.onboard-screen {
-  background: var(--surface); border-radius: 20px;
-  padding: 44px 48px; margin: 5vh auto 0;
-  max-width: 640px; width: 100%;
-  border: 1px solid color-mix(in oklch, var(--accent) 16%, var(--border));
-  box-shadow:
-    var(--shadow-md),
-    0 0 60px -20px color-mix(in oklch, var(--accent) 40%, transparent),
-    inset 0 1px 0 color-mix(in oklch, var(--accent) 12%, transparent);
-  display: none;
+/* ===== ONBOARDING =====
+   Full-page flow: a persistent header (progress + step label) that never
+   moves, a horizontally sliding track holding all 4 steps side by side, and
+   each step's own content area + bottom-pinned button filling the rest of
+   the viewport. Replaces the old single floating card -- see git history
+   for that version if it's ever needed again. */
+.onboard-flow {
+  display: none; flex-direction: column;
+  position: fixed; inset: 0; z-index: 3;
+  background: var(--surface);
+  height: 100dvh;
+}
+.onboard-flow-header {
+  flex-shrink: 0; text-align: center;
+  padding: max(22px, env(safe-area-inset-top)) 24px 14px;
+  border-bottom: 1px solid var(--border2);
+}
+.onboard-flow-header .onboard-progress { margin-bottom: 10px; }
+.onboard-flow-viewport { flex: 1; min-height: 0; overflow: hidden; position: relative; }
+.onboard-flow-track {
+  display: flex; height: 100%; width: 400%;
+  transition: transform 0.38s cubic-bezier(.22,1,.36,1);
+}
+.onboard-flow-track.no-anim { transition: none; }
+.onboard-flow-panel {
+  width: 25%; height: 100%; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  padding: 0 24px;
+}
+.onboard-flow-panel-body {
+  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  max-width: 560px; width: 100%; margin: 0 auto; padding-top: 28px;
+}
+.onboard-flow-panel-footer {
+  flex-shrink: 0; max-width: 560px; width: 100%; margin: 0 auto;
+  padding: 14px 0 calc(14px + env(safe-area-inset-bottom));
 }
 .onboard-step { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
 .onboard-title { font-size: 28px; font-weight: 700; color: var(--text1); margin-bottom: 8px; letter-spacing: -0.3px; }
@@ -1242,7 +1266,8 @@ body.auth-mode .auth-form-col > .onboard-screen {
   .app { max-width: 100%; }
   .auth-form-col { padding: 0 16px; }
   .auth-screen { max-width: none; }
-  .onboard-screen { margin: 16px; margin-top: 16px; padding: 28px 24px; }
+  .onboard-flow-header { padding-left: 16px; padding-right: 16px; }
+  .onboard-flow-panel { padding: 0 16px; }
   .onboard-title { font-size: 24px; }
   .main-app { display: flex; flex-direction: column; height: 100dvh; }
   .tabs { display: none; }

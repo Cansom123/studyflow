@@ -199,87 +199,105 @@
   </div>
 </div>
 
-  <!-- ONBOARDING 1: CONNECT CANVAS -->
-  <div id="onboard-canvas" class="onboard-screen">
-    <div class="progress-dots onboard-progress">
-      <div class="dot current"></div><div class="dot upcoming"></div><div class="dot upcoming"></div><div class="dot upcoming"></div>
+  <!-- ONBOARDING: full-page flow, 4 steps sliding horizontally under a
+       persistent header. See goToOnboardStep() -- the header (progress dots
+       + step label) lives outside the sliding track so it updates state in
+       place instead of sliding with the content. -->
+  <div id="onboard-flow" class="onboard-flow">
+    <div class="onboard-flow-header">
+      <div class="progress-dots onboard-progress" id="onboard-flow-dots">
+        <div class="dot current"></div><div class="dot upcoming"></div><div class="dot upcoming"></div><div class="dot upcoming"></div>
+      </div>
+      <div class="onboard-step" id="onboard-step-label">Step 1 of 4</div>
     </div>
-    <div class="onboard-step">Step 1 of 4</div>
-    <div class="onboard-title">Connect Canvas</div>
-    <div class="onboard-sub">Enter your school's Canvas URL and API token so StudyFlow can see your assignments.</div>
-    <div id="onboard-canvas-msg"></div>
-    <div class="auth-label">Canvas URL</div>
-    <input class="auth-input" type="text" id="ob-canvas-url" placeholder="yourschool.instructure.com" />
-    <div class="auth-label">Canvas API Token</div>
-    <input class="auth-input" type="password" id="ob-canvas-token" placeholder="Paste your token here" />
-    <div class="help-note" style="margin-top:-6px;">
-      Treat this token like a password - whoever has it can see and do anything your Canvas login can, not just assignments. StudyFlow only uses it to pull your assignments, syllabi, and grades; it's never shared. You're always in control: you can revoke it anytime from Canvas → Settings → Approved Integrations, independent of StudyFlow.
-    </div>
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-title" style="margin-bottom:6px;font-size:13px;">How to get your token</div>
-      <div class="settings-note" style="margin-bottom:0;">1. Log into Canvas<br>2. Click your profile picture<br>3. Go to Settings<br>4. Scroll to "Approved Integrations"<br>5. Click "+ New Access Token"<br>6. Name it "StudyFlow" and paste it above</div>
-    </div>
-    <button class="onboard-btn" id="ob-canvas-btn" onclick="saveCanvasOnboard()">Save & continue</button>
-  </div>
+    <div class="onboard-flow-viewport">
+      <div class="onboard-flow-track" id="onboard-flow-track">
 
-  <!-- ONBOARDING 2: SELECT COURSES -->
-  <div id="onboard-courses" class="onboard-screen">
-    <div class="progress-dots onboard-progress">
-      <div class="dot complete"></div><div class="dot current"></div><div class="dot upcoming"></div><div class="dot upcoming"></div>
-    </div>
-    <div class="onboard-step">Step 2 of 4</div>
-    <div class="onboard-title">Your current classes</div>
-    <div class="onboard-sub">Select only the classes you're taking right now. StudyFlow will only pull assignments from these.</div>
-    <div id="course-list-loading" class="course-loading">Loading your courses from Canvas...</div>
-    <div id="course-list"></div>
-    <div id="onboard-courses-msg"></div>
-    <button class="onboard-btn" id="ob-courses-btn" onclick="saveSelectedCourses()">Continue</button>
-    <div class="onboard-link-row">
-      <button class="onboard-link" onclick="showOnboardCanvas()">← Go back</button>
-    </div>
-  </div>
+        <!-- STEP 1: CONNECT CANVAS -->
+        <div id="onboard-canvas" class="onboard-flow-panel">
+          <div class="onboard-flow-panel-body">
+            <div class="onboard-title">Connect Canvas</div>
+            <div class="onboard-sub">Enter your school's Canvas URL and API token so StudyFlow can see your assignments.</div>
+            <div id="onboard-canvas-msg"></div>
+            <div class="auth-label">Canvas URL</div>
+            <input class="auth-input" type="text" id="ob-canvas-url" placeholder="yourschool.instructure.com" />
+            <div class="auth-label">Canvas API Token</div>
+            <input class="auth-input" type="password" id="ob-canvas-token" placeholder="Paste your token here" />
+            <div class="help-note" style="margin-top:-6px;">
+              Treat this token like a password - whoever has it can see and do anything your Canvas login can, not just assignments. StudyFlow only uses it to pull your assignments, syllabi, and grades; it's never shared. You're always in control: you can revoke it anytime from Canvas → Settings → Approved Integrations, independent of StudyFlow.
+            </div>
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-title" style="margin-bottom:6px;font-size:13px;">How to get your token</div>
+              <div class="settings-note" style="margin-bottom:0;">1. Log into Canvas<br>2. Click your profile picture<br>3. Go to Settings<br>4. Scroll to "Approved Integrations"<br>5. Click "+ New Access Token"<br>6. Name it "StudyFlow" and paste it above</div>
+            </div>
+          </div>
+          <div class="onboard-flow-panel-footer">
+            <button class="onboard-btn" id="ob-canvas-btn" onclick="saveCanvasOnboard()">Save & continue</button>
+          </div>
+        </div>
 
-  <!-- ONBOARDING 2: SET GOALS -->
-  <div id="onboard-goals" class="onboard-screen">
-    <div class="progress-dots onboard-progress">
-      <div class="dot complete"></div><div class="dot complete"></div><div class="dot current"></div><div class="dot upcoming"></div>
-    </div>
-    <div class="onboard-step">Step 3 of 4</div>
-    <div class="onboard-title-row">
-      <span class="onboard-title-icon">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.6"/><circle cx="10" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg>
-      </span>
-      <div class="onboard-title">Set your goals</div>
-    </div>
-    <div class="onboard-sub">What do you want to achieve this semester? These help StudyFlow prioritize your work.</div>
-    <div id="goals-list-onboard"></div>
-    <div class="goal-input-row">
-      <input class="goal-input" type="text" id="ob-goal-input" placeholder="e.g. Raise Biology above 70%" />
-      <button class="goal-add-btn" onclick="addGoalOnboard()">Add</button>
-    </div>
-    <div id="onboard-goals-msg"></div>
-    <button class="onboard-btn" id="ob-goals-btn" onclick="finishOnboarding()">Continue</button>
-    <div class="onboard-link-row">
-      <button class="onboard-link" onclick="showOnboardCourses()">← Go back</button>
-      <button class="onboard-link" onclick="finishOnboarding()">Skip for now</button>
-    </div>
-  </div>
+        <!-- STEP 2: SELECT COURSES -->
+        <div id="onboard-courses" class="onboard-flow-panel">
+          <div class="onboard-flow-panel-body">
+            <div class="onboard-title">Your current classes</div>
+            <div class="onboard-sub">Select only the classes you're taking right now. StudyFlow will only pull assignments from these.</div>
+            <div id="course-list-loading" class="course-loading">Loading your courses from Canvas...</div>
+            <div id="course-list"></div>
+            <div id="onboard-courses-msg"></div>
+          </div>
+          <div class="onboard-flow-panel-footer">
+            <button class="onboard-btn" id="ob-courses-btn" onclick="saveSelectedCourses()">Continue</button>
+            <div class="onboard-link-row">
+              <button class="onboard-link" onclick="showOnboardCanvas()">← Go back</button>
+            </div>
+          </div>
+        </div>
 
-  <!-- ONBOARDING 4: QUICK TOUR -->
-  <div id="onboard-tour" class="onboard-screen">
-    <div class="progress-dots onboard-progress">
-      <div class="dot complete"></div><div class="dot complete"></div><div class="dot complete"></div><div class="dot current"></div>
+        <!-- STEP 3: SET GOALS -->
+        <div id="onboard-goals" class="onboard-flow-panel">
+          <div class="onboard-flow-panel-body">
+            <div class="onboard-title-row">
+              <span class="onboard-title-icon">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.6"/><circle cx="10" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg>
+              </span>
+              <div class="onboard-title">Set your goals</div>
+            </div>
+            <div class="onboard-sub">What do you want to achieve this semester? These help StudyFlow prioritize your work.</div>
+            <div id="goals-list-onboard"></div>
+            <div class="goal-input-row">
+              <input class="goal-input" type="text" id="ob-goal-input" placeholder="e.g. Raise Biology above 70%" />
+              <button class="goal-add-btn" onclick="addGoalOnboard()">Add</button>
+            </div>
+            <div id="onboard-goals-msg"></div>
+          </div>
+          <div class="onboard-flow-panel-footer">
+            <button class="onboard-btn" id="ob-goals-btn" onclick="finishOnboarding()">Continue</button>
+            <div class="onboard-link-row">
+              <button class="onboard-link" onclick="showOnboardCourses()">← Go back</button>
+              <button class="onboard-link" onclick="finishOnboarding()">Skip for now</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: QUICK TOUR -->
+        <div id="onboard-tour" class="onboard-flow-panel">
+          <div class="onboard-flow-panel-body">
+            <div class="tour-slide">
+              <div class="tour-mock" id="tour-slide-mock"></div>
+              <div class="tour-slide-icon" id="tour-slide-icon"></div>
+              <div class="onboard-title" id="tour-slide-title"></div>
+              <div class="onboard-sub" id="tour-slide-body"></div>
+            </div>
+            <div class="progress-dots" id="tour-mini-dots" style="margin-bottom:18px;"></div>
+          </div>
+          <div class="onboard-flow-panel-footer">
+            <button class="onboard-btn" id="tour-next-btn" onclick="onboardTourNext()">Next</button>
+            <button class="onboard-btn-secondary" id="tour-back-btn" onclick="onboardTourBack()" style="display:none;">Back</button>
+          </div>
+        </div>
+
+      </div>
     </div>
-    <div class="onboard-step">Step 4 of 4</div>
-    <div class="tour-slide">
-      <div class="tour-mock" id="tour-slide-mock"></div>
-      <div class="tour-slide-icon" id="tour-slide-icon"></div>
-      <div class="onboard-title" id="tour-slide-title"></div>
-      <div class="onboard-sub" id="tour-slide-body"></div>
-    </div>
-    <div class="progress-dots" id="tour-mini-dots" style="margin-bottom:18px;"></div>
-    <button class="onboard-btn" id="tour-next-btn" onclick="onboardTourNext()">Next</button>
-    <button class="onboard-btn-secondary" id="tour-back-btn" onclick="onboardTourBack()" style="display:none;">Back</button>
   </div>
 
   <!-- ══ WELCOME SCREEN — shows once per 24 h ══ -->
@@ -1986,7 +2004,7 @@ function clearSession() {
 }
 
 function hideAll() {
-  ['login-screen','mfa-verify-screen','mfa-backup-screen','mfa-email-screen','signup-screen','forgot-password-screen','reset-password-screen','onboard-canvas','onboard-courses','onboard-goals','onboard-tour','main-app'].forEach(id => {
+  ['login-screen','mfa-verify-screen','mfa-backup-screen','mfa-email-screen','signup-screen','forgot-password-screen','reset-password-screen','onboard-flow','main-app'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2206,14 +2224,44 @@ function checkForPasswordRecovery() {
 function showLoginScreen() { hideAll(); document.getElementById('login-screen').style.display = 'block'; showAuthGlow(); }
 function showSignup() { hideAll(); document.getElementById('signup-screen').style.display = 'block'; showAuthGlow(); }
 function showLogin() { hideAll(); document.getElementById('login-screen').style.display = 'block'; showAuthGlow(); }
-function showOnboardCanvas() { hideAll(); document.getElementById('onboard-canvas').style.display = 'block'; showOnboardGlow(); }
-function showOnboardCourses() {
+// The 4 onboarding steps live side by side in one sliding track
+// (#onboard-flow-track, width 400%, each panel 25%) instead of being shown
+// one at a time via display:none/block. Moving between them is just a
+// transform change, which is what makes the slide-in/slide-out transition
+// possible -- and works identically in both directions (going to a lower
+// index slides the previous step in from the left) without any extra
+// direction bookkeeping.
+const ONBOARD_STEP_COUNT = 4;
+function isOnboardFlowVisible() {
+  const flow = document.getElementById('onboard-flow');
+  return !!flow && flow.style.display === 'flex';
+}
+function goToOnboardStep(index, instant) {
   hideAll();
-  document.getElementById('onboard-courses').style.display = 'block';
+  const flow = document.getElementById('onboard-flow');
+  const track = document.getElementById('onboard-flow-track');
+  flow.style.display = 'flex';
   showOnboardGlow();
+  if (instant) {
+    track.classList.add('no-anim');
+    track.style.transform = `translateX(-${index * 100 / ONBOARD_STEP_COUNT}%)`;
+    void track.offsetWidth; // force layout so the jump applies before re-enabling transitions
+    track.classList.remove('no-anim');
+  } else {
+    track.style.transform = `translateX(-${index * 100 / ONBOARD_STEP_COUNT}%)`;
+  }
+  document.getElementById('onboard-step-label').textContent = `Step ${index + 1} of ${ONBOARD_STEP_COUNT}`;
+  document.querySelectorAll('#onboard-flow-dots .dot').forEach((dot, i) => {
+    dot.classList.remove('complete', 'current', 'upcoming');
+    dot.classList.add(i < index ? 'complete' : i === index ? 'current' : 'upcoming');
+  });
+}
+function showOnboardCanvas() { goToOnboardStep(0, !isOnboardFlowVisible()); }
+function showOnboardCourses() {
+  goToOnboardStep(1, !isOnboardFlowVisible());
   if (!courseSelectionFromSettings) document.getElementById('ob-courses-btn').textContent = 'Continue';
 }
-function showOnboardGoals() { hideAll(); document.getElementById('onboard-goals').style.display = 'block'; showOnboardGlow(); renderGoalsOnboard(); }
+function showOnboardGoals() { goToOnboardStep(2, !isOnboardFlowVisible()); renderGoalsOnboard(); }
 
 async function routeUser() {
   if (!ACCESS_TOKEN || !USER_ID) { showLoginScreen(); return; }
@@ -2949,9 +2997,7 @@ function renderOnboardTourSlide() {
 }
 function showOnboardTour() {
   onboardTourSlide = 0;
-  hideAll();
-  document.getElementById('onboard-tour').style.display = 'block';
-  showOnboardGlow();
+  goToOnboardStep(3, !isOnboardFlowVisible());
   renderOnboardTourSlide();
 }
 function onboardTourNext() {

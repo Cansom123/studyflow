@@ -1985,12 +1985,42 @@ function hideAll() {
   if (glow) glow.style.display = 'none';
   const page = document.getElementById('auth-page');
   if (page) page.style.display = 'none';
+  // Pairs with showAuthGlow()'s class add below -- pinning the whole page to
+  // the viewport while any login/onboarding screen shows, so scrolling can't
+  // reveal empty space around the centered card (or, on desktop, drag the
+  // brand panel around). Removed here unconditionally so a transition into
+  // showApp() (which calls hideAll() first) always leaves normal scrolling
+  // restored, not just the other auth-screen functions that call it.
+  document.body.classList.remove('auth-mode');
+  document.documentElement.classList.remove('auth-mode');
 }
 function showAuthGlow() {
   const glow = document.getElementById('auth-bg-glow');
   if (glow) glow.style.display = 'block';
   const page = document.getElementById('auth-page');
   if (page) page.style.display = 'grid';
+  markAuthMode();
+}
+
+// The onboarding screens (#onboard-canvas/courses/goals/tour) are NOT
+// nested inside #auth-page -- they're plain siblings of it under .app, each
+// with their own centered-card styling. Calling showAuthGlow() for them
+// (as this used to) put the empty-but-still-`display:grid` #auth-page --
+// brand panel included, since only the ids in hideAll() get hidden -- back
+// on screen above the onboarding card, which is exactly what scrolling up
+// during onboarding was revealing: the sign-in page's own layout, sitting
+// there unused. This shows just the background glow, no #auth-page.
+function showOnboardGlow() {
+  const glow = document.getElementById('auth-bg-glow');
+  if (glow) glow.style.display = 'block';
+  markAuthMode();
+}
+
+function markAuthMode() {
+  document.body.classList.add('auth-mode');
+  // <html>, not <body>, is the element the browser actually scrolls here --
+  // overflow:hidden on body alone doesn't stop page-level scrolling.
+  document.documentElement.classList.add('auth-mode');
 }
 
 /* ===== LEGAL DOCS ===== */
@@ -2167,14 +2197,14 @@ function checkForPasswordRecovery() {
 function showLoginScreen() { hideAll(); document.getElementById('login-screen').style.display = 'block'; showAuthGlow(); }
 function showSignup() { hideAll(); document.getElementById('signup-screen').style.display = 'block'; showAuthGlow(); }
 function showLogin() { hideAll(); document.getElementById('login-screen').style.display = 'block'; showAuthGlow(); }
-function showOnboardCanvas() { hideAll(); document.getElementById('onboard-canvas').style.display = 'block'; showAuthGlow(); }
+function showOnboardCanvas() { hideAll(); document.getElementById('onboard-canvas').style.display = 'block'; showOnboardGlow(); }
 function showOnboardCourses() {
   hideAll();
   document.getElementById('onboard-courses').style.display = 'block';
-  showAuthGlow();
+  showOnboardGlow();
   if (!courseSelectionFromSettings) document.getElementById('ob-courses-btn').textContent = 'Continue';
 }
-function showOnboardGoals() { hideAll(); document.getElementById('onboard-goals').style.display = 'block'; showAuthGlow(); renderGoalsOnboard(); }
+function showOnboardGoals() { hideAll(); document.getElementById('onboard-goals').style.display = 'block'; showOnboardGlow(); renderGoalsOnboard(); }
 
 async function routeUser() {
   if (!ACCESS_TOKEN || !USER_ID) { showLoginScreen(); return; }
@@ -2912,7 +2942,7 @@ function showOnboardTour() {
   onboardTourSlide = 0;
   hideAll();
   document.getElementById('onboard-tour').style.display = 'block';
-  showAuthGlow();
+  showOnboardGlow();
   renderOnboardTourSlide();
 }
 function onboardTourNext() {

@@ -180,6 +180,46 @@ body {
 }
 .app { width: 100%; min-height: 100vh; }
 
+/* Pinned to the viewport while any login/onboarding screen is up (class
+   toggled on both <html> and <body> in showAuthGlow()/hideAll() -- <html> is
+   the element that actually scrolls here, overflow:hidden on body alone
+   doesn't stop it) so the page can't be scrolled to reveal empty space
+   around the centered card, or drag the desktop brand panel around.
+   .auth-form-col gets its own internal scroll (and .auth-page is clipped to
+   the viewport so an overly-tall grid track, e.g. the brand panel's text,
+   can't push it taller) so a long onboarding list -- many classes, several
+   goals typed in -- still stays fully reachable, just scrolling within its
+   own column instead of the whole page moving. */
+html.auth-mode, body.auth-mode { height: 100vh; overflow: hidden; }
+/* .app is the actual scroll container for the onboarding screens specifically
+   (#onboard-canvas/courses/goals/tour) -- they're plain siblings of
+   #auth-page under .app, not nested inside it, each already using a fixed
+   top margin rather than flex-centering, so they don't need the same
+   overflow-hides-the-top fix .auth-form-col does below. */
+body.auth-mode .app { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+body.auth-mode .auth-page { height: 100%; overflow: hidden; }
+/* align-items:center (the cross-axis centering on .auth-form-col below) is
+   exactly what was breaking this: centering a child taller than its
+   container makes the overflow extend equally above and below, so with
+   overflow-y:auto's default scrollTop of 0, the *top* of an overly-tall
+   card renders below the fold, invisible, and scrolling down never reaches
+   it either -- flex centering doesn't clamp to a real top edge on its own.
+   Overriding to flex-start and centering instead via auto margins on the
+   card itself avoids that: auto margins consume the extra space when the
+   card fits (so it still looks centered normally) but collapse to 0 and
+   fall back to a plain top-aligned, scrollable layout once it doesn't. */
+body.auth-mode .auth-form-col {
+  height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* Only the cross-axis (vertical, since .auth-form-col is row-direction)
+     needs to change -- justify-content:center (horizontal) is unaffected
+     and still centers the card left-to-right same as before. */
+  align-items: flex-start;
+}
+body.auth-mode .auth-form-col > .auth-screen,
+body.auth-mode .auth-form-col > .onboard-screen {
+  margin: auto 0;
+}
+
 /* ===== LOGO =====
    A graduation cap perched over the "S" of "StudyFlow" -- one monochrome
    mark instead of the wordmark plus a separate colored icon tile. */

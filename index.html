@@ -809,15 +809,15 @@
         <div class="card" style="padding:20px;margin-bottom:28px;">
           <div class="focus-phase-label" style="margin-bottom:8px;">Deep work</div>
           <input class="settings-input" id="quick-deepwork-title" placeholder="What are you doing deep work on?" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){quickStartDeepWork();}" />
-          <button class="settings-btn" onclick="quickStartDeepWork()" style="background:var(--orange, #d85a30);">⬛ Start deep work block</button>
-          <div class="card-sub" style="margin-top:10px;font-size:12px;">One long uninterrupted block, no breaks — pick a length and name what you're avoiding before you start.</div>
+          <button class="deepwork-btn" onclick="quickStartDeepWork()">Start deep work block</button>
+          <div class="card-sub" style="margin-top:10px;font-size:12px;">One long uninterrupted block, no breaks. Pick a length and name what you're avoiding before you start.</div>
         </div>
 
         <div class="section-label">Today's scheduled study time</div>
         <div id="study-today-empty" class="card-sub" style="padding:2px 2px 8px;">Nothing scheduled for today. Add study time from the Due Soon calendar, or start a quick session above.</div>
         <div id="study-today-list" style="margin-bottom:28px;"></div>
 
-        <div class="section-label">Study chain</div>
+        <div class="section-label">Study tracker</div>
         <div class="card" style="padding:16px;margin-bottom:28px;">
           <div class="cal-header">
             <button class="cal-nav-btn" onclick="shiftStudyChainMonth(-1)" title="Previous month">‹</button>
@@ -857,6 +857,16 @@
             <div class="goal-progress-track"><div class="goal-progress-fill" id="study-goal-week-fill" style="width:0%;"></div></div>
           </div>
           <div id="study-goal-nudge" class="card-sub" style="margin-top:20px;font-size:13px;"></div>
+          <div class="chain-lead-lag-row" style="margin-top:20px;">
+            <div class="chain-lead-lag-card">
+              <div class="chain-lead-lag-label">Daily goal hit</div>
+              <div class="chain-lead-lag-value" id="study-goal-daily-hits">0 times</div>
+            </div>
+            <div class="chain-lead-lag-card">
+              <div class="chain-lead-lag-label">Weekly goal hit</div>
+              <div class="chain-lead-lag-value" id="study-goal-weekly-hits">0 times</div>
+            </div>
+          </div>
           <button class="help-toggle-btn" onclick="toggleStudyGoalEdit()" style="margin-top:20px;">
             <span style="font-size:13px;color:var(--text2);">Change goals</span>
             <span class="help-toggle-arrow" id="study-goal-edit-arrow">›</span>
@@ -899,6 +909,28 @@
           <div class="empty-sub">Messages from teachers and classmates on Canvas will show up here.</div>
         </div>
         <div id="messages-list" style="display:none;"></div>
+      </div>
+
+      <!-- FEEDBACK (teacher comments left directly on a submission) -->
+      <div class="page" id="page-feedback">
+        <div id="feedback-loading" class="loading-box">Loading feedback...</div>
+        <div id="feedback-empty" class="empty-box" style="display:none;">
+          <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12v8H8l-4 3.5V12H4V4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+          <div class="empty-title">No feedback yet</div>
+          <div class="empty-sub">Comments a teacher leaves directly on one of your submissions will show up here.</div>
+        </div>
+        <div id="feedback-list" style="display:none;"></div>
+      </div>
+
+      <!-- DISCARDED (dismissed announcements + completed assignments, all in one place) -->
+      <div class="page" id="page-discarded">
+        <div class="section-label" style="margin-top:0;">Dismissed announcements</div>
+        <div id="discarded-announcements-empty" class="card-sub" style="padding:2px 2px 14px;">Nothing dismissed.</div>
+        <div id="discarded-announcements-list" style="margin-bottom:28px;display:none;"></div>
+
+        <div class="section-label">Completed assignments</div>
+        <div id="discarded-assignments-empty" class="card-sub" style="padding:2px 2px 14px;">Nothing completed yet.</div>
+        <div id="discarded-assignments-list" style="display:none;"></div>
       </div>
 
       <!-- GOALS -->
@@ -1009,6 +1041,12 @@
         </div>
         <div class="card syllabus-card" onclick="jumpTo('messages')">
           <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M4 6l6 5 6-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Messages<span class="admin-reports-badge" id="messages-badge"></span></div><span class="more-chevron">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('feedback')">
+          <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12v8H8l-4 3.5V12H4V4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>Feedback<span class="admin-reports-badge" id="feedback-badge"></span></div><span class="more-chevron">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('discarded')">
+          <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3.5 6h13M7.5 6V4.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V6M8 9.5v4M12 9.5v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.5 6l.7 9a1.5 1.5 0 0 0 1.5 1.4h6.6a1.5 1.5 0 0 0 1.5-1.4l.7-9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>Discarded</div><span class="more-chevron">›</span></div>
         </div>
         <div class="card syllabus-card" onclick="jumpTo('goals')">
           <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="3.2" stroke="currentColor" stroke-width="1.6"/></svg></span>Goals</div><span class="more-chevron">›</span></div>
@@ -1858,6 +1896,7 @@ let cachedGradedAssignments = [];
 let cachedGrades = [];
 let cachedAnnouncements = [];
 let cachedMessages = [];
+let cachedFeedback = [];
 let syncInProgress = false;
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -2194,6 +2233,7 @@ async function showApp() {
   loadGrades();
   loadAnnouncements();
   loadMessages();
+  loadFeedback();
   loadSyllabi();
   loadAssignmentChecklists();
   renderGoalsTab();
@@ -3245,7 +3285,7 @@ async function syncCanvas({ silent = false } = {}) {
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.message || result.error || 'Sync failed');
-    await Promise.all([loadAssignments(), loadGrades(), loadAnnouncements(), loadMessages()]);
+    await Promise.all([loadAssignments(), loadGrades(), loadAnnouncements(), loadMessages(), loadFeedback()]);
     localStorage.setItem('sf_last_sync_' + USER_ID, Date.now());
     updateLastSyncedLabel();
     syncInProgress = false;
@@ -3335,6 +3375,39 @@ async function loadAssignments() {
 /* cleanCourseName now lives in js/format-utils.js -- see the module bridge
    near the end of this file. */
 
+// Grades don't have their own "read" flag or history (the table is wiped
+// and re-inserted whole every sync, see canvas-sync-v3) -- there's nowhere
+// server-side to detect "changed since last time". So this compares against
+// a snapshot kept in this browser instead, the same way the due-soon
+// assignment reminders already work. A course seen for the first time seeds
+// the snapshot without notifying; only an actual change to an
+// already-known course fires one.
+function checkGradeChangeNotifications(grades) {
+  const key = 'sf_last_grades_' + USER_ID;
+  let prev = {};
+  try { prev = JSON.parse(localStorage.getItem(key) || '{}'); } catch (_) {}
+
+  const next = {};
+  const changed = [];
+  grades.forEach(g => {
+    if (g.current_score == null && g.final_score == null && !g.current_grade && !g.final_grade) return;
+    const snapshot = { s: g.current_score, fs: g.final_score, g: g.current_grade, fg: g.final_grade };
+    next[g.course_name] = snapshot;
+    const before = prev[g.course_name];
+    if (before && JSON.stringify(before) !== JSON.stringify(snapshot)) {
+      changed.push(g);
+    }
+  });
+
+  localStorage.setItem(key, JSON.stringify(next));
+  if (changed.length === 0) return;
+
+  const body = changed.length === 1
+    ? `${changed[0].course_name}: ${changed[0].current_grade || changed[0].current_score + '%' || 'updated'}`
+    : `${changed.length} courses have updated grades`;
+  notifyBrowser('New grade posted', { body, tag: 'sf-grade' });
+}
+
 async function loadGrades() {
   const loadEl = document.getElementById('grades-loading');
   const emptyEl = document.getElementById('grades-empty');
@@ -3349,6 +3422,7 @@ async function loadGrades() {
   if (!ok || !grades) { if (emptyEl) emptyEl.style.display = 'block'; return; }
 
   cachedGrades = grades;
+  checkGradeChangeNotifications(grades);
   renderGoalsTab(); // refresh action plans with grade data
   renderHome();
 
@@ -3406,6 +3480,61 @@ async function loadAnnouncements() {
   renderAnnouncements();
 }
 
+/* ===========================
+   DISCARDED (dismissed announcements + completed assignments)
+   Loaded on demand when the page is opened, not on every sync -- this is an
+   occasionally-checked archive, not something that needs to be kept warm.
+=========================== */
+async function loadDiscardedPage() {
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/announcements?user_id=eq.${USER_ID}&dismissed=eq.true&order=posted_at.desc.nullslast&limit=50`);
+  const dismissed = (ok && Array.isArray(data)) ? data : [];
+
+  const annEmptyEl = document.getElementById('discarded-announcements-empty');
+  const annListEl = document.getElementById('discarded-announcements-list');
+  if (annListEl) {
+    if (dismissed.length === 0) {
+      if (annEmptyEl) annEmptyEl.style.display = 'block';
+      annListEl.style.display = 'none';
+    } else {
+      if (annEmptyEl) annEmptyEl.style.display = 'none';
+      annListEl.style.display = 'block';
+      annListEl.innerHTML = dismissed.map(discardedAnnouncementCardHTML).join('');
+    }
+  }
+
+  const asgEmptyEl = document.getElementById('discarded-assignments-empty');
+  const asgListEl = document.getElementById('discarded-assignments-list');
+  const completed = cachedAssignments.filter(a => a.completed || doneSet.has(decodeURIComponent(doneKey(a))));
+  if (asgListEl) {
+    if (completed.length === 0) {
+      if (asgEmptyEl) asgEmptyEl.style.display = 'block';
+      asgListEl.style.display = 'none';
+    } else {
+      if (asgEmptyEl) asgEmptyEl.style.display = 'none';
+      asgListEl.style.display = 'block';
+      // Pure HTML building lives in js/render-utils.js.
+      asgListEl.innerHTML = completedAssignmentsBodyHTML(cachedAssignments, doneSet);
+    }
+  }
+}
+
+function discardedAnnouncementCardHTML(a) {
+  return `<div class="announcement-card read">
+    <div class="announcement-main">
+      <div class="announcement-course">${escapeHtml(cleanCourseName(a.course_name))}</div>
+      <div class="announcement-title">${escapeHtml(a.title)}</div>
+      <div class="announcement-meta">${announcementTimeAgo(a.posted_at)}${a.author_name ? ` · ${escapeHtml(a.author_name)}` : ''}</div>
+    </div>
+    <button class="announcement-dismiss" title="Bring this back to Announcements" onclick="restoreAnnouncement('${a.id}')">↺</button>
+  </div>`;
+}
+
+async function restoreAnnouncement(id) {
+  sbFetchWithRetry(`/rest/v1/announcements?id=eq.${id}`, 'PATCH', { dismissed: false });
+  loadDiscardedPage();
+  loadAnnouncements();
+}
+
 /* announcementTimeAgo now lives in js/render-utils.js -- see the module
    bridge near the end of this file. */
 
@@ -3445,7 +3574,7 @@ function openAllAnnouncements() {
   overlay.style.display = 'block';
 }
 function closeAllAnnouncements() {
-  document.getElementById('announcements-detail-overlay').style.display = 'none';
+  hideOverlayAnimated('announcements-detail-overlay');
 }
 
 // Reachable from Settings so checking something off doesn't mean losing
@@ -3460,7 +3589,7 @@ function openCompletedAssignments() {
   overlay.style.display = 'block';
 }
 function closeCompletedAssignments() {
-  document.getElementById('completed-detail-overlay').style.display = 'none';
+  hideOverlayAnimated('completed-detail-overlay');
 }
 
 /* ===========================
@@ -3497,7 +3626,7 @@ function openGradeDetail(courseName) {
 }
 
 function closeGradeDetail() {
-  document.getElementById('grade-detail-overlay').style.display = 'none';
+  hideOverlayAnimated('grade-detail-overlay');
   currentGradeDetailCourse = null;
 }
 
@@ -3520,7 +3649,7 @@ function openAllGraded(courseName) {
 }
 
 function closeAllGraded() {
-  document.getElementById('grade-all-overlay').style.display = 'none';
+  hideOverlayAnimated('grade-all-overlay');
 }
 
 function finishDismissAnnouncement(id) {
@@ -3634,6 +3763,96 @@ async function toggleMessage(id) {
   }
 }
 
+/* ===========================
+   FEEDBACK (teacher comments left directly on a submission)
+   A separate thing from both announcements (course-wide posts) and
+   messages (Canvas Inbox) -- a comment a teacher/grader leaves on a
+   specific submission. Reuses the announcement-card look for the same
+   reason messages does.
+=========================== */
+// Which unread feedback ids we've already notified about this session --
+// module-level, not persisted, so a reload doesn't re-fire a browser
+// notification for something that arrived on a previous visit and is still
+// sitting unread; a genuinely new sync result is what should notify.
+let notifiedFeedbackIds = new Set();
+
+async function loadFeedback() {
+  const loadEl = document.getElementById('feedback-loading');
+  const emptyEl = document.getElementById('feedback-empty');
+  const listEl = document.getElementById('feedback-list');
+  if (loadEl) loadEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (listEl) listEl.style.display = 'none';
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/assignment_feedback?user_id=eq.${USER_ID}&order=posted_at.desc.nullslast&limit=50`);
+  if (loadEl) loadEl.style.display = 'none';
+  const fetched = (ok && Array.isArray(data)) ? data : [];
+
+  const unreadIds = new Set(fetched.filter(f => !f.read).map(f => String(f.id)));
+  const newOnes = fetched.filter(f => !f.read && !notifiedFeedbackIds.has(String(f.id)));
+  // First load of a session seeds notifiedFeedbackIds without notifying --
+  // otherwise every reload would "discover" the same still-unread feedback
+  // from a previous visit and notify about it again.
+  const isFirstLoadThisSession = notifiedFeedbackIds.size === 0 && cachedFeedback.length === 0;
+  if (newOnes.length > 0 && !isFirstLoadThisSession) {
+    const body = newOnes.length === 1
+      ? `${newOnes[0].author_name || 'A teacher'} commented on "${newOnes[0].assignment_title}"`
+      : `${newOnes.length} new comments on your assignments`;
+    notifyBrowser('New feedback from a teacher', { body, tag: 'sf-feedback' });
+  }
+  notifiedFeedbackIds = unreadIds;
+
+  cachedFeedback = fetched;
+  renderFeedbackList();
+}
+
+function feedbackCardHTML(f) {
+  const unread = !f.read ? ' unread' : '';
+  const expanded = f._expanded ? ' expanded' : '';
+  const body = f._expanded
+    ? `<div class="announcement-body">${escapeHtml(f.comment_text)}</div>`
+    : '';
+  return `<div class="announcement-card${expanded}${unread}" onclick="toggleFeedback('${f.id}')">
+    <div class="announcement-unread-dot"></div>
+    <div class="announcement-main">
+      <div class="announcement-course">${escapeHtml(f.course_name)}</div>
+      <div class="announcement-title">${escapeHtml(f.assignment_title)}</div>
+      <div class="announcement-meta">${escapeHtml(f.author_name || 'Teacher')} · ${announcementTimeAgo(f.posted_at)}</div>
+      ${body}
+    </div>
+  </div>`;
+}
+
+function renderFeedbackList() {
+  const emptyEl = document.getElementById('feedback-empty');
+  const listEl = document.getElementById('feedback-list');
+  if (!listEl) return;
+  const badge = document.getElementById('feedback-badge');
+  if (badge) {
+    const unreadCount = cachedFeedback.filter(f => !f.read).length;
+    badge.textContent = unreadCount > 0 ? String(unreadCount) : '';
+  }
+  if (cachedFeedback.length === 0) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    listEl.style.display = 'none';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  listEl.style.display = 'block';
+  listEl.innerHTML = cachedFeedback.map(feedbackCardHTML).join('');
+}
+
+async function toggleFeedback(id) {
+  const f = cachedFeedback.find(x => String(x.id) === String(id));
+  if (!f) return;
+  f._expanded = !f._expanded;
+  const wasUnread = !f.read;
+  if (wasUnread) f.read = true;
+  renderFeedbackList();
+  if (wasUnread) {
+    sbFetchWithRetry(`/rest/v1/assignment_feedback?id=eq.${id}`, 'PATCH', { read: true });
+  }
+}
+
 /* doneKey now lives in js/format-utils.js -- see the module bridge near
    the end of this file. */
 
@@ -3732,7 +3951,7 @@ async function toggleDoneFromDetail(id) {
 }
 
 function closeAssignmentDetail() {
-  document.getElementById('assignment-detail-overlay').style.display = 'none';
+  hideOverlayAnimated('assignment-detail-overlay');
 }
 
 function toggleDone(encodedKey, btn) {
@@ -4472,6 +4691,23 @@ function jumpTo(name) {
   showPage(name, el);
 }
 
+// Plays the matching CSS ".closing" exit animation (see styles.css) before
+// actually hiding an overlay, instead of the display flipping to none
+// instantly. Duration must match the CSS animation-duration on .closing --
+// there's no animationend listener here because a couple of these overlays
+// animate two elements (the backdrop and its inner card) with different
+// durations, and waiting on "the longer one" via a hardcoded ms is simpler
+// than juggling two animationend handlers per call site.
+function hideOverlayAnimated(id, ms = 180) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('closing');
+  setTimeout(() => {
+    el.style.display = 'none';
+    el.classList.remove('closing');
+  }, ms);
+}
+
 // One tap from Home straight to the report form, focused and ready to type --
 // not just "go to Settings and scroll until you find it".
 function jumpToReportProblem() {
@@ -4819,7 +5055,7 @@ function downloadAllSyllabi() {
 }
 
 function closeSyllabusDetail() {
-  document.getElementById('syllabus-detail-overlay').style.display = 'none';
+  hideOverlayAnimated('syllabus-detail-overlay');
   syllabusDetailCourseId = null;
 }
 
@@ -5601,6 +5837,32 @@ function renderStudySessionsForDay() {
 /* startOfWeek and fmtHoursMinutes now live in js/study-utils.js -- see the
    module bridge near the end of this file. */
 
+// How many individual days hit the daily minutes goal, and how many
+// individual weeks hit the weekly one -- across all logged history, not
+// just the currently visible range. A goal you can see yourself actually
+// hitting a running count of is more motivating than a progress bar that
+// resets to 0 every morning.
+function computeGoalAchievementCounts(sessions, dailyGoal, weeklyGoal) {
+  const dayTotals = {};
+  sessions.forEach(s => {
+    if (!s.session_date) return;
+    dayTotals[s.session_date] = (dayTotals[s.session_date] || 0) + (s.minutes_studied || 0);
+  });
+
+  let daysHit = 0;
+  const weekTotals = {};
+  Object.entries(dayTotals).forEach(([dateStr, min]) => {
+    if (dailyGoal > 0 && min >= dailyGoal) daysHit++;
+    const weekKey = ymd(startOfWeek(new Date(dateStr + 'T00:00:00')));
+    weekTotals[weekKey] = (weekTotals[weekKey] || 0) + min;
+  });
+
+  let weeksHit = 0;
+  Object.values(weekTotals).forEach(min => { if (weeklyGoal > 0 && min >= weeklyGoal) weeksHit++; });
+
+  return { daysHit, weeksHit };
+}
+
 function renderStudyTab() {
   const totalEl = document.getElementById('study-stat-total');
   if (!totalEl) return; // page not in DOM yet (shouldn't happen, but stay safe)
@@ -5633,6 +5895,12 @@ function renderStudyTab() {
 
   const nudgeEl = document.getElementById('study-goal-nudge');
   if (nudgeEl) nudgeEl.textContent = r.nudgeText;
+
+  const { daysHit, weeksHit } = computeGoalAchievementCounts(cachedStudySessions, r.dailyGoal, r.weeklyGoal);
+  const dailyHitsEl = document.getElementById('study-goal-daily-hits');
+  if (dailyHitsEl) dailyHitsEl.textContent = `${daysHit} time${daysHit !== 1 ? 's' : ''}`;
+  const weeklyHitsEl = document.getElementById('study-goal-weekly-hits');
+  if (weeklyHitsEl) weeklyHitsEl.textContent = `${weeksHit} time${weeksHit !== 1 ? 's' : ''}`;
 
   const dailyInput = document.getElementById('study-goal-daily-input');
   const weeklyInput = document.getElementById('study-goal-weekly-input');
@@ -5872,7 +6140,7 @@ function toggleFocusPause() {
 function minimizeFocusTimer() {
   if (!focusState) return;
   focusState.minimized = true;
-  document.getElementById('focus-overlay').style.display = 'none';
+  hideOverlayAnimated('focus-overlay');
   renderFocusViews();
 }
 
@@ -6012,7 +6280,7 @@ async function focusEndEarly() {
 function closeFocusTimer() {
   if (focusState && focusState.timerHandle) clearInterval(focusState.timerHandle);
   if (focusOriginalTitle) { document.title = focusOriginalTitle; focusOriginalTitle = null; }
-  document.getElementById('focus-overlay').style.display = 'none';
+  hideOverlayAnimated('focus-overlay');
   focusState = null;
   renderFocusMiniBar();
 }
@@ -6090,7 +6358,7 @@ function renderDeepWorkSetup() {
     <div class="focus-duration-row">
       ${DEEP_WORK_DURATIONS.map(m => `<button class="focus-duration-btn${m === deepWorkState.blockMin ? ' active' : ''}" onclick="deepWorkPickDuration(${m})">${fmtDeepWorkDuration(m)}</button>`).join('')}
     </div>
-    <div class="focus-sub" style="margin-top:10px;">One uninterrupted block — no breaks until it's done.</div>
+    <div class="focus-sub" style="margin-top:10px;">One uninterrupted block. No breaks until it's done.</div>
     <button class="settings-btn" onclick="deepWorkGoToCommit()">Continue</button>
   `;
 }
@@ -6104,7 +6372,7 @@ function deepWorkGoToCommit() {
   const body = document.getElementById('deepwork-body');
   body.innerHTML = `
     <div class="focus-title">Before you start</div>
-    <div class="focus-sub">What are you explicitly avoiding this block — phone, tabs, notifications? Naming it now makes it easier to hold the line.</div>
+    <div class="focus-sub">What are you explicitly avoiding this block, like your phone, tabs, or notifications? Naming it now makes it easier to hold the line.</div>
     <input class="settings-input" id="deepwork-avoiding" placeholder='e.g. "phone in another room, no email"' style="text-align:center;" onkeydown="if(event.key==='Enter'){deepWorkStart();}" />
     <button class="settings-btn" onclick="deepWorkStart()">Start deep work</button>
   `;
@@ -6163,7 +6431,7 @@ function toggleDeepWorkPause() {
 function minimizeDeepWorkTimer() {
   if (!deepWorkState) return;
   deepWorkState.minimized = true;
-  document.getElementById('deepwork-overlay').style.display = 'none';
+  hideOverlayAnimated('deepwork-overlay');
   renderDeepWorkMiniBar();
 }
 
@@ -6231,7 +6499,7 @@ function renderDeepWorkComplete() {
   const body = document.getElementById('deepwork-body');
   body.innerHTML = `
     <div class="focus-title">Block complete</div>
-    <div class="focus-sub">${fmtDeepWorkDuration(deepWorkState.blockMin)} of uninterrupted deep work. That's a thick X on the chain today.</div>
+    <div class="focus-sub">${fmtDeepWorkDuration(deepWorkState.blockMin)} of uninterrupted deep work. That's a red X on the chain today.</div>
     <button class="settings-btn" onclick="deepWorkFinish()">Finish</button>
   `;
 }
@@ -6271,7 +6539,7 @@ async function deepWorkEndEarly() {
 function closeDeepWorkTimer() {
   if (deepWorkState && deepWorkState.timerHandle) clearInterval(deepWorkState.timerHandle);
   if (deepWorkOriginalTitle) { document.title = deepWorkOriginalTitle; deepWorkOriginalTitle = null; }
-  document.getElementById('deepwork-overlay').style.display = 'none';
+  hideOverlayAnimated('deepwork-overlay');
   deepWorkState = null;
   renderDeepWorkMiniBar();
 }
@@ -6279,8 +6547,9 @@ function closeDeepWorkTimer() {
 /* ===== Study chain calendar =====
    The Seinfeld "don't break the chain" method, made real from actual logged
    minutes instead of a manual checkbox: a day counts once it has 15+ minutes
-   of study, and gets a thicker X if any of that was a deep-work block — so
-   the type of studying is visible at a glance, not just that it happened.
+   of study. A deep-work day gets a red X; a regular study day gets a green
+   background instead — so the type of studying is visible at a glance, not
+   just that it happened.
    Doubles as the lead/lag measure pairing from The 4 Disciplines of
    Execution: the chain is the lead measure (what you did today, which you
    fully control), the goals list is the lag measure (the future outcome the
@@ -6288,6 +6557,15 @@ function closeDeepWorkTimer() {
 const STUDY_CHAIN_THRESHOLD_MIN = 15;
 let studyChainMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
 let studyChainSelectedDate = null;
+
+// A small deterministic per-day tilt (-4..+4 degrees) for the chain X, so
+// the mark isn't visually identical stamped on every day -- purely a
+// styling detail, not randomness that would change between renders.
+function chainXTilt(dateKey) {
+  let h = 0;
+  for (let i = 0; i < dateKey.length; i++) h = (h * 31 + dateKey.charCodeAt(i)) | 0;
+  return (Math.abs(h) % 9) - 4;
+}
 
 function studyChainDayTotals() {
   const byDate = {};
@@ -6333,6 +6611,7 @@ function renderStudyChain() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
   const todayStr = ymd(new Date());
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
   const byDate = studyChainDayTotals();
 
   const cells = [];
@@ -6353,14 +6632,17 @@ function renderStudyChain() {
     const key = ymd(c.dateObj);
     const entry = byDate[key];
     const total = entry ? entry.studyMin + entry.deepMin : 0;
-    const chained = total >= STUDY_CHAIN_THRESHOLD_MIN;
-    const thick = !!entry && entry.deepMin > 0;
+    const hasDeepWork = !!entry && entry.deepMin > 0;
+    const studyComplete = !hasDeepWork && total >= STUDY_CHAIN_THRESHOLD_MIN;
     const isToday = key === todayStr;
     const isSelected = key === studyChainSelectedDate;
-    return `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" onclick="selectStudyChainDate('${key}')">
+    // A past day with nothing logged -- the broken-chain day -- gets flagged
+    // red. Today doesn't count as missed yet; there's still time left in it.
+    const missed = !isToday && c.dateObj < today0 && !hasDeepWork && !studyComplete;
+    return `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}${studyComplete ? ' study-complete' : ''}${missed ? ' missed' : ''}" onclick="selectStudyChainDate('${key}')">
       <div class="cal-day-num">${c.dnum}</div>
       <div class="cal-day-dots">
-        ${chained ? `<div class="cal-day-chain-x${thick ? ' thick' : ''}" title="${thick ? 'Deep work' : 'Study'} day">✕</div>` : ''}
+        ${hasDeepWork ? `<div class="cal-day-chain-x" style="--x-tilt:${chainXTilt(key)}deg" title="Deep work day"></div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -6369,7 +6651,16 @@ function renderStudyChain() {
   const leadEl = document.getElementById('chain-lead-value');
   if (leadEl) leadEl.textContent = `${chainLen} day chain${chainLen >= 1 ? ' 🔥' : ''}`;
   const lagEl = document.getElementById('chain-lag-value');
-  if (lagEl) lagEl.textContent = `${userGoals.length} goal${userGoals.length !== 1 ? 's' : ''}`;
+  if (lagEl) {
+    if (userGoals.length === 0) {
+      lagEl.textContent = 'No goal set yet';
+    } else {
+      const first = userGoals[0];
+      const shown = first.length > 40 ? first.slice(0, 37) + '...' : first;
+      const extra = userGoals.length > 1 ? ` +${userGoals.length - 1} more` : '';
+      lagEl.textContent = shown + extra;
+    }
+  }
 
   renderStudyChainDetail(byDate);
 }
@@ -6541,6 +6832,7 @@ function showPage(name, el, fromNav) {
 
   if (name === 'study') maybeShowStudyGoalOnboarding();
   if (name === 'links') maybeShowLinksTutorial();
+  if (name === 'discarded') loadDiscardedPage();
   if (name === 'adminreports') loadAdminReports();
   if (name === 'adminanalytics') loadAdminAnalytics();
 }

@@ -359,6 +359,47 @@ Deno.serve(async (req) => {
       console.warn(`[run ${runId}] grades error: ${e?.message}`);
     }
 
+    // Teacher feedback -- comments left directly on a submission, fetched
+    // via the bulk "submissions for multiple assignments" endpoint so this
+    // is one request per course instead of one per assignment. A
+    // submission's own `user_id` is the student who owns it, so any comment
+    // whose author isn't that id is someone else replying (a teacher or
+    // grader), not the student's own note-to-self.
+    const allFeedback: any[] = [];
+    try {
+      await Promise.all(activeCourses.map(async (course: any) => {
+        const courseId = String(course.id);
+        const submissions = await fetchAllPages(
+          `${canvasUrl}/api/v1/courses/${courseId}/students/submissions` +
+            `?student_ids[]=self&include[]=submission_comments&include[]=assignment&per_page=100`,
+          canvasAuth,
+        ) ?? [];
+        for (const sub of submissions) {
+          const comments = sub.submission_comments;
+          if (!Array.isArray(comments) || comments.length === 0) continue;
+          const assignmentTitle = sub.assignment?.name;
+          if (!assignmentTitle || !sub.assignment_id) continue;
+          for (const c of comments) {
+            if (!c.id || !c.comment) continue;
+            if (String(c.author_id) === String(sub.user_id)) continue; // the student's own comment, not a reply
+            allFeedback.push({
+              user_id: userId,
+              canvas_comment_id: String(c.id),
+              canvas_assignment_id: String(sub.assignment_id),
+              assignment_title: assignmentTitle,
+              course_name: course.name,
+              author_name: c.author_name ?? null,
+              comment_text: c.comment,
+              posted_at: c.created_at ?? null,
+            });
+          }
+        }
+      }));
+      console.log(`[run ${runId}] feedback: ${allFeedback.length}`);
+    } catch (e: any) {
+      console.warn(`[run ${runId}] feedback error: ${e?.message}`);
+    }
+
     // Announcements -- one call across all active courses (Canvas's
     // /announcements endpoint takes a context_codes[] list) rather than a
     // per-course request. Upserted (not delete-then-reinsert like
@@ -495,6 +536,23 @@ Deno.serve(async (req) => {
       { method: "DELETE", headers: svcHdr },
     );
 
+    // Upsert (not delete-then-reinsert) so `read` survives the next sync,
+    // same reasoning as canvas_messages above.
+    if (allFeedback.length > 0) {
+      await fetch(`${supabaseUrl}/rest/v1/assignment_feedback?on_conflict=user_id,canvas_comment_id`, {
+        method: "POST",
+        headers: { ...svcHdr, Prefer: "return=minimal,resolution=merge-duplicates" },
+        body: JSON.stringify(allFeedback),
+      });
+    }
+    // Prune comments no longer returned (assignment deleted, comment removed).
+    const keepFeedbackIds = allFeedback.map((f) => f.canvas_comment_id);
+    const keepFeedbackList = keepFeedbackIds.length > 0 ? `(${keepFeedbackIds.map((id) => `"${id}"`).join(",")})` : "()";
+    await fetch(
+      `${supabaseUrl}/rest/v1/assignment_feedback?user_id=eq.${userId}&canvas_comment_id=not.in.${keepFeedbackList}`,
+      { method: "DELETE", headers: svcHdr },
+    );
+
     const effectiveCourses = syncAll ? activeCourses.map((c: any) => ({ id: String(c.id), name: c.name })) : activeSel;
     const assignmentsByCourse = new Map<string, any[]>();
     for (const a of allAssignments) {
@@ -520,6 +578,7 @@ Deno.serve(async (req) => {
         grades: allGrades.length,
         announcements: allAnnouncements.length,
         messages: allMessages.length,
+        feedback: allFeedback.length,
         blocked_courses: blockedCourseCount,
         courses: courseSummaries,
         sync_all: syncAll,

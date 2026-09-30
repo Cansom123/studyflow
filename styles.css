@@ -325,13 +325,13 @@ body.auth-mode .auth-form-col > .onboard-screen {
 /* ===== ONBOARDING ===== */
 .onboard-screen {
   background: var(--surface); border-radius: 20px;
-  padding: 28px 24px; margin: 20px auto 0;
-  max-width: 430px;
+  padding: 44px 48px; margin: 5vh auto 0;
+  max-width: 640px; width: 100%;
   border: 1px solid var(--border); box-shadow: var(--shadow-md); display: none;
 }
-.onboard-step { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
-.onboard-title { font-size: 22px; font-weight: 700; color: var(--text1); margin-bottom: 6px; letter-spacing: -0.3px; }
-.onboard-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.55; }
+.onboard-step { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+.onboard-title { font-size: 28px; font-weight: 700; color: var(--text1); margin-bottom: 8px; letter-spacing: -0.3px; }
+.onboard-sub { font-size: 15px; color: var(--text2); margin-bottom: 28px; line-height: 1.6; }
 .onboard-btn {
   width: 100%; padding: 13px; border-radius: 12px;
   background: var(--btn-bg); color: var(--btn-fg); font-size: 15px; font-weight: 600;
@@ -1201,7 +1201,8 @@ body.auth-mode .auth-form-col > .onboard-screen {
   .app { max-width: 100%; }
   .auth-form-col { padding: 0 16px; }
   .auth-screen { max-width: none; }
-  .onboard-screen { margin: 16px; margin-top: 16px; }
+  .onboard-screen { margin: 16px; margin-top: 16px; padding: 28px 24px; }
+  .onboard-title { font-size: 24px; }
   .main-app { display: flex; flex-direction: column; height: 100dvh; }
   .tabs { display: none; }
   .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }

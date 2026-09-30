@@ -327,10 +327,23 @@ body.auth-mode .auth-form-col > .onboard-screen {
   background: var(--surface); border-radius: 20px;
   padding: 44px 48px; margin: 5vh auto 0;
   max-width: 640px; width: 100%;
-  border: 1px solid var(--border); box-shadow: var(--shadow-md); display: none;
+  border: 1px solid color-mix(in oklch, var(--accent) 16%, var(--border));
+  box-shadow:
+    var(--shadow-md),
+    0 0 60px -20px color-mix(in oklch, var(--accent) 40%, transparent),
+    inset 0 1px 0 color-mix(in oklch, var(--accent) 12%, transparent);
+  display: none;
 }
 .onboard-step { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
 .onboard-title { font-size: 28px; font-weight: 700; color: var(--text1); margin-bottom: 8px; letter-spacing: -0.3px; }
+.onboard-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.onboard-title-row .onboard-title { margin-bottom: 0; }
+.onboard-title-icon {
+  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  background: var(--accent-soft); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+}
+.onboard-title-icon svg { width: 17px; height: 17px; }
 .onboard-sub { font-size: 15px; color: var(--text2); margin-bottom: 28px; line-height: 1.6; }
 .onboard-btn {
   width: 100%; padding: 13px; border-radius: 12px;
@@ -351,9 +364,32 @@ body.auth-mode .auth-form-col > .onboard-screen {
 .onboard-btn-secondary:hover { background: var(--border2); }
 .onboard-btn-secondary:active { transform: scale(0.98); }
 
+/* Plain-text link pair for "Go back"/"Skip for now" -- demoted below the
+   primary CTA instead of stacked as equal-weight buttons. */
+.onboard-link-row { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 14px; }
+.onboard-link {
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  font-size: 13px; font-weight: 600; color: var(--text2); padding: 4px 2px;
+  transition: color 0.15s;
+}
+.onboard-link:hover { color: var(--text1); }
+.onboard-link:active { opacity: 0.7; }
+
 .progress-dots { display: flex; gap: 7px; justify-content: center; margin-bottom: 26px; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); transition: all 0.2s; }
 .dot.active { background: var(--accent); width: 18px; border-radius: 3px; }
+/* Main 4-step onboarding indicator -- same pill shape at every step instead
+   of a lone wide dot among round ones. Scoped with .onboard-progress so the
+   plain .dot/.dot.active pair above still works unchanged for the tour's
+   mini-dots and the links tutorial, which reuse .progress-dots/.dot too. */
+.onboard-progress .dot {
+  width: 22px; height: 6px; border-radius: 3px;
+  background: transparent; border: 1.5px solid var(--border2);
+  transition: all 0.25s cubic-bezier(.16,1,.3,1);
+}
+.onboard-progress .dot.complete { background: var(--text1); border-color: var(--text1); opacity: 0.85; }
+.onboard-progress .dot.current { background: var(--accent); border-color: var(--accent); width: 28px; }
+.onboard-progress .dot.upcoming { background: transparent; border-color: var(--border2); }
 
 /* Onboarding step 4 -- a short feature tour instead of dropping students
    straight onto the dashboard cold. Reuses the onboarding shell (dots,
@@ -455,6 +491,11 @@ body.auth-mode .auth-form-col > .onboard-screen {
 }
 .goal-tag-text { font-size: 13px; color: var(--text1); flex: 1; font-weight: 500; }
 .goal-tag-remove { font-size: 20px; color: var(--text2); cursor: pointer; background: none; border: none; line-height: 1; opacity: 0.6; }
+.goal-tag.goal-tag-new { animation: goalChipIn 0.3s cubic-bezier(.16,1,.3,1) both; }
+@keyframes goalChipIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 /* ===== MAIN APP ===== */
 .main-app { display: none; flex-direction: row; align-items: stretch; min-height: 100vh; }
@@ -1671,6 +1712,19 @@ body.auth-mode .auth-form-col > .onboard-screen {
 }
 @media (prefers-reduced-motion: reduce) {
   .auth-float-cap { animation: none; opacity: 0.15; }
+}
+
+/* Onboarding reuses the same fixed backdrop as login, but swaps the raining
+   caps (fine as login ambience, too busy/literal behind a multi-step form)
+   for a quiet accent-colored glow centered behind the card. */
+.auth-bg-glow.onboard-glow .auth-float-cap { display: none; }
+.auth-bg-glow.onboard-glow::before {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  width: min(1100px, 150vw); height: min(1100px, 150vw);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, color-mix(in oklch, var(--accent) 45%, transparent) 0%, transparent 68%);
+  filter: blur(10px);
 }
 
 /* ===== HOME ===== */

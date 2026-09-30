@@ -201,8 +201,8 @@
 
   <!-- ONBOARDING 1: CONNECT CANVAS -->
   <div id="onboard-canvas" class="onboard-screen">
-    <div class="progress-dots">
-      <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="progress-dots onboard-progress">
+      <div class="dot current"></div><div class="dot upcoming"></div><div class="dot upcoming"></div><div class="dot upcoming"></div>
     </div>
     <div class="onboard-step">Step 1 of 4</div>
     <div class="onboard-title">Connect Canvas</div>
@@ -224,8 +224,8 @@
 
   <!-- ONBOARDING 2: SELECT COURSES -->
   <div id="onboard-courses" class="onboard-screen">
-    <div class="progress-dots">
-      <div class="dot active"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+    <div class="progress-dots onboard-progress">
+      <div class="dot complete"></div><div class="dot current"></div><div class="dot upcoming"></div><div class="dot upcoming"></div>
     </div>
     <div class="onboard-step">Step 2 of 4</div>
     <div class="onboard-title">Your current classes</div>
@@ -234,16 +234,23 @@
     <div id="course-list"></div>
     <div id="onboard-courses-msg"></div>
     <button class="onboard-btn" id="ob-courses-btn" onclick="saveSelectedCourses()">Continue</button>
-    <button class="onboard-btn-secondary" onclick="showOnboardCanvas()">Go back</button>
+    <div class="onboard-link-row">
+      <button class="onboard-link" onclick="showOnboardCanvas()">← Go back</button>
+    </div>
   </div>
 
   <!-- ONBOARDING 2: SET GOALS -->
   <div id="onboard-goals" class="onboard-screen">
-    <div class="progress-dots">
-      <div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot"></div>
+    <div class="progress-dots onboard-progress">
+      <div class="dot complete"></div><div class="dot complete"></div><div class="dot current"></div><div class="dot upcoming"></div>
     </div>
     <div class="onboard-step">Step 3 of 4</div>
-    <div class="onboard-title">Set your goals</div>
+    <div class="onboard-title-row">
+      <span class="onboard-title-icon">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.6"/><circle cx="10" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg>
+      </span>
+      <div class="onboard-title">Set your goals</div>
+    </div>
     <div class="onboard-sub">What do you want to achieve this semester? These help StudyFlow prioritize your work.</div>
     <div id="goals-list-onboard"></div>
     <div class="goal-input-row">
@@ -252,14 +259,16 @@
     </div>
     <div id="onboard-goals-msg"></div>
     <button class="onboard-btn" id="ob-goals-btn" onclick="finishOnboarding()">Continue</button>
-    <button class="onboard-btn-secondary" onclick="finishOnboarding()">Skip for now</button>
-    <button class="onboard-btn-secondary" onclick="showOnboardCourses()">Go back</button>
+    <div class="onboard-link-row">
+      <button class="onboard-link" onclick="showOnboardCourses()">← Go back</button>
+      <button class="onboard-link" onclick="finishOnboarding()">Skip for now</button>
+    </div>
   </div>
 
   <!-- ONBOARDING 4: QUICK TOUR -->
   <div id="onboard-tour" class="onboard-screen">
-    <div class="progress-dots">
-      <div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div>
+    <div class="progress-dots onboard-progress">
+      <div class="dot complete"></div><div class="dot complete"></div><div class="dot complete"></div><div class="dot current"></div>
     </div>
     <div class="onboard-step">Step 4 of 4</div>
     <div class="tour-slide">
@@ -1982,7 +1991,7 @@ function hideAll() {
     if (el) el.style.display = 'none';
   });
   const glow = document.getElementById('auth-bg-glow');
-  if (glow) glow.style.display = 'none';
+  if (glow) { glow.style.display = 'none'; glow.classList.remove('onboard-glow'); }
   const page = document.getElementById('auth-page');
   if (page) page.style.display = 'none';
   // Pairs with showAuthGlow()'s class add below -- pinning the whole page to
@@ -1996,7 +2005,7 @@ function hideAll() {
 }
 function showAuthGlow() {
   const glow = document.getElementById('auth-bg-glow');
-  if (glow) glow.style.display = 'block';
+  if (glow) { glow.style.display = 'block'; glow.classList.remove('onboard-glow'); }
   const page = document.getElementById('auth-page');
   if (page) page.style.display = 'grid';
   markAuthMode();
@@ -2012,7 +2021,7 @@ function showAuthGlow() {
 // there unused. This shows just the background glow, no #auth-page.
 function showOnboardGlow() {
   const glow = document.getElementById('auth-bg-glow');
-  if (glow) glow.style.display = 'block';
+  if (glow) { glow.style.display = 'block'; glow.classList.add('onboard-glow'); }
   markAuthMode();
 }
 
@@ -2838,10 +2847,10 @@ async function saveSelectedCourses() {
   }
 }
 
-function renderGoalsOnboard() {
+function renderGoalsOnboard(newIndex = -1) {
   const el = document.getElementById('goals-list-onboard');
   el.innerHTML = onboardGoals.map((g, i) => `
-    <div class="goal-tag">
+    <div class="goal-tag${i === newIndex ? ' goal-tag-new' : ''}">
       <div class="goal-tag-text">${g}</div>
       <button class="goal-tag-remove" onclick="removeGoalOnboard(${i})">×</button>
     </div>`).join('');
@@ -2852,7 +2861,7 @@ function addGoalOnboard() {
   const val = input.value.trim();
   if (!val) return;
   onboardGoals.push(val); input.value = '';
-  renderGoalsOnboard();
+  renderGoalsOnboard(onboardGoals.length - 1);
 }
 
 function removeGoalOnboard(i) { onboardGoals.splice(i, 1); renderGoalsOnboard(); }

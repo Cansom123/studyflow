@@ -550,7 +550,7 @@ function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
     </div>
     <div id="syl-inline-counter" style="font-size:12px;color:var(--text2);margin:6px 0 10px;"></div>
     <div id="syl-ai-answer"></div>
-    <div class="syllabus-text" id="syl-view">${escapeHtml(s.content)}</div>` : ''}
+    <div class="syllabus-text" id="syl-view">${linkifyText(s.content)}</div>` : ''}
     <textarea class="syllabus-textarea" id="syl-edit-input" style="display:${hasContent ? 'none' : 'block'};margin-top:${hasContent ? '12px' : '0'};" placeholder="Paste your syllabus text here...">${hasContent ? escapeHtml(s.content) : ''}</textarea>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
       ${hasContent ? `<button class="sync-btn" id="syl-edit-toggle-btn" style="width:auto;flex:1;" onclick="toggleSyllabusEdit()">Edit</button>` : ''}

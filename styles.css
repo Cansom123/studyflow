@@ -1948,7 +1948,10 @@ body.auth-mode .auth-form-col > .auth-screen {
 .syllabus-text {
   font-size: 13px; color: var(--text1); line-height: 1.6; white-space: pre-wrap;
   background: var(--surface2); border-radius: 12px; padding: 14px;
+  overflow-wrap: anywhere;
 }
+.syllabus-text a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.syllabus-text a:hover { opacity: 0.8; }
 .syllabus-textarea {
   width: 100%; min-height: 200px; padding: 12px 14px; border-radius: 12px;
   border: 1px solid var(--border); font-size: 13px; color: var(--text1);

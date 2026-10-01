@@ -12,6 +12,29 @@ function escapeHtml(str) {
 
 function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
+// Turns a bare http(s) URL match into a clickable link, trimming trailing
+// sentence punctuation (periods, commas, closing parens) that's almost
+// never actually part of the URL. Expects already-escaped text in, so a
+// matched URL is the HTML-escaped form (e.g. "&amp;" for "&"), which is
+// exactly what a browser expects inside an href attribute too.
+function linkifyBareUrls(escaped) {
+  return escaped.replace(/\bhttps?:\/\/[^\s<]+/g, url => {
+    const trailing = url.match(/[.,;:!?)\]]+$/);
+    const clean = trailing ? url.slice(0, -trailing[0].length) : url;
+    const tail = trailing ? trailing[0] : '';
+    if (!clean) return url;
+    return `<a href="${clean}" target="_blank" rel="noopener noreferrer">${clean}</a>${tail}`;
+  });
+}
+
+// Escapes text and makes any bare URL in it clickable -- written for synced
+// syllabi, where a professor often pastes a raw Zoom/Drive/form link as
+// plain text (Canvas doesn't always auto-linkify it), leaving students to
+// carefully select and copy the whole thing by hand instead of tapping it.
+function linkifyText(str) {
+  return linkifyBareUrls(escapeHtml(str));
+}
+
 function cleanCourseName(name) {
   // Strip common Canvas administrative suffixes, preserve the actual course title.
   // Handles formats like:

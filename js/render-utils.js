@@ -250,7 +250,15 @@ function syllabusListHTML(syllabusCourses, cachedSyllabi) {
     const s = cachedSyllabi.find(x => String(x.course_id) === String(c.id));
     const name = escapeHtml(cleanCourseName(c.name));
     let badge, badgeClass, sub;
-    if (s && s.content) {
+    if (s && s.content && !syllabusHasRealText(s.content)) {
+      // Canvas gave back a syllabus body, but it's just a posted link with
+      // little or no real text -- coco.1 can't follow it, so say so up front
+      // instead of looking "found" and only failing once someone asks it a
+      // question (see COCO_NO_SYLLABUS_TEXT).
+      badge = 'Link only';
+      badgeClass = 'badge-test';
+      sub = 'Open the link, then paste the text in so coco.1 can read it';
+    } else if (s && s.content) {
       badge = s.source === 'canvas' ? 'Found on Canvas' : 'Added by you';
       badgeClass = s.source === 'canvas' ? 'badge-hw' : 'badge-essay';
       sub = escapeHtml(s.content).slice(0, 110) + (s.content.length > 110 ? '…' : '');
@@ -531,12 +539,17 @@ function checklistSectionHTML(a, steps, editingChecklistStepId, bannerHTML) {
 // not-pure-so-push-it-up reason as checklistSectionHTML's banner.
 function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
   const hasContent = !!(s && s.content);
+  const hasRealText = hasContent && syllabusHasRealText(s.content);
   const sourceLabel = hasContent
     ? (s.source === 'canvas' ? 'Pulled automatically from Canvas' : 'Added manually')
     : "StudyFlow couldn't find this on Canvas. Paste it in yourself below.";
+  const linkOnlyNotice = (hasContent && !hasRealText)
+    ? `<div class="msg-error" style="margin-bottom:12px;">This looks like just a link, not the actual syllabus text - coco.1 can't open links, only read text. Open the link below, then paste the real text into the box at the bottom so it can answer questions about it.</div>`
+    : '';
   return `
     <div class="card-sub" style="margin-bottom:14px;">${escapeHtml(sourceLabel)}</div>
-    ${hasContent ? `
+    ${linkOnlyNotice}
+    ${hasRealText ? `
     <div class="seg-control" id="syl-mode-toggle" style="margin-bottom:10px;">
       <button class="seg-btn active" data-mode="ask" onclick="setSylSearchMode('ask')">✨ Ask</button>
       <button class="seg-btn" data-mode="literal" onclick="setSylSearchMode('literal')">Search</button>
@@ -549,8 +562,8 @@ function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
       <button class="detail-close" style="width:30px;height:30px;flex-shrink:0;" onclick="jumpSyllabusMatch(1)" title="Next match">›</button>
     </div>
     <div id="syl-inline-counter" style="font-size:12px;color:var(--text2);margin:6px 0 10px;"></div>
-    <div id="syl-ai-answer"></div>
-    <div class="syllabus-text" id="syl-view">${linkifyText(s.content)}</div>` : ''}
+    <div id="syl-ai-answer"></div>` : ''}
+    ${hasContent ? `<div class="syllabus-text" id="syl-view">${linkifyText(s.content)}</div>` : ''}
     <textarea class="syllabus-textarea" id="syl-edit-input" style="display:${hasContent ? 'none' : 'block'};margin-top:${hasContent ? '12px' : '0'};" placeholder="Paste your syllabus text here...">${hasContent ? escapeHtml(s.content) : ''}</textarea>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
       ${hasContent ? `<button class="sync-btn" id="syl-edit-toggle-btn" style="width:auto;flex:1;" onclick="toggleSyllabusEdit()">Edit</button>` : ''}

@@ -119,6 +119,22 @@ function cocoRetrieve(question, contextText, limit = 3) {
 
 const COCO_UNKNOWN = "The syllabus doesn't cover that - worth asking your instructor.";
 
+// A lot of real Canvas "syllabi" are just a posted link to a PDF or Google
+// Doc hosted elsewhere, with little or no real text in the syllabus body
+// itself. coco.1 can only read what StudyFlow actually pulled from Canvas --
+// it can't follow a link and read what's on the other side of it. Without
+// this check, cocoRetrieve finds nothing in that near-empty text and
+// cocoAsk falls through to COCO_UNKNOWN, which *sounds* like "I read your
+// syllabus and it doesn't mention that" when the honest answer is "I never
+// had your real syllabus text to read in the first place" -- StudyFlow
+// advertising a syllabus Q&A ability it quietly can't deliver here.
+const COCO_LINK_ONLY_MSG = "This syllabus is just a link on Canvas, so there's no real text here yet for coco.1 to read - open the link, then paste the text in on this page so it can answer questions about it.";
+
+function syllabusHasRealText(contextText) {
+  const withoutUrls = (contextText || '').replace(/https?:\/\/\S+/g, '').trim();
+  return withoutUrls.length >= 40;
+}
+
 // Real incident: the on-device model occasionally degenerates into fluent-
 // looking but meaningless token soup -- mixed scripts, fused non-words, code
 // fragments -- instead of failing outright, and it reached a student

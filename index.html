@@ -4160,6 +4160,10 @@ async function cocoVerify(answer, passages) {
 async function cocoAsk(question, contextText, history) {
   if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
 
+  if (!syllabusHasRealText(contextText)) {
+    return { answer: COCO_LINK_ONLY_MSG, citation: '', confidence: 'none' };
+  }
+
   const hits = cocoRetrieve(question, contextText, 3);
 
   // Nothing relevant retrieved → don't even ask the model. It can only
@@ -5306,7 +5310,7 @@ async function askSyllabiWithAI(q) {
     const prior = cachedSyllabi.find(s => String(s.course_id) === String(cocoSyllabusChat.courseId) && s.content);
     if (prior) best = prior;
   }
-  if (!best) best = cachedSyllabi.find(s => s.content);
+  if (!best) best = cachedSyllabi.find(s => syllabusHasRealText(s.content)) || cachedSyllabi.find(s => s.content);
   if (!best) {
     resultEl.innerHTML = `<div class="card-sub">You don't have any syllabi with content yet.</div>`;
     return;

@@ -2620,12 +2620,12 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   100% { transform: translateY(112vh) rotate(16deg); opacity: 0; }
 }
 
-/* -- Primary buttons on the dark auth screens are flat: no halo, and they
-   dim slightly on hover instead of lifting. -- */
-.auth-page .auth-btn, #conn-problem .auth-btn { box-shadow: none; }
+/* -- Primary buttons on the dark auth screens keep their soft white halo
+   (the base .auth-btn glow); on hover it brightens rather than being
+   replaced by the neutral shadow the rest of the app's buttons use. -- */
 @media (hover: hover) and (pointer: fine) {
   .auth-page .auth-btn:hover:not(:disabled), #conn-problem .auth-btn:hover:not(:disabled) {
-    transform: none; box-shadow: none; filter: brightness(0.9);
+    box-shadow: 0 4px 20px color-mix(in oklch, var(--btn-bg) 45%, transparent);
   }
 }
 
@@ -2650,21 +2650,31 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   position: fixed; inset: 0; z-index: 6000;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
   background: #000; color: #fff; overflow: hidden;
-  transition: opacity 0.5s ease, visibility 0s 0.5s;
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out), visibility 0s 0.6s;
 }
-#boot-splash.done { opacity: 0; visibility: hidden; pointer-events: none; }
-.boot-logo { position: relative; animation: bootIn 0.8s var(--ease-out) both; }
+#boot-splash.done { opacity: 0; transform: scale(1.04); visibility: hidden; pointer-events: none; }
+.boot-glow {
+  position: absolute; width: 560px; height: 560px; max-width: 95vw; max-height: 95vw; border-radius: 50%;
+  background: radial-gradient(circle, oklch(0.5 0.16 275 / 0.3) 0%, transparent 66%);
+  animation: bootBreathe 3.4s ease-in-out infinite;
+}
+.boot-logo { position: relative; animation: bootIn 1s var(--ease-out) both; }
 .boot-logo .logo-mark { color: #fff; width: 48px; height: 48px; }
-.boot-logo .logo-word { font-size: 34px; padding-left: 30px; color: #fff; }
+.boot-logo .logo-word {
+  font-size: 34px; padding-left: 30px; color: transparent;
+  background: linear-gradient(100deg, #7d7d7d 20%, #ffffff 45%, #7d7d7d 70%);
+  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text;
+  animation: bootShine 2.4s ease-in-out infinite;
+}
 .boot-bar {
-  position: relative; width: 96px; height: 2px; border-radius: 2px;
+  position: relative; width: 120px; height: 2px; border-radius: 2px;
   background: rgba(255,255,255,0.12); overflow: hidden;
-  animation: bootIn 0.8s 0.15s var(--ease-out) both;
+  animation: bootIn 1s 0.2s var(--ease-out) both;
 }
 .boot-bar::after {
-  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%;
-  background: #fff; border-radius: 2px;
-  animation: bootSweep 1.4s ease-in-out infinite;
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+  animation: bootSweep 1.3s ease-in-out infinite;
 }
 .boot-slow {
   position: absolute; bottom: 12vh; left: 24px; right: 24px; text-align: center;
@@ -2675,8 +2685,10 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   margin-left: 8px; background: none; border: none; color: #fff; font: inherit;
   font-weight: 700; text-decoration: underline; cursor: pointer;
 }
-@keyframes bootIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@keyframes bootSweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+@keyframes bootIn { from { opacity: 0; transform: translateY(10px) scale(0.96); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes bootShine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+@keyframes bootSweep { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+@keyframes bootBreathe { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
 
 /* -- Shown when the app cannot reach the server on startup (offline, outage)
    instead of mistaking that for "no Canvas connected yet". -- */
@@ -2692,14 +2704,60 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 
 /* -- Sync/loading screen: the logo tile used to spin a full 360 degrees,
    which just turned its glyph upside down on every lap. It now stays
-   upright and breathes gently, which still reads as alive when the
+   upright and breathes, and activity is shown by a ripple leaving the ring
+   plus a soft ambient glow -- so the screen still reads as alive when the
    percentage parks at its cap while waiting on Canvas. -- */
 .ws-sync-logo-spin { animation: wsLogoBreathe 2.8s ease-in-out infinite; }
+.ws-sync-logo-wrap::before {
+  content: ''; position: absolute; inset: -52px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in oklch, var(--accent) 20%, transparent) 0%, transparent 64%);
+  animation: wsAmbient 3.2s ease-in-out infinite;
+}
+.ws-sync-logo-wrap::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  border: 1.5px solid var(--accent); opacity: 0;
+  animation: wsRipple 2.2s ease-out infinite;
+}
+.ws-sync-progress-fill { filter: drop-shadow(0 0 5px color-mix(in oklch, var(--accent) 70%, transparent)); }
+@keyframes wsAmbient { 0%, 100% { opacity: 0.45; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes wsRipple { 0% { transform: scale(1); opacity: 0.45; } 100% { transform: scale(1.5); opacity: 0; } }
 #ws-syncing-msg.swap { animation: msgSwap 0.5s var(--ease-out); }
 @keyframes msgSwap { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 
+/* -- Brand panel product preview: shows what the app is on large screens
+   (decorative; hidden anywhere it would not fit). -- */
+.auth-preview { display: none; }
+@media (min-width: 1100px) and (min-height: 820px) {
+  .auth-brand-inner > *:nth-child(4) { animation-delay: 520ms; }
+  .auth-preview { display: block; position: relative; height: 205px; margin-top: 52px; }
+  .ap-card {
+    position: absolute; display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; border-radius: 16px;
+    background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.09);
+    box-shadow: 0 24px 50px -24px rgba(0,0,0,0.9);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    animation: apFloat 7s ease-in-out infinite;
+  }
+  .ap-card.c1 { top: 0; left: 0; width: 330px; }
+  .ap-card.c2 { top: 64px; left: 150px; width: 300px; animation-delay: -2.3s; }
+  .ap-card.c3 { top: 130px; left: 36px; width: 300px; animation-delay: -4.6s; }
+  .ap-ring { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); flex-shrink: 0; }
+  .ap-rank { width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #0f0f0f; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ap-body { flex: 1; min-width: 0; }
+  .ap-title { font-size: 13.5px; font-weight: 600; color: #fff; }
+  .ap-sub { font-size: 11.5px; color: #9a9a9a; margin-top: 2px; }
+  .ap-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: rgba(30,215,96,0.16); color: #1ed760; }
+  .ap-bar { height: 3px; border-radius: 99px; background: rgba(255,255,255,0.12); margin-top: 7px; overflow: hidden; }
+  .ap-bar i { display: block; height: 100%; width: 94%; border-radius: 99px; background: #1ed760; }
+  .ap-grade { font-size: 18px; font-weight: 800; color: #1ed760; }
+}
+@keyframes apFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .boot-logo, .boot-bar, .boot-bar::after, .ws-sync-logo-spin, #ws-syncing-msg.swap { animation: none; }
+  .boot-glow, .boot-logo, .boot-logo .logo-word, .boot-bar, .boot-bar::after,
+  .ws-sync-logo-spin, .ws-sync-logo-wrap::before, .ws-sync-logo-wrap::after,
+  #ws-syncing-msg.swap, .ap-card { animation: none; }
+  .boot-logo .logo-word { color: #fff; background: none; }
   .boot-bar::after { width: 100%; }
   #boot-splash { transition-duration: 0.01ms; }
 }

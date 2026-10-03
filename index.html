@@ -15,6 +15,7 @@
      session is checked. Dismissed by hideBootSplash() once we know which screen
      to show -- see hideAll() and showApp(). -->
 <div id="boot-splash" role="status" aria-label="Loading StudyFlow">
+  <div class="boot-glow"></div>
   <div class="boot-logo logo">
     <div class="logo-mark">
       <svg viewBox="0 0 24 24" fill="none">
@@ -88,6 +89,11 @@
         <li>One priority list instead of five tabs</li>
         <li>Grades that actually make sense</li>
       </ul>
+      <div class="auth-preview" aria-hidden="true">
+        <div class="ap-card c1"><span class="ap-ring"></span><div class="ap-body"><div class="ap-title">Cell Respiration Lab</div><div class="ap-sub">Biology · due tomorrow</div></div><span class="ap-badge">Essay</span></div>
+        <div class="ap-card c2"><div class="ap-body"><div class="ap-title">AP Calculus</div><div class="ap-bar"><i></i></div></div><span class="ap-grade">A</span></div>
+        <div class="ap-card c3"><span class="ap-rank">1</span><div class="ap-body"><div class="ap-title">Start the essay draft</div><div class="ap-sub">Top priority today</div></div></div>
+      </div>
     </div>
   </div>
 

@@ -2677,10 +2677,11 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   animation: bootSweep 1.3s ease-in-out infinite;
 }
 .boot-slow {
-  position: absolute; bottom: 12vh; left: 24px; right: 24px; text-align: center;
-  font-size: 13px; color: #b3b3b3; opacity: 0; visibility: hidden; transition: opacity 0.4s;
+  text-align: center; font-size: 13px; color: #9a9a9a; line-height: 1.5;
+  max-height: 0; margin-top: 0; overflow: hidden; opacity: 0;
+  transition: max-height 0.4s ease, margin-top 0.4s ease, opacity 0.4s;
 }
-#boot-splash.slow .boot-slow { opacity: 1; visibility: visible; }
+#boot-splash.slow .boot-slow { max-height: 64px; margin-top: 4px; opacity: 1; }
 .boot-slow button {
   margin-left: 8px; background: none; border: none; color: #fff; font: inherit;
   font-weight: 700; text-decoration: underline; cursor: pointer;
@@ -2783,13 +2784,39 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .auth-form-col .auth-screen, .conn-card { padding: 24px 18px 20px; }
   .auth-page .auth-switch { font-size: 14.5px; }
 }
+
+/* -- The splash and the sync/welcome overlay get the same glass card. Their
+   values come from tokens because the overlay follows the app theme (light
+   mode needs a dark-on-light version of the glass); the splash is always
+   black, so it pins the dark values. -- */
+:root {
+  --glass-bg: rgba(15,15,25,0.035); --glass-border: rgba(15,15,25,0.1);
+  --glass-shadow: 0 24px 50px -28px rgba(0,0,0,0.28);
+}
+[data-theme="dark"], #boot-splash {
+  --glass-bg: rgba(255,255,255,0.055); --glass-border: rgba(255,255,255,0.09);
+  --glass-shadow: 0 24px 50px -24px rgba(0,0,0,0.9);
+}
+.boot-card, #ws-card {
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow); border-radius: 20px;
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.boot-card {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 26px;
+  padding: 38px 46px 34px; animation: bootIn 1s var(--ease-out) both;
+}
+.boot-card .boot-logo, .boot-card .boot-bar { animation: none; }
+@media (max-width: 420px) { .boot-card { padding: 30px 26px 28px; max-width: calc(100vw - 48px); } .boot-logo .logo-word { font-size: 30px; padding-left: 26px; } .boot-logo .logo-mark { width: 42px; height: 42px; } }
+#ws-card { padding: 34px 28px 30px; }
+@media (max-height: 780px) { #ws-card { padding: 22px 20px 20px; } }
 .auth-brand-points li::before {
   width: 20px; height: 20px; border-radius: 50%;
   background: rgba(30,215,96,0.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%231ed760' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-5'/%3E%3C/svg%3E") center / 11px no-repeat;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .boot-glow, .boot-logo, .boot-logo .logo-word, .boot-bar, .boot-bar::after,
+  .boot-glow, .boot-card, .boot-logo, .boot-logo .logo-word, .boot-bar, .boot-bar::after,
   .ws-sync-logo-spin, .ws-sync-logo-wrap::before, .ws-sync-logo-wrap::after,
   #ws-syncing-msg.swap, .ap-card { animation: none; }
   .boot-logo .logo-word { color: #fff; background: none; }

@@ -16,16 +16,18 @@
      to show -- see hideAll() and showApp(). -->
 <div id="boot-splash" role="status" aria-label="Loading StudyFlow">
   <div class="boot-glow"></div>
-  <div class="boot-logo logo">
-    <div class="logo-mark">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M13 2 23 9 12 15 3 9 13 2z" fill="currentColor"/><path d="M6 10.3 4.3 19.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="4" cy="20.8" r="1.5" fill="currentColor"/>
-      </svg>
+  <div class="boot-card">
+    <div class="boot-logo logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M13 2 23 9 12 15 3 9 13 2z" fill="currentColor"/><path d="M6 10.3 4.3 19.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="4" cy="20.8" r="1.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <span class="logo-word">Study<em>Flow</em></span>
     </div>
-    <span class="logo-word">Study<em>Flow</em></span>
+    <div class="boot-bar"></div>
+    <div class="boot-slow">Taking longer than usual to connect.<button type="button" onclick="location.reload()">Retry</button></div>
   </div>
-  <div class="boot-bar"></div>
-  <div class="boot-slow">Taking longer than usual to connect.<button type="button" onclick="location.reload()">Retry</button></div>
 </div>
 <!-- Shown by routeUser() when startup cannot reach the server (offline, outage),
      so that is never mistaken for "no Canvas connected yet" and sent to onboarding. -->

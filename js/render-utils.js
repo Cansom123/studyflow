@@ -435,10 +435,20 @@ function homeGradesListHTML(cachedGrades, limit = 4) {
   if (withGrades.length === 0) {
     return `<div style="color:var(--text2);font-size:13px;">No grades published yet.</div>`;
   }
+  const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
   return withGrades.slice(0, limit).map(g => {
     const letter = g.current_grade || g.final_grade || '';
     const letterClass = letterGradeClass(letter);
-    return `<div class="grade-row"><span class="grade-name">${escapeHtml(cleanCourseName(g.course_name))}</span><span class="grade-letter ${letterClass}" style="background:transparent;">${escapeHtml(letter || '-')}</span></div>`;
+    const score = parseFloat(g.current_score != null ? g.current_score : g.final_score);
+    const hasScore = !isNaN(score);
+    const barWidth = hasScore ? Math.min(Math.max(score, 0), 100) : 0;
+    return `<div class="hg-row">
+      <div class="hg-top">
+        <span class="hg-name">${escapeHtml(cleanCourseName(g.course_name))}</span>
+        <span class="hg-score">${hasScore ? `<span class="hg-pct">${score.toFixed(1)}%</span>` : ''}<span class="hg-letter ${letterClass}">${escapeHtml(letter || '-')}</span></span>
+      </div>
+      ${barWidth > 0 ? `<div class="ht-bar"><i style="width:${barWidth}%;background:${barColors[letterClass] || 'var(--accent)'}"></i></div>` : ''}
+    </div>`;
   }).join('');
 }
 

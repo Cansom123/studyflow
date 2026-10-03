@@ -75,7 +75,7 @@ function runCountUps(root) {
    shows up in a mutation record as removed-and-added together, so we can tell
    "same list, fresh markup" (reveal instantly) from "new content arriving"
    (animate) without any timing guesswork. */
-const SR_SELECTOR = '.card, .home-stats-strip, .home-qlink, .empty-box, .due-day-panel';
+const SR_SELECTOR = '.card, .home-stats-strip, .home-qlink, .empty-box, .due-day-panel, .home-tile, .home-week';
 const SR_EXCLUDE = '.detail-overlay, [id$="overlay"], .onboard-flow, #home-upnext';
 
 function scrollRevealEnabled() {

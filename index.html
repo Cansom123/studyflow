@@ -730,12 +730,10 @@
       <div class="page active" id="page-home">
         <div id="home-greeting">
           <div class="home-greeting-eyebrow" id="home-greeting-eyebrow"></div>
-          <div class="home-hero-stat" id="home-hero-stat">
-            <span class="home-hero-num" id="home-hero-num">0</span>
-            <span class="home-hero-label" id="home-hero-label">due this week</span>
-          </div>
           <div class="home-hero-sub" id="home-hero-sub"></div>
         </div>
+        <div class="home-tiles" id="home-tiles"></div>
+        <div class="home-week glass" id="home-week"></div>
         <div class="announcements-section" id="home-announcements-section" style="display:none;">
           <div class="section-label announcements-section-label" id="home-announcements-label" onclick="openAllAnnouncements()" style="cursor:pointer;">
             <svg class="announcements-icon" viewBox="0 0 20 20" fill="none"><path d="M6 8a4 4 0 0 1 8 0c0 3 1 4 1.5 4.5H4.5C5 12 6 11 6 8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.3 15a1.8 1.8 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -754,7 +752,9 @@
           </div>
           <div class="home-col-side">
             <div class="section-label">Grades at a glance</div>
-            <div class="card" id="home-grades"><div style="color:var(--text2);font-size:13px;">No grades published yet.</div></div>
+            <div class="card glass" id="home-grades"><div style="color:var(--text2);font-size:13px;">No grades published yet.</div></div>
+            <div class="section-label">Study goals</div>
+            <div class="card glass home-study" id="home-study" onclick="jumpTo('study')"></div>
             <div class="section-label">Your links</div>
             <div class="home-quicklinks" id="home-custom-links"></div>
           </div>
@@ -4992,6 +4992,134 @@ function renderHome() {
   const gradesEl = document.getElementById('home-grades');
   // Pure HTML building lives in js/render-utils.js.
   if (gradesEl) gradesEl.innerHTML = homeGradesListHTML(cachedGrades);
+
+  renderHomeTiles(overdueCount, soon);
+  renderHomeWeek(today);
+  renderHomeStudy();
+}
+
+/* ---- Home overview: stat tiles, 7-day strip, study goals ------------------
+   Each re-renders only when its inputs actually changed (data-sig), because
+   renderHome() runs after every sync / check-off and the numbers count up on
+   insertion -- replaying that on every refresh would be noise. */
+const HOME_ICONS = {
+  alert: '<circle cx="10" cy="10" r="7.5"/><path d="M10 6v4.6M10 13.5v.1"/>',
+  clock: '<circle cx="10" cy="10" r="7.5"/><path d="M10 6v4.3l2.8 1.7"/>',
+  study: '<path d="M10 2.8c.6 3.2-2.7 4.3-2.7 7.4a3.9 3.9 0 0 0 7.8 0c0-1.7-.8-2.8-1.7-3.8.1 1.1-.5 1.8-1.3 2.1.3-2.1-.3-4.5-2.1-5.7z"/>',
+  grade: '<path d="M4 15l3.5-5 3 3.5L15.5 6"/><path d="M12 6h3.5v3.5"/>',
+};
+
+function homeTileHTML({ tone = '', icon, label, valueHTML, sub, bar, onclick }) {
+  return `<button type="button" class="home-tile glass ${tone}" onclick="${onclick}">
+    <span class="ht-top"><span class="ht-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${HOME_ICONS[icon]}</svg></span><span class="ht-label">${label}</span></span>
+    <span class="ht-value">${valueHTML}</span>
+    <span class="ht-sub">${sub}</span>
+    ${bar ? `<span class="ht-bar"><i class="${bar.met ? 'met' : ''}" style="width:${Math.round(bar.pct)}%"></i></span>` : ''}
+  </button>`;
+}
+
+function renderHomeTiles(overdueCount, soon) {
+  const el = document.getElementById('home-tiles');
+  if (!el) return;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const stats = computeStudyStats(cachedStudySessions, userPrefs, today);
+  const chain = computeStudyChainLength(studyChainDayTotals());
+  const nextDue = [...soon].sort((a, b) => new Date(a.due_date) - new Date(b.due_date))[0];
+  const scores = cachedGrades.map(g => parseFloat(g.current_score != null ? g.current_score : g.final_score)).filter(n => !isNaN(n));
+  const avg = scores.length ? scores.reduce((s, n) => s + n, 0) / scores.length : null;
+
+  const sig = JSON.stringify([overdueCount, soon.length, nextDue && nextDue.title, stats.todayMin, stats.dailyGoal, chain, avg && avg.toFixed(1), scores.length]);
+  if (el.dataset.sig === sig) return;
+  el.dataset.sig = sig;
+
+  const clip = t => escapeHtml(t.length > 24 ? t.slice(0, 23) + '…' : t);
+  const goalFmt = stats.dailyGoal > 0 ? fmtHoursMinutes(stats.dailyGoal) : null;
+  el.innerHTML = [
+    homeTileHTML({
+      tone: overdueCount > 0 ? 'tone-red' : '', icon: 'alert', label: 'Overdue', onclick: "jumpTo('due')",
+      valueHTML: `<span data-count-to="${overdueCount}">${overdueCount}</span>`,
+      sub: overdueCount > 0 ? 'Needs attention' : 'Nothing overdue',
+    }),
+    homeTileHTML({
+      icon: 'clock', label: 'Due this week', onclick: "jumpTo('due')",
+      valueHTML: `<span data-count-to="${soon.length}">${soon.length}</span>`,
+      sub: nextDue ? `Next: ${clip(nextDue.title)}` : 'Nothing due',
+    }),
+    homeTileHTML({
+      icon: 'study', label: 'Studied today', onclick: "jumpTo('study')",
+      valueHTML: stats.todayFmt,
+      sub: [goalFmt ? `${goalFmt} goal` : null, chain > 0 ? `${chain} day chain` : null].filter(Boolean).join(' · ') || 'Start a session',
+      bar: goalFmt ? { pct: stats.todayPct, met: stats.todayGoalMet } : null,
+    }),
+    homeTileHTML({
+      icon: 'grade', label: 'Average grade', onclick: "jumpTo('grades')",
+      valueHTML: avg == null ? '--' : `<span data-count-to="${avg.toFixed(1)}" data-count-decimals="1" data-count-suffix="%">${avg.toFixed(1)}%</span>`,
+      sub: scores.length ? `Across ${scores.length} class${scores.length === 1 ? '' : 'es'}` : 'No grades yet',
+    }),
+  ].join('');
+}
+
+function renderHomeWeek(today) {
+  const el = document.getElementById('home-week');
+  if (!el) return;
+  const counts = {};
+  cachedAssignments.forEach(a => {
+    if (!a.due_date || isAssignmentChecked(a, doneSet)) return;
+    const k = ymd(new Date(a.due_date));
+    counts[k] = (counts[k] || 0) + 1;
+  });
+  const cells = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(today.getDate() + i);
+    const key = ymd(d);
+    cells.push({ key, dow: i === 0 ? 'Today' : days[d.getDay()].slice(0, 3), num: d.getDate(), count: counts[key] || 0, isToday: i === 0 });
+  }
+  const sig = JSON.stringify(cells.map(c => [c.key, c.count]));
+  if (el.dataset.sig === sig) return;
+  el.dataset.sig = sig;
+  el.innerHTML = `
+    <div class="hw-head"><span class="hw-title">Next 7 days</span><button type="button" class="hw-link" onclick="jumpTo('due')">Open calendar ›</button></div>
+    <div class="hw-grid">${cells.map(c => `
+      <button type="button" class="hw-day${c.isToday ? ' today' : ''}${c.count ? ' has' : ''}" onclick="jumpToDueDay('${c.key}')" title="${c.count ? c.count + ' due' : 'Nothing due'}">
+        <span class="hw-dow">${c.dow}</span>
+        <span class="hw-num">${c.num}</span>
+        <span class="hw-count">${c.count || ''}</span>
+      </button>`).join('')}
+    </div>`;
+}
+
+function renderHomeStudy() {
+  const el = document.getElementById('home-study');
+  if (!el) return;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const s = computeStudyStats(cachedStudySessions, userPrefs, today);
+  const chain = computeStudyChainLength(studyChainDayTotals());
+  const firstGoal = userGoals[0];
+  const sig = JSON.stringify([s.todayMin, s.weekMin, s.dailyGoal, s.weeklyGoal, chain, userGoals.length, firstGoal]);
+  if (el.dataset.sig === sig) return;
+  el.dataset.sig = sig;
+  const row = (label, min, goal, pct, met) => goal > 0 ? `
+    <div class="hs-row">
+      <div class="hs-top"><span>${label}</span><span class="hs-val">${fmtHoursMinutes(min)} <em>/ ${fmtHoursMinutes(goal)}</em></span></div>
+      <div class="ht-bar"><i class="${met ? 'met' : ''}" style="width:${Math.round(pct)}%"></i></div>
+    </div>` : '';
+  const goalText = firstGoal ? `${firstGoal.length > 46 ? firstGoal.slice(0, 45) + '…' : firstGoal}${userGoals.length > 1 ? ` +${userGoals.length - 1} more` : ''}` : '';
+  el.innerHTML = `
+    ${row('Today', s.todayMin, s.dailyGoal, s.todayPct, s.todayGoalMet)}
+    ${row('This week', s.weekMin, s.weeklyGoal, s.weekPct, s.weekGoalMet)}
+    <div class="hs-foot"><span>${chain > 0 ? `${chain} day study chain` : 'No study chain yet'}</span>${goalText ? `<span class="hs-goal">${escapeHtml(goalText)}</span>` : ''}</div>`;
+}
+
+// From the Home 7-day strip straight to that day on Upcoming, pinned so it
+// stays on the day that was clicked.
+function jumpToDueDay(key) {
+  const [y, m] = key.split('-').map(Number);
+  dueCalMonth = new Date(y, m - 1, 1);
+  dueCalSelectedDate = key;
+  dueCalPinned = true;
+  dueCalPreviewKey = null;
+  jumpTo('due');
+  renderDueCalendar();
 }
 
 /* ===========================
@@ -5723,6 +5851,7 @@ async function loadStudySessions() {
   cachedStudySessions = ok && Array.isArray(data) ? data : [];
   renderDueCalendar();
   renderStudyTab();
+  renderHome(); // Home's study tile / goals card read this data
 }
 
 function toggleStudyForm() {

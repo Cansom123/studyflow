@@ -2554,6 +2554,28 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
   background-size: 300% 100%; animation: shimmer 1.6s ease-in-out infinite;
 }
 
+/* -- Scroll reveal (see js/motion-utils.js). Cards wait lowered, shrunk and
+   blurred until they scroll into view, then rise into place in a stagger.
+   Replaces the old load-time cardIn for anything it registers (.sr beats it
+   on order); `backwards` fill so hover/press transforms work afterward.
+   :where() keeps the revealed state at zero specificity so those hover
+   rules still win. The delay is !important only because the older
+   :nth-of-type stagger rules would otherwise out-rank it. -- */
+.sr { opacity: 0; transform: translateY(44px) scale(0.96); filter: blur(5px); animation: none; }
+:where(.sr).sr-in {
+  opacity: 1; transform: none; filter: none;
+  animation: srIn 0.85s var(--ease-out) backwards;
+  animation-delay: var(--sr-delay, 0ms) !important;
+}
+@keyframes srIn {
+  from { opacity: 0; transform: translateY(44px) scale(0.96); filter: blur(5px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+/* Re-rendered in place while already on screen: no entrance of any kind. */
+.sr-seen { animation: none; }
+/* Setting switched off: everything already registered just shows. */
+html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation: none; }
+
 /* -- Reduced motion: keep the end states, drop the movement -- */
 @media (prefers-reduced-motion: reduce) {
   .page.active, .card, .home-qlink, .auth-screen > *, .auth-brand-inner > *,

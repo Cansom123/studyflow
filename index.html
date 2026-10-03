@@ -1194,6 +1194,10 @@
               <button class="seg-btn" data-density="compact" onclick="setDensity('compact',this)">Compact</button>
             </div>
           </div>
+          <div class="toggle-row" style="border-top:1px solid var(--border);margin-top:14px;">
+            <div><div class="toggle-row-label">Scroll animations</div><div class="toggle-row-sub">Cards rise into place as you scroll to them. Turn off for a calmer, instant layout.</div></div>
+            <label class="switch"><input type="checkbox" id="pref-scroll-animations" checked onchange="onPrefToggle('scrollAnimations', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
         </div>
 
         <div class="section-label" style="margin-top:20px;">Layout</div>
@@ -1654,6 +1658,7 @@ const DEFAULT_PREFS = {
   showSyllabusTab: true,
   showGoalsTab: true,
   showAskBox: true,
+  scrollAnimations: true,
   autoSyncEnabled: true,
   welcomeToastEnabled: true,
   defaultLandingTab: 'home',
@@ -1685,6 +1690,9 @@ function onPrefToggle(key, value) {
   userPrefs[key] = value;
   saveUserPrefs();
   applyUserPrefsToUI();
+  // Switching scroll animations back on replays them on the page that is
+  // showing, so the effect is visible immediately instead of only on the next render.
+  if (key === 'scrollAnimations' && value && typeof replayScrollReveal === 'function') replayScrollReveal();
 }
 function onPrefInput(key, value) {
   userPrefs[key] = value;
@@ -1754,6 +1762,8 @@ function applyUserPrefsToUI() {
   setSwitch('pref-autosync', userPrefs.autoSyncEnabled !== false);
   setSwitch('pref-welcome', userPrefs.welcomeToastEnabled !== false);
   setSwitch('pref-ask-box', userPrefs.showAskBox !== false);
+  setSwitch('pref-scroll-animations', userPrefs.scrollAnimations !== false);
+  document.documentElement.classList.toggle('no-scroll-reveal', userPrefs.scrollAnimations === false);
   setSwitch('pref-email-reminders', !!userPrefs.emailRemindersEnabled);
   setSwitch('pref-browser-notifications', !!userPrefs.browserNotificationsEnabled);
 

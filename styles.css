@@ -2446,12 +2446,12 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
 @media (hover: hover) and (pointer: fine) {
   .auth-btn:hover:not(:disabled), .onboard-btn:hover:not(:disabled),
   .settings-btn:hover:not(:disabled), .goal-add-btn:hover:not(:disabled) {
-    transform: translateY(-2px); opacity: 1; filter: brightness(1.06);
-    box-shadow: 0 10px 24px -8px color-mix(in oklch, var(--btn-bg) 60%, transparent);
+    transform: translateY(-1px); opacity: 1;
+    box-shadow: 0 6px 16px -8px rgba(0,0,0,0.5);
   }
   .deepwork-btn:hover {
-    transform: translateY(-2px); opacity: 1; filter: brightness(1.06);
-    box-shadow: 0 10px 24px -8px color-mix(in oklch, var(--red) 60%, transparent);
+    transform: translateY(-1px); opacity: 1;
+    box-shadow: 0 6px 16px -8px rgba(0,0,0,0.5);
   }
   .sync-btn:hover:not(:disabled), .change-courses-btn:hover { transform: translateY(-1px); }
 }
@@ -2589,15 +2589,16 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .auth-btn:hover, .onboard-btn:hover, .settings-btn:hover, .goal-add-btn:hover, .deepwork-btn:hover { transform: none; }
 }
 
-/* ===== AUTH + LOADING POLISH ============================================= */
+/* ===== AUTH + LOADING =====================================================
+   Deliberately plain: flat black, no glows or gradients. */
 
 /* -- Auth screens are always dark: their backdrop is hardcoded black, so in
    light theme the wordmark and labels (which read --text1/--text2) were
-   near-black on black. Redefining the tokens here, on the auth page itself,
-   fixes every descendant at once. --btn-bg/--btn-fg are set explicitly
-   because they were already resolved from --accent up on :root and would not
-   follow an --accent override. -- */
-.auth-page {
+   near-black on black. Redefining the tokens on the auth page itself fixes
+   every descendant at once. --btn-bg/--btn-fg are set explicitly because they
+   were already resolved from --accent up on :root and would not follow an
+   --accent override. The connection-problem screen shares the same set. -- */
+.auth-page, #conn-problem {
   --bg: #000; --surface: #101010; --surface2: #171717;
   --border: transparent; --border2: #262626;
   --text1: #ffffff; --text2: #b3b3b3;
@@ -2610,43 +2611,21 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 }
 .auth-brand { border-right-color: #262626; }
 
-/* -- Backdrop: two slow aurora washes replace the busy cap rain as the main
-   ambience; the caps stay as a faint, softer nod to the brand. -- */
-.auth-bg-glow:not(.onboard-glow)::before,
-.auth-bg-glow:not(.onboard-glow)::after {
-  content: ''; position: absolute; border-radius: 50%; pointer-events: none;
-  width: 70vmax; height: 70vmax; will-change: transform;
-}
-.auth-bg-glow:not(.onboard-glow)::before {
-  top: -30vmax; left: -24vmax;
-  background: radial-gradient(circle, oklch(0.5 0.16 275 / 0.34) 0%, transparent 62%);
-  animation: auroraA 26s ease-in-out infinite alternate;
-}
-.auth-bg-glow:not(.onboard-glow)::after {
-  bottom: -34vmax; right: -26vmax;
-  background: radial-gradient(circle, oklch(0.55 0.12 205 / 0.26) 0%, transparent 62%);
-  animation: auroraB 31s ease-in-out infinite alternate;
-}
-@keyframes auroraA { to { transform: translate3d(14vmax, 10vmax, 0) scale(1.15); } }
-@keyframes auroraB { to { transform: translate3d(-12vmax, -8vmax, 0) scale(1.1); } }
+/* -- The falling caps stay (they are the brand's one flourish) but quieter,
+   so they never compete with the form. -- */
 @keyframes authCapRain {
   0%   { transform: translateY(-12vh) rotate(-8deg); opacity: 0; }
-  12%  { opacity: 0.4; }
-  85%  { opacity: 0.4; }
+  12%  { opacity: 0.3; }
+  85%  { opacity: 0.3; }
   100% { transform: translateY(112vh) rotate(16deg); opacity: 0; }
 }
-.auth-float-cap:nth-child(3n+1) { filter: blur(2px); }
-.auth-float-cap:nth-child(3n+2) { filter: blur(0.5px); }
 
-/* -- Wide screens: the form sits on a frosted panel instead of floating on
-   the void, which is what gives the screen depth. -- */
-@media (min-width: 1000px) {
-  .auth-form-col .auth-screen {
-    padding: 38px 36px 34px; border-radius: 26px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.028));
-    border: 1px solid rgba(255,255,255,0.09);
-    box-shadow: 0 40px 90px -36px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.07);
-    -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+/* -- Primary buttons on the dark auth screens are flat: no halo, and they
+   dim slightly on hover instead of lifting. -- */
+.auth-page .auth-btn, #conn-problem .auth-btn { box-shadow: none; }
+@media (hover: hover) and (pointer: fine) {
+  .auth-page .auth-btn:hover:not(:disabled), #conn-problem .auth-btn:hover:not(:disabled) {
+    transform: none; box-shadow: none; filter: brightness(0.9);
   }
 }
 
@@ -2657,43 +2636,13 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   position: absolute; right: 6px; top: 0; bottom: 0; width: 44px;
   display: flex; align-items: center; justify-content: center;
   background: none; border: none; border-radius: 10px; cursor: pointer;
-  color: var(--text2); transition: color 0.15s, background 0.15s, transform 0.25s var(--ease-spring);
+  color: var(--text2); transition: color 0.15s, background 0.15s;
 }
 .auth-eye:hover { color: var(--text1); background: rgba(255,255,255,0.07); }
-.auth-eye:active { transform: scale(0.86); }
 .auth-eye svg { width: 20px; height: 20px; }
 .auth-eye .eye-off { display: none; }
 .auth-eye[aria-pressed="true"] .eye-on { display: none; }
 .auth-eye[aria-pressed="true"] .eye-off { display: block; }
-
-/* -- Brand panel product preview: shows what the app is on large screens
-   (decorative; hidden anywhere it would not fit). -- */
-.auth-preview { display: none; }
-@media (min-width: 1100px) and (min-height: 820px) {
-  .auth-brand-inner > *:nth-child(4) { animation-delay: 520ms; }
-  .auth-preview { display: block; position: relative; height: 205px; margin-top: 52px; }
-  .ap-card {
-    position: absolute; display: flex; align-items: center; gap: 12px;
-    padding: 13px 16px; border-radius: 16px;
-    background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.09);
-    box-shadow: 0 24px 50px -24px rgba(0,0,0,0.9);
-    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
-    animation: apFloat 7s ease-in-out infinite;
-  }
-  .ap-card.c1 { top: 0; left: 0; width: 330px; }
-  .ap-card.c2 { top: 64px; left: 150px; width: 300px; animation-delay: -2.3s; }
-  .ap-card.c3 { top: 130px; left: 36px; width: 300px; animation-delay: -4.6s; }
-  .ap-ring { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); flex-shrink: 0; }
-  .ap-rank { width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #0f0f0f; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .ap-body { flex: 1; min-width: 0; }
-  .ap-title { font-size: 13.5px; font-weight: 600; color: #fff; }
-  .ap-sub { font-size: 11.5px; color: #9a9a9a; margin-top: 2px; }
-  .ap-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: rgba(30,215,96,0.16); color: #1ed760; }
-  .ap-bar { height: 3px; border-radius: 99px; background: rgba(255,255,255,0.12); margin-top: 7px; overflow: hidden; }
-  .ap-bar i { display: block; height: 100%; width: 94%; border-radius: 99px; background: #1ed760; }
-  .ap-grade { font-size: 18px; font-weight: 800; color: #1ed760; }
-}
-@keyframes apFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 
 /* -- Startup splash: shown from first paint until the saved session has been
    checked, so a returning student never sees the sign-in page flash by. -- */
@@ -2701,31 +2650,21 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   position: fixed; inset: 0; z-index: 6000;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
   background: #000; color: #fff; overflow: hidden;
-  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out), visibility 0s 0.6s;
+  transition: opacity 0.5s ease, visibility 0s 0.5s;
 }
-#boot-splash.done { opacity: 0; transform: scale(1.04); visibility: hidden; pointer-events: none; }
-.boot-glow {
-  position: absolute; width: 560px; height: 560px; max-width: 95vw; max-height: 95vw; border-radius: 50%;
-  background: radial-gradient(circle, oklch(0.5 0.16 275 / 0.3) 0%, transparent 66%);
-  animation: bootBreathe 3.4s ease-in-out infinite;
-}
-.boot-logo { position: relative; animation: bootIn 1s var(--ease-out) both; }
+#boot-splash.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.boot-logo { position: relative; animation: bootIn 0.8s var(--ease-out) both; }
 .boot-logo .logo-mark { color: #fff; width: 48px; height: 48px; }
-.boot-logo .logo-word {
-  font-size: 34px; padding-left: 30px; color: transparent;
-  background: linear-gradient(100deg, #7d7d7d 20%, #ffffff 45%, #7d7d7d 70%);
-  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text;
-  animation: bootShine 2.4s ease-in-out infinite;
-}
+.boot-logo .logo-word { font-size: 34px; padding-left: 30px; color: #fff; }
 .boot-bar {
-  position: relative; width: 120px; height: 2px; border-radius: 2px;
+  position: relative; width: 96px; height: 2px; border-radius: 2px;
   background: rgba(255,255,255,0.12); overflow: hidden;
-  animation: bootIn 1s 0.2s var(--ease-out) both;
+  animation: bootIn 0.8s 0.15s var(--ease-out) both;
 }
 .boot-bar::after {
-  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 45%;
-  background: linear-gradient(90deg, transparent, #fff, transparent);
-  animation: bootSweep 1.3s ease-in-out infinite;
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%;
+  background: #fff; border-radius: 2px;
+  animation: bootSweep 1.4s ease-in-out infinite;
 }
 .boot-slow {
   position: absolute; bottom: 12vh; left: 24px; right: 24px; text-align: center;
@@ -2736,39 +2675,31 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   margin-left: 8px; background: none; border: none; color: #fff; font: inherit;
   font-weight: 700; text-decoration: underline; cursor: pointer;
 }
-@keyframes bootIn { from { opacity: 0; transform: translateY(10px) scale(0.96); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
-@keyframes bootShine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-@keyframes bootSweep { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
-@keyframes bootBreathe { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes bootIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes bootSweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+
+/* -- Shown when the app cannot reach the server on startup (offline, outage)
+   instead of mistaking that for "no Canvas connected yet". -- */
+#conn-problem {
+  position: fixed; inset: 0; z-index: 6100; display: none;
+  align-items: center; justify-content: center; padding: 24px;
+  background: #000; color: #fff;
+}
+#conn-problem.show { display: flex; animation: fadeIn 0.3s ease both; }
+.conn-card { width: 100%; max-width: 360px; }
+.conn-title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin: 8px 0 8px; }
+.conn-sub { font-size: 15px; line-height: 1.55; color: var(--text2); margin-bottom: 26px; }
 
 /* -- Sync/loading screen: the logo tile used to spin a full 360 degrees,
-   which just turned its glyph upside down on every lap. It now breathes
-   upright, and activity is shown by a ripple leaving the ring plus a soft
-   ambient glow -- so the screen still reads as alive when the percentage
-   parks at its cap while waiting on Canvas. -- */
+   which just turned its glyph upside down on every lap. It now stays
+   upright and breathes gently, which still reads as alive when the
+   percentage parks at its cap while waiting on Canvas. -- */
 .ws-sync-logo-spin { animation: wsLogoBreathe 2.8s ease-in-out infinite; }
-.ws-sync-logo-wrap::before {
-  content: ''; position: absolute; inset: -52px; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(circle, color-mix(in oklch, var(--accent) 20%, transparent) 0%, transparent 64%);
-  animation: wsAmbient 3.2s ease-in-out infinite;
-}
-.ws-sync-logo-wrap::after {
-  content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
-  border: 1.5px solid var(--accent); opacity: 0;
-  animation: wsRipple 2.2s ease-out infinite;
-}
-.ws-sync-progress-fill { filter: drop-shadow(0 0 5px color-mix(in oklch, var(--accent) 70%, transparent)); }
-@keyframes wsAmbient { 0%, 100% { opacity: 0.45; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.06); } }
-@keyframes wsRipple { 0% { transform: scale(1); opacity: 0.45; } 100% { transform: scale(1.5); opacity: 0; } }
 #ws-syncing-msg.swap { animation: msgSwap 0.5s var(--ease-out); }
 @keyframes msgSwap { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-bg-glow:not(.onboard-glow)::before, .auth-bg-glow:not(.onboard-glow)::after,
-  .boot-glow, .boot-logo, .boot-logo .logo-word, .boot-bar, .boot-bar::after,
-  .ws-sync-logo-spin, .ws-sync-logo-wrap::before, .ws-sync-logo-wrap::after,
-  #ws-syncing-msg.swap, .ap-card { animation: none; }
-  .boot-logo .logo-word { color: #fff; background: none; }
+  .boot-logo, .boot-bar, .boot-bar::after, .ws-sync-logo-spin, #ws-syncing-msg.swap { animation: none; }
   .boot-bar::after { width: 100%; }
   #boot-splash { transition-duration: 0.01ms; }
 }

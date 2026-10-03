@@ -15,7 +15,6 @@
      session is checked. Dismissed by hideBootSplash() once we know which screen
      to show -- see hideAll() and showApp(). -->
 <div id="boot-splash" role="status" aria-label="Loading StudyFlow">
-  <div class="boot-glow"></div>
   <div class="boot-logo logo">
     <div class="logo-mark">
       <svg viewBox="0 0 24 24" fill="none">
@@ -26,6 +25,23 @@
   </div>
   <div class="boot-bar"></div>
   <div class="boot-slow">Taking longer than usual to connect.<button type="button" onclick="location.reload()">Retry</button></div>
+</div>
+<!-- Shown by routeUser() when startup cannot reach the server (offline, outage),
+     so that is never mistaken for "no Canvas connected yet" and sent to onboarding. -->
+<div id="conn-problem" role="alert">
+  <div class="conn-card">
+    <div class="auth-logo logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M13 2 23 9 12 15 3 9 13 2z" fill="currentColor"/><path d="M6 10.3 4.3 19.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="4" cy="20.8" r="1.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <span class="logo-word">Study<em>Flow</em></span>
+    </div>
+    <div class="conn-title">Can't reach StudyFlow</div>
+    <div class="conn-sub">Check your internet connection and try again. Nothing has been lost - your account and data are exactly where you left them.</div>
+    <button class="auth-btn" id="conn-retry-btn" onclick="retryConnection()">Try again</button>
+  </div>
 </div>
 <div class="auth-bg-glow" id="auth-bg-glow">
   <div class="auth-float-cap" style="left:6%;width:40px;height:40px;--dur:13s;--delay:0s;">
@@ -72,11 +88,6 @@
         <li>One priority list instead of five tabs</li>
         <li>Grades that actually make sense</li>
       </ul>
-      <div class="auth-preview" aria-hidden="true">
-        <div class="ap-card c1"><span class="ap-ring"></span><div class="ap-body"><div class="ap-title">Cell Respiration Lab</div><div class="ap-sub">Biology · due tomorrow</div></div><span class="ap-badge">Essay</span></div>
-        <div class="ap-card c2"><div class="ap-body"><div class="ap-title">AP Calculus</div><div class="ap-bar"><i></i></div></div><span class="ap-grade">A</span></div>
-        <div class="ap-card c3"><span class="ap-rank">1</span><div class="ap-body"><div class="ap-title">Start the essay draft</div><div class="ap-sub">Top priority today</div></div></div>
-      </div>
     </div>
   </div>
 
@@ -2055,6 +2066,8 @@ setTimeout(() => { bootSplashHeld = false; hideBootSplash(); }, 20000);
 
 function hideAll() {
   if (!bootSplashHeld) hideBootSplash();
+  const connProblem = document.getElementById('conn-problem');
+  if (connProblem) connProblem.classList.remove('show');
   ['login-screen','mfa-verify-screen','mfa-backup-screen','mfa-email-screen','signup-screen','forgot-password-screen','reset-password-screen','onboard-flow','main-app'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -2316,11 +2329,48 @@ function showOnboardGoals() { goToOnboardStep(2, !isOnboardFlowVisible()); rende
 
 async function routeUser() {
   if (!ACCESS_TOKEN || !USER_ID) { showLoginScreen(); return; }
-  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token`);
-  if (!ok || !data || data.length === 0 || !data[0].canvas_token) { showOnboardCanvas(); return; }
+  let res;
+  try {
+    res = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token`);
+  } catch (e) {
+    // fetch() itself threw -- offline, DNS, blocked. That says nothing about
+    // whether Canvas is connected, so it must not fall through to onboarding.
+    showConnectionProblem();
+    return;
+  }
+  const { ok, status, data } = res;
+  if (status === 401) { clearSession(); showLoginScreen(); return; }
+  // Any other non-OK reply (a 5xx, an outage) is the server's trouble, not an
+  // answer to "is Canvas connected?" -- only a successful reply with no token
+  // on file means onboarding is actually needed.
+  if (!ok) { showConnectionProblem(); return; }
+  if (!data || data.length === 0 || !data[0].canvas_token) { showOnboardCanvas(); return; }
   bootSplashHeld = true;
   showApp();
 }
+
+function showConnectionProblem() {
+  bootSplashHeld = false;
+  hideBootSplash();
+  document.getElementById('conn-problem').classList.add('show');
+}
+
+// The screen stays up (with a spinning button) while retrying: on success
+// showApp()/showOnboard*() all go through hideAll(), which clears it.
+async function retryConnection() {
+  const btn = document.getElementById('conn-retry-btn');
+  btn.disabled = true; btn.classList.add('btn-loading');
+  const started = Date.now();
+  await routeUser();
+  // Hold the spinner for a beat so an instant failure does not look like the click did nothing.
+  await new Promise(r => setTimeout(r, Math.max(0, 600 - (Date.now() - started))));
+  btn.disabled = false; btn.classList.remove('btn-loading');
+}
+
+window.addEventListener('online', () => {
+  const el = document.getElementById('conn-problem');
+  if (el && el.classList.contains('show')) retryConnection();
+});
 
 function maybeShowWelcome() {
   const key = 'sf_last_welcome_' + USER_ID;

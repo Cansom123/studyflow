@@ -75,7 +75,7 @@ function runCountUps(root) {
    shows up in a mutation record as removed-and-added together, so we can tell
    "same list, fresh markup" (reveal instantly) from "new content arriving"
    (animate) without any timing guesswork. */
-const SR_SELECTOR = '.card, .home-stats-strip, .home-qlink, .empty-box';
+const SR_SELECTOR = '.card, .home-stats-strip, .home-qlink, .empty-box, .due-day-panel';
 const SR_EXCLUDE = '.detail-overlay, [id$="overlay"], .onboard-flow, #home-upnext';
 
 function scrollRevealEnabled() {
@@ -84,8 +84,15 @@ function scrollRevealEnabled() {
 }
 
 const srObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(entries => {
-  const arriving = entries.filter(e => e.isIntersecting).sort((a, b) =>
-    a.boundingClientRect.top - b.boundingClientRect.top || a.boundingClientRect.left - b.boundingClientRect.left);
+  // Stagger in reading order. Elements within a row's tolerance count as the
+  // same row and go left to right: their rects still carry the hidden state's
+  // scale/offset, which would otherwise let a shorter element's slightly
+  // higher top edge jump the queue ahead of its neighbour on the left.
+  const ROW_TOLERANCE = 40;
+  const arriving = entries.filter(e => e.isIntersecting).sort((a, b) => {
+    const dy = a.boundingClientRect.top - b.boundingClientRect.top;
+    return Math.abs(dy) < ROW_TOLERANCE ? a.boundingClientRect.left - b.boundingClientRect.left : dy;
+  });
   arriving.forEach((entry, i) => {
     const el = entry.target;
     srObserver.unobserve(el);

@@ -2753,6 +2753,41 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 }
 @keyframes apFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 
+/* -- One visual language across the whole sign-in screen, taken from the
+   preview cards: translucent glass, a hairline border, soft dark shadow,
+   small muted captions, and green as the single accent. The form panel,
+   fields, brand bullets and connection screen all use the same values. -- */
+.auth-form-col .auth-screen, .conn-card {
+  padding: 32px 30px 28px; border-radius: 20px;
+  background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: 0 24px 50px -24px rgba(0,0,0,0.9);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+@media (max-width: 1000px) {
+  .auth-form-col .auth-screen, .conn-card { padding: 26px 22px 22px; }
+}
+.auth-page .auth-input {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.auth-page .auth-input::placeholder { color: #7d7d7d; }
+.auth-page .auth-input:focus {
+  background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.32);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.07);
+}
+.auth-page .auth-label { font-size: 11.5px; color: #9a9a9a; }
+.auth-page .auth-sub { color: #9a9a9a; }
+.auth-page .auth-switch { color: #9a9a9a; }
+.auth-page .auth-switch a { white-space: nowrap; }
+@media (max-width: 420px) {
+  .auth-form-col .auth-screen, .conn-card { padding: 24px 18px 20px; }
+  .auth-page .auth-switch { font-size: 14.5px; }
+}
+.auth-brand-points li::before {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(30,215,96,0.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%231ed760' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-5'/%3E%3C/svg%3E") center / 11px no-repeat;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .boot-glow, .boot-logo, .boot-logo .logo-word, .boot-bar, .boot-bar::after,
   .ws-sync-logo-spin, .ws-sync-logo-wrap::before, .ws-sync-logo-wrap::after,

@@ -2965,3 +2965,22 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .boot-bar::after { width: 100%; }
   #boot-splash { transition-duration: 0.01ms; }
 }
+
+/* ===== HOME: square boxes ================================================
+   The Home dashboard's boxes use square corners instead of rounded ones.
+   One variable so the whole page can be softened again by changing it.
+   Count badges and the round check-off circles are labels/controls, not
+   boxes, so they keep their shape. */
+#page-home { --home-radius: 0px; }
+#page-home .home-tile,
+#page-home .home-week,
+#page-home .hw-day,
+#page-home .ht-icon,
+#page-home .ht-bar, #page-home .ht-bar i,
+#page-home #home-upnext .card,
+#page-home #home-thisweek,
+#page-home #home-grades,
+#page-home #home-study,
+#page-home .home-qlink,
+#page-home .home-qlink-icon,
+#page-home #home-announcements { border-radius: var(--home-radius); }

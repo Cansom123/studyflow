@@ -11,6 +11,22 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<!-- Startup splash: covers the (visible-by-default) sign-in page while the saved
+     session is checked. Dismissed by hideBootSplash() once we know which screen
+     to show -- see hideAll() and showApp(). -->
+<div id="boot-splash" role="status" aria-label="Loading StudyFlow">
+  <div class="boot-glow"></div>
+  <div class="boot-logo logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M13 2 23 9 12 15 3 9 13 2z" fill="currentColor"/><path d="M6 10.3 4.3 19.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="4" cy="20.8" r="1.5" fill="currentColor"/>
+      </svg>
+    </div>
+    <span class="logo-word">Study<em>Flow</em></span>
+  </div>
+  <div class="boot-bar"></div>
+  <div class="boot-slow">Taking longer than usual to connect.<button type="button" onclick="location.reload()">Retry</button></div>
+</div>
 <div class="auth-bg-glow" id="auth-bg-glow">
   <div class="auth-float-cap" style="left:6%;width:40px;height:40px;--dur:13s;--delay:0s;">
     <svg viewBox="0 0 24 24" fill="none"><path d="M13 2 23 9 12 15 3 9 13 2z" fill="currentColor"/><path d="M6 10.3 4.3 19.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="4" cy="20.8" r="1.5" fill="currentColor"/></svg>
@@ -56,6 +72,11 @@
         <li>One priority list instead of five tabs</li>
         <li>Grades that actually make sense</li>
       </ul>
+      <div class="auth-preview" aria-hidden="true">
+        <div class="ap-card c1"><span class="ap-ring"></span><div class="ap-body"><div class="ap-title">Cell Respiration Lab</div><div class="ap-sub">Biology · due tomorrow</div></div><span class="ap-badge">Essay</span></div>
+        <div class="ap-card c2"><div class="ap-body"><div class="ap-title">AP Calculus</div><div class="ap-bar"><i></i></div></div><span class="ap-grade">A</span></div>
+        <div class="ap-card c3"><span class="ap-rank">1</span><div class="ap-body"><div class="ap-title">Start the essay draft</div><div class="ap-sub">Top priority today</div></div></div>
+      </div>
     </div>
   </div>
 
@@ -2013,7 +2034,27 @@ function clearSession() {
   ['sf_access_token','sf_refresh_token','sf_user_id','sf_user_email','sf_user_name','sf_goals'].forEach(k => localStorage.removeItem(k));
 }
 
+// The splash outlives the first hideAll() when a saved session is being
+// restored: showApp() calls hideAll() immediately, but the app shell is still
+// empty until preferences load, so routeUser() holds the splash and showApp()
+// releases it once the welcome screen is ready. The slow-notice and hard
+// failsafe timers mean a hung connection can never trap someone behind it.
+let bootSplashHeld = false;
+const bootStartedAt = performance.now();
+function hideBootSplash() {
+  const el = document.getElementById('boot-splash');
+  if (!el || el.dataset.leaving) return;
+  el.dataset.leaving = '1';
+  // A minimum on-screen time so a fast connection reads as a deliberate
+  // moment rather than a one-frame flash of the logo.
+  const wait = Math.max(0, 700 - (performance.now() - bootStartedAt));
+  setTimeout(() => { el.classList.add('done'); setTimeout(() => el.remove(), 700); }, wait);
+}
+setTimeout(() => { const s = document.getElementById('boot-splash'); if (s) s.classList.add('slow'); }, 8000);
+setTimeout(() => { bootSplashHeld = false; hideBootSplash(); }, 20000);
+
 function hideAll() {
+  if (!bootSplashHeld) hideBootSplash();
   ['login-screen','mfa-verify-screen','mfa-backup-screen','mfa-email-screen','signup-screen','forgot-password-screen','reset-password-screen','onboard-flow','main-app'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -2277,6 +2318,7 @@ async function routeUser() {
   if (!ACCESS_TOKEN || !USER_ID) { showLoginScreen(); return; }
   const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token`);
   if (!ok || !data || data.length === 0 || !data[0].canvas_token) { showOnboardCanvas(); return; }
+  bootSplashHeld = true;
   showApp();
 }
 
@@ -2347,6 +2389,8 @@ async function showApp() {
   // autoSync() when the welcome screen itself isn't going to show (e.g. the
   // student turned it off in Settings).
   const showedWelcome = maybeShowWelcome();
+  bootSplashHeld = false;
+  hideBootSplash();
   if (!showedWelcome) await autoSync();
 }
 
@@ -7228,6 +7272,9 @@ if (!checkForPasswordRecovery()) routeUser();
     mark.classList.remove('tick');
     void mark.offsetWidth;
     mark.classList.add('tick');
+    // Each tick is a new status line: let it settle in rather than swap.
+    const msg = document.getElementById('ws-syncing-msg');
+    if (msg) { msg.classList.remove('swap'); void msg.offsetWidth; msg.classList.add('swap'); }
   }
 
   // There's no real progress feed from the sync endpoint -- it's one opaque
@@ -7454,5 +7501,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/render-utils.js"></script>
 <script src="js/grade-core.js"></script>
 <script src="js/motion-utils.js"></script>
+<script src="js/auth-ui.js"></script>
 </body>
 </html>

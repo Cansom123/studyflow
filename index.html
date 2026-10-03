@@ -6009,6 +6009,10 @@ function renderDueCalendar() {
 function selectDueCalDate(key) {
   dueCalSelectedDate = key;
   dueCalPreviewKey = null;
+  // Once a day has been clicked it stays put: hover preview is only a way to
+  // peek around before choosing, and must not keep swapping the panel
+  // underneath someone who has already picked their day.
+  dueCalPinned = true;
   renderDueCalendar();
 }
 
@@ -6019,8 +6023,9 @@ function selectDueCalDate(key) {
 // just change content nobody is looking at. Delegated on the grid (set up
 // once) because the cells themselves are rebuilt on every render.
 let dueCalPreviewKey = null;
+let dueCalPinned = false;
 function dueCalCanPreview() {
-  return window.matchMedia('(min-width: 1100px) and (hover: hover)').matches;
+  return !dueCalPinned && window.matchMedia('(min-width: 1100px) and (hover: hover)').matches;
 }
 function initDueCalHover() {
   const grid = document.getElementById('due-cal-grid');
@@ -6049,6 +6054,7 @@ function dueCalToday() {
   const t = new Date();
   dueCalMonth = new Date(t.getFullYear(), t.getMonth(), 1);
   dueCalSelectedDate = ymd(t);
+  dueCalPinned = true;
   renderDueCalendar();
 }
 

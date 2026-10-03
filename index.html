@@ -4831,8 +4831,9 @@ function renderHome() {
   const numEl = document.getElementById('home-hero-num');
   const labelEl = document.getElementById('home-hero-label');
   const subEl = document.getElementById('home-hero-sub');
-  if (numEl && numEl.textContent !== heroValue) {
-    numEl.textContent = heroValue;
+  if (numEl && numEl.textContent !== String(heroValue)) {
+    if (/^\d+$/.test(String(heroValue))) animateCount(numEl, parseInt(heroValue, 10), { from: parseInt(numEl.textContent, 10) || 0, duration: 900 });
+    else numEl.textContent = heroValue;
     numEl.classList.remove('stat-pop');
     void numEl.offsetWidth;
     numEl.classList.add('stat-pop');
@@ -5811,7 +5812,8 @@ function setStatValue(id, value) {
   if (!el) return;
   const strVal = String(value);
   if (el.textContent === strVal) return;
-  el.textContent = strVal;
+  if (/^\d+$/.test(strVal)) animateCount(el, parseInt(strVal, 10), { from: parseInt(el.textContent, 10) || 0, duration: 700 });
+  else el.textContent = strVal;
   el.classList.remove('stat-pop');
   void el.offsetWidth;
   el.classList.add('stat-pop');
@@ -7441,5 +7443,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/study-utils.js"></script>
 <script src="js/render-utils.js"></script>
 <script src="js/grade-core.js"></script>
+<script src="js/motion-utils.js"></script>
 </body>
 </html>

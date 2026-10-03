@@ -422,7 +422,7 @@ function gradeCardsHTML(withGrades) {
       </div>
       <div class="grade-card-right">
         <div class="grade-card-letter ${letterClass}">${letter || '-'}</div>
-        ${scoreText ? `<div class="grade-card-pct">${scoreText}</div>` : ''}
+        ${scoreText ? `<div class="grade-card-pct" data-count-to="${score.toFixed(1)}" data-count-decimals="1" data-count-suffix="%">${scoreText}</div>` : ''}
       </div>
     </div>`;
   }).join('');

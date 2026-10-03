@@ -784,38 +784,49 @@
                 <button class="cal-tip-dismiss" onclick="dismissCalTip()" title="Dismiss">✕</button>
               </div>
             </div>
-            <div class="card due-cal-card">
-              <div class="cal-header">
-                <button class="cal-nav-btn" onclick="shiftDueCalMonth(-1)" title="Previous month">‹</button>
-                <div class="cal-title" id="due-cal-title"></div>
-                <div style="display:flex;gap:6px;align-items:center;">
-                  <button class="cal-today-btn" onclick="dueCalToday()">Today</button>
-                  <button class="cal-nav-btn" onclick="shiftDueCalMonth(1)" title="Next month">›</button>
+            <!-- Wide screens: calendar on the left, the day's assignments on the
+                 right (hover a day to preview it, click to select it). Stacked on phones. -->
+            <div class="due-cal-layout">
+              <div class="card due-cal-card">
+                <div class="cal-header">
+                  <button class="cal-nav-btn" onclick="shiftDueCalMonth(-1)" title="Previous month">‹</button>
+                  <div class="cal-title" id="due-cal-title"></div>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <button class="cal-today-btn" onclick="dueCalToday()">Today</button>
+                    <button class="cal-nav-btn" onclick="shiftDueCalMonth(1)" title="Next month">›</button>
+                  </div>
+                </div>
+                <div class="cal-grid cal-dow-row">
+                  <div class="cal-dow">S</div><div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
+                </div>
+                <div class="cal-grid" id="due-cal-grid"></div>
+              </div>
+              <div class="due-day-panel" id="due-day-panel">
+                <div class="due-day-head">
+                  <div class="section-label" id="due-cal-selected-label">Today</div>
+                  <span class="due-day-preview-tag">Preview</span>
+                </div>
+                <div id="due-day-body">
+                  <div id="due-cal-selected-list"></div>
+                  <div id="study-sessions-list"></div>
+                </div>
+                <button class="add-study-btn" id="add-study-btn" onclick="toggleStudyForm()">+ Schedule study time</button>
+                <div class="card" id="study-form" style="display:none;padding:14px;margin-bottom:14px;">
+                  <input class="settings-input" id="study-form-title" placeholder="What are you studying? (e.g. Bio Chapter 4)" style="margin-bottom:10px;" />
+                  <input class="settings-input" id="study-form-course" placeholder="Course (optional)" style="margin-bottom:10px;" />
+                  <div class="study-form-row" style="margin-bottom:10px;">
+                    <input type="time" class="settings-input" id="study-form-start" style="margin-bottom:0;" />
+                    <input type="time" class="settings-input" id="study-form-end" style="margin-bottom:0;" />
+                  </div>
+                  <textarea class="syllabus-textarea" id="study-form-notes" placeholder="Notes (optional)" style="min-height:60px;margin-bottom:10px;"></textarea>
+                  <div style="display:flex;gap:8px;">
+                    <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="toggleStudyForm()">Cancel</button>
+                    <button class="settings-btn" style="width:auto;flex:1;" onclick="saveStudySession()">Save</button>
+                  </div>
+                  <div id="study-form-msg" style="margin-top:8px;"></div>
                 </div>
               </div>
-              <div class="cal-grid cal-dow-row">
-                <div class="cal-dow">S</div><div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
-              </div>
-              <div class="cal-grid" id="due-cal-grid"></div>
             </div>
-            <div class="section-label" id="due-cal-selected-label">Today</div>
-            <div id="study-sessions-list"></div>
-            <button class="add-study-btn" id="add-study-btn" onclick="toggleStudyForm()">+ Schedule study time</button>
-            <div class="card" id="study-form" style="display:none;padding:14px;margin-bottom:14px;">
-              <input class="settings-input" id="study-form-title" placeholder="What are you studying? (e.g. Bio Chapter 4)" style="margin-bottom:10px;" />
-              <input class="settings-input" id="study-form-course" placeholder="Course (optional)" style="margin-bottom:10px;" />
-              <div class="study-form-row" style="margin-bottom:10px;">
-                <input type="time" class="settings-input" id="study-form-start" style="margin-bottom:0;" />
-                <input type="time" class="settings-input" id="study-form-end" style="margin-bottom:0;" />
-              </div>
-              <textarea class="syllabus-textarea" id="study-form-notes" placeholder="Notes (optional)" style="min-height:60px;margin-bottom:10px;"></textarea>
-              <div style="display:flex;gap:8px;">
-                <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="toggleStudyForm()">Cancel</button>
-                <button class="settings-btn" style="width:auto;flex:1;" onclick="saveStudySession()">Save</button>
-              </div>
-              <div id="study-form-msg" style="margin-top:8px;"></div>
-            </div>
-            <div id="due-cal-selected-list"></div>
           </div>
           <div id="nodate-section" style="display:none;"><div class="section-label">No due date</div><div id="nodate-list"></div></div>
         </div>
@@ -5983,7 +5994,7 @@ function renderDueCalendar() {
   const todayStr = ymd(new Date());
   const cells = buildDueCalendarCells(year, month, dueCalAssignments, cachedStudySessions, todayStr, dueCalSelectedDate);
 
-  gridEl.innerHTML = cells.map(c => `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${c.isToday ? ' today' : ''}${c.isSelected ? ' selected' : ''}" onclick="selectDueCalDate('${c.key}')">
+  gridEl.innerHTML = cells.map(c => `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${c.isToday ? ' today' : ''}${c.isSelected ? ' selected' : ''}" data-key="${c.key}" onclick="selectDueCalDate('${c.key}')">
       <div class="cal-day-num">${c.dnum}</div>
       <div class="cal-day-dots">
         ${c.count ? `<div class="cal-day-count">${c.count}</div>` : ''}
@@ -5991,12 +6002,42 @@ function renderDueCalendar() {
       </div>
     </div>`).join('');
 
+  initDueCalHover();
   renderDueCalSelected();
 }
 
 function selectDueCalDate(key) {
   dueCalSelectedDate = key;
+  dueCalPreviewKey = null;
   renderDueCalendar();
+}
+
+// Hovering a day previews it in the day panel without selecting it; leaving
+// the grid snaps back to the selected day. Only on screens wide enough for
+// the side-by-side layout, and only for devices that can actually hover --
+// stacked on a phone the panel sits below the calendar, so previewing would
+// just change content nobody is looking at. Delegated on the grid (set up
+// once) because the cells themselves are rebuilt on every render.
+let dueCalPreviewKey = null;
+function dueCalCanPreview() {
+  return window.matchMedia('(min-width: 1100px) and (hover: hover)').matches;
+}
+function initDueCalHover() {
+  const grid = document.getElementById('due-cal-grid');
+  if (!grid || grid.dataset.hoverBound) return;
+  grid.dataset.hoverBound = '1';
+  grid.addEventListener('mouseover', e => {
+    if (!dueCalCanPreview()) return;
+    const cell = e.target.closest('.cal-day');
+    if (!cell || !cell.dataset.key || cell.dataset.key === dueCalPreviewKey) return;
+    dueCalPreviewKey = cell.dataset.key;
+    renderDueCalDay(dueCalPreviewKey, dueCalPreviewKey !== dueCalSelectedDate);
+  });
+  grid.addEventListener('mouseleave', () => {
+    if (!dueCalPreviewKey) return;
+    dueCalPreviewKey = null;
+    renderDueCalDay(dueCalSelectedDate, false);
+  });
 }
 
 function shiftDueCalMonth(delta) {
@@ -6015,6 +6056,8 @@ function renderDueCalSelected() {
   const listEl = document.getElementById('due-cal-selected-list');
   const labelEl = document.getElementById('due-cal-selected-label');
   if (!listEl || !labelEl || !dueCalSelectedDate) return;
+  dueCalPreviewKey = null;
+  document.getElementById('due-day-panel')?.classList.remove('previewing');
 
   // Pure filtering/label/HTML building lives in js/render-utils.js.
   const r = dueCalSelectedBodyHTML(dueCalAssignments, dueCalSelectedDate, doneSet, ymd(new Date()));
@@ -6022,6 +6065,25 @@ function renderDueCalSelected() {
   listEl.innerHTML = r.itemsHTML;
 
   renderStudySessionsForDay();
+}
+
+// Lighter than renderDueCalSelected(): fills just the day panel (heading,
+// assignments, study sessions) for any date, optionally flagged as a hover
+// preview. Used for the hover preview so the calendar grid is never rebuilt
+// underneath the cursor.
+function renderDueCalDay(key, previewing) {
+  const labelEl = document.getElementById('due-cal-selected-label');
+  const listEl = document.getElementById('due-cal-selected-list');
+  const sessionsEl = document.getElementById('study-sessions-list');
+  const panel = document.getElementById('due-day-panel');
+  const body = document.getElementById('due-day-body');
+  if (!labelEl || !listEl || !sessionsEl || !key) return;
+  const r = dueCalSelectedBodyHTML(dueCalAssignments, key, doneSet, ymd(new Date()));
+  labelEl.textContent = r.label;
+  listEl.innerHTML = r.itemsHTML;
+  sessionsEl.innerHTML = cachedStudySessions.filter(s => s.session_date === key).map(studySessionCardHTML).join('');
+  if (panel) panel.classList.toggle('previewing', !!previewing);
+  if (body) { body.classList.remove('day-swap'); void body.offsetWidth; body.classList.add('day-swap'); }
 }
 
 /* fmtTime12 and studySessionCardHTML now live in js/study-utils.js -- see

@@ -2810,6 +2810,41 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 @media (max-width: 420px) { .boot-card { padding: 30px 26px 28px; max-width: calc(100vw - 48px); } .boot-logo .logo-word { font-size: 30px; padding-left: 26px; } .boot-logo .logo-mark { width: 42px; height: 42px; } }
 #ws-card { padding: 34px 28px 30px; }
 @media (max-height: 780px) { #ws-card { padding: 22px 20px 20px; } }
+
+/* ===== UPCOMING: calendar + day panel ====================================
+   Wide screens put the selected day's assignments beside the calendar
+   instead of far below it (hover a day to preview it, click to select).
+   Under 1100px it stays stacked exactly as before. */
+.due-day-head { display: flex; align-items: center; gap: 10px; }
+.due-day-preview-tag {
+  display: none; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text2); background: var(--surface2); padding: 3px 8px; border-radius: 99px;
+}
+.due-day-panel.previewing .due-day-preview-tag { display: inline-block; }
+.day-swap { animation: daySwap 0.22s var(--ease-out); }
+@keyframes daySwap { from { opacity: 0.35; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .day-swap { animation: none; } }
+
+@media (min-width: 1100px) {
+  .due-cal-layout {
+    display: grid; grid-template-columns: minmax(380px, 480px) minmax(0, 1fr);
+    gap: 24px; align-items: start;
+  }
+  .due-cal-layout .due-cal-card { max-width: none; }
+  .due-day-panel {
+    position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto;
+    background: var(--surface); border: 1px solid var(--border2); border-radius: var(--card-radius);
+    box-shadow: var(--shadow-sm); padding: 18px 18px 8px;
+  }
+  .due-day-head { margin-bottom: 14px; }
+  #due-cal-selected-label {
+    font-size: 16px; font-weight: 700; color: var(--text1); text-transform: none;
+    letter-spacing: -0.2px; margin: 0;
+  }
+  /* The page-wide grid rule for this list assumes a full-width column; the
+     panel is a single narrow column. */
+  .due-day-panel #due-cal-selected-list { display: block; }
+}
 .auth-brand-points li::before {
   width: 20px; height: 20px; border-radius: 50%;
   background: rgba(30,215,96,0.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%231ed760' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-5'/%3E%3C/svg%3E") center / 11px no-repeat;

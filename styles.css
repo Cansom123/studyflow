@@ -2047,8 +2047,8 @@ mark.syl-mark-active { background: var(--accent); color: var(--on-accent); }
 .cal-dow-row { margin-bottom: 4px; }
 .cal-dow { font-size: 10px; font-weight: 700; color: var(--text2); text-align: center; text-transform: uppercase; letter-spacing: 0.04em; }
 .cal-day {
-  aspect-ratio: 1; border-radius: 9px; border: 1.5px solid transparent; position: relative;
-  background: var(--surface2); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  aspect-ratio: 1; border-radius: 10px; border: 1.5px solid var(--glass-border); position: relative;
+  background: var(--glass-bg); display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px; cursor: pointer; transition: background 0.15s, border-color 0.15s; min-height: 0;
 }
 .cal-day:hover { background: var(--btn-secondary-bg); }
@@ -2815,9 +2815,9 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
    Wide screens put the selected day's assignments beside the calendar
    instead of far below it (hover a day to preview it, click to select).
    Under 1100px it stays stacked exactly as before. */
-/* The calendar card shares the day panel's glass. Only the card itself:
-   the day cells stay solid tiles so their selected / today / study-streak
-   states keep their own backgrounds. */
+/* The calendar card shares the day panel's glass, and so do its day cells
+   (see .cal-day): glass is set on the base rule, with the selected / today
+   / study-streak states layered over it by their own more specific rules. */
 .card.due-cal-card {
   background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px;
   box-shadow: var(--glass-shadow);

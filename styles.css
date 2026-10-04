@@ -2984,3 +2984,78 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 #page-home .home-qlink,
 #page-home .home-qlink-icon,
 #page-home #home-announcements { border-radius: var(--home-radius); }
+
+/* ===== LOGIN: motion =====================================================
+   A choreographed arrival rather than everything fading at once: panel ->
+   logo cap -> fields (existing stagger) on the right; headline word by word
+   -> bullets -> preview cards on the left, with the first card's assignment
+   getting ticked off as a quiet demo of the product. All transform/opacity
+   (plus one short blur), all one-shot except the cards' float, and all off
+   under prefers-reduced-motion. */
+
+/* The glass panel rises in under its own fields instead of popping in. */
+.auth-form-col .auth-screen { animation: authPanelIn 0.7s var(--ease-out) backwards; }
+@keyframes authPanelIn { from { opacity: 0; transform: translateY(18px) scale(0.985); } to { opacity: 1; transform: none; } }
+
+/* The cap drops onto the S. The end frame matches the logo's resting
+   rotate(-24deg), so it hands off seamlessly. */
+.auth-logo .logo-mark, .auth-brand-logo .logo-mark { animation: capSettle 0.9s 0.25s var(--ease-spring) backwards; }
+@keyframes capSettle { from { opacity: 0; transform: translateY(-12px) rotate(-75deg); } to { opacity: 1; transform: rotate(-24deg); } }
+
+/* Headline reveals word by word (words are wrapped by js/auth-ui.js). */
+.auth-brand-tagline { animation: none; }
+.auth-brand-tagline .tw {
+  display: inline-block; animation: wordIn 0.7s var(--ease-out) backwards;
+  animation-delay: calc(200ms + var(--i, 0) * 45ms);
+}
+@keyframes wordIn { from { opacity: 0; transform: translateY(12px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+
+/* Bullets slide in one after another; their green checks pop. */
+.auth-brand-points { animation: none; }
+.auth-brand-points li { animation: bulletIn 0.6s var(--ease-out) backwards; }
+.auth-brand-points li:nth-child(1) { animation-delay: 0.75s; }
+.auth-brand-points li:nth-child(2) { animation-delay: 0.87s; }
+.auth-brand-points li:nth-child(3) { animation-delay: 0.99s; }
+.auth-brand-points li::before { animation: chipPop 0.5s var(--ease-spring) backwards; animation-delay: inherit; }
+@keyframes bulletIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@keyframes chipPop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* Field labels brighten while their field has focus. */
+.auth-page .auth-label { transition: color 0.2s; }
+.auth-page .auth-label:has(+ .auth-input:focus),
+.auth-page .auth-label:has(+ .auth-input-wrap .auth-input:focus) { color: #fff; }
+
+/* Preview cards: arrive one at a time, then float; the grade bar fills; the
+   first card's assignment gets checked off. `translate` (entrance + cursor
+   depth) and `transform` (float) are separate properties so they never
+   fight. --px/--py are set by js/auth-ui.js from the cursor position. */
+@media (min-width: 1100px) and (min-height: 820px) {
+  .auth-preview { animation: none; }
+  .ap-card {
+    translate: calc(var(--px, 0) * var(--d, 8) * 1px) calc(var(--py, 0) * var(--d, 8) * 1px);
+    transition: translate 0.6s var(--ease-out);
+  }
+  .ap-card.c1 { --d: 8;  animation: apIn 0.9s 1.05s var(--ease-out) backwards, apFloat 7s ease-in-out 0s infinite; }
+  .ap-card.c2 { --d: 14; animation: apIn 0.9s 1.2s var(--ease-out) backwards, apFloat 7s ease-in-out -2.3s infinite; }
+  .ap-card.c3 { --d: 20; animation: apIn 0.9s 1.35s var(--ease-out) backwards, apFloat 7s ease-in-out -4.6s infinite; }
+  .ap-bar i { animation: apBarFill 1.4s 1.7s var(--ease-out) backwards; }
+  .ap-ring { position: relative; animation: apRingDone 0.45s 2.8s ease forwards; }
+  .ap-ring::after {
+    content: ''; position: absolute; left: 6px; top: 2.5px; width: 4px; height: 8px;
+    border: solid #1ed760; border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0); animation: apTick 0.4s 2.95s var(--ease-spring) forwards;
+  }
+}
+@keyframes apIn { from { opacity: 0; translate: 0 26px; filter: blur(6px); } to { opacity: 1; filter: blur(0); } }
+@keyframes apBarFill { from { width: 0; } }
+@keyframes apRingDone { to { border-color: #1ed760; background: rgba(30,215,96,0.16); } }
+@keyframes apTick { to { transform: rotate(45deg) scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-form-col .auth-screen, .auth-logo .logo-mark, .auth-brand-logo .logo-mark,
+  .auth-brand-tagline .tw, .auth-brand-points li, .auth-brand-points li::before,
+  .ap-card.c1, .ap-card.c2, .ap-card.c3, .ap-bar i { animation: none; }
+  .ap-card { translate: none; transition: none; }
+  .ap-ring { animation: none; }
+  .ap-ring::after { animation: none; display: none; }
+}

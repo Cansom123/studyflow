@@ -1141,6 +1141,9 @@
             <input class="settings-input" id="custom-link-label-input" placeholder="Name (e.g. Bio notes)" style="flex:1;min-width:120px;margin-bottom:0;">
             <input class="settings-input" id="custom-link-url-input" placeholder="Paste link here" style="flex:2;min-width:160px;margin-bottom:0;">
           </div>
+          <div class="link-class-field" style="display:none;margin-top:8px;">
+            <select class="settings-input" id="custom-link-class-input" aria-label="Class (optional)" style="margin-bottom:0;"></select>
+          </div>
           <div id="custom-link-msg" style="color:var(--error-color);font-size:12.5px;margin-top:6px;"></div>
           <button class="settings-btn" style="margin-top:10px;" onclick="addCustomLink()">+ Add link</button>
         </div>
@@ -2063,7 +2066,8 @@ function renderCustomLinks() {
 
   // Pure HTML building lives in js/render-utils.js.
   if (homeHost) homeHost.innerHTML = homeCustomLinksHTML(links);
-  if (linksHost) linksHost.innerHTML = linksTabListHTML(links);
+  if (linksHost) linksHost.innerHTML = linksTabListHTML(links, linkClassNames());
+  renderLinkClassPicker();
 }
 
 function addCustomLink() {
@@ -2088,7 +2092,8 @@ function addCustomLink() {
     return;
   }
 
-  userPrefs.customLinks = [...(userPrefs.customLinks || []), { label, url }];
+  const course = (document.getElementById('custom-link-class-input') || {}).value || '';
+  userPrefs.customLinks = [...(userPrefs.customLinks || []), course ? { label, url, course } : { label, url }];
   saveUserPrefs();
   renderCustomLinks();
   labelInput.value = '';
@@ -5516,7 +5521,7 @@ function renderHome() {
       const top = withDate[0];
       const due = new Date(top.due_date); due.setHours(0,0,0,0);
       const isOverdue = due < today;
-      upnextEl.innerHTML = aCard(top, isOverdue, isOverdue, doneSet);
+      upnextEl.innerHTML = aCard(top, isOverdue, isOverdue, doneSet) + homeFocusNowHTML(top);
     }
   }
 
@@ -8620,5 +8625,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/grade-core.js"></script>
 <script src="js/motion-utils.js"></script>
 <script src="js/auth-ui.js"></script>
+<script src="js/home-links-extras.js"></script>
 </body>
 </html>

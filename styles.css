@@ -3844,3 +3844,55 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 @media (prefers-reduced-motion: reduce) {
   .page-head.in .page-head-icon, .page-head.in .page-head-title, .page-head.in .page-head-sub { animation: none; }
 }
+
+/* ===========================
+   HOME: Focus now  |  LINKS: pin + class groups
+=========================== */
+.home-focus-now {
+  width: 100%; display: flex; align-items: center; gap: 12px; margin: 2px 0 14px; padding: 12px 14px; text-align: left;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--card-radius, 14px);
+  color: var(--text1); font: inherit; cursor: pointer;
+  transition: transform 0.3s var(--ease-spring), border-color 0.2s, background 0.2s;
+}
+.home-focus-now:hover { transform: translateY(-2px); border-color: color-mix(in oklch, var(--accent) 45%, var(--glass-border)); }
+.home-focus-now:active { transform: scale(0.99); }
+.home-focus-now:disabled { opacity: 0.6; cursor: progress; }
+.hfn-icon {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--btn-bg); color: var(--btn-fg); box-shadow: 0 6px 18px color-mix(in oklch, var(--btn-bg) 28%, transparent);
+}
+.hfn-icon svg { width: 16px; height: 16px; margin-left: 2px; }
+.hfn-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hfn-text b { font-size: 14px; font-weight: 700; }
+.hfn-text span { font-size: 12px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hfn-arrow { width: 16px; height: 16px; color: var(--text2); flex-shrink: 0; transition: transform 0.2s var(--ease-out); }
+.home-focus-now:hover .hfn-arrow { transform: translateX(3px); color: var(--text1); }
+
+.home-qlink.is-pinned { border-color: color-mix(in oklch, var(--accent) 35%, var(--glass-border)); }
+.link-pin, .link-card .goal-remove { flex-shrink: 0; }
+.link-pin {
+  width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--text2); cursor: pointer; transition: color 0.15s, transform 0.25s var(--ease-spring);
+}
+.link-pin svg { width: 16px; height: 16px; fill: none; }
+.link-pin:hover { color: var(--text1); transform: scale(1.12); }
+.link-pin.on { color: var(--amber); }
+.link-pin.on svg { fill: currentColor; }
+.link-card.pinned { border-color: color-mix(in oklch, var(--amber) 28%, var(--glass-border)); }
+.link-class-select {
+  flex-shrink: 0; max-width: 130px; font: inherit; font-size: 12px; color: var(--text2); cursor: pointer;
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 5px 8px; outline: none;
+}
+[data-theme="dark"] .link-class-select { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.09); }
+.link-class-select:hover, .link-class-select:focus-visible { color: var(--text1); border-color: color-mix(in oklch, var(--text1) 25%, transparent); }
+.link-group { margin-bottom: 10px; }
+.link-group-head {
+  display: flex; align-items: center; gap: 8px; margin: 14px 2px 8px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text2);
+}
+.link-group-count { padding: 1px 7px; border-radius: 9px; background: var(--surface2); font-size: 10.5px; }
+@media (max-width: 600px) {
+  .link-card { flex-wrap: wrap; }
+  .link-class-select { max-width: none; order: 5; flex: 1 0 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .home-focus-now, .link-pin, .hfn-arrow { transition: none; } }

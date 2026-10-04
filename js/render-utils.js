@@ -473,8 +473,9 @@ function wsAssignmentListHTML(assignments) {
 }
 
 // Home's mini quick-links grid: an "add a link" prompt when there are none,
-// otherwise the 4 most-recently-opened (never-opened links sort after,
-// newest-added first).
+// otherwise pinned links first, then the most-recently-opened (never-opened
+// links sort after, newest-added first). Four slots, or more if more than
+// four are pinned.
 function homeCustomLinksHTML(links) {
   if (links.length === 0) {
     return `<button class="home-qlink" style="grid-column:1 / -1;" onclick="jumpTo('links')">
@@ -482,31 +483,60 @@ function homeCustomLinksHTML(links) {
         <span>Add a link</span>
       </button>`;
   }
+  const pinnedCount = links.filter(l => l.pinned).length;
   const recent = links
     .map((l, i) => ({ ...l, i }))
-    .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0))
-    .slice(0, 4);
+    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b.lastOpened || 0) - (a.lastOpened || 0))
+    .slice(0, Math.min(8, Math.max(4, pinnedCount)));
   return recent.map(l => `
-        <button class="home-qlink" onclick="openCustomLink(${l.i})">
+        <button class="home-qlink${l.pinned ? ' is-pinned' : ''}" onclick="openCustomLink(${l.i})">
           <div class="home-qlink-icon">${linkIconHTML(l.url)}</div>
           <span>${escapeHtml(l.label)}</span>
         </button>`).join('');
 }
 
-// The full Links tab list: newest-added first, each with a remove button.
-function linksTabListHTML(links) {
-  if (links.length === 0) {
-    return `<div class="empty-box"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M8.5 11.5a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24l-1 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M11.5 8.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l1-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div class="empty-title">No links yet</div><div class="empty-sub">Add a Google Doc, NotebookLM notebook, class site - anything you use for school - below.</div></div>`;
-  }
-  const ordered = links.map((l, i) => ({ ...l, i })).reverse();
-  return ordered.map(l => `
-        <div class="card link-card" style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openCustomLink(${l.i})">
+const LINK_PIN_ICON = '<svg viewBox="0 0 20 20" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><polygon points="10 2.5 12 7.5 17.5 7.5 13 11 14.5 17 10 13.5 5.5 17 7 11 2.5 7.5 8 7.5"/></svg>';
+
+function linkCardHTML(l, classNames) {
+  const picker = classNames.length
+    ? `<select class="link-class-select" aria-label="Class for ${escapeHtml(l.label)}" onclick="event.stopPropagation()" onchange="setLinkCourse(${l.i}, this.value)">
+         <option value="">No class</option>
+         ${classNames.map(n => `<option value="${escapeHtml(n)}"${n === l.course ? ' selected' : ''}>${escapeHtml(n)}</option>`).join('')}
+         ${l.course && !classNames.includes(l.course) ? `<option value="${escapeHtml(l.course)}" selected>${escapeHtml(l.course)}</option>` : ''}
+       </select>`
+    : '';
+  return `
+        <div class="card link-card${l.pinned ? ' pinned' : ''}" style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openCustomLink(${l.i})">
           <div class="home-qlink-icon" style="flex-shrink:0;">${linkIconHTML(l.url)}</div>
           <div style="flex:1;min-width:0;">
             <div class="card-title">${escapeHtml(l.label)}</div>
             <div class="card-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(l.url)}</div>
           </div>
+          ${picker}
+          <button class="link-pin${l.pinned ? ' on' : ''}" title="${l.pinned ? 'Unpin from Home' : 'Pin to Home'}" aria-pressed="${!!l.pinned}" onclick="event.stopPropagation();toggleLinkPin(${l.i})">${LINK_PIN_ICON}</button>
           <button class="goal-remove" title="Remove" onclick="event.stopPropagation();removeCustomLink(${l.i}, this)">✕</button>
+        </div>`;
+}
+
+// The full Links tab list. With no classes assigned it is one list, newest
+// first; once any link has a class it groups by class (classes in the order
+// given, then "Other"). Pinned links lead their list either way.
+function linksTabListHTML(links, classNames = []) {
+  if (links.length === 0) {
+    return `<div class="empty-box"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M8.5 11.5a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24l-1 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M11.5 8.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l1-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div><div class="empty-title">No links yet</div><div class="empty-sub">Add a Google Doc, NotebookLM notebook, class site - anything you use for school - below.</div></div>`;
+  }
+  const ordered = links.map((l, i) => ({ ...l, i })).reverse()
+    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+  const grouped = ordered.some(l => l.course);
+  if (!grouped) return ordered.map(l => linkCardHTML(l, classNames)).join('');
+  const order = [...classNames];
+  ordered.forEach(l => { if (l.course && !order.includes(l.course)) order.push(l.course); });
+  const sections = order.map(name => ({ name, items: ordered.filter(l => l.course === name) }));
+  sections.push({ name: 'Other', items: ordered.filter(l => !l.course) });
+  return sections.filter(g => g.items.length).map(g => `
+        <div class="link-group">
+          <div class="link-group-head"><span>${escapeHtml(g.name)}</span><span class="link-group-count">${g.items.length}</span></div>
+          ${g.items.map(l => linkCardHTML(l, classNames)).join('')}
         </div>`).join('');
 }
 

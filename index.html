@@ -1106,7 +1106,11 @@
 
       <!-- LINKS -->
       <div class="page" id="page-links">
-        <div class="section-label" style="margin-top:0;">Your links</div>
+        <div id="class-links-section" style="display:none;">
+          <div class="section-label" style="margin-top:0;">Your classes</div>
+          <div id="class-links-list"></div>
+        </div>
+        <div class="section-label" id="custom-links-label" style="margin-top:0;">Your links</div>
         <div id="links-list"></div>
         <div class="section-label" style="margin-top:20px;">Add a link</div>
         <div class="card" style="padding:16px;">
@@ -1906,7 +1910,62 @@ function openCustomLink(index) {
   window.open(link.url, '_blank', 'noopener,noreferrer');
 }
 
+// One entry per class with its Canvas course page. Prefers the student's
+// saved classes (Canvas course id + their school's Canvas address); a class
+// only seen through synced assignments still gets a link, worked out from
+// any of its assignment URLs (https://school.instructure.com/courses/123/...).
+function classCanvasLinks(selectedCourses, canvasUrl, assignments) {
+  const base = canvasUrl
+    ? (/^https?:\/\//i.test(canvasUrl) ? canvasUrl : 'https://' + canvasUrl).replace(/\/+$/, '')
+    : '';
+  const byName = new Map();
+  const add = (name, courseUrl) => {
+    const clean = cleanCourseName(name || '');
+    if (!clean || !courseUrl || byName.has(clean.toLowerCase())) return;
+    byName.set(clean.toLowerCase(), { name: clean, url: courseUrl });
+  };
+  if (base) (selectedCourses || []).forEach(c => { if (c && c.id != null) add(c.name, `${base}/courses/${c.id}`); });
+  (assignments || []).forEach(a => {
+    const m = /^(https?:\/\/[^/]+\/courses\/\d+)/i.exec(a.assignment_url || '');
+    if (m) add(a.course || a.course_name, m[1]);
+  });
+  return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// "Your classes" on the Links tab: a card per class that opens its Canvas
+// course page, with shortcuts into that class's Assignments, Modules and
+// Grades. Built from data that's already loaded -- nothing to set up.
+const CLASS_LINK_SECTIONS = [
+  { label: 'Assignments', path: '/assignments' },
+  { label: 'Modules', path: '/modules' },
+  { label: 'Grades', path: '/grades' },
+];
+function renderClassLinks() {
+  const section = document.getElementById('class-links-section');
+  const listEl = document.getElementById('class-links-list');
+  if (!section || !listEl) return;
+  const classes = classCanvasLinks(syllabusCourses, syllabusCanvas && syllabusCanvas.url,
+    (cachedAssignments || []).concat(cachedGradedAssignments || []));
+  section.style.display = classes.length ? '' : 'none';
+  document.getElementById('custom-links-label')?.style.setProperty('margin-top', classes.length ? '24px' : '0');
+  const sig = JSON.stringify(classes);
+  if (listEl.dataset.sig === sig) return;
+  listEl.dataset.sig = sig;
+  listEl.innerHTML = classes.map((c, i) => `
+    <div class="card class-link-card">
+      <a class="class-link-main" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">
+        <span class="class-link-avatar" style="--h:${(i * 67 + 210) % 360}">${escapeHtml(c.name.replace(/^(AP|IB|H)\s+/i, '').charAt(0).toUpperCase())}</span>
+        <span class="class-link-text"><span class="class-link-name">${escapeHtml(c.name)}</span><span class="class-link-sub">Open class in Canvas</span></span>
+        <svg class="class-link-out" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5H5.5A1.5 1.5 0 0 0 4 6.5v8A1.5 1.5 0 0 0 5.5 16h8a1.5 1.5 0 0 0 1.5-1.5V12"/><path d="M11 4h5v5M16 4l-7 7"/></svg>
+      </a>
+      <div class="class-link-chips">
+        ${CLASS_LINK_SECTIONS.map(s => `<a class="class-link-chip" href="${escapeHtml(c.url + s.path)}" target="_blank" rel="noopener noreferrer">${s.label}</a>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
 function renderCustomLinks() {
+  renderClassLinks();
   const homeHost = document.getElementById('home-custom-links');
   const linksHost = document.getElementById('links-list');
   const links = Array.isArray(userPrefs.customLinks) ? userPrefs.customLinks : [];
@@ -3648,6 +3707,7 @@ async function loadAssignments() {
   renderPriority(assignments);
   renderGoalsTab();
   renderHome();
+  renderClassLinks();
 }
 
 /* cleanCourseName now lives in js/format-utils.js -- see the module bridge
@@ -5372,6 +5432,7 @@ async function loadSyllabi() {
     url: (sOk && settings && settings[0] && settings[0].canvas_url) || '',
     token: (sOk && settings && settings[0] && settings[0].canvas_token) || '',
   };
+  renderClassLinks();
 
   const { ok, data } = await sbFetchWithRetry(`/rest/v1/syllabi?user_id=eq.${USER_ID}&select=*`);
   cachedSyllabi = (ok && Array.isArray(data)) ? data : [];
@@ -7644,7 +7705,7 @@ function showPage(name, el, fromNav) {
   if (navEl) navEl.classList.add('active');
 
   if (name === 'study') maybeShowStudyGoalOnboarding();
-  if (name === 'links') maybeShowLinksTutorial();
+  if (name === 'links') { renderClassLinks(); maybeShowLinksTutorial(); }
   if (name === 'discarded') loadDiscardedPage();
   if (name === 'adminreports') loadAdminReports();
   if (name === 'adminanalytics') loadAdminAnalytics();

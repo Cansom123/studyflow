@@ -3466,3 +3466,33 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .done-toast.show .dt-tick { animation: none; }
   .dt-bar i { transition: none; }
 }
+
+/* ===========================
+   LINKS: "Your classes"
+=========================== */
+#class-links-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.class-link-card { padding: 0; margin: 0; overflow: hidden; display: flex; flex-direction: column; }
+.class-link-main {
+  display: flex; align-items: center; gap: 12px; padding: 14px 14px 10px; text-decoration: none; color: inherit;
+  transition: background 0.15s;
+}
+.class-link-main:hover { background: color-mix(in oklch, var(--text1) 4%, transparent); }
+.class-link-avatar {
+  width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: oklch(0.82 0.12 var(--h)); background: oklch(0.6 0.14 var(--h) / 0.18);
+}
+[data-theme="light"] .class-link-avatar { color: oklch(0.45 0.15 var(--h)); background: oklch(0.6 0.14 var(--h) / 0.14); }
+.class-link-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.class-link-name { font-size: 14.5px; font-weight: 700; color: var(--text1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.class-link-sub { font-size: 12px; color: var(--text2); }
+.class-link-out { width: 16px; height: 16px; color: var(--text2); flex-shrink: 0; transition: transform 0.2s var(--ease-out), color 0.15s; }
+.class-link-main:hover .class-link-out { color: var(--text1); transform: translate(2px, -2px); }
+.class-link-chips { display: flex; gap: 6px; padding: 0 14px 14px 64px; flex-wrap: wrap; }
+.class-link-chip {
+  font-size: 12px; font-weight: 600; color: var(--text2); text-decoration: none;
+  padding: 5px 10px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border);
+  transition: color 0.15s, border-color 0.15s;
+}
+[data-theme="dark"] .class-link-chip { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.07); }
+.class-link-chip:hover { color: var(--text1); border-color: var(--border2); }
+@media (max-width: 600px) { .class-link-chips { padding-left: 14px; } }

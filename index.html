@@ -4239,6 +4239,7 @@ function openGradeDetail(courseName) {
   if (titleEl) titleEl.textContent = cleanCourseName(courseName);
   // Pure HTML building lives in js/render-utils.js.
   body.innerHTML = gradeDetailBodyHTML(courseName, grade, breakdown, schoolAIBannerHTML('grade-tips'));
+  renderGradeWhatIf(courseName);
   overlay.style.display = 'block';
 }
 
@@ -8689,5 +8690,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/assignments-extras.js"></script>
 <script src="js/priority-extras.js"></script>
 <script src="js/study-extras.js"></script>
+<script src="js/grades-extras.js"></script>
 </body>
 </html>

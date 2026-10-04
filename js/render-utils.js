@@ -420,6 +420,7 @@ function gradeCardsHTML(withGrades) {
       <div class="grade-card-left">
         <div class="grade-card-name">${cleanName}</div>
         ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="--w:${barWidth}%;background:${barColor}"></div></div>` : ''}
+        ${typeof gradeSparkHTML === 'function' ? gradeSparkHTML(g.course_name) : ''}
         <div class="grade-breakdown-hint">Tap to see what's affecting this grade</div>
       </div>
       <div class="grade-card-right">

@@ -39,15 +39,33 @@ function computePriorityScores(assignments, today, userGoals, priorityGoalBoost,
   return active.map(a => {
     const d = dayDiff(a.due_date, today);
     let score = d < 0 ? 1000 + Math.abs(d) : 100 - d;
+    // Every nudge records why, in plain words: the "Why this rank?" panel on
+    // each Priority card reads exactly this list, so it can never disagree
+    // with the real score.
+    const reasons = [];
+    if (d < 0) reasons.push(`It is ${Math.abs(d)} day${Math.abs(d) === 1 ? '' : 's'} overdue, and overdue work always ranks above anything that is not late.`);
+    else if (d === 0) reasons.push('It is due today.');
+    else if (d === 1) reasons.push('It is due tomorrow.');
+    else reasons.push(`It is due in ${d} days, and sooner deadlines rank higher.`);
     const goal = goalForAssignment(a, resolved);
     if (goal) {
       score += priorityGoalBoost;
+      reasons.push(`It is in a class tied to your goal "${goal.goal}", so it moves up.`);
       // Further below the goal's target = a little more pull, capped so it
       // nudges within the goal boost's scale rather than swamping deadlines.
-      if (goal.gap) score += Math.min(priorityGoalBoost * 0.5, goal.gap * 2);
+      if (goal.gap) {
+        score += Math.min(priorityGoalBoost * 0.5, goal.gap * 2);
+        reasons.push(`You are ${goal.gap} points below your ${goal.target}% target there, which adds a bit more.`);
+      }
     }
-    score += priorityGradeRiskBoost(a.course, cachedGrades);
-    return { ...a, score, d, goal: goal ? goal.goal : null };
+    const risk = priorityGradeRiskBoost(a.course, cachedGrades);
+    if (risk > 0) {
+      score += risk;
+      const g = (cachedGrades || []).find(x => (x.course_name || '').trim().toLowerCase() === (a.course || '').trim().toLowerCase());
+      const pct = g ? (g.current_score != null ? g.current_score : g.final_score) : null;
+      reasons.push(`${pct != null ? `You are at ${Number(pct).toFixed(1)}%` : 'Your grade'} in ${cleanCourseName(a.course)}, so it gets extra weight to protect it.`);
+    }
+    return { ...a, score, d, goal: goal ? goal.goal : null, reasons };
   }).sort((a, b) => b.score - a.score);
 }
 
@@ -76,12 +94,14 @@ function priorityListHTML(scored, completedToday) {
       : a.d === 0 ? `<span style="color:var(--error-color);">due today</span>`
       : a.d === 1 ? `<span style="color:var(--error-color);">due tomorrow</span>`
       : `due ${new Date(a.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-    return `<div class="priority-card" data-assignment-id="${a.id}">
+    return `<div class="priority-card${typeof priorityWhyOpen !== 'undefined' && priorityWhyOpen.has(String(a.id)) ? ' why-open' : ''}" data-assignment-id="${a.id}">
       <button class="priority-check" onclick="markPriorityDone('${a.id}')" title="Mark as done">✓</button>
       <div class="priority-num ${colors[i] || 'p5'}">${i + 1}</div>
       <div class="priority-info">
         <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
         <div class="card-sub" style="margin-top:3px;">${a.course || ''} · ${dueText}</div>
+        <button type="button" class="priority-why${typeof priorityWhyOpen !== 'undefined' && priorityWhyOpen.has(String(a.id)) ? ' open' : ''}" aria-expanded="${typeof priorityWhyOpen !== 'undefined' && priorityWhyOpen.has(String(a.id))}" onclick="togglePriorityWhy('${a.id}', this)">Why #${i + 1}?<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4"/></svg></button>
+        <div class="priority-why-panel"><ul>${(a.reasons || []).map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ul></div>
         ${a.goal ? `<div class="priority-goal-tag" title="Ranked higher because of this goal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3"/></svg>${escapeHtml(a.goal)}</div>` : ''}
       </div>
     </div>`;

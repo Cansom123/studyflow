@@ -716,7 +716,16 @@
           <div class="topbar-sub" id="topbar-date"></div>
         </div>
       </div>
+      <div class="gsearch" id="gsearch">
+        <svg class="gsearch-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.3"/><path d="M12.8 12.8l3.7 3.7"/></svg>
+        <input id="gsearch-input" type="search" placeholder="Search assignments, classes, links…" autocomplete="off" spellcheck="false" aria-label="Search StudyFlow" aria-controls="gsearch-panel" />
+        <kbd class="gsearch-kbd">/</kbd>
+        <div class="gsearch-panel" id="gsearch-panel" role="listbox"></div>
+      </div>
       <div class="topbar-right">
+        <button class="gsearch-open" id="gsearch-open" title="Search" aria-label="Search">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.3"/><path d="M12.8 12.8l3.7 3.7"/></svg>
+        </button>
         <button class="mobile-sync-btn" onclick="openSyncOverlay()" title="Sync assignments now">
           <span class="mobile-sync-icon">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -7806,5 +7815,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/grade-core.js"></script>
 <script src="js/motion-utils.js"></script>
 <script src="js/auth-ui.js"></script>
+<script src="js/global-search.js"></script>
 </body>
 </html>

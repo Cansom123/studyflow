@@ -177,6 +177,21 @@ function cocoDeterministicPlan(ctx) {
   // Flag a course that's grade-at-risk and also has work coming up, so a
   // struggling class gets called out even when its next due date isn't the
   // soonest -- due-date order alone would silently bury it.
+  // A stated goal with work coming up in its class: name the goal and the
+  // next thing to do for it, so the plan visibly follows what the student
+  // said they care about. Uses the same goal->class resolution as Priority.
+  let goalCourseKey = null;
+  const goalHit = (ctx.goals || []).map(r => ({ r, next: ctx.upcoming.find(a => a.due_date && r.courseKeys.has(cleanCourseName(a.course || a.course_name || '').trim().toLowerCase())) }))
+    .find(x => x.next);
+  if (goalHit) {
+    const { r, next } = goalHit;
+    goalCourseKey = cleanCourseName(next.course || next.course_name || '').trim().toLowerCase();
+    const where = r.grade && r.grade.pct != null && r.target != null
+      ? (r.gap ? ` (you're at ${r.grade.pct}%, aiming for ${r.target}%)` : ` (you're already at ${r.grade.pct}%, so this keeps it there)`)
+      : '';
+    parts.push(`For your goal "${r.goal}"${where}, put real time into ${name(next)}.`);
+  }
+
   if (ctx.grades && ctx.grades.length) {
     const atRisk = ctx.grades.find(g => {
       const pct = g.current_score != null ? g.current_score : g.final_score;
@@ -187,7 +202,8 @@ function cocoDeterministicPlan(ctx) {
     // a grade's course name differently -- normalize instead of trusting
     // exact string equality, or a real at-risk grade silently never surfaces.
     const norm = s => (s || '').trim().toLowerCase();
-    if (atRisk && ctx.upcoming.some(a => norm(a.course) === norm(atRisk.course_name))) {
+    const sameAsGoal = atRisk && goalCourseKey === cleanCourseName(atRisk.course_name).trim().toLowerCase();
+    if (atRisk && !sameAsGoal && ctx.upcoming.some(a => norm(a.course) === norm(atRisk.course_name))) {
       const pct = atRisk.current_score != null ? atRisk.current_score : atRisk.final_score;
       parts.push(`Also worth extra time: you're at ${pct}% in ${atRisk.course_name}, so don't let that slip.`);
     }

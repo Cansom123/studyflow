@@ -165,8 +165,22 @@ function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals
     });
   if (gradeLines.length) text += `\n\nCurrent grades:\n${gradeLines.join('\n')}`;
 
-  const goalLines = (userGoals || []).filter(Boolean);
-  if (goalLines.length) text += `\n\nStudent's stated goals this semester:\n${goalLines.map(g => `- ${g}`).join('\n')}`;
+  // Each goal goes in already resolved to its class, current grade and gap
+  // (js/goals-core.js) -- left to work out "Raise Biology above 70%" on its
+  // own, the model guessed at which course was meant and invented numbers.
+  const goals = resolveGoals(userGoals, cachedAssignments, cachedGrades);
+  if (goals.length) {
+    const goalLine = r => {
+      const bits = [];
+      if (r.courses.length) bits.push(`class: ${r.courses.join(', ')}`);
+      if (r.grade && r.grade.pct != null) bits.push(`currently ${r.grade.pct}%`);
+      if (r.target != null) bits.push(`target ${r.target}%`);
+      if (r.gap) bits.push(`${r.gap} points short`);
+      else if (r.target != null && r.grade && r.grade.pct != null) bits.push('target already met');
+      return `- ${r.goal}${bits.length ? ` (${bits.join('; ')})` : ''}`;
+    };
+    text += `\n\nStudent's stated goals this semester:\n${goals.map(goalLine).join('\n')}`;
+  }
 
   const weekOut = new Date(today); weekOut.setDate(weekOut.getDate() + 7);
   const studyLines = cachedStudySessions.filter(s => {
@@ -202,5 +216,5 @@ function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals
     if (s.title) itemDays.push({ title: s.title, day });
   });
 
-  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays, itemDays, grades: gradedCourses };
+  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays, itemDays, grades: gradedCourses, goals };
 }

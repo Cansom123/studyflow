@@ -33,23 +33,30 @@ function computePriorityScores(assignments, today, userGoals, priorityGoalBoost,
     const d = dayDiff(a.due_date, today);
     return d >= -7;
   });
+  // Goals are resolved to real classes once (js/goals-core.js) -- the same
+  // resolution the Goals tab and coco.1 use, so all three agree.
+  const resolved = resolveGoals(userGoals, assignments, cachedGrades);
   return active.map(a => {
     const d = dayDiff(a.due_date, today);
     let score = d < 0 ? 1000 + Math.abs(d) : 100 - d;
-    for (const goal of userGoals) {
-      const g = goal.toLowerCase().split(' ')[0];
-      if ((a.course || '').toLowerCase().includes(g) || a.title.toLowerCase().includes(g)) score += priorityGoalBoost;
+    const goal = goalForAssignment(a, resolved);
+    if (goal) {
+      score += priorityGoalBoost;
+      // Further below the goal's target = a little more pull, capped so it
+      // nudges within the goal boost's scale rather than swamping deadlines.
+      if (goal.gap) score += Math.min(priorityGoalBoost * 0.5, goal.gap * 2);
     }
     score += priorityGradeRiskBoost(a.course, cachedGrades);
-    return { ...a, score, d };
+    return { ...a, score, d, goal: goal ? goal.goal : null };
   }).sort((a, b) => b.score - a.score);
 }
 
 // The one-line "why this is your top priority" text under the ranked list.
 function priorityAiText(top, userGoals, cachedGrades) {
-  const matchingGoal = userGoals.find(g => (top.course || '').toLowerCase().includes(g.toLowerCase().split(' ')[0]));
+  const matchingGoal = top.goal;
   const gradeAtRisk = priorityGradeRiskBoost(top.course, cachedGrades) > 0;
-  if (matchingGoal) return `"${top.title}" is your top priority - and it's in a class tied to your goal: "${matchingGoal}". Start here.`;
+  if (matchingGoal && top.d < 0) return `"${top.title}" is overdue, and it's in the class tied to your goal "${matchingGoal}". Take care of it first.`;
+  if (matchingGoal) return `"${top.title}" is your top priority - it's in the class tied to your goal "${matchingGoal}". Start here.`;
   if (top.d < 0) return `"${top.title}" is overdue. Take care of that first.`;
   if (top.d <= 1) return `"${top.title}" is due ${top.d === 0 ? 'today' : 'tomorrow'} - that's your top priority.`;
   if (gradeAtRisk) return `"${top.title}" is your top priority - your grade in ${top.course} could use the attention.`;
@@ -75,6 +82,7 @@ function priorityListHTML(scored, completedToday) {
       <div class="priority-info">
         <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
         <div class="card-sub" style="margin-top:3px;">${a.course || ''} · ${dueText}</div>
+        ${a.goal ? `<div class="priority-goal-tag" title="Ranked higher because of this goal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3"/></svg>${escapeHtml(a.goal)}</div>` : ''}
       </div>
     </div>`;
   }).join('');

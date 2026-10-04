@@ -3284,14 +3284,23 @@ async function addGoalMain() {
   if (!val) return;
   userGoals.push(val); input.value = '';
   localStorage.setItem('sf_goals', JSON.stringify(userGoals));
-  await sbFetchWithRetry('/rest/v1/goals', 'POST', { user_id: USER_ID, goal_text: val });
   renderGoalsTab();
+  goalsChanged();
+  await sbFetchWithRetry('/rest/v1/goals', 'POST', { user_id: USER_ID, goal_text: val });
 }
 
 async function removeGoalMain(i) {
   userGoals.splice(i, 1);
   localStorage.setItem('sf_goals', JSON.stringify(userGoals));
   renderGoalsTab();
+  goalsChanged();
+}
+
+// Goals steer Priority's ranking (and Home's summary of it), so a goal
+// added or removed re-ranks right away instead of on the next reload.
+function goalsChanged() {
+  if (cachedAssignments.length) renderPriority(cachedAssignments);
+  renderHome();
 }
 
 async function renderSelectedCoursesTab() {
@@ -3762,6 +3771,9 @@ async function loadGrades() {
   cachedGrades = grades;
   checkGradeChangeNotifications(grades);
   renderGoalsTab(); // refresh action plans with grade data
+  // Priority weighs grades too (grade risk, and how far below a goal's
+  // target a class is), so re-rank now that they've arrived.
+  if (cachedAssignments.length) renderPriority(cachedAssignments);
   renderHome();
 
   // Per-assignment scores for the "what's affecting this grade" breakdown --

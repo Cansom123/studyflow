@@ -4352,6 +4352,7 @@ async function toggleDoneFromDetail(id) {
   const wasDone = a.completed || doneSet.has(key);
   const nowDone = !wasDone;
   const now = new Date().toISOString();
+  const prevWeek = weekDoneProgress();
 
   if (nowDone) doneSet.add(key); else doneSet.delete(key);
   localStorage.setItem('sf_done_' + USER_ID, JSON.stringify([...doneSet]));
@@ -4367,6 +4368,7 @@ async function toggleDoneFromDetail(id) {
     );
   } catch (_) {}
 
+  const prevCount = getCompletedCount();
   bumpCompletedCount(nowDone ? 1 : -1);
   updateAssignmentDetailDoneButton({ ...a, completed: nowDone });
   renderChecklistSection({ ...a, completed: nowDone });
@@ -4374,10 +4376,7 @@ async function toggleDoneFromDetail(id) {
   renderAllWork(cachedAssignments);
   renderPriority(cachedAssignments);
   renderHome();
-  if (nowDone) {
-    celebrateFromElement(document.getElementById('a-detail-done-btn'));
-    showReward(ASSIGNMENT_DONE_REWARD_MESSAGES[Math.floor(Math.random() * ASSIGNMENT_DONE_REWARD_MESSAGES.length)], 'check');
-  }
+  if (nowDone) celebrateAssignmentDone(document.getElementById('a-detail-done-btn'), prevCount, prevWeek);
 }
 
 function closeAssignmentDetail() {
@@ -4395,6 +4394,7 @@ function toggleDone(encodedKey, btn) {
   const a = cachedAssignments.find(x => decodeURIComponent(doneKey(x)) === key);
   const wasDone = (a && a.completed) || doneSet.has(key);
   const nowDone = !wasDone;
+  const prevWeek = weekDoneProgress();
   if (nowDone) trackEvent('assignment_marked_done', { from: 'list' });
   // The same assignment can render more than once at a time (e.g. Home's "Up
   // next" and "This week" both show it) -- every one of those cards/buttons
@@ -4403,13 +4403,7 @@ function toggleDone(encodedKey, btn) {
   // look permanently stuck the next time you look at them.
   document.querySelectorAll(`[data-done-key="${encodedKey}"]`).forEach(c => c.classList.toggle('done', nowDone));
   document.querySelectorAll(`[data-done-key="${encodedKey}"] .done-check`).forEach(b => b.classList.toggle('checked', nowDone));
-  if (nowDone) {
-    doneSet.add(key);
-    celebrateFromElement(btn);
-    showReward(ASSIGNMENT_DONE_REWARD_MESSAGES[Math.floor(Math.random() * ASSIGNMENT_DONE_REWARD_MESSAGES.length)], 'check');
-  } else {
-    doneSet.delete(key);
-  }
+  if (nowDone) doneSet.add(key); else doneSet.delete(key);
   localStorage.setItem('sf_done_' + USER_ID, JSON.stringify([...doneSet]));
 
   // Must land in cachedAssignments BEFORE bumpCompletedCount, which
@@ -4430,7 +4424,11 @@ function toggleDone(encodedKey, btn) {
       ).catch(() => {});
     }
   }
+  const prevCount = getCompletedCount();
   bumpCompletedCount(nowDone ? 1 : -1);
+  // After the re-render above, so the week progress counts this one; the
+  // clicked button may have been replaced, so fall back to a live copy.
+  if (nowDone) celebrateAssignmentDone(btn && btn.isConnected ? btn : document.querySelector(`[data-done-key="${encodedKey}"] .done-check`), prevCount, prevWeek);
 }
 
 /* escapeHtml and escapeRegex now live in js/format-utils.js -- see the
@@ -6225,6 +6223,133 @@ function celebrateFromElement(el) {
   celebrateAt(r.left + r.width / 2, r.top + r.height / 2);
 }
 
+/* ---- Finishing an assignment ----------------------------------------------
+   The one moment the whole app is built around, so it gets the full beat:
+   the checkbox pops with a ring, confetti bursts out and falls, the card
+   flashes, and a bar slides up from the bottom where the lifetime "done"
+   number rolls over to its new value and this week's progress fills in.
+   Every 10th assignment, or clearing everything due this week, gets a bigger
+   send-off. Shared by every way of marking work done (list checkbox, the
+   assignment's detail panel, Priority). */
+function celebrateBurst(x, y) {
+  const shapes = ['', 'confetti-dot', 'confetti-strip'];
+  const count = 26;
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.4 - 0.2);
+    const dist = 46 + Math.random() * 54;
+    const piece = document.createElement('div');
+    piece.className = `confetti-piece confetti-fall ${shapes[i % shapes.length]}`;
+    piece.style.left = x + 'px';
+    piece.style.top = y + 'px';
+    piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+    piece.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+    piece.style.setProperty('--dy', `${Math.sin(angle) * dist - 18}px`);
+    piece.style.setProperty('--fall', `${70 + Math.random() * 70}px`);
+    piece.style.setProperty('--rot', `${Math.random() * 720 - 360}deg`);
+    piece.style.animationDuration = `${0.95 + Math.random() * 0.5}s`;
+    document.body.appendChild(piece);
+    piece.addEventListener('animationend', () => piece.remove());
+  }
+}
+
+// Of everything due from today through the next 7 days, how much is done.
+function weekDoneProgress() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const end = new Date(today); end.setDate(today.getDate() + 7);
+  let done = 0, total = 0;
+  (cachedAssignments || []).forEach(a => {
+    if (!a.due_date) return;
+    const d = new Date(a.due_date); d.setHours(0, 0, 0, 0);
+    if (d < today || d > end) return;
+    total++;
+    if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) done++;
+  });
+  return { done, total };
+}
+
+let doneToastTimer = null;
+function showDoneToast(prevCount, count, week, message, big) {
+  document.getElementById('reward-toast')?.classList.remove('reward-toast-show');
+  let el = document.getElementById('done-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'done-toast';
+    el.className = 'done-toast';
+    el.setAttribute('role', 'status');
+    el.innerHTML = `
+      <div class="dt-badge"><svg viewBox="0 0 20 20" fill="none"><path class="dt-tick" d="M5 10.5l3.3 3.3L15.2 6.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="dt-main">
+        <div class="dt-line"><span class="dt-odo"><span class="dt-old"></span><span class="dt-new"></span></span><span class="dt-label"></span></div>
+        <div class="dt-msg"></div>
+        <div class="dt-week"><div class="dt-bar"><i></i></div><span class="dt-week-text"></span></div>
+      </div>`;
+    document.body.appendChild(el);
+  }
+  el.querySelector('.dt-old').textContent = prevCount;
+  el.querySelector('.dt-new').textContent = count;
+  el.querySelector('.dt-label').textContent = count === 1 ? 'assignment done' : 'assignments done';
+  el.querySelector('.dt-msg').textContent = message;
+  const weekEl = el.querySelector('.dt-week');
+  weekEl.style.display = week.total ? '' : 'none';
+  if (week.total) {
+    const bar = el.querySelector('.dt-bar i');
+    const from = Math.max(0, week.done - 1) / week.total;
+    bar.style.transition = 'none';
+    bar.style.transform = `scaleX(${from})`;
+    void bar.offsetWidth;
+    bar.style.transition = '';
+    requestAnimationFrame(() => { bar.style.transform = `scaleX(${week.done / week.total})`; });
+    el.querySelector('.dt-week-text').textContent = `${week.done}/${week.total} this week`;
+  }
+  el.classList.toggle('dt-big', !!big);
+  el.classList.remove('show');
+  void el.offsetWidth; // restart the entrance + number roll
+  el.classList.add('show');
+  clearTimeout(doneToastTimer);
+  doneToastTimer = setTimeout(() => el.classList.remove('show'), big ? 4200 : 3200);
+  return el;
+}
+
+function celebrateAssignmentDone(originEl, prevCount, prevWeek) {
+  const count = getCompletedCount();
+  const week = weekDoneProgress();
+  // Only the check-off that actually finishes the week counts -- not every
+  // later one while the week happens to already be clear.
+  const clearedWeek = week.total > 0 && week.done === week.total && (!prevWeek || prevWeek.done < week.done);
+  const milestone = count > 0 && count % 10 === 0;
+  const big = clearedWeek || milestone;
+  const message = clearedWeek ? 'Everything due this week is done.'
+    : milestone ? `That's ${count}. Seriously good work.`
+    : ASSIGNMENT_DONE_REWARD_MESSAGES[Math.floor(Math.random() * ASSIGNMENT_DONE_REWARD_MESSAGES.length)];
+  const toast = showDoneToast(prevCount, count, week, message, big);
+
+  if (prefersReducedMotion()) return;
+  if (originEl && originEl.getBoundingClientRect) {
+    const r = originEl.getBoundingClientRect();
+    if (r.width) celebrateBurst(r.left + r.width / 2, r.top + r.height / 2);
+    originEl.classList.remove('just-checked');
+    void originEl.offsetWidth;
+    originEl.classList.add('just-checked');
+    setTimeout(() => originEl.classList.remove('just-checked'), 700);
+    const card = originEl.closest('.card, .priority-card');
+    if (card) {
+      card.classList.remove('done-flash');
+      void card.offsetWidth;
+      card.classList.add('done-flash');
+      setTimeout(() => card.classList.remove('done-flash'), 900);
+    }
+  }
+  if (big) {
+    setTimeout(() => {
+      const r = toast.getBoundingClientRect();
+      const midY = r.top + r.height / 2;
+      celebrateUpward(r.left + r.width / 2, midY, r.width * 0.8, -Math.PI / 2, 1.7, 34);
+      celebrateUpward(16, midY, 30, -Math.PI / 2 + 0.55, 1.1, 20);
+      celebrateUpward(window.innerWidth - 16, midY, 30, -Math.PI / 2 - 0.55, 1.1, 20);
+    }, 250);
+  }
+}
+
 // Consecutive-day streak, keyed per user, based on calendar day (not a rolling
 // 24h window) so a skipped day actually breaks it. Call once per app open.
 function bumpDailyStreak() {
@@ -7437,6 +7562,7 @@ async function markPriorityDone(id) {
   const ghost = (originalCard && startRect) ? originalCard.cloneNode(true) : null;
 
   const now = new Date().toISOString();
+  const prevWeek = weekDoneProgress();
   await sbFetchWithRetry(
     `/rest/v1/assignments?id=eq.${id}&user_id=eq.${USER_ID}`,
     'PATCH',
@@ -7445,8 +7571,12 @@ async function markPriorityDone(id) {
   cachedAssignments = cachedAssignments.map(a =>
     a.id === id ? { ...a, completed: true, completed_at: now } : a
   );
+  const prevCount = getCompletedCount();
   bumpCompletedCount(1);
   renderPriority(cachedAssignments);
+  // The card is re-rendered into the Completed section below; the burst
+  // fires there once the flying copy lands.
+  celebrateAssignmentDone(null, prevCount, prevWeek);
 
   const newCard = document.querySelector(`.priority-completed-section .priority-card[data-assignment-id="${id}"]`);
   if (!ghost || !startRect || !newCard) return;
@@ -7469,7 +7599,7 @@ async function markPriorityDone(id) {
     ghost.remove();
     newCard.style.transition = 'opacity 0.3s ease';
     newCard.style.opacity = '1';
-    celebrateFromElement(newCard);
+    if (!prefersReducedMotion()) celebrateFromElement(newCard.querySelector('.priority-check') || newCard);
   }, 500);
 }
 

@@ -3380,3 +3380,89 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .upd-filter .seg-btn { flex: 0 0 auto; }
   .upd-filter { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
 }
+
+/* ===========================
+   DONE CELEBRATION
+=========================== */
+/* Confetti that bursts outward, then tumbles down under "gravity". */
+.confetti-piece.confetti-fall { width: 8px; height: 8px; animation: confettiFall 1.2s cubic-bezier(.2,.7,.4,1) forwards; }
+.confetti-piece.confetti-dot { border-radius: 50%; width: 7px; height: 7px; }
+.confetti-piece.confetti-strip { width: 4px; height: 11px; border-radius: 2px; }
+@keyframes confettiFall {
+  0%   { transform: translate(-50%,-50%) scale(0.4) rotate(0deg); opacity: 1; }
+  35%  { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1) rotate(calc(var(--rot) * 0.4)); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx) * 1.25), calc(-50% + var(--dy) + var(--fall))) scale(0.85) rotate(var(--rot)); opacity: 0; }
+}
+
+/* Checkbox: a spring pop plus a ring that ripples out. */
+.done-check.just-checked, .priority-check.just-checked, #a-detail-done-btn.just-checked { animation: checkPop 0.5s var(--ease-spring); position: relative; }
+.done-check.just-checked::after, .priority-check.just-checked::after {
+  content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--green);
+  animation: checkRing 0.6s var(--ease-out) forwards; pointer-events: none;
+}
+@keyframes checkPop { 0% { transform: scale(1); } 30% { transform: scale(0.82); } 65% { transform: scale(1.22); } 100% { transform: scale(1); } }
+@keyframes checkRing { from { transform: scale(1); opacity: 0.9; } to { transform: scale(2.4); opacity: 0; } }
+
+/* Card: a soft green wash that sweeps across once. */
+.card.done-flash, .priority-card.done-flash { position: relative; overflow: hidden; }
+.card.done-flash::after, .priority-card.done-flash::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, transparent 20%, color-mix(in oklch, var(--green) 22%, transparent) 50%, transparent 80%);
+  animation: doneSweep 0.8s var(--ease-out) forwards;
+}
+@keyframes doneSweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* The bar that slides up from the bottom. */
+.done-toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 10001;
+  display: flex; align-items: center; gap: 14px; min-width: 300px; max-width: calc(100vw - 32px);
+  padding: 14px 20px 14px 14px; box-sizing: border-box;
+  background: var(--surface); border: 1px solid var(--border2); border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+  opacity: 0; pointer-events: none; transform: translate(-50%, 24px) scale(0.96);
+  transition: opacity 0.25s, transform 0.4s var(--ease-spring);
+}
+[data-theme="dark"] .done-toast { background: #151515; border-color: rgba(255,255,255,0.1); }
+.done-toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.done-toast.dt-big { border-color: color-mix(in oklch, var(--green) 55%, transparent); box-shadow: 0 18px 50px rgba(0,0,0,0.35), 0 0 0 4px color-mix(in oklch, var(--green) 14%, transparent); }
+.dt-badge {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--green); color: #fff;
+}
+.done-toast.show .dt-badge { animation: checkPop 0.55s 0.1s var(--ease-spring) backwards; }
+.dt-badge svg { width: 22px; height: 22px; }
+.dt-tick { stroke-dasharray: 16; stroke-dashoffset: 16; }
+.done-toast.show .dt-tick { animation: dtTick 0.35s 0.25s var(--ease-out) forwards; }
+@keyframes dtTick { to { stroke-dashoffset: 0; } }
+.dt-main { min-width: 0; flex: 1; }
+.dt-line { display: flex; align-items: baseline; gap: 7px; }
+.dt-label { font-size: 14px; font-weight: 600; color: var(--text1); }
+.dt-msg { font-size: 12.5px; color: var(--text2); margin-top: 2px; }
+
+/* Odometer: the old number rolls up and out as the new one rolls in. */
+.dt-odo { position: relative; display: inline-block; height: 26px; overflow: hidden; font-size: 24px; font-weight: 800; line-height: 26px; color: var(--text1); font-variant-numeric: tabular-nums; }
+.dt-old, .dt-new { display: block; }
+.dt-new { position: absolute; left: 0; top: 0; transform: translateY(100%); }
+.done-toast.show .dt-old { animation: odoOut 0.45s 0.35s var(--ease-out) forwards; }
+.done-toast.show .dt-new { animation: odoIn 0.45s 0.35s var(--ease-spring) forwards; color: var(--green); }
+@keyframes odoOut { to { transform: translateY(-100%); opacity: 0; } }
+@keyframes odoIn { to { transform: translateY(0); } }
+
+.dt-week { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.dt-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; min-width: 90px; }
+[data-theme="dark"] .dt-bar { background: rgba(255,255,255,0.08); }
+.dt-bar i { display: block; height: 100%; background: var(--green); transform-origin: left; transform: scaleX(0); transition: transform 0.7s 0.45s var(--ease-out); }
+.dt-week-text { font-size: 11.5px; font-weight: 600; color: var(--text2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 600px) {
+  .done-toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); min-width: 0; width: calc(100vw - 24px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .done-toast { transition: opacity 0.2s; transform: translate(-50%, 0); }
+  .done-toast.show .dt-badge, .done-toast.show .dt-old, .done-toast.show .dt-new { animation: none; }
+  .done-toast.show .dt-old { display: none; }
+  .done-toast.show .dt-new { position: static; transform: none; }
+  .dt-tick { stroke-dashoffset: 0; }
+  .done-toast.show .dt-tick { animation: none; }
+  .dt-bar i { transition: none; }
+}

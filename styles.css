@@ -3328,3 +3328,55 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .awc-inner { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; align-content: start; }
   .awc-inner > .card { margin-bottom: 0; }
 }
+
+/* ===========================
+   UPDATES (teacher feed)
+=========================== */
+.tab-badge:empty { display: none; }
+.tab-badge {
+  margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
+  border-radius: 9px; background: var(--accent); color: var(--on-accent);
+  font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+  animation: chipPop 0.35s var(--ease-spring) backwards;
+}
+.tabs.collapsed .tab-badge { position: absolute; top: 4px; right: 6px; margin: 0; min-width: 8px; height: 8px; padding: 0; font-size: 0; }
+
+.upd-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.upd-filter { flex: 0 1 auto; width: auto; overflow-x: auto; scrollbar-width: none; }
+.upd-filter::-webkit-scrollbar { display: none; }
+.upd-filter .seg-btn { white-space: nowrap; padding-left: 14px; padding-right: 14px; display: inline-flex; align-items: center; gap: 6px; }
+.upd-count {
+  min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 9px;
+  background: var(--accent); color: var(--on-accent); font-size: 10.5px; font-weight: 700; line-height: 17px;
+}
+.upd-markall {
+  margin-left: auto; flex-shrink: 0; background: none; border: none; cursor: pointer; font: inherit;
+  font-size: 13px; font-weight: 600; color: var(--text2); padding: 6px 4px; transition: color 0.15s, opacity 0.15s;
+}
+.upd-markall:hover:not(:disabled) { color: var(--text1); }
+.upd-markall:disabled { opacity: 0.4; cursor: default; }
+
+.upd-day { margin-top: 18px; }
+#updates-list > .upd-day:first-child { margin-top: 8px; }
+#updates-list .upd-card { margin-bottom: 8px; }
+.upd-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.upd-top .announcement-course { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upd-kind {
+  flex-shrink: 0; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 6px;
+}
+.upd-kind-announcement { background: var(--accent-soft); color: var(--accent-text); }
+.upd-kind-feedback { background: var(--green-soft); color: var(--green); }
+.upd-kind-message { background: var(--purple-soft); color: var(--purple); }
+.upd-card:focus-visible { outline: 2px solid var(--text1); outline-offset: 2px; }
+
+@media (max-width: 600px) {
+  .upd-toolbar { flex-wrap: wrap; }
+  .upd-filter { width: 100%; }
+  .upd-filter .seg-btn { flex: 1; padding-left: 10px; padding-right: 10px; }
+}
+.announcement-body a { color: var(--text1); text-decoration: underline; text-underline-offset: 2px; word-break: break-all; }
+@media (max-width: 600px) {
+  .upd-filter .seg-btn { flex: 0 0 auto; }
+  .upd-filter { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
+}

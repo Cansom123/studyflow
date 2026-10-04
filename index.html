@@ -663,6 +663,11 @@
         <span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 0 10h-3M9 17H6A5 5 0 0 1 6 7h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
         <span>Links</span>
       </button>
+      <button class="tab" id="tab-updates" onclick="showPage('updates',this)" title="Updates from teachers">
+        <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a4 4 0 0 1 8 0c0 3 1 4 1.5 4.5h-11C5 12 6 11 6 8z"/><path d="M8.3 15a1.8 1.8 0 0 0 3.4 0"/></svg></span>
+        <span>Updates</span>
+        <span class="tab-badge" id="updates-tab-badge"></span>
+      </button>
       <div class="nav-group-label">Assignments</div>
       <button class="tab" id="tab-due" onclick="showPage('due',this)" title="Upcoming">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><polyline points="10 5.5 10 10 12.5 12.5"/></svg></span>
@@ -1002,6 +1007,21 @@
         </div>
       </div>
 
+      <!-- UPDATES (everything teachers send, in one feed: announcements,
+           feedback on submissions, Canvas messages) -->
+      <div class="page" id="page-updates">
+        <div class="upd-toolbar">
+          <div class="seg-control upd-filter" id="updates-filter" role="tablist" aria-label="Filter updates">
+            <button class="seg-btn active" data-kind="all" role="tab" onclick="setUpdatesFilter('all')">All</button>
+            <button class="seg-btn" data-kind="announcement" role="tab" onclick="setUpdatesFilter('announcement')">Announcements</button>
+            <button class="seg-btn" data-kind="feedback" role="tab" onclick="setUpdatesFilter('feedback')">Feedback</button>
+            <button class="seg-btn" data-kind="message" role="tab" onclick="setUpdatesFilter('message')">Messages</button>
+          </div>
+          <button class="upd-markall" id="updates-markall" onclick="markAllUpdatesRead()">Mark all as read</button>
+        </div>
+        <div id="updates-list"></div>
+      </div>
+
       <!-- MESSAGES (Canvas Inbox/Conversations) -->
       <div class="page" id="page-messages">
         <div id="messages-loading" class="loading-box">Loading messages...</div>
@@ -1140,6 +1160,9 @@
         </div>
         <div class="card syllabus-card" onclick="jumpTo('grades')">
           <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3.5" y="10" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="8.5" y="6" width="3" height="10.5" rx="1" fill="currentColor"/><rect x="13.5" y="3" width="3" height="13.5" rx="1" fill="currentColor"/></svg></span>Grades</div><span class="more-chevron">›</span></div>
+        </div>
+        <div class="card syllabus-card" onclick="jumpTo('updates')">
+          <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a4 4 0 0 1 8 0c0 3 1 4 1.5 4.5h-11C5 12 6 11 6 8z"/><path d="M8.3 15a1.8 1.8 0 0 0 3.4 0"/></svg></span>Updates from teachers<span class="admin-reports-badge" id="updates-more-badge"></span></div><span class="more-chevron">›</span></div>
         </div>
         <div class="card syllabus-card" onclick="jumpTo('messages')">
           <div class="card-row"><div class="card-title more-title"><span class="more-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M4 6l6 5 6-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Messages<span class="admin-reports-badge" id="messages-badge"></span></div><span class="more-chevron">›</span></div>
@@ -3794,6 +3817,7 @@ async function restoreAnnouncement(id) {
    bridge near the end of this file. */
 
 function renderAnnouncements() {
+  renderUpdates();
   const section = document.getElementById('home-announcements-section');
   const listEl = document.getElementById('home-announcements');
   if (!section || !listEl) return;
@@ -3986,6 +4010,7 @@ function messageCardHTML(m) {
 }
 
 function renderMessagesList() {
+  renderUpdates();
   const emptyEl = document.getElementById('messages-empty');
   const listEl = document.getElementById('messages-list');
   if (!listEl) return;
@@ -4078,6 +4103,7 @@ function feedbackCardHTML(f) {
 }
 
 function renderFeedbackList() {
+  renderUpdates();
   const emptyEl = document.getElementById('feedback-empty');
   const listEl = document.getElementById('feedback-list');
   if (!listEl) return;
@@ -4106,6 +4132,155 @@ async function toggleFeedback(id) {
   if (wasUnread) {
     sbFetchWithRetry(`/rest/v1/assignment_feedback?id=eq.${id}`, 'PATCH', { read: true });
   }
+}
+
+/* ===========================
+   UPDATES (one feed of everything teachers send)
+   Announcements, feedback on submissions and Canvas messages already load
+   into their own caches for Home / More; this tab merges them newest first,
+   grouped by day, so a student has one place to check. Reading an item here
+   marks it read in its own table, exactly like opening it in its home list.
+=========================== */
+let updatesFilter = 'all';
+const updatesExpanded = new Set(); // "kind:id" of items opened in this feed
+
+const UPDATE_KINDS = {
+  announcement: { label: 'Announcement', table: 'announcements', cache: () => cachedAnnouncements, rerender: () => renderAnnouncements() },
+  feedback:     { label: 'Feedback',     table: 'assignment_feedback', cache: () => cachedFeedback, rerender: () => renderFeedbackList() },
+  message:      { label: 'Message',      table: 'canvas_messages', cache: () => cachedMessages, rerender: () => renderMessagesList() },
+};
+
+function allUpdates() {
+  const items = [];
+  (cachedAnnouncements || []).forEach(a => items.push({
+    kind: 'announcement', src: a, id: a.id, time: a.posted_at,
+    context: cleanCourseName(a.course_name || ''), title: a.title || 'Announcement',
+    from: a.author_name || '', body: a.message || 'No additional details.', url: a.announcement_url,
+  }));
+  (cachedFeedback || []).forEach(f => items.push({
+    kind: 'feedback', src: f, id: f.id, time: f.posted_at,
+    context: cleanCourseName(f.course_name || ''), title: f.assignment_title ? `On “${f.assignment_title}”` : 'Feedback on your work',
+    from: f.author_name || 'Teacher', body: f.comment_text || '', url: feedbackAssignmentUrl(f),
+  }));
+  (cachedMessages || []).forEach(m => items.push({
+    kind: 'message', src: m, id: m.id, time: m.last_message_at,
+    context: m.participants || 'Canvas', title: m.subject || '(no subject)',
+    from: m.message_count > 1 ? `${m.message_count} messages` : '', body: m.last_message || 'No preview available.', url: m.conversation_url,
+  }));
+  return items.sort((a, b) => (b.time ? new Date(b.time) : 0) - (a.time ? new Date(a.time) : 0));
+}
+
+// Feedback rows carry the assignment's title + class, not a link, so find
+// the synced assignment it belongs to for the "Open in Canvas" link.
+function feedbackAssignmentUrl(f) {
+  const norm = s => (s || '').trim().toLowerCase();
+  const pool = (cachedAssignments || []).concat(cachedGradedAssignments || []);
+  const match = pool.find(a => norm(a.title) === norm(f.assignment_title)
+    && norm(cleanCourseName(a.course || a.course_name)) === norm(cleanCourseName(f.course_name)));
+  return match && match.assignment_url;
+}
+
+function updatesDayLabel(iso) {
+  if (!iso) return 'Earlier';
+  const d = new Date(iso); d.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Math.round((today - d) / 86400000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return 'This week';
+  return 'Earlier';
+}
+
+function updateCardHTML(u) {
+  const key = `${u.kind}:${u.id}`;
+  const open = updatesExpanded.has(key);
+  const unread = !u.src.read;
+  const meta = [announcementTimeAgo(u.time), u.from ? escapeHtml(u.from) : ''].filter(Boolean).join(' · ');
+  return `<div class="announcement-card upd-card${open ? ' expanded' : ''}${unread ? ' unread' : ' read'}" data-kind="${u.kind}"
+      role="button" tabindex="0" aria-expanded="${open}"
+      onclick="toggleUpdate('${u.kind}', '${u.id}')"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+    <div class="announcement-unread-dot"></div>
+    <div class="announcement-main">
+      <div class="upd-top"><span class="upd-kind upd-kind-${u.kind}">${UPDATE_KINDS[u.kind].label}</span><span class="announcement-course">${escapeHtml(u.context)}</span></div>
+      <div class="announcement-title">${escapeHtml(u.title)}</div>
+      <div class="announcement-meta">${meta}</div>
+      ${open ? `<div class="announcement-body">${linkifyText(u.body)}</div>
+        ${u.url ? `<a href="${escapeHtml(u.url)}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>` : ''}` : ''}
+    </div>
+  </div>`;
+}
+
+function renderUpdates() {
+  const all = allUpdates();
+  const unreadTotal = all.filter(u => !u.src.read).length;
+  ['updates-tab-badge', 'updates-more-badge'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = unreadTotal > 0 ? String(unreadTotal) : '';
+  });
+
+  const listEl = document.getElementById('updates-list');
+  if (!listEl) return;
+  document.querySelectorAll('#updates-filter .seg-btn').forEach(b => {
+    const kind = b.dataset.kind;
+    const n = kind === 'all' ? unreadTotal : all.filter(u => u.kind === kind && !u.src.read).length;
+    b.classList.toggle('active', kind === updatesFilter);
+    b.setAttribute('aria-selected', String(kind === updatesFilter));
+    const base = { all: 'All', announcement: 'Announcements', feedback: 'Feedback', message: 'Messages' }[kind];
+    b.innerHTML = escapeHtml(base) + (n ? ` <span class="upd-count">${n}</span>` : '');
+  });
+
+  const shown = updatesFilter === 'all' ? all : all.filter(u => u.kind === updatesFilter);
+  const markAll = document.getElementById('updates-markall');
+  if (markAll) markAll.disabled = !shown.some(u => !u.src.read);
+
+  if (!shown.length) {
+    const what = { all: 'updates', announcement: 'announcements', feedback: 'feedback', message: 'messages' }[updatesFilter];
+    listEl.innerHTML = `<div class="empty-box"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a4 4 0 0 1 8 0c0 3 1 4 1.5 4.5h-11C5 12 6 11 6 8z"/><path d="M8.3 15a1.8 1.8 0 0 0 3.4 0"/></svg></div>
+      <div class="empty-title">No ${what} yet</div>
+      <div class="empty-sub">When your teachers post an announcement, comment on your work or message you on Canvas, it shows up here after a sync.</div></div>`;
+    return;
+  }
+  let html = '', lastLabel = '';
+  shown.forEach(u => {
+    const label = updatesDayLabel(u.time);
+    if (label !== lastLabel) { html += `<div class="section-label upd-day">${label}</div>`; lastLabel = label; }
+    html += updateCardHTML(u);
+  });
+  listEl.innerHTML = html;
+}
+
+function setUpdatesFilter(kind) {
+  updatesFilter = UPDATE_KINDS[kind] ? kind : 'all';
+  renderUpdates();
+}
+
+function toggleUpdate(kind, id) {
+  const def = UPDATE_KINDS[kind];
+  const item = def && def.cache().find(x => String(x.id) === String(id));
+  if (!item) return;
+  const key = `${kind}:${id}`;
+  if (updatesExpanded.has(key)) updatesExpanded.delete(key); else updatesExpanded.add(key);
+  const wasUnread = !item.read;
+  if (wasUnread) {
+    item.read = true;
+    sbFetchWithRetry(`/rest/v1/${def.table}?id=eq.${id}`, 'PATCH', { read: true });
+    def.rerender(); // keeps Home / More badges in step; also re-renders this feed
+  } else {
+    renderUpdates();
+  }
+}
+
+async function markAllUpdatesRead() {
+  const kinds = updatesFilter === 'all' ? Object.keys(UPDATE_KINDS) : [updatesFilter];
+  await Promise.all(kinds.map(kind => {
+    const def = UPDATE_KINDS[kind];
+    const unread = def.cache().filter(x => !x.read);
+    if (!unread.length) return null;
+    unread.forEach(x => { x.read = true; });
+    def.rerender();
+    return sbFetchWithRetry(`/rest/v1/${def.table}?user_id=eq.${USER_ID}&id=in.(${unread.map(x => x.id).join(',')})`, 'PATCH', { read: true });
+  }));
 }
 
 /* doneKey now lives in js/format-utils.js -- see the module bridge near

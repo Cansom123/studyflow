@@ -1039,9 +1039,11 @@
             <button class="seg-btn" data-kind="announcement" role="tab" onclick="setUpdatesFilter('announcement')">Announcements</button>
             <button class="seg-btn" data-kind="feedback" role="tab" onclick="setUpdatesFilter('feedback')">Feedback</button>
             <button class="seg-btn" data-kind="message" role="tab" onclick="setUpdatesFilter('message')">Messages</button>
+            <button class="seg-btn" data-kind="saved" role="tab" onclick="setUpdatesFilter('saved')">Saved</button>
           </div>
           <button class="upd-markall" id="updates-markall" onclick="markAllUpdatesRead()">Mark all as read</button>
         </div>
+        <div id="updates-muted"></div>
         <div id="updates-list"></div>
       </div>
 
@@ -4138,16 +4140,17 @@ async function restoreAnnouncement(id) {
    bridge near the end of this file. */
 
 function renderAnnouncements() {
+  const anns = visibleAnnouncements();
   renderUpdates();
   const section = document.getElementById('home-announcements-section');
   const listEl = document.getElementById('home-announcements');
   if (!section || !listEl) return;
-  if (cachedAnnouncements.length === 0) {
+  if (anns.length === 0) {
     section.style.display = 'none';
     return;
   }
   section.style.display = '';
-  const unreadCount = cachedAnnouncements.filter(a => !a.read).length;
+  const unreadCount = anns.filter(a => !a.read).length;
   const badgeEl = document.getElementById('home-announcements-badge');
   if (badgeEl) {
     badgeEl.textContent = unreadCount > 0 ? String(unreadCount) : '';
@@ -4155,12 +4158,12 @@ function renderAnnouncements() {
   }
   document.getElementById('home-announcements-label')?.classList.toggle('has-unread', unreadCount > 0);
   listEl.classList.toggle('has-unread', unreadCount > 0);
-  listEl.innerHTML = cachedAnnouncements.slice(0, 5).map(announcementCardHTML).join('');
+  listEl.innerHTML = anns.slice(0, 5).map(announcementCardHTML).join('');
 
   // Keep the full-list overlay in sync too, in case it's open (or gets
   // reopened) while a dismiss/toggle/sync updates the underlying data.
   const detailBody = document.getElementById('announcements-detail-body');
-  if (detailBody) detailBody.innerHTML = cachedAnnouncements.map(announcementCardHTML).join('');
+  if (detailBody) detailBody.innerHTML = anns.map(announcementCardHTML).join('');
 }
 
 /* announcementCardHTML now lives in js/render-utils.js -- see the module
@@ -4170,7 +4173,7 @@ function openAllAnnouncements() {
   const overlay = document.getElementById('announcements-detail-overlay');
   const body = document.getElementById('announcements-detail-body');
   if (!overlay || !body) return;
-  body.innerHTML = cachedAnnouncements.map(announcementCardHTML).join('');
+  body.innerHTML = visibleAnnouncements().map(announcementCardHTML).join('');
   overlay.style.display = 'block';
 }
 function closeAllAnnouncements() {
@@ -4473,7 +4476,7 @@ const UPDATE_KINDS = {
 
 function allUpdates() {
   const items = [];
-  (cachedAnnouncements || []).forEach(a => items.push({
+  visibleAnnouncements().forEach(a => items.push({
     kind: 'announcement', src: a, id: a.id, time: a.posted_at,
     context: cleanCourseName(a.course_name || ''), title: a.title || 'Announcement',
     from: a.author_name || '', body: a.message || 'No additional details.', url: a.announcement_url,
@@ -4516,7 +4519,9 @@ function updateCardHTML(u) {
   const key = `${u.kind}:${u.id}`;
   const open = updatesExpanded.has(key);
   const unread = !u.src.read;
+  const saved = isUpdateSaved(u.kind, u.id);
   const meta = [announcementTimeAgo(u.time), u.from ? escapeHtml(u.from) : ''].filter(Boolean).join(' · ');
+  const canMute = open && u.kind === 'announcement' && u.context;
   return `<div class="announcement-card upd-card${open ? ' expanded' : ''}${unread ? ' unread' : ' read'}" data-kind="${u.kind}"
       role="button" tabindex="0" aria-expanded="${open}"
       onclick="toggleUpdate('${u.kind}', '${u.id}')"
@@ -4527,8 +4532,13 @@ function updateCardHTML(u) {
       <div class="announcement-title">${escapeHtml(u.title)}</div>
       <div class="announcement-meta">${meta}</div>
       ${open ? `<div class="announcement-body">${linkifyText(u.body)}</div>
-        ${u.url ? `<a href="${escapeHtml(u.url)}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>` : ''}` : ''}
+        <div class="upd-actions">
+          ${u.url ? `<a href="${escapeHtml(u.url)}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>` : ''}
+          ${canMute ? `<button type="button" class="upd-mute" data-cls="${escapeHtml(u.context)}" onclick="event.stopPropagation();muteClass(this.dataset.cls)">Mute ${escapeHtml(u.context)}</button>` : ''}
+        </div>` : ''}
     </div>
+    <button type="button" class="upd-save${saved ? ' on' : ''}" aria-pressed="${saved}" title="${saved ? 'Remove from saved' : 'Save for later'}"
+      onclick="event.stopPropagation();toggleSaveUpdate('${u.kind}', '${u.id}')">${UPD_BOOKMARK}</button>
   </div>`;
 }
 
@@ -4545,22 +4555,29 @@ function renderUpdates() {
   if (!listEl) return;
   document.querySelectorAll('#updates-filter .seg-btn').forEach(b => {
     const kind = b.dataset.kind;
-    const n = kind === 'all' ? unreadTotal : all.filter(u => u.kind === kind && !u.src.read).length;
+    const n = kind === 'saved' ? 0 : kind === 'all' ? unreadTotal : all.filter(u => u.kind === kind && !u.src.read).length;
     b.classList.toggle('active', kind === updatesFilter);
     b.setAttribute('aria-selected', String(kind === updatesFilter));
-    const base = { all: 'All', announcement: 'Announcements', feedback: 'Feedback', message: 'Messages' }[kind];
-    b.innerHTML = escapeHtml(base) + (n ? ` <span class="upd-count">${n}</span>` : '');
+    const base = { all: 'All', announcement: 'Announcements', feedback: 'Feedback', message: 'Messages', saved: 'Saved' }[kind];
+    const savedN = savedUpdateList().length;
+    b.innerHTML = escapeHtml(base) + (n ? ` <span class="upd-count">${n}</span>` : '') + (kind === 'saved' && savedN ? ` <span class="upd-count quiet">${savedN}</span>` : '');
   });
+  const mutedEl = document.getElementById('updates-muted');
+  if (mutedEl) mutedEl.innerHTML = mutedChipsHTML();
 
-  const shown = updatesFilter === 'all' ? all : all.filter(u => u.kind === updatesFilter);
+  const shown = updatesFilter === 'saved' ? savedUpdateList().map(savedUpdateAsItem)
+    : updatesFilter === 'all' ? all : all.filter(u => u.kind === updatesFilter);
   const markAll = document.getElementById('updates-markall');
   if (markAll) markAll.disabled = !shown.some(u => !u.src.read);
 
   if (!shown.length) {
-    const what = { all: 'updates', announcement: 'announcements', feedback: 'feedback', message: 'messages' }[updatesFilter];
+    const what = { all: 'updates', announcement: 'announcements', feedback: 'feedback', message: 'messages', saved: 'saved updates' }[updatesFilter];
+    const emptyText = updatesFilter === 'saved'
+      ? 'Tap the bookmark on any update to keep it here, even after it disappears from Canvas.'
+      : 'When your teachers post an announcement, comment on your work or message you on Canvas, it shows up here after a sync.';
     listEl.innerHTML = `<div class="empty-box"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a4 4 0 0 1 8 0c0 3 1 4 1.5 4.5h-11C5 12 6 11 6 8z"/><path d="M8.3 15a1.8 1.8 0 0 0 3.4 0"/></svg></div>
       <div class="empty-title">No ${what} yet</div>
-      <div class="empty-sub">When your teachers post an announcement, comment on your work or message you on Canvas, it shows up here after a sync.</div></div>`;
+      <div class="empty-sub">${emptyText}</div></div>`;
     return;
   }
   let html = '', lastLabel = '';
@@ -4573,15 +4590,20 @@ function renderUpdates() {
 }
 
 function setUpdatesFilter(kind) {
-  updatesFilter = UPDATE_KINDS[kind] ? kind : 'all';
+  updatesFilter = (UPDATE_KINDS[kind] || kind === 'saved') ? kind : 'all';
   renderUpdates();
 }
 
 function toggleUpdate(kind, id) {
   const def = UPDATE_KINDS[kind];
   const item = def && def.cache().find(x => String(x.id) === String(id));
-  if (!item) return;
   const key = `${kind}:${id}`;
+  if (!item) {
+    if (!isUpdateSaved(kind, id)) return;
+    if (updatesExpanded.has(key)) updatesExpanded.delete(key); else updatesExpanded.add(key);
+    renderUpdates();
+    return;
+  }
   if (updatesExpanded.has(key)) updatesExpanded.delete(key); else updatesExpanded.add(key);
   const wasUnread = !item.read;
   if (wasUnread) {
@@ -4594,6 +4616,7 @@ function toggleUpdate(kind, id) {
 }
 
 async function markAllUpdatesRead() {
+  if (updatesFilter === 'saved') return;
   const kinds = updatesFilter === 'all' ? Object.keys(UPDATE_KINDS) : [updatesFilter];
   await Promise.all(kinds.map(kind => {
     const def = UPDATE_KINDS[kind];
@@ -8252,7 +8275,7 @@ if (!checkForPasswordRecovery()) routeUser();
       const due = new Date(a.due_date); due.setHours(0,0,0,0);
       if (due >= today && due <= weekFromNow) dueSoon++;
     });
-    const unreadAnnouncements = (cachedAnnouncements || []).filter(a => !a.read).length;
+    const unreadAnnouncements = visibleAnnouncements().filter(a => !a.read).length;
     const gradeChanges = wsCountGradeChanges();
 
     const rows = [];
@@ -8626,5 +8649,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/motion-utils.js"></script>
 <script src="js/auth-ui.js"></script>
 <script src="js/home-links-extras.js"></script>
+<script src="js/updates-extras.js"></script>
 </body>
 </html>

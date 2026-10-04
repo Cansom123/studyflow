@@ -3896,3 +3896,35 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .link-class-select { max-width: none; order: 5; flex: 1 0 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .home-focus-now, .link-pin, .hfn-arrow { transition: none; } }
+
+/* ===========================
+   UPDATES: save for later + mute a class
+=========================== */
+.upd-card { position: relative; }
+.upd-save {
+  flex-shrink: 0; align-self: flex-start; width: 32px; height: 32px; margin: -4px -6px 0 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; background: none; border: none;
+  color: var(--text2); cursor: pointer; transition: color 0.15s, transform 0.25s var(--ease-spring), background 0.15s;
+}
+.upd-save svg { width: 17px; height: 17px; fill: none; }
+.upd-save:hover { color: var(--text1); background: var(--surface2); transform: scale(1.08); }
+.upd-save.on { color: var(--amber); }
+.upd-save.on svg { fill: currentColor; animation: chipPop 0.35s var(--ease-spring); }
+.upd-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 8px; }
+.upd-actions .canvas-link { margin: 0; }
+.upd-mute {
+  background: none; border: none; padding: 0; font: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--text2); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in oklch, currentColor 40%, transparent);
+}
+.upd-mute:hover { color: var(--text1); }
+.upd-muted { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 10px; }
+.upd-muted-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text2); margin-right: 2px; }
+.upd-muted-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px 4px 10px; border-radius: 99px;
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.upd-muted-chip svg { width: 11px; height: 11px; }
+.upd-muted-chip:hover { color: var(--text1); border-color: color-mix(in oklch, var(--text1) 30%, transparent); }
+.upd-count.quiet { background: var(--surface2); color: var(--text2); }
+@media (prefers-reduced-motion: reduce) { .upd-save.on svg { animation: none; } .upd-save { transition: none; } }

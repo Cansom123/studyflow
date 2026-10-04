@@ -2094,7 +2094,7 @@ function hideAll() {
   const glow = document.getElementById('auth-bg-glow');
   if (glow) { glow.style.display = 'none'; glow.classList.remove('onboard-glow'); }
   const page = document.getElementById('auth-page');
-  if (page) page.style.display = 'none';
+  if (page) { page.style.display = 'none'; page.classList.remove('auth-leaving'); }
   // Pairs with showAuthGlow()'s class add below -- pinning the whole page to
   // the viewport while any login/onboarding screen shows, so scrolling can't
   // reveal empty space around the centered card (or, on desktop, drag the
@@ -2386,6 +2386,26 @@ async function retryConnection() {
   btn.disabled = false; btn.classList.remove('btn-loading');
 }
 
+// The beat between a successful sign-in and the app: the button confirms
+// "Signed in" and the panel lifts and dims (styles.css: .auth-leaving),
+// instead of the screen cutting straight away. The panel stays visible
+// (dimmed, not gone) until routeUser() swaps screens, so a slow network
+// never leaves a blank page. The short pause is skipped under reduced motion.
+async function signedIn(btn) {
+  const reduced = typeof prefersReducedMotion === 'function' && prefersReducedMotion();
+  if (btn) {
+    btn.dataset.label = btn.dataset.label || btn.textContent;
+    btn.classList.add('btn-success');
+    btn.textContent = 'Signed in';
+    // Put the label back once the sign-in screens are out of sight, so it
+    // reads correctly next time (e.g. after signing out).
+    setTimeout(() => { btn.classList.remove('btn-success'); btn.textContent = btn.dataset.label; }, 2500);
+  }
+  document.getElementById('auth-page')?.classList.add('auth-leaving');
+  if (!reduced) await new Promise(r => setTimeout(r, 320));
+  routeUser();
+}
+
 window.addEventListener('online', () => {
   const el = document.getElementById('conn-problem');
   if (el && el.classList.contains('show')) retryConnection();
@@ -2615,7 +2635,7 @@ async function handleLogin() {
   }
 
   btn.disabled = false; btn.classList.remove('btn-loading');
-  saveSession(data); routeUser();
+  saveSession(data); signedIn(btn);
 }
 
 async function handleMfaVerify() {
@@ -2635,7 +2655,7 @@ async function handleMfaVerify() {
   btn.disabled = false; btn.classList.remove('btn-loading');
   if (!res.ok) { msgEl.innerHTML = `<div class="msg-error">${data.error_description || data.msg || 'That code didn\'t work -- try again.'}</div>`; return; }
   pendingMfa = null;
-  saveSession(data); routeUser();
+  saveSession(data); signedIn(btn);
 }
 
 function cancelMfaVerify() { pendingMfa = null; showLoginScreen(); }
@@ -2679,7 +2699,7 @@ async function handleMfaBackupVerify() {
   const loginData = pendingMfa.loginData;
   pendingMfa = null;
   btn.disabled = false; btn.classList.remove('btn-loading');
-  saveSession(loginData); routeUser();
+  saveSession(loginData); signedIn(btn);
 }
 
 /* ---- 2FA recovery via email (lost authenticator) ----
@@ -2729,7 +2749,7 @@ async function handleMfaEmailVerify() {
   // blocking sign-in over.
   try { await sbFetchWithRetry(`/auth/v1/factors/${lostFactorId}`, 'DELETE'); } catch(e) {}
   btn.disabled = false; btn.classList.remove('btn-loading');
-  routeUser();
+  signedIn(btn);
   setTimeout(() => {
     alert('Two-factor authentication was turned off because you signed in by email instead of your authenticator app. You can turn it back on in Settings.');
   }, 300);

@@ -4528,6 +4528,7 @@ function updateCardHTML(u) {
 }
 
 function renderUpdates() {
+  refreshPageHeads('updates');
   const all = allUpdates();
   const unreadTotal = all.filter(u => !u.src.read).length;
   ['updates-tab-badge', 'updates-more-badge'].forEach(id => {
@@ -5472,6 +5473,7 @@ function jumpToReportProblem() {
    js/home-core.js -- see the module bridge near the end of this file. */
 
 function renderHome() {
+  refreshPageHeads();
   const eyebrowEl = document.getElementById('home-greeting-eyebrow');
   if (!eyebrowEl) return;
   // The dashboard used to lead with a big "Welcome back, Name" headline every
@@ -7947,6 +7949,106 @@ async function undoPriorityDone(id) {
   renderPriority(cachedAssignments);
 }
 
+/* ===========================
+   PAGE HEADERS
+   Every tab opens with the same confident heading the sign-in screen uses
+   ("Welcome back" + one calm line under it): the tab's icon in a glass
+   tile, its name, and a live one-line summary of what's in it. Icons are
+   read from the sidebar so the two can never drift apart. Home keeps its
+   own greeting instead.
+=========================== */
+var PAGE_HEADS = { // var: refreshPageHeads may run (via renderHome) before this line has executed
+  links:    { title: 'Links', sub: () => {
+    const classes = classCanvasLinks(syllabusCourses, syllabusCanvas && syllabusCanvas.url, (cachedAssignments || []).concat(cachedGradedAssignments || [])).length;
+    const saved = (userPrefs.customLinks || []).length;
+    return [classes ? `${classes} ${classes === 1 ? 'class' : 'classes'}` : '', `${saved} saved ${saved === 1 ? 'link' : 'links'}`].filter(Boolean).join(' · ');
+  } },
+  updates:  { title: 'Updates', sub: () => {
+    const n = allUpdates().filter(u => !u.src.read).length;
+    return n ? `${n} unread from your teachers` : 'All caught up with your teachers';
+  } },
+  due:      { title: 'Upcoming', sub: () => {
+    const w = weekDoneProgress(); const left = w.total - w.done;
+    const overdue = pageHeadOverdue();
+    return [left ? `${left} due this week` : 'Nothing left due this week', overdue ? `${overdue} overdue` : ''].filter(Boolean).join(' · ');
+  } },
+  allwork:  { title: 'Assignments', sub: () => {
+    const left = (cachedAssignments || []).filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a)))).length;
+    const overdue = pageHeadOverdue();
+    return left ? [`${left} left to do`, overdue ? `${overdue} overdue` : ''].filter(Boolean).join(' · ') : 'Nothing left to do';
+  } },
+  priority: { title: 'Priority', sub: () => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const top = computePriorityScores((cachedAssignments || []).filter(a => !doneSet.has(decodeURIComponent(doneKey(a)))), today, userGoals, userPrefs.priorityGoalBoost ?? 50, cachedGrades)[0];
+    return top ? `Start with “${top.title}”` : 'Nothing to rank right now';
+  } },
+  study:    { title: 'Study', sub: () => {
+    const s = computeStudyStats(cachedStudySessions, userPrefs, new Date());
+    return s.dailyGoal ? `${s.todayMin} of ${s.dailyGoal} min studied today` : `${s.todayMin} min studied today`;
+  } },
+  grades:   { title: 'Grades', sub: () => {
+    const pcts = (cachedGrades || []).map(g => g.current_score != null ? g.current_score : g.final_score).filter(p => p != null).map(Number);
+    if (!pcts.length) return 'No grades posted yet';
+    const avg = pcts.reduce((a, b) => a + b, 0) / pcts.length;
+    return `Averaging ${avg.toFixed(1)}% across ${pcts.length} ${pcts.length === 1 ? 'class' : 'classes'}`;
+  } },
+  goals:    { title: 'Goals', sub: () => {
+    if (!userGoals.length) return 'Tell StudyFlow what you are aiming for';
+    const linked = resolveGoals(userGoals, cachedAssignments, cachedGrades).filter(r => r.courses.length).length;
+    return `${userGoals.length} ${userGoals.length === 1 ? 'goal' : 'goals'}${linked ? ` · ${linked} steering Priority` : ''}`;
+  } },
+  syllabus: { title: 'Syllabus', sub: () => {
+    const n = (cachedSyllabi || []).length;
+    return n ? `${n} ${n === 1 ? 'syllabus' : 'syllabi'} you can search and ask about` : 'Your class syllabi, searchable';
+  } },
+  settings: { title: 'Settings', sub: () => 'Appearance, notifications and your Canvas connection' },
+  more:     { title: 'More', sub: () => 'Everything else in StudyFlow' },
+  messages: { title: 'Messages', icon: 'more', sub: () => { const n = (cachedMessages || []).filter(m => !m.read).length; return n ? `${n} unread` : 'Canvas inbox'; } },
+  feedback: { title: 'Feedback', icon: 'more', sub: () => { const n = (cachedFeedback || []).filter(f => !f.read).length; return n ? `${n} new comments` : 'Comments on your work'; } },
+  discarded:{ title: 'Discarded', icon: 'more', sub: () => 'Dismissed announcements and finished work' },
+};
+
+function pageHeadOverdue() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return (cachedAssignments || []).filter(a => {
+    if (!a.due_date || a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return false;
+    const d = new Date(a.due_date); d.setHours(0, 0, 0, 0);
+    return d < today;
+  }).length;
+}
+
+function initPageHeads() {
+  Object.entries(PAGE_HEADS).forEach(([name, meta]) => {
+    const page = document.getElementById('page-' + name);
+    if (!page || page.querySelector(':scope > .page-head')) return;
+    const iconSrc = document.querySelector(`#tab-${meta.icon || name} .tab-icon`);
+    const head = document.createElement('header');
+    head.className = 'page-head';
+    head.innerHTML = `
+      <span class="page-head-icon" aria-hidden="true">${iconSrc ? iconSrc.innerHTML : ''}</span>
+      <div class="page-head-text">
+        <h1 class="page-head-title">${meta.title}</h1>
+        <div class="page-head-sub"></div>
+      </div>`;
+    page.insertBefore(head, page.firstChild);
+  });
+}
+
+// Subtitles read live data, so they're refreshed whenever a page is shown
+// and whenever Home re-renders (which happens on every data change).
+function refreshPageHeads(onlyName) {
+  if (!PAGE_HEADS) return;
+  Object.entries(PAGE_HEADS).forEach(([name, meta]) => {
+    if (onlyName && name !== onlyName) return;
+    const el = document.querySelector(`#page-${name} > .page-head .page-head-sub`);
+    if (!el) return;
+    let text = '';
+    try { text = meta.sub(); } catch (e) { text = ''; }
+    if (el.textContent !== text) el.textContent = text;
+  });
+}
+initPageHeads();
+
 function showPage(name, el, fromNav) {
   trackEvent('page_view', { page: name });
   // A detail overlay (assignment description, syllabus) sits above everything
@@ -7974,6 +8076,9 @@ function showPage(name, el, fromNav) {
   const navEl = document.getElementById('nav-'+name);
   if (navEl) navEl.classList.add('active');
 
+  refreshPageHeads(name);
+  const head = document.querySelector(`#page-${name} > .page-head`);
+  if (head) { head.classList.remove('in'); void head.offsetWidth; head.classList.add('in'); }
   if (name === 'study') maybeShowStudyGoalOnboarding();
   if (name === 'links') { renderClassLinks(); maybeShowLinksTutorial(); }
   if (name === 'discarded') loadDiscardedPage();

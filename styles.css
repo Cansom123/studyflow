@@ -4190,3 +4190,6 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 .cwd-item.key .cwd-dot { background: var(--purple); }
 .syl-day-item { border-color: color-mix(in oklch, var(--purple) 30%, var(--glass-border)); }
 @media (max-width: 600px) { .syl-dates-head { flex-direction: column; gap: 8px; } }
+
+/* Settings: quiet-hours time pickers need more room than the number boxes. */
+.num-input[type="time"] { width: 128px; padding-right: 8px; }

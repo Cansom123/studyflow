@@ -1429,6 +1429,19 @@
             <label class="switch"><input type="checkbox" id="pref-browser-notifications" onchange="onBrowserNotificationsToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
           </div>
           <div class="card-sub" style="line-height:1.5;">Only fires while StudyFlow is open in a tab (even in the background) - not when the browser itself is closed.</div>
+          <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div><div class="toggle-row-label">Quiet hours</div><div class="toggle-row-sub">No browser notifications overnight (email reminders are separate)</div></div>
+              <label class="switch"><input type="checkbox" id="pref-quiet-hours" onchange="onQuietHoursToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+            </div>
+            <div class="num-input-row" id="quiet-hours-row" style="display:none;">
+              <span class="card-sub">From</span>
+              <input type="time" class="num-input" id="pref-quiet-start" value="22:00" onchange="onQuietHoursTime('start', this.value)" aria-label="Quiet hours start">
+              <span class="card-sub">to</span>
+              <input type="time" class="num-input" id="pref-quiet-end" value="07:00" onchange="onQuietHoursTime('end', this.value)" aria-label="Quiet hours end">
+            </div>
+            <div class="card-sub" id="quiet-hours-note" style="min-height:1em;"></div>
+          </div>
         </div>
 
         <div class="section-label" style="margin-top:20px;">Academic</div>
@@ -1591,7 +1604,8 @@
         <div class="section-label" style="margin-top:20px;">Data</div>
         <div class="card">
           <button class="change-courses-btn" style="margin-bottom:8px;" onclick="openCompletedAssignments()">Completed assignments</button>
-          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAllData()">Export all my data</button>
+          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAllData()">Export everything (JSON)</button>
+          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAssignmentsCsv()">Assignments &amp; scores for a spreadsheet (CSV)</button>
           <button class="change-courses-btn" style="margin-bottom:0;" onclick="clearDoneMarks()">Clear "done" checkmarks</button>
         </div>
 
@@ -1939,9 +1953,16 @@ async function onBrowserNotificationsToggle(checked) {
 // the user's saved preference and the browser's actual permission state,
 // so callers (the focus timer, due-soon checks) don't have to repeat those
 // checks themselves.
+// Returns 'quiet' when a notification was held back by quiet hours, so a
+// caller that tracks "already notified" can try again later instead of
+// losing it. Timer alerts for a session the student started themselves
+// always come through.
 function notifyBrowser(title, options) {
   if (!userPrefs.browserNotificationsEnabled) return;
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const tag = (options && options.tag) || '';
+  const isTimer = tag.startsWith('sf-focus') || tag.startsWith('sf-deepwork');
+  if (!isTimer && typeof inQuietHours === 'function' && inQuietHours()) return 'quiet';
   try { new Notification(title, options); } catch (e) {}
 }
 function onPrefSeg(key, value, el) {
@@ -1999,6 +2020,7 @@ function applyUserPrefsToUI() {
   const weightInput = document.getElementById('calc-weight');
   if (weightInput && !weightInput.value) weightInput.value = userPrefs.defaultFinalWeight ?? 30;
 
+  syncQuietHoursUI();
   renderCustomLinks();
 }
 
@@ -2173,16 +2195,7 @@ async function submitProblemReport() {
   }
 }
 
-function exportAllData() {
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    assignments: cachedAssignments,
-    grades: cachedGrades,
-    goals: userGoals,
-    syllabi: cachedSyllabi,
-  };
-  downloadTextFile('StudyFlow Data Export.json', JSON.stringify(payload, null, 2));
-}
+/* exportAllData now lives in js/settings-extras.js (full export + CSV). */
 
 function clearDoneMarks() {
   doneSet = new Set();
@@ -4670,7 +4683,7 @@ function checkDueSoonNotifications(assignments) {
     if (d !== 0 && d !== 1) return;
     const key = doneKey(a);
     if (notified.has(key)) return;
-    notifyBrowser(`Due ${d === 0 ? 'today' : 'tomorrow'}: ${a.title}`, { body: a.course || 'StudyFlow', tag: 'sf-due-' + key });
+    if (notifyBrowser(`Due ${d === 0 ? 'today' : 'tomorrow'}: ${a.title}`, { body: a.course || 'StudyFlow', tag: 'sf-due-' + key }) === 'quiet') return; // try again after quiet hours
     notified.add(key);
   });
 
@@ -8695,5 +8708,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/study-extras.js"></script>
 <script src="js/grades-extras.js"></script>
 <script src="js/syllabus-extras.js"></script>
+<script src="js/settings-extras.js"></script>
 </body>
 </html>

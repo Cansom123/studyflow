@@ -3721,3 +3721,59 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .tour-mock-cal-cell:hover { transform: none; }
   .tour-mock-cal-preview.swap > *, .tour-mock-timer.paused .tt-time { animation: none; }
 }
+
+/* ===========================
+   STUDY TIMERS: drain ring (focus + deep work)
+=========================== */
+.ft { display: flex; flex-direction: column; align-items: center; }
+.ft-title { margin-bottom: 4px !important; }
+.ft-ring { position: relative; width: 210px; height: 210px; margin: 14px 0 10px; }
+.ft-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.ft-track { fill: none; stroke: var(--border2); stroke-width: 10; }
+[data-theme="dark"] .ft-track { stroke: rgba(255,255,255,0.08); }
+.ft-arc {
+  fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s linear, stroke 0.3s;
+  filter: drop-shadow(0 0 6px color-mix(in oklch, var(--accent) 45%, transparent));
+}
+.ft-break .ft-arc { stroke: var(--green); filter: drop-shadow(0 0 6px color-mix(in oklch, var(--green) 45%, transparent)); }
+.ft-deep .ft-arc { stroke: var(--red); filter: drop-shadow(0 0 6px color-mix(in oklch, var(--red) 40%, transparent)); }
+.ft-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ft-time { font-size: 46px; font-weight: 800; letter-spacing: -1px; color: var(--text1); font-variant-numeric: tabular-nums; line-height: 1; }
+.ft-of { font-size: 12px; font-weight: 600; color: var(--text2); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+/* Paused: the number breathes and the ring dims, so it reads as on hold. */
+.ft-ring.is-paused .ft-time { animation: ftBreathe 1.6s ease-in-out infinite; }
+.ft-ring.is-paused .ft-arc { opacity: 0.45; }
+@keyframes ftBreathe { 50% { opacity: 0.4; } }
+.ft-rounds { display: flex; gap: 6px; justify-content: center; min-height: 8px; margin-bottom: 10px; }
+.ft-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); }
+[data-theme="dark"] .ft-dot { background: rgba(255,255,255,0.12); }
+.ft-dot.done { background: var(--accent); }
+.ft-dot.now { background: var(--accent); animation: ftPulse 1.4s ease-in-out infinite; }
+@keyframes ftPulse { 50% { transform: scale(1.5); opacity: 0.55; } }
+.ft-note { margin: 0 0 10px !important; }
+.ft-controls { display: flex; gap: 14px; justify-content: center; align-items: center; margin: 4px 0 12px; }
+.ft-btn {
+  width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text1); cursor: pointer;
+  transition: transform 0.18s var(--ease-spring), background 0.15s;
+}
+[data-theme="dark"] .ft-btn { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+.ft-btn:hover { transform: scale(1.07); }
+.ft-btn:active { transform: scale(0.93); }
+.ft-btn svg { width: 18px; height: 18px; }
+.ft-btn.ft-main { width: 62px; height: 62px; background: var(--btn-bg); color: var(--btn-fg); border-color: transparent; box-shadow: 0 6px 20px color-mix(in oklch, var(--btn-bg) 30%, transparent); }
+.ft-btn.ft-main svg { width: 22px; height: 22px; }
+.ft-hint { font-size: 12px !important; margin-bottom: 0 !important; }
+/* Entrance when a phase starts (the layout is only rebuilt on phase or
+   pause changes, so this plays at those moments, not every second). */
+.ft .ft-ring { animation: ftRingIn 0.55s var(--ease-spring) backwards; }
+.ft .ft-controls { animation: obIn 0.4s 0.15s var(--ease-out) backwards; }
+@keyframes ftRingIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
+#focus-minibar-pause, #deepwork-minibar-pause { display: flex; align-items: center; justify-content: center; }
+#focus-minibar-pause svg, #deepwork-minibar-pause svg { width: 15px; height: 15px; }
+@media (max-width: 420px) { .ft-ring { width: 180px; height: 180px; } .ft-time { font-size: 40px; } }
+@media (prefers-reduced-motion: reduce) {
+  .ft-arc { transition: none; }
+  .ft-ring.is-paused .ft-time, .ft-dot.now, .ft .ft-ring, .ft .ft-controls { animation: none; }
+}

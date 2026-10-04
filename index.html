@@ -7166,6 +7166,7 @@ function focusStartStudy() {
 function startFocusCountdown(seconds, onComplete) {
   clearInterval(focusState.timerHandle);
   focusState.remainingSec = seconds;
+  focusState.totalSec = seconds; // the ring drains against this
   focusState.deadline = Date.now() + seconds * 1000;
   focusState.paused = false;
   focusState.awaiting = false;
@@ -7248,12 +7249,17 @@ function renderFocusMiniBar() {
 
   const pauseBtn = document.getElementById('focus-minibar-pause');
   pauseBtn.style.display = v.pauseBtnVisible ? '' : 'none';
-  pauseBtn.textContent = v.pauseBtnLabel;
+  pauseBtn.innerHTML = v.isPaused ? TIMER_ICONS.play : TIMER_ICONS.pause;
   pauseBtn.title = v.pauseBtnTitle;
 }
 
 function renderFocusTimer() {
   const body = document.getElementById('focus-body');
+  // Same layout as last tick (same phase, round, paused state): just move
+  // the number and the ring, so the drain animates instead of flickering.
+  const cur = body.firstElementChild;
+  if (cur && cur.classList.contains('ft') && cur.dataset.key === focusTimerKey(focusState)
+      && updateTimerRing(cur, focusState.remainingSec, focusState.totalSec)) return;
   body.innerHTML = focusTimerBodyHTML(focusState);
 }
 
@@ -7530,20 +7536,28 @@ function renderDeepWorkMiniBar() {
   time.textContent = deepWorkState.awaiting ? '' : fmtClock(deepWorkState.remainingSec);
   const pauseBtn = document.getElementById('deepwork-minibar-pause');
   pauseBtn.style.display = deepWorkState.awaiting ? 'none' : '';
-  pauseBtn.textContent = deepWorkState.paused ? '▶' : '❚❚';
+  pauseBtn.innerHTML = deepWorkState.paused ? TIMER_ICONS.play : TIMER_ICONS.pause;
   pauseBtn.title = deepWorkState.paused ? 'Resume' : 'Pause';
 }
 
 function renderDeepWorkActive() {
   const body = document.getElementById('deepwork-body');
+  const total = deepWorkState.blockMin * 60;
+  const key = `deep|${deepWorkState.paused ? 1 : 0}`;
+  const cur = body.firstElementChild;
+  if (cur && cur.classList.contains('ft') && cur.dataset.key === key
+      && updateTimerRing(cur, deepWorkState.remainingSec, total)) return;
   body.innerHTML = `
-    <div class="focus-phase-label">Deep work${deepWorkState.paused ? ' · paused' : ''}</div>
-    <div class="focus-title" style="margin-bottom:0;">${escapeHtml(deepWorkState.sessionTitle)}</div>
-    <div class="focus-timer-display">${fmtClock(deepWorkState.remainingSec)}</div>
-    ${deepWorkState.avoiding ? `<div class="focus-sub">Avoiding: "${escapeHtml(deepWorkState.avoiding)}"</div>` : ''}
-    <div class="focus-btn-row stack" style="margin-top:14px;">
-      <button class="sync-btn" onclick="toggleDeepWorkPause()">${deepWorkState.paused ? 'Resume' : 'Pause'}</button>
-      <button class="help-toggle-btn" onclick="deepWorkEndEarly()"><span style="font-size:13px;color:var(--text2);">End session early</span></button>
+    <div class="ft" data-key="${key}">
+      <div class="focus-phase-label">Deep work · no breaks</div>
+      <div class="focus-title ft-title">${escapeHtml(deepWorkState.sessionTitle)}</div>
+      ${timerRingHTML(deepWorkState.remainingSec, total, 'deep', deepWorkState.paused)}
+      ${deepWorkState.avoiding ? `<div class="focus-sub ft-note">Avoiding: "${escapeHtml(deepWorkState.avoiding)}"</div>` : ''}
+      <div class="ft-controls">
+        <button class="ft-btn ft-main" onclick="toggleDeepWorkPause()" aria-label="${deepWorkState.paused ? 'Resume' : 'Pause'}" title="${deepWorkState.paused ? 'Resume' : 'Pause'}">${deepWorkState.paused ? TIMER_ICONS.play : TIMER_ICONS.pause}</button>
+        <button class="ft-btn" onclick="deepWorkEndEarly()" aria-label="End session early" title="End session early">${TIMER_ICONS.stop}</button>
+      </div>
+      <div class="focus-sub ft-hint">Close this to keep the timer running while you use the app.</div>
     </div>
   `;
 }

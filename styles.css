@@ -3664,3 +3664,60 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .tour-mock-cal-cell.active, .tour-mock-timer-ring circle, .tut-brand-cap,
   .tut-ex-form > *, .tut-ex-browser > *, #study-goal-onboard-card, #study-goal-onboard-card .focus-duration-row > * { animation: none !important; }
 }
+
+/* ===========================
+   TOUR: interactive calendar + working timer
+=========================== */
+/* Calendar days behave like the real Upcoming calendar: hover lifts and
+   previews, click pins (the pinned day is the solid one). */
+.tour-mock-cal-cell {
+  border: 1px solid var(--border2); font: inherit; font-size: 11px; font-weight: 600; color: var(--text2);
+  cursor: pointer; flex-direction: column; gap: 2px; padding: 0;
+  transition: transform 0.18s var(--ease-out), background 0.15s, border-color 0.15s, color 0.15s;
+}
+[data-theme="dark"] .tour-mock-cal-cell, .onboard-flow .tour-mock-cal-cell { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+.tour-mock-cal-cell:hover, .tour-mock-cal-cell:focus-visible { transform: translateY(-2px); border-color: var(--border2); color: var(--text1); background: rgba(255,255,255,0.09); outline: none; }
+.tour-mock-cal-cell.active { background: var(--btn-bg); color: var(--btn-fg); border-color: transparent; }
+.tour-mock-cal-count {
+  min-width: 13px; height: 13px; padding: 0 3px; box-sizing: border-box; border-radius: 7px;
+  background: var(--text1); color: var(--bg); font-size: 8.5px; font-weight: 800; line-height: 13px; text-align: center;
+}
+.tour-mock-cal-cell.active .tour-mock-cal-count { background: var(--btn-fg); color: var(--btn-bg); }
+.tour-mock-cal-preview {
+  margin-top: 4px; padding: 10px 12px; border-radius: 10px; background: var(--surface);
+  border: 1px solid var(--border2); text-align: left; transition: border-color 0.15s;
+}
+.onboard-flow .tour-mock-cal-preview { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+.tour-mock-cal-preview.previewing { border-style: dashed; }
+.tour-mock-cal-preview.swap > * { animation: obIn 0.25s var(--ease-out) backwards; }
+.tcp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; font-weight: 700; color: var(--text1); margin-bottom: 6px; }
+.tcp-hint { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+.tcp-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text1); padding: 3px 0; }
+.tcp-empty { font-size: 12px; color: var(--text2); }
+
+/* Working timer: the ring drains in step with the countdown. */
+.tour-mock-timer-ring { width: 96px; height: 96px; font-size: 17px; font-variant-numeric: tabular-nums; }
+.tour-mock-timer-ring circle { animation: none; }
+.tour-mock-timer-ring .tt-track { fill: none; stroke: var(--border2); stroke-width: 4; }
+.onboard-flow .tour-mock-timer-ring .tt-track { stroke: rgba(255,255,255,0.1); }
+.tour-mock-timer-ring .tt-arc { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.25s linear, stroke 0.3s; }
+.tour-mock-timer.paused .tt-time { animation: ttBlink 1.2s ease-in-out infinite; }
+@keyframes ttBlink { 50% { opacity: 0.35; } }
+.tour-mock-timer.done .tt-arc { stroke: var(--green); }
+.tt-controls { display: flex; gap: 8px; }
+.tt-btn {
+  width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border2); background: var(--surface); color: var(--text1); cursor: pointer;
+  transition: transform 0.15s var(--ease-spring), background 0.15s;
+}
+.onboard-flow .tt-btn { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+.tt-btn:hover { transform: scale(1.08); }
+.tt-btn:active { transform: scale(0.94); }
+.tt-btn svg { width: 15px; height: 15px; }
+.tt-toggle { background: var(--btn-bg); color: var(--btn-fg); border-color: transparent; }
+.onboard-flow .tt-toggle { background: var(--btn-bg); border-color: transparent; }
+@media (prefers-reduced-motion: reduce) {
+  .tour-mock-cal-cell, .tour-mock-timer-ring .tt-arc { transition: none; }
+  .tour-mock-cal-cell:hover { transform: none; }
+  .tour-mock-cal-preview.swap > *, .tour-mock-timer.paused .tt-time { animation: none; }
+}

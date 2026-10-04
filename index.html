@@ -3310,12 +3310,9 @@ const ONBOARD_TOUR_SLIDES = [
   {
     icon: TOUR_ICON('<circle cx="10" cy="10" r="7.5"/><polyline points="10 5.5 10 10 12.5 12.5"/>'),
     title: 'Upcoming has a real calendar',
-    body: 'Tap a day to pin it and see everything due. You can also subscribe it to Google or Apple Calendar from Settings.',
-    mock: `
-      <div class="tour-mock-cal-grid">
-        <div class="tour-mock-cal-cell">3</div><div class="tour-mock-cal-cell">4</div><div class="tour-mock-cal-cell">5</div><div class="tour-mock-cal-cell">6</div><div class="tour-mock-cal-cell active">7<span class="tour-mock-cal-dot"></span></div><div class="tour-mock-cal-cell">8</div><div class="tour-mock-cal-cell">9</div>
-        <div class="tour-mock-cal-cell">10</div><div class="tour-mock-cal-cell">11</div><div class="tour-mock-cal-cell">12</div><div class="tour-mock-cal-cell">13</div><div class="tour-mock-cal-cell">14</div><div class="tour-mock-cal-cell">15</div><div class="tour-mock-cal-cell">16</div>
-      </div>`,
+    body: 'Hover a day to preview what is due, and click to pin it, just like the real one. You can also subscribe it to Google or Apple Calendar from Settings.',
+    mock: '',
+    setup: 'calendar',
   },
   {
     icon: TOUR_ICON('<polygon points="10 2.5 12 7.5 17.5 7.5 13 11 14.5 17 10 13.5 5.5 17 7 11 2.5 7.5 8 7.5"/>'),
@@ -3337,12 +3334,9 @@ const ONBOARD_TOUR_SLIDES = [
   {
     icon: TOUR_ICON('<circle cx="10" cy="10" r="7.5"/><polygon points="8.5 6.5 14 10 8.5 13.5 8.5 6.5"/>'),
     title: 'Study has a focus timer',
-    body: 'Run focus sessions, schedule study time on your calendar, and keep a daily and weekly study goal.',
-    mock: `
-      <div class="tour-mock-timer">
-        <div class="tour-mock-timer-ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="31"/></svg><span>24:58</span></div>
-        <div class="tour-mock-timer-label">Round 1 - focus</div>
-      </div>`,
+    body: 'Run focus sessions, schedule study time on your calendar, and keep a daily and weekly study goal. Try this one: it really counts down.',
+    mock: '',
+    setup: 'timer',
   },
   {
     icon: TOUR_ICON('<path d="M10 2l1.6 5.4L17 9l-5.4 1.6L10 16l-1.6-5.4L3 9l5.4-1.6L10 2z"/>'),
@@ -3353,10 +3347,129 @@ const ONBOARD_TOUR_SLIDES = [
       <div class="tour-mock-bubble tour-mock-bubble-a">Late work loses 10% per day, per your syllabus.</div>`,
   },
 ];
+// ---- Interactive tour mocks ------------------------------------------------
+// The calendar and timer slides are small working versions of the real
+// thing rather than pictures of it: the calendar previews a day on hover and
+// pins it on click (same as Upcoming), and the timer genuinely counts down.
+const TOUR_CAL_DUE = {
+  4: ['Math problem set'],
+  7: ['Bio lab report', 'Spanish vocab quiz'],
+  9: ['Read chapter 7'],
+  12: ['History essay draft'],
+  14: ['Chem unit test'],
+};
+function setupTourCalendar(host) {
+  const now = new Date();
+  const label = n => new Date(now.getFullYear(), now.getMonth(), n)
+    .toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  let pinned = 7;
+  const days = Array.from({ length: 14 }, (_, i) => i + 3);
+  host.innerHTML = `
+    <div class="tour-mock-cal-grid">
+      ${days.map(n => `<button type="button" class="tour-mock-cal-cell${n === pinned ? ' active' : ''}" data-day="${n}" aria-label="${label(n)}">${n}${TOUR_CAL_DUE[n] ? `<span class="tour-mock-cal-count">${TOUR_CAL_DUE[n].length}</span>` : ''}</button>`).join('')}
+    </div>
+    <div class="tour-mock-cal-preview" aria-live="polite"></div>`;
+  const preview = host.querySelector('.tour-mock-cal-preview');
+  const show = (n, previewing) => {
+    const items = TOUR_CAL_DUE[n] || [];
+    preview.classList.toggle('previewing', !!previewing);
+    preview.innerHTML = `
+      <div class="tcp-head"><span>${label(n)}</span><span class="tcp-hint">${previewing ? 'Click to pin' : 'Pinned'}</span></div>
+      ${items.length
+        ? items.map(t => `<div class="tcp-item"><span class="tour-mock-dot"></span>${t}</div>`).join('')
+        : '<div class="tcp-empty">Nothing due this day.</div>'}`;
+    preview.classList.remove('swap'); void preview.offsetWidth; preview.classList.add('swap');
+  };
+  show(pinned, false);
+  host.querySelectorAll('.tour-mock-cal-cell').forEach(cell => {
+    const n = Number(cell.dataset.day);
+    cell.addEventListener('mouseenter', () => { if (n !== pinned) show(n, true); });
+    cell.addEventListener('focus', () => { if (n !== pinned) show(n, true); });
+    cell.addEventListener('click', () => {
+      pinned = n;
+      host.querySelectorAll('.tour-mock-cal-cell').forEach(c => c.classList.toggle('active', c === cell));
+      show(n, false);
+    });
+  });
+  host.querySelector('.tour-mock-cal-grid').addEventListener('mouseleave', () => show(pinned, false));
+}
+
+let tourTimer = null;
+function stopTourTimer() {
+  if (tourTimer) { clearInterval(tourTimer.id); tourTimer = null; }
+}
+function setupTourTimer(host) {
+  stopTourTimer();
+  const TOTAL = 25 * 60;
+  const CIRC = 2 * Math.PI * 31;
+  const PLAY = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 5.5v9l7.5-4.5z"/></svg>';
+  const PAUSE = '<svg viewBox="0 0 20 20" fill="currentColor"><rect x="5.5" y="5" width="3" height="10" rx="1"/><rect x="11.5" y="5" width="3" height="10" rx="1"/></svg>';
+  host.innerHTML = `
+    <div class="tour-mock-timer">
+      <div class="tour-mock-timer-ring">
+        <svg viewBox="0 0 72 72"><circle class="tt-track" cx="36" cy="36" r="31"/><circle class="tt-arc" cx="36" cy="36" r="31" style="stroke-dasharray:${CIRC};stroke-dashoffset:0"/></svg>
+        <span class="tt-time">25:00</span>
+      </div>
+      <div class="tour-mock-timer-label">Round 1 · focus</div>
+      <div class="tt-controls">
+        <button type="button" class="tt-btn tt-toggle" aria-label="Pause">${PAUSE}</button>
+        <button type="button" class="tt-btn tt-reset" aria-label="Reset"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10a5.5 5.5 0 1 0 1.6-3.9"/><path d="M4.5 3.5v3h3"/></svg></button>
+      </div>
+    </div>`;
+  const timeEl = host.querySelector('.tt-time');
+  const arc = host.querySelector('.tt-arc');
+  const labelEl = host.querySelector('.tour-mock-timer-label');
+  const toggle = host.querySelector('.tt-toggle');
+  // Timed against the clock, not by counting ticks, so a throttled
+  // background tab can't make it drift.
+  const t = tourTimer = { id: 0, left: TOTAL, endAt: Date.now() + TOTAL * 1000, running: true };
+  const draw = () => {
+    const s = Math.max(0, Math.ceil(t.left));
+    timeEl.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    arc.style.strokeDashoffset = String(CIRC * (1 - t.left / TOTAL));
+  };
+  const tick = () => {
+    // Tour closed or left some other way: stop rather than tick unseen.
+    if (!host.isConnected || host.offsetParent === null) { stopTourTimer(); return; }
+    if (!t.running) return;
+    t.left = Math.max(0, (t.endAt - Date.now()) / 1000);
+    draw();
+    if (t.left <= 0) {
+      t.running = false;
+      labelEl.textContent = 'Nice focus. Break time.';
+      host.querySelector('.tour-mock-timer').classList.add('done');
+      arc.style.strokeDashoffset = '0'; // refill the ring in green to mark the finish
+      toggle.innerHTML = PLAY; toggle.setAttribute('aria-label', 'Start');
+    }
+  };
+  toggle.addEventListener('click', () => {
+    if (t.left <= 0) { host.querySelector('.tt-reset').click(); return; } // finished: play starts a fresh round
+    t.running = !t.running;
+    if (t.running) t.endAt = Date.now() + t.left * 1000;
+    toggle.innerHTML = t.running ? PAUSE : PLAY;
+    toggle.setAttribute('aria-label', t.running ? 'Pause' : 'Start');
+    host.querySelector('.tour-mock-timer').classList.toggle('paused', !t.running);
+    labelEl.textContent = t.running ? 'Round 1 · focus' : 'Paused';
+  });
+  host.querySelector('.tt-reset').addEventListener('click', () => {
+    t.left = TOTAL; t.endAt = Date.now() + TOTAL * 1000; t.running = true;
+    toggle.innerHTML = PAUSE; toggle.setAttribute('aria-label', 'Pause');
+    host.querySelector('.tour-mock-timer').classList.remove('paused', 'done');
+    labelEl.textContent = 'Round 1 · focus';
+    draw();
+  });
+  draw();
+  t.id = setInterval(tick, 250);
+}
+const TOUR_MOCK_SETUP = { calendar: setupTourCalendar, timer: setupTourTimer };
+
 let onboardTourSlide = 0;
 function renderOnboardTourSlide(direction) {
   const slide = ONBOARD_TOUR_SLIDES[onboardTourSlide];
-  document.getElementById('tour-slide-mock').innerHTML = slide.mock;
+  stopTourTimer();
+  const mockHost = document.getElementById('tour-slide-mock');
+  mockHost.innerHTML = slide.mock;
+  if (slide.setup) TOUR_MOCK_SETUP[slide.setup](mockHost);
   document.getElementById('tour-slide-icon').innerHTML = slide.icon;
   document.getElementById('tour-slide-title').textContent = slide.title;
   document.getElementById('tour-slide-body').textContent = slide.body;
@@ -3381,6 +3494,7 @@ function showOnboardTour() {
 }
 function onboardTourNext() {
   if (onboardTourSlide >= ONBOARD_TOUR_SLIDES.length - 1) {
+    stopTourTimer();
     finishOnboardingCelebration(document.getElementById('tour-next-btn'));
     return;
   }

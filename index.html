@@ -846,12 +846,18 @@
       <div class="page" id="page-allwork">
         <div class="aw-search">
           <svg class="aw-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.3"/><path d="M12.8 12.8l3.7 3.7"/></svg>
-          <input id="allwork-search" type="search" placeholder="Search assignments, classes, or types like quiz…" autocomplete="off" spellcheck="false" aria-label="Search assignments" oninput="onAllWorkSearch()" onkeydown="if(event.key==='Escape'){clearAllWorkSearch();}" />
+          <input id="allwork-search" type="search" placeholder="Search by title, class, or type…" autocomplete="off" spellcheck="false" aria-label="Search assignments" oninput="onAllWorkSearch()" onkeydown="if(event.key==='Escape'){clearAllWorkSearch();}" />
           <button class="aw-search-clear" id="allwork-search-clear" onclick="clearAllWorkSearch()" title="Clear search" aria-label="Clear search">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l8 8M14 6l-8 8"/></svg>
           </button>
         </div>
-        <div class="aw-search-count" id="allwork-search-count"></div>
+        <div class="aw-toolbar">
+          <div class="aw-search-count" id="allwork-search-count"></div>
+          <div class="seg-control aw-view" id="allwork-view" role="tablist" aria-label="Group assignments">
+            <button class="seg-btn" data-view="date" role="tab" onclick="setAllWorkView('date')">By due date</button>
+            <button class="seg-btn" data-view="class" role="tab" onclick="setAllWorkView('class')">By class</button>
+          </div>
+        </div>
         <div id="allwork-loading" class="loading-box">Loading assignments...</div>
         <div id="allwork-empty" class="empty-box" style="display:none;">
           <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4.5c1.8-.9 4-.9 6 0v11c-2-.9-4.2-.9-6 0v-11z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 4.5c-1.8-.9-4-.9-6 0v11c2-.9 4.2-.9 6 0v-11z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
@@ -7149,17 +7155,51 @@ function renderAllWork(assignments) {
   const query = (document.getElementById('allwork-search')?.value || '').trim();
   const countEl = document.getElementById('allwork-search-count');
   document.getElementById('allwork-search-clear')?.classList.toggle('show', !!query);
+  document.querySelectorAll('#allwork-view .seg-btn').forEach(b => {
+    const on = b.dataset.view === allWorkView;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  // Pure bucketing/sorting/HTML building lives in js/render-utils.js.
+  const body = list => allWorkView === 'class'
+    ? allWorkByClassHTML(list, doneSet, cachedGrades, allWorkCollapsed, today)
+    : allWorkBodyHTML(list, doneSet, today);
   if (!query) {
     if (countEl) countEl.textContent = '';
-    // Pure bucketing/sorting/HTML building lives in js/render-utils.js.
-    listEl.innerHTML = allWorkBodyHTML(assignments, doneSet, today);
+    listEl.innerHTML = body(assignments || []);
     return;
   }
   const matches = (assignments || []).filter(a => assignmentMatchesQuery(a, query));
   if (countEl) countEl.textContent = matches.length ? `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}` : '';
   listEl.innerHTML = matches.length
-    ? allWorkBodyHTML(matches, doneSet, today)
+    ? body(matches)
     : `<div class="empty-box"><div class="empty-title">No assignments match “${escapeHtml(query)}”</div><div class="empty-sub">Try a class name, part of the title, or a type like quiz or essay.</div></div>`;
+}
+
+// "By due date" (Overdue / Due Soon / Upcoming) or "By class". Remembered
+// on this device only -- it's a viewing preference, not account data.
+let allWorkView = (() => {
+  try { return localStorage.getItem('sf_allwork_view') === 'class' ? 'class' : 'date'; } catch (e) { return 'date'; }
+})();
+// Classes folded shut in the "By class" view; kept across re-renders.
+const allWorkCollapsed = new Set();
+
+function setAllWorkView(view) {
+  allWorkView = view === 'class' ? 'class' : 'date';
+  try { localStorage.setItem('sf_allwork_view', allWorkView); } catch (e) {}
+  renderAllWork(cachedAssignments);
+}
+
+function toggleAllWorkClass(name) {
+  if (allWorkCollapsed.has(name)) allWorkCollapsed.delete(name);
+  else allWorkCollapsed.add(name);
+  // Toggled in place rather than re-rendered, so the fold animates.
+  document.querySelectorAll('#allwork-list .awc-group').forEach(g => {
+    if (g.querySelector('.awc-name')?.textContent !== name) return;
+    const shut = allWorkCollapsed.has(name);
+    g.classList.toggle('collapsed', shut);
+    g.querySelector('.awc-head')?.setAttribute('aria-expanded', String(!shut));
+  });
 }
 
 function onAllWorkSearch() {

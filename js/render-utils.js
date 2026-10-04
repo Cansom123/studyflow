@@ -678,3 +678,64 @@ function adminReportsListHTML(reports) {
     </div>`;
   }).join('');
 }
+
+// Body HTML for the All Work tab's "By class" view: every unfinished
+// assignment grouped under its class, classes ordered by whichever has
+// something due soonest, assignments within a class soonest-due first.
+// Each group header shows how many are left, how many are overdue, and the
+// class's current grade (a button into the grade breakdown). `collapsed` is
+// a Set of class names the student has folded shut, passed in so a
+// re-render (typing in search, checking something off) keeps them folded.
+function allWorkByClassHTML(assignments, doneSet, grades, collapsed, today) {
+  const ref = today || (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
+  const dueTime = a => a.due_date ? new Date(a.due_date).getTime() : Infinity;
+  const isOverdue = a => {
+    if (!a.due_date) return false;
+    const d = new Date(a.due_date); d.setHours(0, 0, 0, 0);
+    return d < ref;
+  };
+
+  const groups = new Map();
+  assignments.forEach(a => {
+    if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
+    const raw = a.course || a.course_name || '';
+    const name = cleanCourseName(raw) || 'Other';
+    if (!groups.has(name)) groups.set(name, { name, raw, items: [] });
+    groups.get(name).items.push(a);
+  });
+  if (!groups.size) return '<div class="empty-box"><div class="empty-title">No assignments</div></div>';
+
+  const norm = s => cleanCourseName(s || '').trim().toLowerCase();
+  const list = [...groups.values()];
+  list.forEach(g => g.items.sort((a, b) => dueTime(a) - dueTime(b)));
+  list.sort((a, b) => dueTime(a.items[0]) - dueTime(b.items[0]) || a.name.localeCompare(b.name));
+
+  return list.map(g => {
+    const overdue = g.items.filter(isOverdue).length;
+    const grade = (grades || []).find(x => norm(x.course_name) === norm(g.name));
+    const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
+    const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
+    const gradeBtn = grade && (pct != null || letter)
+      ? `<button class="awc-grade" onclick="event.stopPropagation();openGradeDetail(${escapeHtml(JSON.stringify(grade.course_name))})" title="See what's affecting this grade">
+           ${letter ? `<b>${escapeHtml(letter)}</b>` : ''}${pct != null ? `<span>${Number(pct).toFixed(1)}%</span>` : ''}
+         </button>`
+      : '';
+    const meta = [`${g.items.length} ${g.items.length === 1 ? 'assignment' : 'assignments'}`]
+      .concat(overdue ? [`<span class="awc-overdue">${overdue} overdue</span>`] : [])
+      .join(' · ');
+    const isCollapsed = collapsed && collapsed.has(g.name);
+    return `<div class="awc-group${isCollapsed ? ' collapsed' : ''}">
+      <div class="awc-head" role="button" tabindex="0" aria-expanded="${!isCollapsed}"
+        onclick="toggleAllWorkClass(${escapeHtml(JSON.stringify(g.name))})"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+        <svg class="awc-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l5 5-5 5"/></svg>
+        <div class="awc-title">
+          <div class="awc-name">${escapeHtml(g.name)}</div>
+          <div class="awc-meta">${meta}</div>
+        </div>
+        ${gradeBtn}
+      </div>
+      <div class="awc-body"><div class="awc-inner">${g.items.map(a => aCard(a, isOverdue(a), isOverdue(a), doneSet)).join('')}</div></div>
+    </div>`;
+  }).join('');
+}

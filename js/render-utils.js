@@ -95,9 +95,10 @@ function aCard(a, isOverdue, redTint = false, doneSet) {
   const isDone = a.completed || doneSet.has(decodeURIComponent(key));
   const cardClass = `card${isDone ? ' done' : ''}${redTint && !isDone ? ' overdue-card' : ''}`;
   const overdueTag = redTint && !isDone ? `<span class="overdue-pill">OVERDUE</span>` : '';
+  const noteTag = (typeof assignmentHasNote === 'function' && assignmentHasNote(a)) ? noteIndicatorHTML() : '';
   const titleInner = a.id
-    ? `<span class="card-title-link" onclick="event.stopPropagation();openAssignmentDetail('${a.id}')">${a.title}${overdueTag}</span>`
-    : `${a.title}${overdueTag}`;
+    ? `<span class="card-title-link" onclick="event.stopPropagation();openAssignmentDetail('${a.id}')">${a.title}${overdueTag}</span>${noteTag}`
+    : `${a.title}${overdueTag}${noteTag}`;
   const canvasLink = a.assignment_url
     ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>`
     : '';
@@ -308,6 +309,7 @@ function assignmentDetailBodyHTML(a) {
       ${canvasBtn}
       <button class="sync-btn" id="a-detail-done-btn" style="width:auto;flex:1;" onclick="toggleDoneFromDetail('${a.id}')"></button>
     </div>
+    <div id="a-note-section"></div>
     <div id="a-checklist-section"></div>
   `;
 }

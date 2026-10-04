@@ -889,6 +889,7 @@
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l8 8M14 6l-8 8"/></svg>
           </button>
         </div>
+        <div class="aw-chips" id="allwork-chips" style="display:none;" role="group" aria-label="Filter by type"></div>
         <div class="aw-toolbar">
           <div class="aw-search-count" id="allwork-search-count"></div>
           <div class="seg-control aw-view" id="allwork-view" role="tablist" aria-label="Group assignments">
@@ -4678,6 +4679,7 @@ function openAssignmentDetail(id) {
   // Pure HTML building lives in js/render-utils.js.
   document.getElementById('a-detail-body').innerHTML = assignmentDetailBodyHTML(a);
   updateAssignmentDetailDoneButton(a);
+  renderAssignmentNote(a);
   renderChecklistSection(a);
   document.getElementById('assignment-detail-overlay').style.display = 'block';
 }
@@ -7846,16 +7848,21 @@ function renderAllWork(assignments) {
   const body = list => allWorkView === 'class'
     ? allWorkByClassHTML(list, doneSet, cachedGrades, allWorkCollapsed, today)
     : allWorkBodyHTML(list, doneSet, today);
+  renderAllWorkChips(assignments);
+  const typed = allWorkTypeFilter ? (assignments || []).filter(a => assignmentTypeOf(a) === allWorkTypeFilter) : (assignments || []);
   if (!query) {
-    if (countEl) countEl.textContent = '';
-    listEl.innerHTML = body(assignments || []);
+    if (countEl) {
+      const left = typed.filter(a => !isAssignmentDoneNow(a)).length;
+      countEl.textContent = allWorkTypeFilter ? `${left} ${typeNoun(allWorkTypeFilter, left)} left` : '';
+    }
+    listEl.innerHTML = body(typed);
     return;
   }
-  const matches = (assignments || []).filter(a => assignmentMatchesQuery(a, query));
+  const matches = typed.filter(a => assignmentMatchesQuery(a, query));
   if (countEl) countEl.textContent = matches.length ? `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}` : '';
   listEl.innerHTML = matches.length
     ? body(matches)
-    : `<div class="empty-box"><div class="empty-title">No assignments match “${escapeHtml(query)}”</div><div class="empty-sub">Try a class name, part of the title, or a type like quiz or essay.</div></div>`;
+    : `<div class="empty-box"><div class="empty-title">No ${allWorkTypeFilter ? typeNoun(allWorkTypeFilter, 2) : 'assignments'} match “${escapeHtml(query)}”</div><div class="empty-sub">Try a class name, part of the title, or a type like quiz or essay.</div></div>`;
 }
 
 // "By due date" (Overdue / Due Soon / Upcoming) or "By class". Remembered
@@ -8672,5 +8679,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/home-links-extras.js"></script>
 <script src="js/updates-extras.js"></script>
 <script src="js/calendar-extras.js"></script>
+<script src="js/assignments-extras.js"></script>
 </body>
 </html>

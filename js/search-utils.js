@@ -153,7 +153,8 @@ function rankedKeywordSearchHTML(raw, q) {
 function assignmentMatchesQuery(a, query) {
   const words = (query || '').toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return true;
-  const hay = [a.title, cleanCourseName(a.course_name || a.course || ''), a.course_name, getBadge(a.assignment_type, a.title)[1]]
+  const note = typeof assignmentNoteText === 'function' ? assignmentNoteText(a) : '';
+  const hay = [a.title, cleanCourseName(a.course_name || a.course || ''), a.course_name, getBadge(a.assignment_type, a.title)[1], note]
     .join(' ').toLowerCase();
   return words.every(w => hay.includes(w));
 }

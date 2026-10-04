@@ -90,7 +90,7 @@ function cocoPlanningAnswerHTML(answer, confidence) {
 // doneKey) is passed in explicitly rather than read as a global -- this is
 // the same pattern used for isAssignmentChecked in home-core.js.
 function aCard(a, isOverdue, redTint = false, doneSet) {
-  const [bc, bl] = getBadge(a.assignment_type);
+  const [bc, bl] = getBadge(a.assignment_type, a.title);
   const key = doneKey(a);
   const isDone = a.completed || doneSet.has(decodeURIComponent(key));
   const cardClass = `card${isDone ? ' done' : ''}${redTint && !isDone ? ' overdue-card' : ''}`;
@@ -281,7 +281,7 @@ function syllabusListHTML(syllabusCourses, cachedSyllabi) {
 // renderChecklistSection), since those depend on live state this function
 // doesn't need.
 function assignmentDetailBodyHTML(a) {
-  const [bc, bl] = getBadge(a.assignment_type);
+  const [bc, bl] = getBadge(a.assignment_type, a.title);
   const dueStr = a.due_date
     ? new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
     : 'No due date';

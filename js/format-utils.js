@@ -70,11 +70,19 @@ function dayDiff(due_date, ref) {
   return Math.round((dueMidnight - today) / (1000*60*60*24));
 }
 
-function getBadge(type) {
+// `type` is Canvas's submission type (online_upload, online_quiz,
+// discussion_topic, on_paper...), which says how work is handed in, not what
+// it is -- a file upload can be an essay, a lab or homework. So the title
+// decides first, and the submission type only fills in the two cases it
+// reliably identifies (quizzes and discussions).
+function getBadge(type, title) {
+  const n = (title || '').toLowerCase();
+  if (/\bquiz/.test(n)) return ['badge-quiz','Quiz'];
+  if (/\b(test|exam|midterm)s?\b/.test(n)) return ['badge-test','Test'];
+  if (/\b(essay|paper|thesis)s?\b/.test(n)) return ['badge-essay','Essay'];
+  if (/\b(discussion|forum)s?\b/.test(n)) return ['badge-discussion','Discussion'];
   const t = (type || '').toLowerCase();
   if (t.includes('quiz')) return ['badge-quiz','Quiz'];
-  if (t.includes('online_upload')||t.includes('test')||t.includes('exam')) return ['badge-test','Test'];
-  if (t.includes('essay')||t.includes('paper')) return ['badge-essay','Essay'];
   if (t.includes('discussion')) return ['badge-discussion','Discussion'];
   return ['badge-hw','Homework'];
 }

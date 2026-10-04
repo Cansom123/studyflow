@@ -3224,3 +3224,12 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
    when the summary rows are showing. */
 #ws-welcome { min-height: min(470px, 62dvh); }
 #ws-greeting-block { padding-bottom: 28px; }
+#study-goal-onboard-card .ws-skip { animation-delay: 0.2s; }
+/* Card-corner choices: visible against dark surfaces, and the selected one
+   actually shows (it used to carry an inline border that hid .active). */
+.radius-swatch { width: 32px; height: 32px; background: var(--surface2); border: 2px solid var(--border2); }
+.radius-swatch.active { border-color: var(--text1); background: var(--surface3, var(--surface2)); }
+/* A ring just outside the selected swatch reads on every color, including
+   the white accent (a white border on a white dot disappears). */
+.swatch.active { outline: 2px solid var(--text1); outline-offset: 2px; }
+@media (max-width: 600px) { .eyebrow-date { display: none; } }

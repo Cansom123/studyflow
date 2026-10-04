@@ -64,7 +64,7 @@ function priorityAiText(top, userGoals, cachedGrades) {
 function priorityListHTML(scored, completedToday) {
   const colors = ['p1', 'p2', 'p3', 'p4', 'p5'];
   let html = scored.slice(0, 5).map((a, i) => {
-    const [bc, bl] = getBadge(a.assignment_type);
+    const [bc, bl] = getBadge(a.assignment_type, a.title);
     const dueText = a.d < 0 ? `<span style="color:var(--error-color);">${Math.abs(a.d)}d overdue</span>`
       : a.d === 0 ? `<span style="color:var(--error-color);">due today</span>`
       : a.d === 1 ? `<span style="color:var(--error-color);">due tomorrow</span>`
@@ -83,7 +83,7 @@ function priorityListHTML(scored, completedToday) {
     html += `<div class="priority-completed-section">
       <div class="priority-completed-label">Completed today</div>
       ${completedToday.map(a => {
-        const [bc, bl] = getBadge(a.assignment_type);
+        const [bc, bl] = getBadge(a.assignment_type, a.title);
         return `<div class="priority-card completed-card" data-assignment-id="${a.id}">
           <button class="priority-check" style="border-color:var(--green);color:var(--green);" onclick="undoPriorityDone('${a.id}')" title="Undo">✓</button>
           <div class="priority-num p5" style="opacity:0.5;">✓</div>

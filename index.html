@@ -617,10 +617,8 @@
       <div class="focus-duration-row" id="onboard-daily-row" style="justify-content:flex-start;margin-bottom:24px;"></div>
       <div class="focus-phase-label">Weekly goal</div>
       <div class="focus-duration-row" id="onboard-weekly-row" style="justify-content:flex-start;margin-bottom:24px;"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="settings-btn" style="width:auto;flex:1;" onclick="finishStudyGoalOnboarding()">Sounds good</button>
-        <button class="sync-btn" style="width:auto;flex:1;margin-bottom:0;" onclick="skipStudyGoalOnboarding()">Skip for now</button>
-      </div>
+      <button class="settings-btn" onclick="finishStudyGoalOnboarding()">Sounds good</button>
+      <button class="ws-skip" onclick="skipStudyGoalOnboarding()">Skip for now</button>
     </div>
   </div>
 
@@ -904,7 +902,7 @@
         </div>
 
         <div class="section-label">Today's scheduled study time</div>
-        <div id="study-today-empty" class="card-sub" style="padding:2px 2px 8px;">Nothing scheduled for today. Add study time from the Due Soon calendar, or start a quick session above.</div>
+        <div id="study-today-empty" class="card-sub" style="padding:2px 2px 8px;">Nothing scheduled for today. Add study time from the Upcoming calendar, or start a quick session above.</div>
         <div id="study-today-list" style="margin-bottom:28px;"></div>
 
         <div class="section-label">Study tracker</div>
@@ -1215,7 +1213,7 @@
           <div class="tweak-row">
             <div class="tweak-label">Accent color</div>
             <div class="tweak-swatches" id="tweak-swatches-accent">
-              <div class="swatch" data-h="white" style="background:#ffffff;border:1.5px solid var(--border2);" onclick="resetAccentToWhite(this)" title="White"></div>
+              <div class="swatch" data-h="white" style="background:#ffffff;box-shadow:inset 0 0 0 1.5px var(--border2);" onclick="resetAccentToWhite(this)" title="White"></div>
               <div class="swatch" data-h="275" style="background:oklch(0.56 0.2 275);" onclick="setAccent(275,this)" title="Violet"></div>
               <div class="swatch" data-h="220" style="background:oklch(0.56 0.2 220);" onclick="setAccent(220,this)" title="Blue"></div>
               <div class="swatch" data-h="170" style="background:oklch(0.52 0.18 170);" onclick="setAccent(170,this)" title="Teal"></div>
@@ -1241,9 +1239,9 @@
           <div class="tweak-row">
             <div class="tweak-label">Card corners</div>
             <div class="tweak-swatches" id="tweak-swatches-radius">
-              <div class="swatch" data-r="8" style="background:var(--surface2);border:1.5px solid var(--border2);border-radius:4px;width:32px;height:32px;" onclick="setRadius(8,this)" title="Sharp"></div>
-              <div class="swatch active" data-r="14" style="background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;width:32px;height:32px;" onclick="setRadius(14,this)" title="Rounded"></div>
-              <div class="swatch" data-r="20" style="background:var(--surface2);border:1.5px solid var(--border2);border-radius:18px;width:32px;height:32px;" onclick="setRadius(20,this)" title="Pill"></div>
+              <div class="swatch radius-swatch" data-r="8" style="border-radius:4px;" onclick="setRadius(8,this)" title="Sharp"></div>
+              <div class="swatch radius-swatch active" data-r="14" style="border-radius:10px;" onclick="setRadius(14,this)" title="Rounded"></div>
+              <div class="swatch radius-swatch" data-r="20" style="border-radius:18px;" onclick="setRadius(20,this)" title="Pill"></div>
             </div>
           </div>
           <div class="tweak-row">
@@ -1300,7 +1298,7 @@
             <label class="switch"><input type="checkbox" id="pref-autosync" checked onchange="onPrefToggle('autoSyncEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
           </div>
           <div class="toggle-row">
-            <div><div class="toggle-row-label">Welcome back message</div><div class="toggle-row-sub">Show the greeting popup once a day</div></div>
+            <div><div class="toggle-row-label">Welcome back message</div><div class="toggle-row-sub">Show the greeting when you open the app</div></div>
             <label class="switch"><input type="checkbox" id="pref-welcome" checked onchange="onPrefToggle('welcomeToastEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
           </div>
           <div class="toggle-row">
@@ -1317,7 +1315,7 @@
               <input type="number" class="num-input" id="pref-reminder-days" min="0" max="7" value="1" onchange="onPrefInput('reminderDaysBefore', parseInt(this.value)||1)">
               <span class="card-sub">day(s) before it's due</span>
             </div>
-            <div class="card-sub" style="line-height:1.5;">Needs email delivery configured on the backend before it actually sends - this saves your preference now, ask to finish wiring it up when ready.</div>
+            <div class="card-sub" style="line-height:1.5;">Reminders go to the email you sign in with.</div>
           </div>
           <div class="toggle-row">
             <div><div class="toggle-row-label">Browser notifications</div><div class="toggle-row-sub">Focus timer alerts and due-soon reminders, right in your browser</div></div>
@@ -2468,10 +2466,10 @@ async function showApp() {
   loadCanvasSettings();
   loadCalendarToken();
   syncUserTimezone();
-  loadAssignments();
+  // The welcome screen's summary is built from these three, so keep hold of
+  // them and redraw it once they land (see below).
+  const summaryLoads = [loadAssignments(), loadGrades(), loadAnnouncements()];
   loadStudySessions();
-  loadGrades();
-  loadAnnouncements();
   loadMessages();
   loadFeedback();
   loadSyllabi();
@@ -2490,6 +2488,9 @@ async function showApp() {
   // autoSync() when the welcome screen itself isn't going to show (e.g. the
   // student turned it off in Settings).
   const showedWelcome = maybeShowWelcome();
+  // The welcome screen opens before the data above has arrived, so its first
+  // summary is always empty; fill it in as soon as everything is loaded.
+  if (showedWelcome) Promise.allSettled(summaryLoads).then(() => window.wsRefreshSummary && wsRefreshSummary());
   bootSplashHeld = false;
   hideBootSplash();
   if (!showedWelcome) await autoSync();
@@ -4976,7 +4977,9 @@ function renderHome() {
   // in instead, so this is one line, not two competing greetings.
   const now = new Date();
   const nameSuffix = USER_NAME ? `, ${USER_NAME}` : '';
-  eyebrowEl.textContent = `${greetingWord()}${nameSuffix} · ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  // The date part is its own span so phones (whose top bar already shows
+  // the date under the logo) can drop it instead of repeating it.
+  eyebrowEl.innerHTML = `${escapeHtml(greetingWord() + nameSuffix)}<span class="eyebrow-date"> · ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}</span>`;
 
   const today = new Date(); today.setHours(0,0,0,0);
   const completedCount = getCompletedCount();
@@ -7400,6 +7403,10 @@ if (!checkForPasswordRecovery()) routeUser();
     try { prev = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) {}
     const next = {};
     let changed = 0;
+    // Grades not loaded yet: say nothing changed, and leave the saved
+    // snapshot alone rather than overwriting it with an empty one (which
+    // would hide every real change on the next run).
+    if (!cachedGrades.length) return 0;
     cachedGrades.forEach(g => {
       const id = g.canvas_course_id;
       if (!id) return;
@@ -7450,6 +7457,16 @@ if (!checkForPasswordRecovery()) routeUser();
       </div>`
     ).join('');
   }
+
+  // Redraws the summary once data has loaded, but only while the greeting is
+  // still the thing on screen (not after it closed or moved on to a sync).
+  window.wsRefreshSummary = function () {
+    const overlay = document.getElementById('ws-overlay');
+    const welcome = document.getElementById('ws-welcome');
+    if (overlay.style.display === 'none' || overlay.classList.contains('fade-out')) return;
+    if (welcome.style.display === 'none') return;
+    wsRenderSummary();
+  };
 
   // Replaces the existing maybeShowWelcome (assignment wins over hoisted declaration)
   window.maybeShowWelcome = function () {

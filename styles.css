@@ -3543,3 +3543,124 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   padding-right: 2px; /* italic overhang would otherwise clip the last letter */
 }
+
+/* ===========================
+   ONBOARDING + TUTORIALS: logo, motion
+=========================== */
+/* Logo in the onboarding header, settling in like the sign-in screen's. */
+.onboard-flow-header { position: relative; }
+.onboard-logo { justify-content: center; margin: 0 auto 14px; width: fit-content; }
+.onboard-logo .logo-mark { animation: capSettle 0.9s 0.15s var(--ease-spring) backwards; }
+.onboard-logo .logo-word { animation: fadeUp 0.5s 0.05s var(--ease-out) backwards; }
+@media (min-width: 701px) {
+  .onboard-logo { position: absolute; left: 28px; top: 50%; margin: 0; transform: translateY(-40%); }
+}
+
+/* Progress: the current pill fills in from the left as you arrive. */
+.onboard-progress .dot.current { position: relative; overflow: hidden; }
+.onboard-progress .dot.current::after {
+  content: ''; position: absolute; inset: 0; background: color-mix(in oklch, var(--text1) 35%, transparent);
+  transform-origin: left; animation: dotFill 0.6s var(--ease-out) forwards;
+}
+@keyframes dotFill { from { transform: scaleX(0); } to { transform: scaleX(1); opacity: 0; } }
+
+/* Arriving step: icon pops, then title, text and fields cascade in. */
+.onboard-flow-panel.is-current .onboard-flow-panel-body > * { animation: obIn 0.5s var(--ease-out) backwards; }
+.onboard-flow-panel.is-current .onboard-flow-panel-body > :nth-child(1) { animation-delay: 0.12s; }
+.onboard-flow-panel.is-current .onboard-flow-panel-body > :nth-child(2) { animation-delay: 0.18s; }
+.onboard-flow-panel.is-current .onboard-flow-panel-body > :nth-child(3) { animation-delay: 0.24s; }
+.onboard-flow-panel.is-current .onboard-flow-panel-body > :nth-child(4) { animation-delay: 0.29s; }
+.onboard-flow-panel.is-current .onboard-flow-panel-body > :nth-child(5) { animation-delay: 0.34s; }
+.onboard-flow-panel.is-current .onboard-flow-panel-body > :nth-child(6) { animation-delay: 0.39s; }
+.onboard-flow-panel.is-current .onboard-flow-panel-body > :nth-child(n+7) { animation-delay: 0.44s; }
+.onboard-flow-panel.is-current .onboard-flow-panel-footer { animation: obIn 0.5s 0.3s var(--ease-out) backwards; }
+.onboard-flow-panel.is-current .onboard-title-icon { animation: obIconPop 0.6s 0.1s var(--ease-spring) backwards; }
+@keyframes obIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes obIconPop { from { opacity: 0; transform: scale(0.4) rotate(-18deg); } to { opacity: 1; transform: none; } }
+.onboard-title-icon { width: 36px; height: 36px; border-radius: 11px; }
+.onboard-title-icon svg { width: 19px; height: 19px; }
+/* The tour step's slide handles its own entrance (below). */
+#onboard-tour.is-current .onboard-flow-panel-body > .tour-slide { animation: none; }
+
+/* Token instructions: a numbered checklist instead of a line-broken blob. */
+.token-steps { list-style: none; margin: 4px 0 0; padding: 0; counter-reset: tok; display: grid; gap: 8px; }
+.token-steps li {
+  counter-increment: tok; display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--text2); line-height: 1.4;
+}
+.token-steps li b { color: var(--text1); font-weight: 600; }
+.token-steps li::before {
+  content: counter(tok); flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--text1);
+  background: var(--surface2); border: 1px solid var(--border2);
+}
+.onboard-flow-panel.is-current .token-steps li { animation: obIn 0.4s var(--ease-out) backwards; }
+.onboard-flow-panel.is-current .token-steps li:nth-child(1) { animation-delay: 0.45s; }
+.onboard-flow-panel.is-current .token-steps li:nth-child(2) { animation-delay: 0.5s; }
+.onboard-flow-panel.is-current .token-steps li:nth-child(3) { animation-delay: 0.55s; }
+.onboard-flow-panel.is-current .token-steps li:nth-child(4) { animation-delay: 0.6s; }
+.onboard-flow-panel.is-current .token-steps li:nth-child(5) { animation-delay: 0.65s; }
+.onboard-flow-panel.is-current .token-steps li:nth-child(6) { animation-delay: 0.7s; }
+
+/* Finish button: turns green for the send-off. */
+.onboard-btn.btn-success { background: var(--green); color: #fff; transition: background 0.25s; }
+
+/* Tour: slides come in from the direction you are going, then the mock
+   builds up piece by piece. */
+.tour-slide { animation: none; }
+.tour-slide.tour-in-next { animation: tourInNext 0.42s var(--ease-out); }
+.tour-slide.tour-in-back { animation: tourInBack 0.42s var(--ease-out); }
+@keyframes tourInNext { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+@keyframes tourInBack { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: none; } }
+.tour-slide-icon { color: var(--text1); }
+.tour-slide-icon svg { width: 28px; height: 28px; }
+.tour-slide.tour-in-next .tour-slide-icon, .tour-slide.tour-in-back .tour-slide-icon { animation: obIconPop 0.55s 0.12s var(--ease-spring) backwards; }
+.tour-mock { animation: none; }
+.tour-slide.tour-in-next .tour-mock > *, .tour-slide.tour-in-back .tour-mock > * { animation: obIn 0.4s var(--ease-out) backwards; }
+.tour-mock > :nth-child(1) { animation-delay: 0.15s !important; }
+.tour-mock > :nth-child(2) { animation-delay: 0.25s !important; }
+.tour-mock > :nth-child(3) { animation-delay: 0.35s !important; }
+.tour-mock-tag { margin-left: auto; font-size: 10.5px; color: var(--text2); }
+.tour-mock-goal { margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-text); }
+.tour-mock-kind { flex-shrink: 0; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 5px; }
+.tour-mock-kind.fb { background: var(--green-soft); color: var(--green); }
+.tour-mock-kind.an { background: var(--accent-soft); color: var(--accent-text); }
+.tour-mock-cal-cell.active { animation: chipPop 0.4s 0.5s var(--ease-spring) backwards; }
+/* Timer ring that actually ticks down while you look at it. */
+.tour-mock-timer-ring { position: relative; border: none; }
+.tour-mock-timer-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.tour-mock-timer-ring circle { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 195; stroke-dashoffset: 0; animation: tourRing 6s linear infinite; }
+@keyframes tourRing { to { stroke-dashoffset: 195; } }
+.tour-mock-timer-ring span { position: relative; }
+.tour-mock-bubble-a { animation-delay: 0.6s !important; }
+
+/* Tutorial brand badge (Links tutorial, study-goal popup). */
+.tut-brand {
+  display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text2);
+}
+.tut-brand-cap { width: 20px; height: 20px; display: flex; color: var(--text1); transform: rotate(-24deg); animation: capSettle 0.8s 0.1s var(--ease-spring) backwards; }
+.tut-brand-cap svg { width: 100%; height: 100%; }
+.links-tutorial-slide-icon svg { width: 24px; height: 24px; }
+.tut-slide-next .tut-ex-browser > *, .tut-slide-next .tut-ex-form > *, .tut-slide-back .tut-ex-browser > *, .tut-slide-back .tut-ex-form > * { animation: obIn 0.35s var(--ease-out) backwards; }
+.tut-ex-form > :nth-child(2), .tut-ex-browser > :nth-child(2) { animation-delay: 0.1s !important; }
+.tut-ex-form > :nth-child(3), .tut-ex-browser > :nth-child(3) { animation-delay: 0.2s !important; }
+
+/* Study-goal popup: a proper entrance instead of a plain fade. */
+#study-goal-onboard-card { animation: obCardIn 0.5s var(--ease-spring); }
+@keyframes obCardIn { from { opacity: 0; transform: translateY(18px) scale(0.96); } to { opacity: 1; transform: none; } }
+#study-goal-onboard-card .focus-duration-row > * { animation: chipPop 0.35s var(--ease-spring) backwards; }
+#study-goal-onboard-card .focus-duration-row > :nth-child(2) { animation-delay: 0.04s; }
+#study-goal-onboard-card .focus-duration-row > :nth-child(3) { animation-delay: 0.08s; }
+#study-goal-onboard-card .focus-duration-row > :nth-child(4) { animation-delay: 0.12s; }
+#study-goal-onboard-card .focus-duration-row > :nth-child(5) { animation-delay: 0.16s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .onboard-logo .logo-mark, .onboard-logo .logo-word, .onboard-progress .dot.current::after,
+  .onboard-flow-panel.is-current .onboard-flow-panel-body > *, .onboard-flow-panel.is-current .onboard-flow-panel-footer,
+  .onboard-flow-panel.is-current .onboard-title-icon, .onboard-flow-panel.is-current .token-steps li,
+  .tour-slide.tour-in-next, .tour-slide.tour-in-back, .tour-slide .tour-slide-icon, .tour-mock > *,
+  .tour-mock-cal-cell.active, .tour-mock-timer-ring circle, .tut-brand-cap,
+  .tut-ex-form > *, .tut-ex-browser > *, #study-goal-onboard-card, #study-goal-onboard-card .focus-duration-row > * { animation: none !important; }
+}

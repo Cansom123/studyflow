@@ -252,6 +252,10 @@
        place instead of sliding with the content. -->
   <div id="onboard-flow" class="onboard-flow">
     <div class="onboard-flow-header">
+      <div class="logo onboard-logo" aria-label="StudyFlow">
+        <div class="logo-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg></div>
+        <span class="logo-word">Study<em>Flow</em></span>
+      </div>
       <div class="progress-dots onboard-progress" id="onboard-flow-dots">
         <div class="dot current"></div><div class="dot upcoming"></div><div class="dot upcoming"></div><div class="dot upcoming"></div>
       </div>
@@ -263,7 +267,12 @@
         <!-- STEP 1: CONNECT CANVAS -->
         <div id="onboard-canvas" class="onboard-flow-panel">
           <div class="onboard-flow-panel-body">
-            <div class="onboard-title">Connect Canvas</div>
+            <div class="onboard-title-row">
+              <span class="onboard-title-icon">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 11.5l3-3"/><path d="M9.5 6.5l1-1a3 3 0 0 1 4.2 4.2l-1 1M10.5 13.5l-1 1a3 3 0 0 1-4.2-4.2l1-1"/></svg>
+              </span>
+              <div class="onboard-title">Connect Canvas</div>
+            </div>
             <div class="onboard-sub">Enter your school's Canvas URL and API token so StudyFlow can see your assignments.</div>
             <div id="onboard-canvas-msg"></div>
             <div class="auth-label">Canvas URL</div>
@@ -275,7 +284,14 @@
             </div>
             <div class="card" style="margin-bottom:16px;">
               <div class="card-title" style="margin-bottom:6px;font-size:13px;">How to get your token</div>
-              <div class="settings-note" style="margin-bottom:0;">1. Log into Canvas<br>2. Click your profile picture<br>3. Go to Settings<br>4. Scroll to "Approved Integrations"<br>5. Click "+ New Access Token"<br>6. Name it "StudyFlow" and paste it above</div>
+              <ol class="token-steps">
+                <li><span>Log into Canvas</span></li>
+                <li><span>Click your profile picture</span></li>
+                <li><span>Go to <b>Settings</b></span></li>
+                <li><span>Scroll to <b>Approved Integrations</b></span></li>
+                <li><span>Click <b>+ New Access Token</b></span></li>
+                <li><span>Name it "StudyFlow" and paste it above</span></li>
+              </ol>
             </div>
           </div>
           <div class="onboard-flow-panel-footer">
@@ -286,7 +302,12 @@
         <!-- STEP 2: SELECT COURSES -->
         <div id="onboard-courses" class="onboard-flow-panel">
           <div class="onboard-flow-panel-body">
-            <div class="onboard-title">Your current classes</div>
+            <div class="onboard-title-row">
+              <span class="onboard-title-icon">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5c1.8-.9 4-.9 6 0v11c-2-.9-4.2-.9-6 0v-11z"/><path d="M16 4.5c-1.8-.9-4-.9-6 0v11c2-.9 4.2-.9 6 0v-11z"/></svg>
+              </span>
+              <div class="onboard-title">Your current classes</div>
+            </div>
             <div class="onboard-sub">Select only the classes you're taking right now. StudyFlow will only pull assignments from these.</div>
             <div id="course-list-loading" class="course-loading">Loading your courses from Canvas...</div>
             <div id="course-list"></div>
@@ -560,6 +581,7 @@
     <div class="card links-tutorial-card" id="links-tutorial-card">
       <button class="detail-close" id="links-tutorial-dismiss" onclick="dismissLinksTutorial()" title="Dismiss">✕</button>
       <div class="links-tutorial-col">
+        <div class="tut-brand"><span class="tut-brand-cap"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg></span>StudyFlow tip</div>
         <div class="progress-dots" id="links-tutorial-dots" style="justify-content:flex-start;"></div>
         <div class="links-tutorial-slide-icon" id="links-tutorial-slide-icon"></div>
         <div class="links-tutorial-slide-title" id="links-tutorial-slide-title"></div>
@@ -611,6 +633,7 @@
   <!-- STUDY GOAL ONBOARDING (blocks the app like the sync welcome screen — answer or skip) -->
   <div id="study-goal-onboard-overlay" style="display:none;">
     <div id="study-goal-onboard-card">
+      <div class="tut-brand"><span class="tut-brand-cap"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg></span>StudyFlow</div>
       <div class="focus-title" style="text-align:left;margin-bottom:4px;">What's a good study goal for you?</div>
       <div class="card-sub" style="margin-bottom:22px;">Pick something easy to hit - you can always change it later.</div>
       <div class="focus-phase-label">Daily goal</div>
@@ -2512,6 +2535,13 @@ function goToOnboardStep(index, instant) {
     dot.classList.remove('complete', 'current', 'upcoming');
     dot.classList.add(i < index ? 'complete' : i === index ? 'current' : 'upcoming');
   });
+  // The arriving step's contents cascade in (icon, title, text, fields --
+  // see .onboard-flow-panel.is-current in styles.css). Re-adding the class
+  // restarts the cascade even when returning to a step already seen.
+  document.querySelectorAll('#onboard-flow-track > .onboard-flow-panel').forEach((panel, i) => {
+    panel.classList.remove('is-current');
+    if (i === index) { void panel.offsetWidth; panel.classList.add('is-current'); }
+  });
 }
 function showOnboardCanvas() { goToOnboardStep(0, !isOnboardFlowVisible()); }
 function showOnboardCourses() {
@@ -3249,26 +3279,39 @@ async function finishOnboarding() {
   // Gated to admin accounts for now -- the tour isn't polished enough yet
   // to put in front of real students signing up.
   if (ADMIN_EMAILS.includes(USER_EMAIL)) showOnboardTour();
-  else showApp();
+  else finishOnboardingCelebration(btn);
 }
 
-// One idea per slide, covering the features that actually exist today
-// (not what onboarding looked like when it was first built) -- so a new
-// student has some idea what each tab is for before landing on it cold.
+// The end of setup is a real moment -- send the student off with confetti
+// from the button they pressed rather than cutting straight to the app.
+function finishOnboardingCelebration(fromEl) {
+  if (prefersReducedMotion() || !fromEl) { showApp(); return; }
+  const r = fromEl.getBoundingClientRect();
+  celebrateUpward(r.left + r.width / 2, r.top, r.width * 0.9, -Math.PI / 2, 1.6, 46);
+  const label = fromEl.textContent;
+  fromEl.textContent = "You're all set";
+  fromEl.classList.add('btn-success');
+  setTimeout(() => { fromEl.classList.remove('btn-success'); fromEl.textContent = label; showApp(); }, 900);
+}
+
+// One idea per slide, covering the features that actually exist today --
+// so a new student has some idea what each tab is for before landing on it
+// cold. Line icons to match the rest of the app (they used to be emoji).
+const TOUR_ICON = d => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const ONBOARD_TOUR_SLIDES = [
   {
-    icon: '🏠',
+    icon: TOUR_ICON('<path d="M3 9.5 10 3l7 6.5"/><path d="M5 8.5V17h10V8.5"/>'),
     title: 'Home is your daily summary',
-    body: 'What\'s due, your top priority, and any new announcements -- the moment you open the app, before you go digging.',
+    body: 'What\'s overdue, what\'s due this week, your grades and the next thing to do, the moment you open the app.',
     mock: `
       <div class="tour-mock-stat"><span class="tour-mock-stat-num">3</span><span class="tour-mock-stat-label">due this week</span></div>
-      <div class="tour-mock-row"><span class="tour-mock-dot"></span>Bio Lab Report</div>
-      <div class="tour-mock-row"><span class="tour-mock-dot"></span>Math Problem Set</div>`,
+      <div class="tour-mock-row"><span class="tour-mock-dot"></span>Bio Lab Report<span class="tour-mock-tag">Tomorrow</span></div>
+      <div class="tour-mock-row"><span class="tour-mock-dot"></span>Math Problem Set<span class="tour-mock-tag">Fri</span></div>`,
   },
   {
-    icon: '📅',
-    title: 'Due has a real calendar',
-    body: 'Browse by month or list. Tip: you can subscribe this calendar to Google or Apple Calendar from Settings, so due dates show up right alongside your other events.',
+    icon: TOUR_ICON('<circle cx="10" cy="10" r="7.5"/><polyline points="10 5.5 10 10 12.5 12.5"/>'),
+    title: 'Upcoming has a real calendar',
+    body: 'Tap a day to pin it and see everything due. You can also subscribe it to Google or Apple Calendar from Settings.',
     mock: `
       <div class="tour-mock-cal-grid">
         <div class="tour-mock-cal-cell">3</div><div class="tour-mock-cal-cell">4</div><div class="tour-mock-cal-cell">5</div><div class="tour-mock-cal-cell">6</div><div class="tour-mock-cal-cell active">7<span class="tour-mock-cal-dot"></span></div><div class="tour-mock-cal-cell">8</div><div class="tour-mock-cal-cell">9</div>
@@ -3276,37 +3319,46 @@ const ONBOARD_TOUR_SLIDES = [
       </div>`,
   },
   {
-    icon: '⭐',
-    title: 'Priority tells you what\'s first',
-    body: 'StudyFlow ranks your work so you always know what to start with -- no more guessing which assignment matters most today.',
+    icon: TOUR_ICON('<polygon points="10 2.5 12 7.5 17.5 7.5 13 11 14.5 17 10 13.5 5.5 17 7 11 2.5 7.5 8 7.5"/>'),
+    title: 'Priority follows your goals',
+    body: 'Your work is ranked so you always know what to start with, and anything in a class tied to one of your goals moves up the list.',
     mock: `
-      <div class="tour-mock-priority-row"><span class="tour-mock-rank">1</span>Finish essay draft</div>
-      <div class="tour-mock-priority-row"><span class="tour-mock-rank">2</span>Study for quiz</div>`,
+      <div class="tour-mock-priority-row"><span class="tour-mock-rank">1</span>Finish essay draft<span class="tour-mock-goal">Goal</span></div>
+      <div class="tour-mock-priority-row"><span class="tour-mock-rank">2</span>Study for quiz</div>
+      <div class="tour-mock-priority-row"><span class="tour-mock-rank">3</span>Read chapter 7</div>`,
   },
   {
-    icon: '⏱',
+    icon: TOUR_ICON('<path d="M6 8a4 4 0 0 1 8 0c0 3 1 4 1.5 4.5h-11C5 12 6 11 6 8z"/><path d="M8.3 15a1.8 1.8 0 0 0 3.4 0"/>'),
+    title: 'Updates from your teachers',
+    body: 'Announcements, feedback on your work and Canvas messages, all in one feed, so nothing a teacher sends slips past you.',
+    mock: `
+      <div class="tour-mock-row"><span class="tour-mock-kind fb">Feedback</span>Strong thesis, tighten paragraph 3</div>
+      <div class="tour-mock-row"><span class="tour-mock-kind an">Announcement</span>Test moved to Friday</div>`,
+  },
+  {
+    icon: TOUR_ICON('<circle cx="10" cy="10" r="7.5"/><polygon points="8.5 6.5 14 10 8.5 13.5 8.5 6.5"/>'),
     title: 'Study has a focus timer',
-    body: 'Run timed focus sessions, schedule study time on your calendar, and track daily and weekly study goals.',
+    body: 'Run focus sessions, schedule study time on your calendar, and keep a daily and weekly study goal.',
     mock: `
       <div class="tour-mock-timer">
-        <div class="tour-mock-timer-ring">24:58</div>
+        <div class="tour-mock-timer-ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="31"/></svg><span>24:58</span></div>
         <div class="tour-mock-timer-label">Round 1 - focus</div>
       </div>`,
   },
   {
-    icon: '✨',
+    icon: TOUR_ICON('<path d="M10 2l1.6 5.4L17 9l-5.4 1.6L10 16l-1.6-5.4L3 9l5.4-1.6L10 2z"/>'),
     title: 'coco.1 answers from your syllabus',
-    body: 'An optional on-device AI assistant -- ask it about grading policy or deadlines, or ask it to help you plan. It runs on your device, and nothing leaves your browser.',
+    body: 'An optional AI that runs on your device. Ask about grading or late work, or ask it to help you plan around your goals.',
     mock: `
       <div class="tour-mock-bubble tour-mock-bubble-q">Can I turn this in late?</div>
-      <div class="tour-mock-bubble tour-mock-bubble-a">✨ Late work loses 10% per day, per your syllabus.</div>`,
+      <div class="tour-mock-bubble tour-mock-bubble-a">Late work loses 10% per day, per your syllabus.</div>`,
   },
 ];
 let onboardTourSlide = 0;
-function renderOnboardTourSlide() {
+function renderOnboardTourSlide(direction) {
   const slide = ONBOARD_TOUR_SLIDES[onboardTourSlide];
   document.getElementById('tour-slide-mock').innerHTML = slide.mock;
-  document.getElementById('tour-slide-icon').textContent = slide.icon;
+  document.getElementById('tour-slide-icon').innerHTML = slide.icon;
   document.getElementById('tour-slide-title').textContent = slide.title;
   document.getElementById('tour-slide-body').textContent = slide.body;
   document.getElementById('tour-mini-dots').innerHTML = ONBOARD_TOUR_SLIDES
@@ -3314,6 +3366,14 @@ function renderOnboardTourSlide() {
   document.getElementById('tour-back-btn').style.display = onboardTourSlide === 0 ? 'none' : 'block';
   document.getElementById('tour-next-btn').textContent =
     onboardTourSlide === ONBOARD_TOUR_SLIDES.length - 1 ? 'Let\'s go' : 'Next';
+  // Slide in from the side the student is heading toward (Next from the
+  // right, Back from the left); the mock's pieces then build up in order.
+  const el = document.querySelector('.tour-slide');
+  if (el) {
+    el.classList.remove('tour-in-next', 'tour-in-back');
+    void el.offsetWidth;
+    el.classList.add(direction === 'back' ? 'tour-in-back' : 'tour-in-next');
+  }
 }
 function showOnboardTour() {
   onboardTourSlide = 0;
@@ -3321,14 +3381,17 @@ function showOnboardTour() {
   renderOnboardTourSlide();
 }
 function onboardTourNext() {
-  if (onboardTourSlide >= ONBOARD_TOUR_SLIDES.length - 1) { showApp(); return; }
+  if (onboardTourSlide >= ONBOARD_TOUR_SLIDES.length - 1) {
+    finishOnboardingCelebration(document.getElementById('tour-next-btn'));
+    return;
+  }
   onboardTourSlide++;
-  renderOnboardTourSlide();
+  renderOnboardTourSlide('next');
 }
 function onboardTourBack() {
   if (onboardTourSlide === 0) return;
   onboardTourSlide--;
-  renderOnboardTourSlide();
+  renderOnboardTourSlide('back');
 }
 
 /* buildActionPlan now lives in js/goals-core.js -- see the module bridge
@@ -3515,7 +3578,7 @@ async function showCourseSelection() {
 // one card; this spreads it out so nothing reads as a wall of text.
 const LINKS_TUTORIAL_SLIDES = [
   {
-    icon: '🔗',
+    icon: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 11.5l3-3"/><path d="M9.5 6.5l1-1a3 3 0 0 1 4.2 4.2l-1 1M10.5 13.5l-1 1a3 3 0 0 1-4.2-4.2l1-1"/></svg>',
     title: 'Grab a link',
     body: 'Copy the link to anything you use for a class - a shared Google Doc, a NotebookLM notebook, a class website, a group chat.',
     example: `
@@ -3526,7 +3589,7 @@ const LINKS_TUTORIAL_SLIDES = [
       </div>`,
   },
   {
-    icon: '✏️',
+    icon: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5l3 3L7 16H4v-3z"/><path d="M11.5 5.5l3 3"/></svg>',
     title: 'Give it a name',
     body: 'Something short you’ll recognize at a glance, like "Bio notes" or "Group project doc" - not the whole title of the page.',
     example: `
@@ -3536,7 +3599,7 @@ const LINKS_TUTORIAL_SLIDES = [
       </div>`,
   },
   {
-    icon: '📋',
+    icon: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="10" height="13" rx="1.5"/><path d="M8 4V3h4v1M8 9h4M8 12h4"/></svg>',
     title: 'Paste it below',
     body: 'Drop the link and name into the two boxes under this card, then tap + Add link. That’s the whole process.',
     example: `
@@ -3559,7 +3622,7 @@ let linksTutorialAnimating = false;
 
 function renderLinksTutorialSlide(direction) {
   const slide = LINKS_TUTORIAL_SLIDES[linksTutorialSlide];
-  document.getElementById('links-tutorial-slide-icon').textContent = slide.icon;
+  document.getElementById('links-tutorial-slide-icon').innerHTML = slide.icon;
   document.getElementById('links-tutorial-slide-title').textContent = slide.title;
   document.getElementById('links-tutorial-slide-body').textContent = slide.body;
   document.getElementById('links-tutorial-example').innerHTML = slide.example;

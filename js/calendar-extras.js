@@ -51,13 +51,15 @@ function renderDueCalendarWeek() {
   if (!gridEl || !titleEl) return;
   titleEl.textContent = dueCalWeekTitle();
   const cells = buildDueCalendarWeekCells(dueCalWeekStart, dueCalAssignments, cachedStudySessions, ymd(new Date()), dueCalSelectedDate);
+  // Syllabus dates (exams, papers...) sit in the week alongside the rest.
+  cells.forEach(c => syllabusDatesForKey(c.key).forEach(k => c.items.push({ type: 'k', title: k.label, sub: k.courseName })));
   gridEl.innerHTML = cells.map(c => {
     const shown = c.items.slice(0, WEEK_ITEM_LIMIT);
     const more = c.items.length - shown.length;
     return `<div class="cal-day cal-wday${c.isToday ? ' today' : ''}${c.isSelected ? ' selected' : ''}" data-key="${c.key}" onclick="selectDueCalDate('${c.key}')">
       <div class="cwd-head"><span class="cwd-dow">${c.dow}</span><span class="cal-day-num">${c.dnum}</span></div>
       <div class="cwd-items">
-        ${shown.map(it => `<div class="cwd-item ${it.type === 's' ? 'study' : 'due'}${it.done ? ' done' : ''}" title="${escapeHtml(it.title)}${it.sub ? ' · ' + escapeHtml(it.sub) : ''}"><span class="cwd-dot"></span><span class="cwd-text">${escapeHtml(it.title)}</span></div>`).join('')}
+        ${shown.map(it => `<div class="cwd-item ${it.type === 's' ? 'study' : it.type === 'k' ? 'key' : 'due'}${it.done ? ' done' : ''}" title="${escapeHtml(it.title)}${it.sub ? ' · ' + escapeHtml(it.sub) : ''}"><span class="cwd-dot"></span><span class="cwd-text">${escapeHtml(it.title)}</span></div>`).join('')}
         ${more > 0 ? `<div class="cwd-more">+${more} more</div>` : ''}
         ${!c.items.length ? '<div class="cwd-empty">Free</div>' : ''}
       </div>

@@ -1193,6 +1193,7 @@
           <div class="empty-title">No classes selected yet</div>
           <div class="empty-sub">Pick your classes in Settings first - StudyFlow will try to pull each syllabus from Canvas automatically.</div>
         </div>
+        <div id="syllabus-keydates"></div>
         <div id="syllabus-search-results" style="display:none;"></div>
         <div id="syllabus-list" style="display:none;"></div>
       </div>
@@ -5755,6 +5756,7 @@ function renderSyllabusList() {
   if (!listEl) return;
   // Pure HTML building lives in js/render-utils.js.
   listEl.innerHTML = syllabusListHTML(syllabusCourses, cachedSyllabi);
+  onSyllabiChanged();
 }
 
 function openSyllabus(courseId) {
@@ -6852,6 +6854,7 @@ function renderDueCalendar() {
       </div>
     </div>`).join('');
 
+  decorateSyllabusDates();
   initDueCalHover();
   renderDueCalSelected();
 }
@@ -6920,7 +6923,7 @@ function renderDueCalSelected() {
   // Pure filtering/label/HTML building lives in js/render-utils.js.
   const r = dueCalSelectedBodyHTML(dueCalAssignments, dueCalSelectedDate, doneSet, ymd(new Date()));
   labelEl.textContent = r.label;
-  listEl.innerHTML = r.itemsHTML;
+  listEl.innerHTML = r.itemsHTML + syllabusDayItemsHTML(dueCalSelectedDate);
 
   renderStudySessionsForDay();
 }
@@ -6938,7 +6941,7 @@ function renderDueCalDay(key, previewing) {
   if (!labelEl || !listEl || !sessionsEl || !key) return;
   const r = dueCalSelectedBodyHTML(dueCalAssignments, key, doneSet, ymd(new Date()));
   labelEl.textContent = r.label;
-  listEl.innerHTML = r.itemsHTML;
+  listEl.innerHTML = r.itemsHTML + syllabusDayItemsHTML(key);
   sessionsEl.innerHTML = cachedStudySessions.filter(s => s.session_date === key).map(studySessionCardHTML).join('');
   if (panel) panel.classList.toggle('previewing', !!previewing);
   if (body) { body.classList.remove('day-swap'); void body.offsetWidth; body.classList.add('day-swap'); }
@@ -8691,5 +8694,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/priority-extras.js"></script>
 <script src="js/study-extras.js"></script>
 <script src="js/grades-extras.js"></script>
+<script src="js/syllabus-extras.js"></script>
 </body>
 </html>

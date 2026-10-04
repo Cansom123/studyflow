@@ -5626,7 +5626,7 @@ function renderHomeTiles(overdueCount, soon) {
   const scores = cachedGrades.map(g => parseFloat(g.current_score != null ? g.current_score : g.final_score)).filter(n => !isNaN(n));
   const avg = scores.length ? scores.reduce((s, n) => s + n, 0) / scores.length : null;
 
-  const sig = JSON.stringify([overdueCount, soon.length, nextDue && nextDue.title, stats.todayMin, stats.dailyGoal, chain, avg && avg.toFixed(1), scores.length]);
+  const sig = JSON.stringify([overdueCount, soon.length, nextDue && nextDue.title, stats.todaySec, stats.dailyGoal, chain, avg && avg.toFixed(1), scores.length]);
   if (el.dataset.sig === sig) return;
   el.dataset.sig = sig;
 
@@ -5693,18 +5693,18 @@ function renderHomeStudy() {
   const s = computeStudyStats(cachedStudySessions, userPrefs, today);
   const chain = computeStudyChainLength(studyChainDayTotals());
   const firstGoal = userGoals[0];
-  const sig = JSON.stringify([s.todayMin, s.weekMin, s.dailyGoal, s.weeklyGoal, chain, userGoals.length, firstGoal]);
+  const sig = JSON.stringify([s.todaySec, s.weekSec, s.dailyGoal, s.weeklyGoal, chain, userGoals.length, firstGoal]);
   if (el.dataset.sig === sig) return;
   el.dataset.sig = sig;
-  const row = (label, min, goal, pct, met) => goal > 0 ? `
+  const row = (label, sec, goal, pct, met) => goal > 0 ? `
     <div class="hs-row">
-      <div class="hs-top"><span>${label}</span><span class="hs-val">${fmtHoursMinutes(min)} <em>/ ${fmtHoursMinutes(goal)}</em></span></div>
+      <div class="hs-top"><span>${label}</span><span class="hs-val">${fmtDuration(sec)} <em>/ ${fmtHoursMinutes(goal)}</em></span></div>
       <div class="ht-bar"><i class="${met ? 'met' : ''}" style="width:${Math.round(pct)}%"></i></div>
     </div>` : '';
   const goalText = firstGoal ? `${firstGoal.length > 46 ? firstGoal.slice(0, 45) + '…' : firstGoal}${userGoals.length > 1 ? ` +${userGoals.length - 1} more` : ''}` : '';
   el.innerHTML = `
-    ${row('Today', s.todayMin, s.dailyGoal, s.todayPct, s.todayGoalMet)}
-    ${row('This week', s.weekMin, s.weeklyGoal, s.weekPct, s.weekGoalMet)}
+    ${row('Today', s.todaySec, s.dailyGoal, s.todayPct, s.todayGoalMet)}
+    ${row('This week', s.weekSec, s.weeklyGoal, s.weekPct, s.weekGoalMet)}
     <div class="hs-foot"><span>${chain > 0 ? `${chain} day study chain` : 'No study chain yet'}</span>${goalText ? `<span class="hs-goal">${escapeHtml(goalText)}</span>` : ''}</div>`;
 }
 
@@ -6448,6 +6448,7 @@ let dueCalAssignments = [];
 let cachedStudySessions = [];
 
 async function loadStudySessions() {
+  await detectStudySecondsColumn();
   const { ok, data } = await sbFetchWithRetry(`/rest/v1/study_sessions?user_id=eq.${USER_ID}&order=session_date.asc&select=*`);
   cachedStudySessions = ok && Array.isArray(data) ? data : [];
   renderDueCalendar();
@@ -6985,19 +6986,19 @@ function computeGoalAchievementCounts(sessions, dailyGoal, weeklyGoal) {
   const dayTotals = {};
   sessions.forEach(s => {
     if (!s.session_date) return;
-    dayTotals[s.session_date] = (dayTotals[s.session_date] || 0) + (s.minutes_studied || 0);
+    dayTotals[s.session_date] = (dayTotals[s.session_date] || 0) + studySessionSec(s);
   });
 
   let daysHit = 0;
   const weekTotals = {};
-  Object.entries(dayTotals).forEach(([dateStr, min]) => {
-    if (dailyGoal > 0 && min >= dailyGoal) daysHit++;
+  Object.entries(dayTotals).forEach(([dateStr, sec]) => {
+    if (dailyGoal > 0 && sec >= dailyGoal * 60) daysHit++;
     const weekKey = ymd(startOfWeek(new Date(dateStr + 'T00:00:00')));
-    weekTotals[weekKey] = (weekTotals[weekKey] || 0) + min;
+    weekTotals[weekKey] = (weekTotals[weekKey] || 0) + sec;
   });
 
   let weeksHit = 0;
-  Object.values(weekTotals).forEach(min => { if (weeklyGoal > 0 && min >= weeklyGoal) weeksHit++; });
+  Object.values(weekTotals).forEach(sec => { if (weeklyGoal > 0 && sec >= weeklyGoal * 60) weeksHit++; });
 
   return { daysHit, weeksHit };
 }
@@ -7025,12 +7026,12 @@ function renderStudyTab() {
   if (todayFill) {
     todayFill.style.width = r.todayPct + '%';
     todayFill.classList.toggle('goal-met', r.todayGoalMet);
-    todayText.textContent = `${r.todayMin} / ${r.dailyGoal} min`;
+    todayText.textContent = `${fmtDuration(r.todaySec)} / ${r.dailyGoal} min`;
   }
   if (weekFill) {
     weekFill.style.width = r.weekPct + '%';
     weekFill.classList.toggle('goal-met', r.weekGoalMet);
-    weekText.textContent = `${r.weekMin} / ${r.weeklyGoal} min`;
+    weekText.textContent = `${fmtDuration(r.weekSec)} / ${r.weeklyGoal} min`;
   }
 
   const nudgeEl = document.getElementById('study-goal-nudge');
@@ -7192,8 +7193,8 @@ function openFocusTimer(sessionId) {
     round: 1,
     completedStudyRounds: 0,
     studiedSecDone: 0,                 // seconds of finished study rounds
-    baseMin: s.minutes_studied || 0,   // what the session row held before this timer
-    loggedMin: 0,                      // minutes this timer has already saved
+    baseSec: studySessionSec(s),       // what the session row held before this timer
+    loggedSec: 0,                      // seconds this timer has already saved
     phase: 'setup',
     breakActivity: '',
     remainingSec: 0,
@@ -7279,7 +7280,7 @@ function toggleFocusPause() {
   } else {
     focusState.remainingSec = Math.max(0, Math.round((focusState.deadline - Date.now()) / 1000));
     focusState.paused = true;
-    if (focusState.phase === 'study') focusCheckpoint();
+    if (focusState.phase === 'study') focusCheckpoint(true);
   }
   renderFocusViews();
 }
@@ -7347,7 +7348,7 @@ function onFocusStudyComplete() {
   focusState.completedStudyRounds++;
   focusState.studiedSecDone += focusState.totalSec;
   focusState.awaiting = true;
-  focusCheckpoint();
+  focusCheckpoint(true);
   document.title = focusOriginalTitle;
   showReward(`Round ${focusState.round} done - nice focus.`, 'focus');
   // The round is over and there's a choice to make, so surface it even if they
@@ -7466,8 +7467,8 @@ function openDeepWorkTimer(sessionId) {
     minimized: false,
     awaiting: false,
     completedMin: 0,
-    baseMin: s.minutes_studied || 0,   // what the session row held before this timer
-    loggedMin: 0,                      // minutes this timer has already saved
+    baseSec: studySessionSec(s),       // what the session row held before this timer
+    loggedSec: 0,                      // seconds this timer has already saved
   };
   adoptSessionForToday(s);
   document.getElementById('deepwork-overlay').style.display = 'flex';
@@ -7552,7 +7553,7 @@ function toggleDeepWorkPause() {
   } else {
     deepWorkState.remainingSec = Math.max(0, Math.round((deepWorkState.deadline - Date.now()) / 1000));
     deepWorkState.paused = true;
-    deepCheckpoint();
+    deepCheckpoint(true);
   }
   renderDeepWorkActive();
   renderDeepWorkMiniBar();
@@ -7624,7 +7625,7 @@ function renderDeepWorkActive() {
 function onDeepWorkComplete() {
   deepWorkState.awaiting = true;
   deepWorkState.completedMin = deepWorkState.blockMin;
-  deepCheckpoint();
+  deepCheckpoint(true);
   updateDeepWorkTitle();
   showReward(`Deep work block done - ${fmtDeepWorkDuration(deepWorkState.blockMin)}, no breaks.`, 'focus');
   if (deepWorkState.minimized) expandDeepWorkTimer();
@@ -7681,7 +7682,7 @@ function studyChainDayTotals() {
   const byDate = {};
   cachedStudySessions.forEach(s => {
     if (!s.session_date) return;
-    const min = s.minutes_studied || 0;
+    const min = studySessionSec(s) / 60;
     const entry = byDate[s.session_date] || (byDate[s.session_date] = { studyMin: 0, deepMin: 0 });
     if (s.session_type === 'deep_work') entry.deepMin += min; else entry.studyMin += min;
   });
@@ -7787,8 +7788,8 @@ function renderStudyChainDetail(byDate) {
     return;
   }
   const parts = [];
-  if (entry.studyMin > 0) parts.push(`${entry.studyMin}m study`);
-  if (entry.deepMin > 0) parts.push(`${entry.deepMin}m deep work`);
+  if (entry.studyMin > 0) parts.push(`${fmtDuration(entry.studyMin * 60)} study`);
+  if (entry.deepMin > 0) parts.push(`${fmtDuration(entry.deepMin * 60)} deep work`);
   el.textContent = `${dateLabel} — ${parts.join(' + ')}`;
 }
 
@@ -8017,7 +8018,7 @@ var PAGE_HEADS = { // var: refreshPageHeads may run (via renderHome) before this
   } },
   study:    { title: 'Study', sub: () => {
     const s = computeStudyStats(cachedStudySessions, userPrefs, new Date());
-    return s.dailyGoal ? `${s.todayMin} of ${s.dailyGoal} min studied today` : `${s.todayMin} min studied today`;
+    return s.dailyGoal ? `${fmtDuration(s.todaySec)} of ${s.dailyGoal} min studied today` : `${fmtDuration(s.todaySec)} studied today`;
   } },
   grades:   { title: 'Grades', sub: () => {
     const pcts = (cachedGrades || []).map(g => g.current_score != null ? g.current_score : g.final_score).filter(p => p != null).map(Number);

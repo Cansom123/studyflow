@@ -12,11 +12,30 @@ function fmtTime12(t) {
   return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 
+// A session's exact study time in seconds. Rows saved by the seconds-aware
+// timer carry seconds_studied; older rows (or databases without that column)
+// only have whole minutes, which stand in at 60 seconds each.
+function studySessionSec(s) {
+  const sec = Number(s.seconds_studied) || 0;
+  return sec > 0 ? sec : (Number(s.minutes_studied) || 0) * 60;
+}
+
+// "40s", "12m 40s", "12m", "2h 15m": exact under an hour, hours and minutes
+// above that (seconds on a 2-hour total are just noise).
+function fmtDuration(totalSec) {
+  const sec = Math.max(0, Math.round(totalSec || 0));
+  if (sec < 60) return `${sec}s`;
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  return s ? `${m}m ${s}s` : `${m}m`;
+}
+
 function studySessionCardHTML(s) {
   const timeRange = s.start_time
     ? `${fmtTime12(s.start_time)}${s.end_time ? ' – ' + fmtTime12(s.end_time) : ''}`
     : '';
-  const meta = [s.course, timeRange].filter(Boolean).join(' · ');
+  const studied = studySessionSec(s);
+  const meta = [s.course, timeRange, studied > 0 ? `${fmtDuration(studied)} studied` : ''].filter(Boolean).join(' · ');
   return `<div class="study-session-card${s.completed ? ' done' : ''}" draggable="true" data-session-id="${s.id}" title="Drag onto another day to move it">
     <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleStudySessionDone('${s.id}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
     <div class="study-session-info">
@@ -47,37 +66,42 @@ function computeStudyStats(cachedStudySessions, userPrefs, today) {
   const todayKey = ymd(ref);
   const weekStart = startOfWeek(ref);
 
-  let todayMin = 0, weekMin = 0, totalMin = 0, deepWorkTotalMin = 0;
+  // Everything is summed in seconds and only turned into minutes for display
+  // and for the minute-based goals.
+  let todaySec = 0, weekSec = 0, totalSec = 0, deepSec = 0;
   cachedStudySessions.forEach(s => {
-    const min = s.minutes_studied || 0;
-    totalMin += min;
-    if (s.session_type === 'deep_work') deepWorkTotalMin += min;
+    const sec = studySessionSec(s);
+    totalSec += sec;
+    if (s.session_type === 'deep_work') deepSec += sec;
     if (!s.session_date) return;
     const d = new Date(s.session_date + 'T00:00:00');
-    if (s.session_date === todayKey) todayMin += min;
-    if (d >= weekStart) weekMin += min;
+    if (s.session_date === todayKey) todaySec += sec;
+    if (d >= weekStart) weekSec += sec;
   });
+  const todayMin = Math.floor(todaySec / 60), weekMin = Math.floor(weekSec / 60);
+  const totalMin = Math.floor(totalSec / 60), deepWorkTotalMin = Math.floor(deepSec / 60);
 
   const dailyGoal = userPrefs.studyGoalDailyMin ?? 60;
   const weeklyGoal = userPrefs.studyGoalWeeklyMin ?? 300;
-  const todayPct = dailyGoal > 0 ? Math.min(100, (todayMin / dailyGoal) * 100) : 0;
-  const weekPct = weeklyGoal > 0 ? Math.min(100, (weekMin / weeklyGoal) * 100) : 0;
-  const todayGoalMet = todayMin >= dailyGoal && dailyGoal > 0;
-  const weekGoalMet = weekMin >= weeklyGoal && weeklyGoal > 0;
+  const todayPct = dailyGoal > 0 ? Math.min(100, (todaySec / (dailyGoal * 60)) * 100) : 0;
+  const weekPct = weeklyGoal > 0 ? Math.min(100, (weekSec / (weeklyGoal * 60)) * 100) : 0;
+  const todayGoalMet = dailyGoal > 0 && todaySec >= dailyGoal * 60;
+  const weekGoalMet = weeklyGoal > 0 && weekSec >= weeklyGoal * 60;
 
   let nudgeText = '';
-  if (dailyGoal > 0 && todayMin >= dailyGoal) {
+  if (todayGoalMet) {
     nudgeText = "🎉 You've hit today's study goal - anything more is a bonus.";
   } else if (dailyGoal > 0) {
-    nudgeText = `${dailyGoal - todayMin} minutes left to hit today's goal.`;
+    nudgeText = `${fmtDuration(dailyGoal * 60 - todaySec)} left to hit today's goal.`;
   }
 
   const todayItems = cachedStudySessions.filter(s => s.session_date === todayKey);
 
   return {
     todayMin, weekMin, totalMin, deepWorkTotalMin,
-    todayFmt: fmtHoursMinutes(todayMin), weekFmt: fmtHoursMinutes(weekMin), totalFmt: fmtHoursMinutes(totalMin),
-    deepWorkTotalFmt: fmtHoursMinutes(deepWorkTotalMin),
+    todaySec, weekSec, totalSec, deepWorkTotalSec: deepSec,
+    todayFmt: fmtDuration(todaySec), weekFmt: fmtDuration(weekSec), totalFmt: fmtDuration(totalSec),
+    deepWorkTotalFmt: fmtDuration(deepSec),
     dailyGoal, weeklyGoal, todayPct, weekPct, todayGoalMet, weekGoalMet,
     nudgeText, todayItems,
   };

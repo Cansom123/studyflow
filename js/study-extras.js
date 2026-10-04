@@ -9,13 +9,13 @@
 =========================== */
 
 /* ---- Weekly chart ---------------------------------------------------------- */
-function studyMinutesForDays(sessions, endDate, count) {
+function studySecondsForDays(sessions, endDate, count) {
   const out = [];
   for (let i = count - 1; i >= 0; i--) {
     const d = new Date(endDate); d.setDate(endDate.getDate() - i);
     const key = ymd(d);
-    const min = sessions.reduce((sum, s) => s.session_date === key ? sum + (s.minutes_studied || 0) : sum, 0);
-    out.push({ key, date: d, min });
+    const sec = sessions.reduce((sum, s) => s.session_date === key ? sum + studySessionSec(s) : sum, 0);
+    out.push({ key, date: d, sec, min: sec / 60 });
   }
   return out;
 }
@@ -24,12 +24,12 @@ function renderStudyChart() {
   const host = document.getElementById('study-chart');
   if (!host) return;
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const week = studyMinutesForDays(cachedStudySessions || [], today, 7);
+  const week = studySecondsForDays(cachedStudySessions || [], today, 7);
   const prevEnd = new Date(today); prevEnd.setDate(today.getDate() - 7);
-  const prevTotal = studyMinutesForDays(cachedStudySessions || [], prevEnd, 7).reduce((a, d) => a + d.min, 0);
-  const total = week.reduce((a, d) => a + d.min, 0);
+  const prevTotal = studySecondsForDays(cachedStudySessions || [], prevEnd, 7).reduce((a, d) => a + d.sec, 0);
+  const total = week.reduce((a, d) => a + d.sec, 0);
   const goal = userPrefs.studyGoalDailyMin ?? 60;
-  const sig = JSON.stringify([week.map(d => d.min), prevTotal, goal]);
+  const sig = JSON.stringify([week.map(d => d.sec), prevTotal, goal]);
   if (host.dataset.sig === sig) return; // unchanged: do not replay the bars rising
   host.dataset.sig = sig;
 
@@ -37,10 +37,10 @@ function renderStudyChart() {
   const delta = total - prevTotal;
   const deltaHTML = prevTotal === 0 && total === 0 ? '<span class="sc-delta">No study logged yet this week</span>'
     : delta === 0 ? '<span class="sc-delta">Same as the week before</span>'
-    : `<span class="sc-delta ${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '+' : '−'}${fmtHoursMinutes(Math.abs(delta))} vs the week before</span>`;
+    : `<span class="sc-delta ${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '+' : '−'}${fmtDuration(Math.abs(delta))} vs the week before</span>`;
   host.innerHTML = `
     <div class="sc-head">
-      <div class="sc-total"><b>${fmtHoursMinutes(total)}</b><span>last 7 days</span></div>
+      <div class="sc-total"><b>${fmtDuration(total)}</b><span>last 7 days</span></div>
       ${deltaHTML}
     </div>
     <div class="sc-plot">
@@ -48,11 +48,11 @@ function renderStudyChart() {
       <div class="sc-cols">
         ${week.map((d, i) => {
           const isToday = i === week.length - 1;
-          const met = goal > 0 && d.min >= goal;
+          const met = goal > 0 && d.sec >= goal * 60;
           const label = d.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-          return `<div class="sc-col${isToday ? ' today' : ''}${met ? ' met' : ''}" title="${label}: ${d.min} min">
-            <div class="sc-val">${d.min ? d.min : ''}</div>
-            <div class="sc-track"><div class="sc-bar" style="height:${d.min ? Math.max(4, (d.min / max) * 100) : 0}%;--i:${i}"></div></div>
+          return `<div class="sc-col${isToday ? ' today' : ''}${met ? ' met' : ''}" title="${label}: ${fmtDuration(d.sec)}">
+            <div class="sc-val">${d.sec ? (d.sec < 60 ? d.sec + 's' : Math.round(d.min)) : ''}</div>
+            <div class="sc-track"><div class="sc-bar" style="height:${d.sec ? Math.max(4, (d.min / max) * 100) : 0}%;--i:${i}"></div></div>
             <div class="sc-day">${isToday ? 'Today' : DOW_SHORT[d.date.getDay()]}</div>
           </div>`;
         }).join('')}

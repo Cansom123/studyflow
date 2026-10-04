@@ -3276,10 +3276,9 @@ async function finishOnboarding() {
   }
   await syncCanvas();
   btn.disabled = false; btn.classList.remove('btn-loading');
-  // Gated to admin accounts for now -- the tour isn't polished enough yet
-  // to put in front of real students signing up.
-  if (ADMIN_EMAILS.includes(USER_EMAIL)) showOnboardTour();
-  else finishOnboardingCelebration(btn);
+  // Every new student gets the short tour after setup; its last slide's
+  // "Let's go" sends them into the app with the finish celebration.
+  showOnboardTour();
 }
 
 // The end of setup is a real moment -- send the student off with confetti

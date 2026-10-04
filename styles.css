@@ -4037,3 +4037,49 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 .priority-why-panel li::before { content: ''; position: absolute; left: 2px; top: 12px; width: 5px; height: 5px; border-radius: 50%; background: var(--text2); opacity: 0.7; }
 .priority-why-panel ul { padding-bottom: 2px; }
 @media (prefers-reduced-motion: reduce) { .priority-why-panel, .priority-why svg { transition: none; } }
+
+/* ===========================
+   STUDY: weekly chart + background sound
+=========================== */
+.study-chart { padding: 18px 18px 14px; }
+.sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.sc-total { display: flex; align-items: baseline; gap: 8px; }
+.sc-total b { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: var(--text1); }
+.sc-total span, .sc-delta { font-size: 12.5px; color: var(--text2); }
+.sc-delta.up { color: var(--green); font-weight: 600; }
+.sc-delta.down { color: var(--amber); font-weight: 600; }
+.sc-plot { position: relative; height: 150px; padding-top: 4px; }
+.sc-cols { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; height: 100%; }
+.sc-col { display: flex; flex-direction: column; align-items: center; min-width: 0; height: 100%; }
+.sc-track { flex: 1; width: 100%; max-width: 44px; display: flex; align-items: flex-end; min-height: 0; }
+.sc-bar {
+  width: 100%; border-radius: 8px 8px 3px 3px; transform-origin: bottom;
+  background: color-mix(in oklch, var(--text1) 22%, transparent);
+  animation: scGrow 0.7s calc(var(--i) * 0.05s) var(--ease-out) backwards; transition: background 0.2s;
+}
+.sc-col.met .sc-bar { background: var(--green); }
+.sc-col.today .sc-bar { background: var(--accent); }
+.sc-col.today.met .sc-bar { background: var(--green); }
+.sc-col:hover .sc-bar { filter: brightness(1.2); }
+.sc-val { height: 16px; font-size: 11px; font-weight: 700; color: var(--text2); font-variant-numeric: tabular-nums; }
+.sc-day { margin-top: 8px; font-size: 11px; font-weight: 600; color: var(--text2); }
+.sc-col.today .sc-day { color: var(--text1); }
+/* Daily goal as a dashed line across the bars. */
+.sc-goal { position: absolute; left: 0; right: 0; z-index: 0; border-top: 1px dashed color-mix(in oklch, var(--text1) 35%, transparent); pointer-events: none; margin-bottom: 38px; }
+.sc-goal span { position: absolute; right: 0; top: -17px; font-size: 10.5px; font-weight: 600; color: var(--text2); background: var(--bg); padding: 0 4px; }
+@keyframes scGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+.ft-sound { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin: 4px 0 10px; }
+.ft-sound-icon { display: flex; color: var(--text2); margin-right: 2px; }
+.ft-sound-icon svg { width: 16px; height: 16px; }
+.ft-sound-btn {
+  padding: 5px 10px; border-radius: 99px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  color: var(--text2); background: var(--surface2); border: 1px solid var(--border2); transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+[data-theme="dark"] .ft-sound-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.09); }
+.ft-sound-btn:hover { color: var(--text1); }
+.ft-sound-btn.active { color: var(--btn-fg); background: var(--btn-bg); border-color: transparent; }
+.ft-sound-vol { width: 100%; max-width: 180px; margin-top: 4px; accent-color: var(--accent); cursor: pointer; }
+#focus-body > .focus-phase-label + .ft-sound, #deepwork-body > .focus-phase-label + .ft-sound { margin-bottom: 14px; }
+@media (max-width: 420px) { .sc-plot { height: 130px; } .sc-cols { gap: 4px; } }
+@media (prefers-reduced-motion: reduce) { .sc-bar { animation: none; } .ft-sound-btn { transition: none; } }

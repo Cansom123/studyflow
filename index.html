@@ -941,7 +941,10 @@
           </div>
         </div>
 
-        <div class="section-label" style="margin-top:0;">Quick start</div>
+        <div class="section-label" style="margin-top:0;">Last 7 days</div>
+        <div class="card study-chart" id="study-chart" style="margin-bottom:22px;"></div>
+
+        <div class="section-label">Quick start</div>
         <div class="card" style="padding:20px;margin-bottom:16px;">
           <input class="settings-input" id="quick-study-title" placeholder="What are you studying?" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){quickStartFocus();}" />
           <button class="settings-btn" onclick="quickStartFocus()">▶ Start focus session</button>
@@ -6996,6 +6999,7 @@ function renderStudyTab() {
   const deepTotalEl = document.getElementById('study-stat-deepwork-total');
   if (deepTotalEl) deepTotalEl.textContent = r.deepWorkTotalFmt;
   renderStudyChain();
+  renderStudyChart();
 
   const todayFill = document.getElementById('study-goal-today-fill');
   const weekFill = document.getElementById('study-goal-week-fill');
@@ -7499,6 +7503,8 @@ function deepWorkGoToCommit() {
     <div class="focus-title">Before you start</div>
     <div class="focus-sub">What are you explicitly avoiding this block, like your phone, tabs, or notifications? Naming it now makes it easier to hold the line.</div>
     <input class="settings-input" id="deepwork-avoiding" placeholder='e.g. "phone in another room, no email"' style="text-align:center;" onkeydown="if(event.key==='Enter'){deepWorkStart();}" />
+    <div class="focus-phase-label">Background sound</div>
+    ${focusSoundPickerHTML()}
     <button class="settings-btn" onclick="deepWorkStart()">Start deep work</button>
   `;
   const el = document.getElementById('deepwork-avoiding');
@@ -7610,6 +7616,7 @@ function renderDeepWorkActive() {
         <button class="ft-btn ft-main" onclick="toggleDeepWorkPause()" aria-label="${deepWorkState.paused ? 'Resume' : 'Pause'}" title="${deepWorkState.paused ? 'Resume' : 'Pause'}">${deepWorkState.paused ? TIMER_ICONS.play : TIMER_ICONS.pause}</button>
         <button class="ft-btn" onclick="deepWorkEndEarly()" aria-label="End session early" title="End session early">${TIMER_ICONS.stop}</button>
       </div>
+      ${focusSoundPickerHTML()}
       <div class="focus-sub ft-hint">Close this to keep the timer running while you use the app.</div>
     </div>
   `;
@@ -8681,5 +8688,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/calendar-extras.js"></script>
 <script src="js/assignments-extras.js"></script>
 <script src="js/priority-extras.js"></script>
+<script src="js/study-extras.js"></script>
 </body>
 </html>

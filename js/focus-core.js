@@ -94,6 +94,7 @@ function focusTimerBodyHTML(focusState) {
         <button class="ft-btn ft-main" onclick="toggleFocusPause()" aria-label="${focusState.paused ? 'Resume' : 'Pause'}" title="${focusState.paused ? 'Resume' : 'Pause'}">${focusState.paused ? TIMER_ICONS.play : TIMER_ICONS.pause}</button>
         <button class="ft-btn" onclick="focusEndEarly()" aria-label="End session" title="End session">${TIMER_ICONS.stop}</button>
       </div>
+      ${typeof focusSoundPickerHTML === 'function' ? focusSoundPickerHTML() : ''}
       <div class="focus-sub ft-hint">Close this to keep the timer running while you use the app.</div>
     </div>
   `;
@@ -115,6 +116,7 @@ function focusSetupHTML(focusState, studyDurations, breakDurations) {
     <div class="focus-duration-row">
       ${breakDurations.map(m => `<button class="focus-duration-btn${m === focusState.breakMin ? ' active' : ''}" onclick="focusPickDuration('break',${m})">${m} min</button>`).join('')}
     </div>
+    ${typeof focusSoundPickerHTML === 'function' ? `<div class="focus-phase-label">Background sound</div>${focusSoundPickerHTML()}` : ''}
     <button class="settings-btn" onclick="focusGoToCommit()">Continue</button>
   `;
 }

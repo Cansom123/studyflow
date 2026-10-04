@@ -4193,3 +4193,5 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 
 /* Settings: quiet-hours time pickers need more room than the number boxes. */
 .num-input[type="time"] { width: 128px; padding-right: 8px; }
+
+.focus-btn-row.stack .help-toggle-btn { align-self: center; justify-content: center; margin-top: 4px; }

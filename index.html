@@ -7191,6 +7191,9 @@ function openFocusTimer(sessionId) {
     nextBreakMin: 5,
     round: 1,
     completedStudyRounds: 0,
+    studiedSecDone: 0,                 // seconds of finished study rounds
+    baseMin: s.minutes_studied || 0,   // what the session row held before this timer
+    loggedMin: 0,                      // minutes this timer has already saved
     phase: 'setup',
     breakActivity: '',
     remainingSec: 0,
@@ -7201,6 +7204,7 @@ function openFocusTimer(sessionId) {
     awaiting: false,
     onComplete: null,
   };
+  adoptSessionForToday(s);
   document.getElementById('focus-overlay').style.display = 'flex';
   renderFocusMiniBar();
   renderFocusSetup();
@@ -7255,6 +7259,7 @@ function focusTick() {
   const remaining = Math.max(0, Math.round((focusState.deadline - Date.now()) / 1000));
   if (remaining === focusState.remainingSec) return; // same displayed second — skip re-render
   focusState.remainingSec = remaining;
+  if (focusState.phase === 'study') focusCheckpoint();
   if (remaining <= 0) {
     clearInterval(focusState.timerHandle);
     focusState.timerHandle = null;
@@ -7274,6 +7279,7 @@ function toggleFocusPause() {
   } else {
     focusState.remainingSec = Math.max(0, Math.round((focusState.deadline - Date.now()) / 1000));
     focusState.paused = true;
+    if (focusState.phase === 'study') focusCheckpoint();
   }
   renderFocusViews();
 }
@@ -7339,7 +7345,9 @@ function renderFocusTimer() {
 
 function onFocusStudyComplete() {
   focusState.completedStudyRounds++;
+  focusState.studiedSecDone += focusState.totalSec;
   focusState.awaiting = true;
+  focusCheckpoint();
   document.title = focusOriginalTitle;
   showReward(`Round ${focusState.round} done - nice focus.`, 'focus');
   // The round is over and there's a choice to make, so surface it even if they
@@ -7387,39 +7395,8 @@ function focusAnotherRound() {
   startFocusCountdown(focusState.studyMin * 60, onFocusStudyComplete);
 }
 
-// Persists actual minutes studied (completed rounds only — an in-progress
-// round doesn't count) regardless of how the session ends, so bailing early
-// still credits real effort instead of losing it.
-async function persistFocusProgress(markComplete) {
-  const id = focusState.sessionId;
-  const minutesEarned = focusState.completedStudyRounds * focusState.studyMin;
-  const s = cachedStudySessions.find(x => x.id === id);
-  if (!s) return;
-  s.minutes_studied = (s.minutes_studied || 0) + minutesEarned;
-  if (markComplete) s.completed = true;
-  renderStudySessionsForDay();
-  renderStudyTab();
-  const patch = { minutes_studied: s.minutes_studied };
-  if (markComplete) patch.completed = true;
-  await sbFetchWithRetry(`/rest/v1/study_sessions?id=eq.${id}`, 'PATCH', patch, true);
-}
-
-async function focusFinish() {
-  const rounds = focusState.completedStudyRounds;
-  await persistFocusProgress(true);
-  closeFocusTimer();
-  if (rounds > 0) bumpStudyStreak();
-  showReward(`Session complete - ${rounds} round${rounds !== 1 ? 's' : ''} of real focus today.`, 'focus');
-}
-
-async function focusEndEarly() {
-  const rounds = focusState ? focusState.completedStudyRounds : 0;
-  if (rounds > 0) {
-    await persistFocusProgress(false);
-    showReward(`Saved - ${rounds} round${rounds !== 1 ? 's' : ''} of focus logged.`, 'focus');
-  }
-  closeFocusTimer();
-}
+/* persistFocusProgress, focusFinish and focusEndEarly now live in js/study-tracking.js:
+   studied time is measured and saved as an absolute total, so ending early still counts. */
 
 // Fully ends the session. Distinct from minimizeFocusTimer(), which keeps it
 // running in the background — the ✕ minimizes, only "End session" stops.
@@ -7489,7 +7466,10 @@ function openDeepWorkTimer(sessionId) {
     minimized: false,
     awaiting: false,
     completedMin: 0,
+    baseMin: s.minutes_studied || 0,   // what the session row held before this timer
+    loggedMin: 0,                      // minutes this timer has already saved
   };
+  adoptSessionForToday(s);
   document.getElementById('deepwork-overlay').style.display = 'flex';
   renderDeepWorkMiniBar();
   renderDeepWorkSetup();
@@ -7552,6 +7532,7 @@ function deepWorkTick() {
   const remaining = Math.max(0, Math.round((deepWorkState.deadline - Date.now()) / 1000));
   if (remaining === deepWorkState.remainingSec) return; // same displayed second — skip re-render
   deepWorkState.remainingSec = remaining;
+  deepCheckpoint();
   if (remaining <= 0) {
     clearInterval(deepWorkState.timerHandle);
     deepWorkState.timerHandle = null;
@@ -7571,6 +7552,7 @@ function toggleDeepWorkPause() {
   } else {
     deepWorkState.remainingSec = Math.max(0, Math.round((deepWorkState.deadline - Date.now()) / 1000));
     deepWorkState.paused = true;
+    deepCheckpoint();
   }
   renderDeepWorkActive();
   renderDeepWorkMiniBar();
@@ -7631,7 +7613,7 @@ function renderDeepWorkActive() {
       ${deepWorkState.avoiding ? `<div class="focus-sub ft-note">Avoiding: "${escapeHtml(deepWorkState.avoiding)}"</div>` : ''}
       <div class="ft-controls">
         <button class="ft-btn ft-main" onclick="toggleDeepWorkPause()" aria-label="${deepWorkState.paused ? 'Resume' : 'Pause'}" title="${deepWorkState.paused ? 'Resume' : 'Pause'}">${deepWorkState.paused ? TIMER_ICONS.play : TIMER_ICONS.pause}</button>
-        <button class="ft-btn" onclick="deepWorkEndEarly()" aria-label="End session early" title="End session early">${TIMER_ICONS.stop}</button>
+        <button class="ft-btn" onclick="deepWorkEndPrompt()" aria-label="Finish early" title="Finish early">${TIMER_ICONS.stop}</button>
       </div>
       ${focusSoundPickerHTML()}
       <div class="focus-sub ft-hint">Close this to keep the timer running while you use the app.</div>
@@ -7642,6 +7624,7 @@ function renderDeepWorkActive() {
 function onDeepWorkComplete() {
   deepWorkState.awaiting = true;
   deepWorkState.completedMin = deepWorkState.blockMin;
+  deepCheckpoint();
   updateDeepWorkTitle();
   showReward(`Deep work block done - ${fmtDeepWorkDuration(deepWorkState.blockMin)}, no breaks.`, 'focus');
   if (deepWorkState.minimized) expandDeepWorkTimer();
@@ -7661,37 +7644,7 @@ function renderDeepWorkComplete() {
   `;
 }
 
-// Same "credit whatever real progress happened" rule as persistFocusProgress —
-// bailing early on a deep work block still logs the minutes actually spent.
-async function persistDeepWorkProgress(minutesEarned, markComplete) {
-  const id = deepWorkState.sessionId;
-  const s = cachedStudySessions.find(x => x.id === id);
-  if (!s) return;
-  s.minutes_studied = (s.minutes_studied || 0) + minutesEarned;
-  if (markComplete) s.completed = true;
-  renderStudySessionsForDay();
-  renderStudyTab();
-  const patch = { minutes_studied: s.minutes_studied };
-  if (markComplete) patch.completed = true;
-  await sbFetchWithRetry(`/rest/v1/study_sessions?id=eq.${id}`, 'PATCH', patch, true);
-}
-
-async function deepWorkFinish() {
-  const minutesEarned = deepWorkState.completedMin || 0;
-  await persistDeepWorkProgress(minutesEarned, true);
-  closeDeepWorkTimer();
-  showReward(`Deep work logged - ${fmtDeepWorkDuration(minutesEarned)}.`, 'focus');
-}
-
-async function deepWorkEndEarly() {
-  if (!deepWorkState) return;
-  const elapsedMin = Math.round((deepWorkState.blockMin * 60 - deepWorkState.remainingSec) / 60);
-  if (elapsedMin > 0) {
-    await persistDeepWorkProgress(elapsedMin, false);
-    showReward(`Saved - ${fmtDeepWorkDuration(elapsedMin)} of deep work logged.`, 'focus');
-  }
-  closeDeepWorkTimer();
-}
+/* persistDeepWorkProgress, deepWorkFinish and deepWorkEndEarly now live in js/study-tracking.js. */
 
 function closeDeepWorkTimer() {
   if (deepWorkState && deepWorkState.timerHandle) clearInterval(deepWorkState.timerHandle);
@@ -8709,5 +8662,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/grades-extras.js"></script>
 <script src="js/syllabus-extras.js"></script>
 <script src="js/settings-extras.js"></script>
+<script src="js/study-tracking.js"></script>
 </body>
 </html>

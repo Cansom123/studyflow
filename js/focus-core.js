@@ -92,7 +92,7 @@ function focusTimerBodyHTML(focusState) {
       ${!isStudy && focusState.breakActivity ? `<div class="focus-sub ft-note">You said you'd: "${escapeHtml(focusState.breakActivity)}"</div>` : ''}
       <div class="ft-controls">
         <button class="ft-btn ft-main" onclick="toggleFocusPause()" aria-label="${focusState.paused ? 'Resume' : 'Pause'}" title="${focusState.paused ? 'Resume' : 'Pause'}">${focusState.paused ? TIMER_ICONS.play : TIMER_ICONS.pause}</button>
-        <button class="ft-btn" onclick="focusEndEarly()" aria-label="End session" title="End session">${TIMER_ICONS.stop}</button>
+        <button class="ft-btn" onclick="focusEndPrompt()" aria-label="Finish early" title="Finish early">${TIMER_ICONS.stop}</button>
       </div>
       ${typeof focusSoundPickerHTML === 'function' ? focusSoundPickerHTML() : ''}
       <div class="focus-sub ft-hint">Close this to keep the timer running while you use the app.</div>

@@ -160,6 +160,24 @@ function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
 
 // Card list for the Goals tab: one card per goal, with its action plan
 // (from buildActionPlan) rendered underneath when it has steps.
+// Progress toward a goal's target grade: a bar filled to the current grade
+// with a marker at the target, and how many points are left. Only for goals
+// that name both a class with a posted grade and a target.
+function goalProgressHTML(r) {
+  if (!r || !r.grade || r.grade.pct == null || r.target == null) return '';
+  const pct = Math.max(0, Math.min(100, r.grade.pct));
+  const target = Math.max(0, Math.min(100, r.target));
+  const met = r.gap === 0;
+  return `<div class="gp${met ? ' met' : ''}">
+    <div class="gp-top"><span class="gp-now">${r.grade.pct.toFixed(1)}%${r.grade.letter ? ` <small>${escapeHtml(r.grade.letter)}</small>` : ''}</span>
+      <span class="gp-state">${met ? 'Goal met' : `${r.gap} points to go`}</span><span class="gp-target">${target}%</span></div>
+    <div class="gp-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Progress toward ${target}%">
+      <div class="gp-fill" style="width:${pct}%"></div>
+      <div class="gp-mark" style="left:${target}%" title="Target ${target}%"></div>
+    </div>
+  </div>`;
+}
+
 function goalsListHTML(userGoals, cachedAssignments, cachedGrades) {
   const colors = ['#d85a30', '#007aff', '#3b6d11', '#854f0b', '#534ab7'];
   return userGoals.map((g, i) => {
@@ -177,6 +195,7 @@ function goalsListHTML(userGoals, cachedAssignments, cachedGrades) {
         <div class="goal-text">${escapeHtml(g)}${linked}</div>
         <button class="goal-remove" onclick="removeGoalMain(${i})">×</button>
       </div>
+      ${goalProgressHTML(r)}
       ${stepsHtml ? `<div class="goal-plan">${stepsHtml}</div>` : ''}
     </div>`;
   }).join('');

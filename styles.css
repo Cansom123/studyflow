@@ -3235,85 +3235,33 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 @media (max-width: 600px) { .eyebrow-date { display: none; } }
 
 /* ===========================
-   GLOBAL SEARCH (top bar)
-   Desktop: a field on the left of the top bar. Phones: a search button that
-   expands the field across the whole top bar. Results drop down as a glass
-   panel, grouped by type.
+   ASSIGNMENTS: search
+   Filters the list in place as you type (title, class, or type badge).
 =========================== */
-.gsearch { position: relative; flex: 0 1 440px; display: flex; align-items: center; }
-.gsearch-icon { position: absolute; left: 12px; width: 16px; height: 16px; color: var(--text2); pointer-events: none; }
-#gsearch-input {
-  width: 100%; height: 36px; padding: 0 38px 0 36px; box-sizing: border-box;
-  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-  color: var(--text1); font: inherit; font-size: 13.5px; outline: none;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.2s;
+.aw-search { position: relative; display: flex; align-items: center; margin-bottom: 6px; }
+.aw-search-icon { position: absolute; left: 14px; width: 17px; height: 17px; color: var(--text2); pointer-events: none; }
+#allwork-search {
+  width: 100%; height: 44px; padding: 0 42px; box-sizing: border-box;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius, 14px);
+  color: var(--text1); font: inherit; font-size: 14.5px; outline: none;
+  transition: border-color 0.15s, box-shadow 0.2s;
 }
-#gsearch-input::placeholder { color: var(--text2); }
-#gsearch-input::-webkit-search-cancel-button { display: none; }
-#gsearch-input:focus { border-color: var(--border2); background: var(--surface); box-shadow: 0 0 0 3px color-mix(in oklch, var(--text1) 8%, transparent); }
-[data-theme="dark"] #gsearch-input { border-color: rgba(255,255,255,0.08); }
-.gsearch-kbd {
-  position: absolute; right: 9px; font: 600 11px/1 inherit; font-family: inherit; color: var(--text2);
-  border: 1px solid var(--border2); border-radius: 5px; padding: 3px 6px; pointer-events: none;
-  transition: opacity 0.15s;
+[data-theme="dark"] #allwork-search { border-color: rgba(255,255,255,0.08); }
+#allwork-search::placeholder { color: var(--text2); }
+#allwork-search::-webkit-search-cancel-button { display: none; }
+#allwork-search:focus { border-color: var(--border2); box-shadow: 0 0 0 3px color-mix(in oklch, var(--text1) 8%, transparent); }
+[data-theme="dark"] #allwork-search:focus { border-color: rgba(255,255,255,0.22); }
+.aw-search-clear {
+  position: absolute; right: 8px; width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: none; color: var(--text2); cursor: pointer;
+  opacity: 0; transform: scale(0.7); pointer-events: none;
+  transition: opacity 0.15s, transform 0.2s var(--ease-spring), color 0.15s;
 }
-.gsearch.open .gsearch-kbd { opacity: 0; }
-
-.gsearch-panel {
-  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 300;
-  max-height: min(460px, 70vh); overflow-y: auto; padding: 6px;
-  background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 14px;
-  box-shadow: var(--glass-shadow), 0 18px 50px rgba(0,0,0,0.35);
-  backdrop-filter: blur(22px) saturate(140%); -webkit-backdrop-filter: blur(22px) saturate(140%);
-  opacity: 0; transform: translateY(-6px) scale(0.98); transform-origin: top center;
-  pointer-events: none; visibility: hidden;
-  transition: opacity 0.16s, transform 0.2s var(--ease-out), visibility 0s 0.2s;
-}
-.gsearch-panel { background: var(--surface); }
-[data-theme="dark"] .gsearch-panel { background: #141414; }
-.gsearch.open .gsearch-panel { opacity: 1; transform: none; pointer-events: auto; visibility: visible; transition: opacity 0.16s, transform 0.2s var(--ease-out); }
-
-.gs-hint { padding: 14px 12px; font-size: 13px; color: var(--text2); }
-.gs-group { padding: 10px 10px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); }
-.gs-item {
-  width: 100%; display: flex; align-items: center; gap: 11px; padding: 8px 10px;
-  background: none; border: none; border-radius: 9px; cursor: pointer; text-align: left; font: inherit; color: var(--text1);
-}
-.gs-item.active { background: var(--surface2); }
-[data-theme="dark"] .gs-item.active { background: rgba(255,255,255,0.07); }
-.gs-icon {
-  flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-  background: var(--surface2); color: var(--text2);
-}
-[data-theme="dark"] .gs-icon { background: rgba(255,255,255,0.06); }
-.gs-item.active .gs-icon { color: var(--text1); }
-.gs-icon svg { width: 15px; height: 15px; }
-.gs-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.gs-title, .gs-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gs-title { font-size: 13.5px; font-weight: 600; }
-.gs-sub { font-size: 12px; color: var(--text2); }
-.gs-item mark { background: none; color: inherit; text-decoration: underline; text-decoration-color: color-mix(in oklch, currentColor 45%, transparent); text-underline-offset: 2px; }
-.gs-item mark { padding: 0; margin: 0; border-radius: 0; box-shadow: none; }
-
-.gsearch-open {
-  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-  background: var(--surface2); border: 1px solid var(--border); color: var(--text1);
-  cursor: pointer; display: none; align-items: center; justify-content: center;
-}
-.gsearch-open svg { width: 15px; height: 15px; }
-
-@media (max-width: 600px) {
-  .gsearch { display: none; }
-  .gsearch-open { display: flex; }
-  .topbar.searching .topbar-logo, .topbar.searching .topbar-right { display: none; }
-  .topbar.searching .gsearch { display: flex; flex: 1; animation: gsExpand 0.22s var(--ease-out); }
-  .topbar.searching { min-height: 54px; }
-  #gsearch-input { font-size: 16px; } /* below 16px iOS zooms the page on focus */
-  .gsearch-kbd { display: none; }
-  .gsearch-panel { max-height: calc(100dvh - 90px); }
-}
-@keyframes gsExpand { from { opacity: 0; transform: scaleX(0.92); transform-origin: right; } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) {
-  .gsearch-panel, .gsearch.open .gsearch-panel { transition: none; transform: none; }
-  .topbar.searching .gsearch { animation: none; }
-}
+.aw-search-clear.show { opacity: 1; transform: none; pointer-events: auto; }
+.aw-search-clear:hover { color: var(--text1); }
+.aw-search-clear svg { width: 13px; height: 13px; }
+.aw-search-count { min-height: 18px; font-size: 12px; color: var(--text2); padding: 2px 4px 10px; }
+@media (max-width: 600px) { #allwork-search { font-size: 16px; } } /* below 16px iOS zooms on focus */
+@media (prefers-reduced-motion: reduce) { .aw-search-clear { transition: none; } }
+[data-theme="dark"] .aw-search-clear { background: rgba(255,255,255,0.1); color: var(--text1); }

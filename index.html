@@ -716,16 +716,7 @@
           <div class="topbar-sub" id="topbar-date"></div>
         </div>
       </div>
-      <div class="gsearch" id="gsearch">
-        <svg class="gsearch-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.3"/><path d="M12.8 12.8l3.7 3.7"/></svg>
-        <input id="gsearch-input" type="search" placeholder="Search assignments, classes, links…" autocomplete="off" spellcheck="false" aria-label="Search StudyFlow" aria-controls="gsearch-panel" />
-        <kbd class="gsearch-kbd">/</kbd>
-        <div class="gsearch-panel" id="gsearch-panel" role="listbox"></div>
-      </div>
       <div class="topbar-right">
-        <button class="gsearch-open" id="gsearch-open" title="Search" aria-label="Search">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.3"/><path d="M12.8 12.8l3.7 3.7"/></svg>
-        </button>
         <button class="mobile-sync-btn" onclick="openSyncOverlay()" title="Sync assignments now">
           <span class="mobile-sync-icon">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -853,6 +844,14 @@
 
       <!-- ALL WORK -->
       <div class="page" id="page-allwork">
+        <div class="aw-search">
+          <svg class="aw-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.3"/><path d="M12.8 12.8l3.7 3.7"/></svg>
+          <input id="allwork-search" type="search" placeholder="Search assignments, classes, or types like quiz…" autocomplete="off" spellcheck="false" aria-label="Search assignments" oninput="onAllWorkSearch()" onkeydown="if(event.key==='Escape'){clearAllWorkSearch();}" />
+          <button class="aw-search-clear" id="allwork-search-clear" onclick="clearAllWorkSearch()" title="Clear search" aria-label="Clear search">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l8 8M14 6l-8 8"/></svg>
+          </button>
+        </div>
+        <div class="aw-search-count" id="allwork-search-count"></div>
         <div id="allwork-loading" class="loading-box">Loading assignments...</div>
         <div id="allwork-empty" class="empty-box" style="display:none;">
           <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4.5c1.8-.9 4-.9 6 0v11c-2-.9-4.2-.9-6 0v-11z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M16 4.5c-1.8-.9-4-.9-6 0v11c2-.9 4.2-.9 6 0v-11z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
@@ -7144,10 +7143,35 @@ function studyChainToday() {
 }
 
 function renderAllWork(assignments) {
-  document.getElementById('allwork-list').style.display = '';
+  const listEl = document.getElementById('allwork-list');
+  listEl.style.display = '';
   const today = new Date(); today.setHours(0,0,0,0);
-  // Pure bucketing/sorting/HTML building lives in js/render-utils.js.
-  document.getElementById('allwork-list').innerHTML = allWorkBodyHTML(assignments, doneSet, today);
+  const query = (document.getElementById('allwork-search')?.value || '').trim();
+  const countEl = document.getElementById('allwork-search-count');
+  document.getElementById('allwork-search-clear')?.classList.toggle('show', !!query);
+  if (!query) {
+    if (countEl) countEl.textContent = '';
+    // Pure bucketing/sorting/HTML building lives in js/render-utils.js.
+    listEl.innerHTML = allWorkBodyHTML(assignments, doneSet, today);
+    return;
+  }
+  const matches = (assignments || []).filter(a => assignmentMatchesQuery(a, query));
+  if (countEl) countEl.textContent = matches.length ? `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}` : '';
+  listEl.innerHTML = matches.length
+    ? allWorkBodyHTML(matches, doneSet, today)
+    : `<div class="empty-box"><div class="empty-title">No assignments match “${escapeHtml(query)}”</div><div class="empty-sub">Try a class name, part of the title, or a type like quiz or essay.</div></div>`;
+}
+
+function onAllWorkSearch() {
+  renderAllWork(cachedAssignments);
+}
+
+function clearAllWorkSearch() {
+  const input = document.getElementById('allwork-search');
+  if (!input) return;
+  input.value = '';
+  renderAllWork(cachedAssignments);
+  input.focus();
 }
 
 /* priorityGradeRiskBoost, computePriorityScores, and priorityAiText now
@@ -7815,6 +7839,5 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/grade-core.js"></script>
 <script src="js/motion-utils.js"></script>
 <script src="js/auth-ui.js"></script>
-<script src="js/global-search.js"></script>
 </body>
 </html>

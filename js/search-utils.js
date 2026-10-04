@@ -145,3 +145,15 @@ function rankedKeywordSearchHTML(raw, q) {
 
   return { html, status: 'found' };
 }
+
+// Assignments-tab search: true when every word of the query appears
+// somewhere in the assignment's title, class name or type badge, so
+// "bio lab" finds "Cell Respiration Lab" in AP Biology and "quiz" finds
+// every quiz. Word order doesn't matter; case doesn't either.
+function assignmentMatchesQuery(a, query) {
+  const words = (query || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const hay = [a.title, cleanCourseName(a.course_name || a.course || ''), a.course_name, getBadge(a.assignment_type, a.title)[1]]
+    .join(' ').toLowerCase();
+  return words.every(w => hay.includes(w));
+}

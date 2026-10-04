@@ -3136,3 +3136,52 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   .auth-brand::after { animation: none; display: none; }
   .auth-page .auth-switch a { transition: none; }
 }
+
+/* ===== LOGIN: refreshed copy, wordmark, divider =========================== */
+
+/* "Welcome back" / "Create your account" etc. -- a real heading on each
+   sign-in screen, with the subtitle beneath it as supporting text. */
+.auth-heading {
+  font-size: 26px; font-weight: 700; color: var(--text1); letter-spacing: -0.5px; line-height: 1.2;
+  margin: 18px 0 6px;
+}
+.auth-page .auth-sub { font-size: 15px; margin-bottom: 26px; }
+@media (max-width: 420px) { .auth-heading { font-size: 23px; } }
+
+/* Wordmark: "Flow" set in Playfair's italic for a bit of motion in the
+   name itself, with slightly tighter tracking. Applies to every logo. */
+.logo-word { letter-spacing: -0.4px; }
+.logo-word em { font-style: italic; font-weight: 700; }
+
+/* Divider: instead of a hard full-height rule, a hairline that fades out
+   toward the top and bottom and draws itself in from the middle on load.
+   The traveling light (.auth-brand::after) still runs along it. */
+@media (min-width: 901px) {
+  .auth-page .auth-brand { border-right-color: transparent; }
+  .auth-brand::before {
+    content: ''; position: absolute; top: 0; bottom: 0; right: -1px; width: 1px; pointer-events: none;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.14) 18%, rgba(255,255,255,0.14) 82%, transparent);
+    transform-origin: center; animation: dividerGrow 1.1s 0.15s var(--ease-out) backwards;
+  }
+}
+@keyframes dividerGrow { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+
+/* Logo proportions. Every wordmark now uses the same ratios, taken from the
+   large brand logo (f = the wordmark's font size): cap 1.41f square, perched
+   0.5f above the text, wordmark indented 0.88f -- so the refined cap (which
+   has a base under its board) rests ON the S at every size instead of
+   covering it on big logos or floating beside it on small ones. */
+.logo-mark { width: 28px; height: 28px; top: -10px; left: 1px; }              /* f = 20 (sidebar) */
+.logo-word { padding-left: 18px; }
+.topbar-logo .logo-mark { width: 25px; height: 25px; top: -9px; left: 1px; }  /* f = 18 */
+.topbar-logo .logo-word { padding-left: 16px; }
+.auth-logo .logo-mark { width: 40px; height: 40px; top: -14px; left: 1px; }   /* f = 28 */
+.auth-logo .logo-word { padding-left: 25px; }
+.auth-brand-logo .logo-mark, .boot-logo .logo-mark { top: -17px; left: 1px; } /* f = 34: 48px cap, 30px indent */
+/* The sidebar logo has its own padding (4px top, 10px left) that shifts the
+   text but not the absolutely positioned cap, so the cap shifts to match. */
+.sidebar-logo .logo-mark { top: -6px; left: 11px; }
+@media (max-width: 420px) {
+  .boot-logo .logo-mark { top: -15px; }                                        /* f = 30: 42px cap, 26px indent */
+}
+@media (prefers-reduced-motion: reduce) { .auth-brand::before { animation: none; } }

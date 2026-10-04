@@ -1255,26 +1255,49 @@
             <div class="tweak-label">Accent color</div>
             <div class="tweak-swatches" id="tweak-swatches-accent">
               <div class="swatch" data-h="white" style="background:#ffffff;box-shadow:inset 0 0 0 1.5px var(--border2);" onclick="resetAccentToWhite(this)" title="White"></div>
-              <div class="swatch" data-h="275" style="background:oklch(0.56 0.2 275);" onclick="setAccent(275,this)" title="Violet"></div>
-              <div class="swatch" data-h="220" style="background:oklch(0.56 0.2 220);" onclick="setAccent(220,this)" title="Blue"></div>
-              <div class="swatch" data-h="170" style="background:oklch(0.52 0.18 170);" onclick="setAccent(170,this)" title="Teal"></div>
+              <div class="swatch" data-h="25" style="background:oklch(0.56 0.2 25);" onclick="setAccent(25,this)" title="Red"></div>
+              <div class="swatch" data-h="45" style="background:oklch(0.6 0.18 45);" onclick="setAccent(45,this)" title="Orange"></div>
+              <div class="swatch" data-h="75" style="background:oklch(0.66 0.16 75);" onclick="setAccent(75,this)" title="Amber"></div>
+              <div class="swatch" data-h="125" style="background:oklch(0.62 0.17 125);" onclick="setAccent(125,this)" title="Lime"></div>
               <div class="swatch" data-h="145" style="background:oklch(0.52 0.16 145);" onclick="setAccent(145,this)" title="Green"></div>
-              <div class="swatch" data-h="30"  style="background:oklch(0.58 0.2 30);"  onclick="setAccent(30,this)"  title="Orange"></div>
+              <div class="swatch" data-h="170" style="background:oklch(0.52 0.18 170);" onclick="setAccent(170,this)" title="Teal"></div>
+              <div class="swatch" data-h="200" style="background:oklch(0.56 0.15 200);" onclick="setAccent(200,this)" title="Cyan"></div>
+              <div class="swatch" data-h="220" style="background:oklch(0.56 0.2 220);" onclick="setAccent(220,this)" title="Blue"></div>
+              <div class="swatch" data-h="255" style="background:oklch(0.5 0.2 255);" onclick="setAccent(255,this)" title="Indigo"></div>
+              <div class="swatch" data-h="275" style="background:oklch(0.56 0.2 275);" onclick="setAccent(275,this)" title="Violet"></div>
+              <div class="swatch" data-h="300" style="background:oklch(0.52 0.2 300);" onclick="setAccent(300,this)" title="Purple"></div>
               <div class="swatch" data-h="330" style="background:oklch(0.55 0.2 330);" onclick="setAccent(330,this)" title="Pink"></div>
+              <div class="swatch" data-h="355" style="background:oklch(0.56 0.2 355);" onclick="setAccent(355,this)" title="Rose"></div>
               <div class="swatch" data-h="gray" style="background:oklch(0.6 0 0);" onclick="setAccentGray(this)" title="Gray"></div>
+              <button type="button" class="swatch swatch-custom" id="accent-custom-swatch" onclick="toggleCustomHue('accent')" title="Custom color" aria-label="Custom accent color" aria-expanded="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></button>
+            </div>
+            <div class="hue-picker" id="accent-hue-picker" hidden>
+              <input type="range" min="0" max="359" step="1" class="hue-slider" id="accent-hue-slider" aria-label="Accent hue" oninput="setAccentCustom(this.value)">
+              <span class="hue-preview" id="accent-hue-preview"></span>
             </div>
           </div>
           <div class="tweak-row">
             <div class="tweak-label">Background color</div>
             <div class="tweak-swatches" id="tweak-swatches-bg">
               <div class="swatch active" data-h="match" style="background:conic-gradient(from 0deg,#a78bfa,#60a5fa,#34d399,#fbbf24,#f472b6,#a78bfa);" onclick="setBgHue('match',this)" title="Match accent"></div>
-              <div class="swatch" data-h="275" style="background:oklch(0.9 0.03 275);" onclick="setBgHue(275,this)" title="Violet"></div>
-              <div class="swatch" data-h="220" style="background:oklch(0.9 0.03 220);" onclick="setBgHue(220,this)" title="Blue"></div>
-              <div class="swatch" data-h="170" style="background:oklch(0.88 0.035 170);" onclick="setBgHue(170,this)" title="Teal"></div>
+              <div class="swatch" data-h="355" style="background:oklch(0.9 0.03 355);" onclick="setBgHue(355,this)" title="Rose"></div>
+              <div class="swatch" data-h="30" style="background:oklch(0.9 0.03 30);" onclick="setBgHue(30,this)" title="Warm"></div>
+              <div class="swatch" data-h="75" style="background:oklch(0.92 0.035 75);" onclick="setBgHue(75,this)" title="Sand"></div>
+              <div class="swatch" data-h="125" style="background:oklch(0.9 0.035 125);" onclick="setBgHue(125,this)" title="Lime"></div>
               <div class="swatch" data-h="145" style="background:oklch(0.88 0.03 145);" onclick="setBgHue(145,this)" title="Green"></div>
-              <div class="swatch" data-h="30"  style="background:oklch(0.9 0.03 30);"  onclick="setBgHue(30,this)"  title="Warm"></div>
+              <div class="swatch" data-h="170" style="background:oklch(0.88 0.035 170);" onclick="setBgHue(170,this)" title="Teal"></div>
+              <div class="swatch" data-h="200" style="background:oklch(0.9 0.03 200);" onclick="setBgHue(200,this)" title="Sky"></div>
+              <div class="swatch" data-h="220" style="background:oklch(0.9 0.03 220);" onclick="setBgHue(220,this)" title="Blue"></div>
+              <div class="swatch" data-h="255" style="background:oklch(0.9 0.03 255);" onclick="setBgHue(255,this)" title="Indigo"></div>
+              <div class="swatch" data-h="275" style="background:oklch(0.9 0.03 275);" onclick="setBgHue(275,this)" title="Violet"></div>
+              <div class="swatch" data-h="300" style="background:oklch(0.9 0.03 300);" onclick="setBgHue(300,this)" title="Lilac"></div>
               <div class="swatch" data-h="330" style="background:oklch(0.9 0.03 330);" onclick="setBgHue(330,this)" title="Pink"></div>
               <div class="swatch" data-h="0"   style="background:oklch(0.92 0 0);" onclick="setBgHue(0,this)" title="Neutral gray"></div>
+              <button type="button" class="swatch swatch-custom" id="bg-custom-swatch" onclick="toggleCustomHue('bg')" title="Custom tint" aria-label="Custom background tint" aria-expanded="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></button>
+            </div>
+            <div class="hue-picker" id="bg-hue-picker" hidden>
+              <input type="range" min="0" max="359" step="1" class="hue-slider" id="bg-hue-slider" aria-label="Background tint hue" oninput="setBgCustom(this.value)">
+              <span class="hue-preview" id="bg-hue-preview"></span>
             </div>
           </div>
           <div class="tweak-row">
@@ -1668,6 +1691,48 @@ function setBgHue(h, el) {
   if (el) el.classList.add('active');
   saveTweak('bgHue', String(h));
 }
+// "Custom" swatch: opens a hue slider for any accent / background tint, not
+// just the presets. The slider starts at the current hue, and the custom
+// swatch itself shows the chosen color once one is picked.
+function toggleCustomHue(kind) {
+  const picker = document.getElementById(kind + '-hue-picker');
+  const swatch = document.getElementById(kind + '-custom-swatch');
+  if (!picker) return;
+  const open = picker.hidden;
+  picker.hidden = !open;
+  swatch?.setAttribute('aria-expanded', String(open));
+  if (open) {
+    const cs = getComputedStyle(document.documentElement);
+    const cur = parseFloat(cs.getPropertyValue(kind === 'accent' ? '--accent-h' : '--bg-h')) || 217;
+    const slider = document.getElementById(kind + '-hue-slider');
+    slider.value = Math.round(cur) % 360;
+    updateHuePreview(kind, slider.value);
+    slider.focus();
+  }
+}
+function updateHuePreview(kind, h) {
+  const prev = document.getElementById(kind + '-hue-preview');
+  const color = kind === 'accent' ? `oklch(0.56 0.2 ${h})` : `oklch(0.9 0.035 ${h})`;
+  if (prev) prev.style.background = color;
+  const swatch = document.getElementById(kind + '-custom-swatch');
+  if (swatch) { swatch.style.setProperty('--custom', color); swatch.classList.add('has-color'); }
+}
+function markCustomActive(kind, h) {
+  document.querySelectorAll(`#tweak-swatches-${kind} .swatch`).forEach(s => s.classList.remove('active'));
+  document.getElementById(kind + '-custom-swatch')?.classList.add('active');
+  updateHuePreview(kind, h);
+}
+function setAccentCustom(h) {
+  h = String(Math.round(Number(h)) % 360);
+  setAccent(h, null);
+  markCustomActive('accent', h);
+}
+function setBgCustom(h) {
+  h = String(Math.round(Number(h)) % 360);
+  setBgHue(h, null);
+  markCustomActive('bg', h);
+}
+
 function setRadius(r, el) {
   document.documentElement.style.setProperty('--card-radius', r + 'px');
   document.querySelectorAll('#tweak-swatches-radius .swatch').forEach(s => s.classList.remove('active'));
@@ -1692,12 +1757,15 @@ function applyTweaks(t) {
   else if (t.accent) document.documentElement.style.setProperty('--accent-h', t.accent);
   if (t.btnAccent) {
     document.documentElement.setAttribute('data-btn-accent', '1');
-    document.querySelector(`#tweak-swatches-accent .swatch[data-h="${t.accent}"]`)?.classList.add('active');
+    const preset = document.querySelector(`#tweak-swatches-accent .swatch[data-h="${t.accent}"]`);
+    // A hue picked with the custom slider has no preset swatch of its own.
+    if (preset) preset.classList.add('active'); else if (t.accent) markCustomActive('accent', t.accent);
   } else {
     document.querySelector('#tweak-swatches-accent .swatch[data-h="white"]')?.classList.add('active');
   }
   if (t.bgHue && t.bgHue !== 'match') document.documentElement.style.setProperty('--bg-h', t.bgHue);
-  document.querySelector(`#tweak-swatches-bg .swatch[data-h="${t.bgHue || 'match'}"]`)?.classList.add('active');
+  const bgPreset = document.querySelector(`#tweak-swatches-bg .swatch[data-h="${t.bgHue || 'match'}"]`);
+  if (bgPreset) bgPreset.classList.add('active'); else markCustomActive('bg', t.bgHue);
   if (t.cardRadius) {
     document.documentElement.style.setProperty('--card-radius', t.cardRadius + 'px');
     document.querySelector(`#tweak-swatches-radius .swatch[data-r="${t.cardRadius}"]`)?.classList.add('active');

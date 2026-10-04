@@ -3509,3 +3509,37 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .priority-goal-tag svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* ===========================
+   COLORS: custom hue + light-mode logo
+=========================== */
+.swatch-custom {
+  padding: 0; display: flex; align-items: center; justify-content: center; color: #fff;
+  background: conic-gradient(from 0deg, oklch(0.62 0.2 0), oklch(0.7 0.17 90), oklch(0.62 0.18 180), oklch(0.56 0.2 270), oklch(0.62 0.2 360));
+  font: inherit;
+}
+.swatch-custom svg { width: 13px; height: 13px; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); }
+/* Once a custom color is chosen the swatch shows it, with the plus kept. */
+.swatch-custom.has-color.active { background: var(--custom); }
+.hue-picker { display: flex; align-items: center; gap: 12px; margin-top: 12px; animation: fadeUp 0.25s var(--ease-out); }
+.hue-picker[hidden] { display: none; }
+.hue-slider {
+  -webkit-appearance: none; appearance: none; flex: 1; height: 14px; border-radius: 7px; cursor: pointer; outline: none;
+  background: linear-gradient(to right, oklch(0.62 0.2 0), oklch(0.66 0.18 45), oklch(0.72 0.16 90), oklch(0.66 0.18 135), oklch(0.62 0.16 180), oklch(0.6 0.16 225), oklch(0.56 0.2 270), oklch(0.58 0.2 315), oklch(0.62 0.2 359));
+}
+.hue-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid rgba(0,0,0,0.25); box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
+.hue-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid rgba(0,0,0,0.25); box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
+.hue-slider:focus-visible { box-shadow: 0 0 0 3px color-mix(in oklch, var(--text1) 20%, transparent); }
+.hue-preview { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); }
+
+/* Light mode: the cap and "Flow" carry the accent color (a soft gradient on
+   "Flow") so the logo matches whatever color the student picked, instead of
+   sitting there as the one plain-black thing on the page. Dark mode and the
+   always-dark sign-in / splash screens keep the white mark. */
+[data-theme="light"] .main-app .logo-mark { color: var(--accent); }
+[data-theme="light"] .main-app .logo-word em {
+  color: var(--accent-text);
+  background: linear-gradient(100deg, var(--accent) 10%, oklch(0.5 0.2 calc(var(--accent-h) + 35)) 90%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  padding-right: 2px; /* italic overhang would otherwise clip the last letter */
+}

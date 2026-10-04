@@ -17,7 +17,7 @@ function studySessionCardHTML(s) {
     ? `${fmtTime12(s.start_time)}${s.end_time ? ' – ' + fmtTime12(s.end_time) : ''}`
     : '';
   const meta = [s.course, timeRange].filter(Boolean).join(' · ');
-  return `<div class="study-session-card${s.completed ? ' done' : ''}">
+  return `<div class="study-session-card${s.completed ? ' done' : ''}" draggable="true" data-session-id="${s.id}" title="Drag onto another day to move it">
     <button class="done-check${s.completed ? ' checked' : ''}" onclick="toggleStudySessionDone('${s.id}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
     <div class="study-session-info">
       <div class="study-session-title">${escapeHtml(s.title)}</div>

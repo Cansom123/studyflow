@@ -4020,7 +4020,8 @@ async function loadAssignments() {
   document.getElementById('allwork-empty').style.display = 'none';
   document.getElementById('priority-empty').style.display = 'none';
 
-  const rawAssignments = Array.isArray(data) ? data : [];
+  const rawAssignments = (Array.isArray(data) ? data : [])
+    .map(a => (a.description ? { ...a, description: cleanSyncedText(a.description) } : a));
   // Hide assignments that are locked AND due more than 30 days ago —
   // those are old enough that no action is realistically possible.
   // Assignments locked within the last 30 days remain visible so students

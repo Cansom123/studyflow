@@ -54,24 +54,35 @@ function isTermConcluded(courseName: string, now: Date): boolean {
   return termEnd < now;
 }
 
+// A tag ends at the first ">" that is NOT inside a quoted attribute. Text
+// pasted into Canvas from chat apps carries attributes like
+// class="[&>*]:pointer-events-auto ..."; cutting at the first ">" leaked the
+// rest of the attribute into the description as visible text.
+const TAG_ATTRS = `(?:[^>"']|"[^"]*"|'[^']*')*`;
+const NAMED_ENTITIES: Record<string, string> = {
+  nbsp: " ", lt: "<", gt: ">", quot: '"', apos: "'", ndash: "\u2013", mdash: "\u2014",
+  lsquo: "\u2018", rsquo: "\u2019", ldquo: "\u201c", rdquo: "\u201d", hellip: "\u2026", bull: "\u2022",
+};
+
 function htmlToText(html: string | null | undefined): string | null {
   if (!html) return null;
   let text = html
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, "\n")
-    .replace(/<li[^>]*>/gi, "• ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, "")
+    .replace(new RegExp(`<br\\b${TAG_ATTRS}>`, "gi"), "\n")
+    .replace(/<\/(p|div|li|h[1-6]|tr)\s*>/gi, "\n")
+    .replace(new RegExp(`<li\\b${TAG_ATTRS}>`, "gi"), "\u2022 ")
+    .replace(new RegExp(`<[a-zA-Z!/]${TAG_ATTRS}>`, "g"), "")
+    .replace(/<\/?[a-zA-Z][^>]*>/g, "") // anything left with an unbalanced quote
+    .replace(/&([a-z]+);/gi, (m, n) => NAMED_ENTITIES[n.toLowerCase()] ?? m)
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&amp;/g, "&") // last, so "&amp;lt;" stays "&lt;" instead of becoming "<"
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   if (!text) return null;
-  if (text.length > 4000) text = text.slice(0, 4000).trim() + "…";
+  if (text.length > 4000) text = text.slice(0, 4000).trim() + "\u2026";
   return text;
 }
 

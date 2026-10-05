@@ -87,6 +87,20 @@ function getBadge(type, title) {
   return ['badge-hw','Homework'];
 }
 
+// Older syncs cut HTML tags short when an attribute contained ">", so some
+// stored descriptions start with leftover tag text such as
+// '*]:pointer-events-auto ... data-turn="assistant">'. Any line that ends in
+// an HTML attribute followed by ">" is that kind of leftover; drop it.
+function cleanSyncedText(text) {
+  if (!text) return text;
+  return text
+    .split('\n')
+    .filter(line => !/[\w:-]+=(?:"[^"]*"|'[^']*')\s*\/?>\s*$/.test(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // Canvas has closed this assignment: it is locked because the window to
 // submit is over (not "not open yet"). Older synced rows have no lock_reason,
 // so a locked assignment whose due date has passed counts as closed.

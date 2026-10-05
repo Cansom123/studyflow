@@ -787,6 +787,7 @@
             <div id="home-upnext"></div>
             <div class="section-label">This week</div>
             <div id="home-thisweek"></div>
+            <div id="closed-suggest-home"></div>
           </div>
           <div class="home-col-side">
             <div class="section-label">Grades at a glance</div>
@@ -904,6 +905,7 @@
           <div class="empty-sub">Sync your Canvas account in Settings.</div>
         </div>
         <div id="allwork-list" style="display:none;"></div>
+        <div id="closed-suggest-allwork"></div>
       </div>
 
       <!-- PRIORITY -->
@@ -927,6 +929,7 @@
           <div class="empty-sub">Sync your Canvas account in Settings first.</div>
         </div>
         <div id="priority-list"></div>
+        <div id="closed-suggest-priority"></div>
       </div>
 
       <!-- STUDY -->
@@ -2226,6 +2229,7 @@ let onboardGoals = [];
 // getSchoolYear, isCurrentYearCourse, isCourseTermConcluded moved to js/term-utils.js (fifteenth module)
 let doneSet = new Set();
 let cachedAssignments = [];
+let cachedClosedAssignments = [];   // incomplete work Canvas has closed (see loadAssignments)
 let cachedGradedAssignments = [];
 let cachedGrades = [];
 let cachedAnnouncements = [];
@@ -3991,9 +3995,14 @@ async function loadAssignments() {
   // Assignments locked within the last 30 days remain visible so students
   // can see recent missed work and follow up with their teacher.
   const lockCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const assignments = rawAssignments.filter(a =>
+  const recent = rawAssignments.filter(a =>
     !(a.is_locked && a.due_date && new Date(a.due_date) < lockCutoff)
   );
+  // Work Canvas has closed can't be done anymore, so it leaves the to-do
+  // lists (and Priority, and the counts) and becomes a coco.1 suggestion
+  // instead: ask the teacher about late credit, review it, or clear it.
+  cachedClosedAssignments = recent.filter(a => isSubmissionClosed(a));
+  const assignments = recent.filter(a => !isSubmissionClosed(a));
   if (!ok || assignments.length === 0) {
     console.warn('[loadAssignments] no data — ok:', ok, 'raw:', rawAssignments.length);
     document.getElementById('due-empty').style.display     = 'block';
@@ -4707,7 +4716,8 @@ function checkDueSoonNotifications(assignments) {
 }
 
 function openAssignmentDetail(id) {
-  const a = cachedAssignments.find(x => String(x.id) === String(id));
+  const a = cachedAssignments.find(x => String(x.id) === String(id))
+    || cachedClosedAssignments.find(x => String(x.id) === String(id));
   if (!a) return;
   document.getElementById('a-detail-title').textContent = a.title;
   // Pure HTML building lives in js/render-utils.js.
@@ -5045,7 +5055,8 @@ function cocoRate(rowId, feature, positive) {
 async function cocoAskPlanning(question) {
   if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
 
-  const ctx = cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions);
+  const ctx = cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, 20,
+    typeof closedSuggestionList === 'function' ? closedSuggestionList() : []);
   const { text, count } = ctx;
   if (count === 0) {
     return { answer: "You don't have any upcoming assignments synced right now - nothing to plan around yet.", confidence: 'none' };
@@ -5065,7 +5076,8 @@ async function cocoAskPlanning(question) {
         '5. Weave any acknowledgment of stress INTO the same sentence as the plan, or keep it to a short clause at the start. Never spend a whole separate sentence just on feelings before getting to the plan.\n' +
         '6. If the student already has study time scheduled, build on it rather than ignoring it.\n' +
         '7. Reply in 2-4 plain sentences, as ONE continuous paragraph with no blank lines. No markdown, no bullet lists, no restating the whole list back verbatim.\n' +
-        '8. If current grades or stated goals are listed below, weigh them: a class where the grade is low, borderline, or below a stated goal deserves more attention than its due date alone would suggest -- even over a closer deadline in a class that\'s already in good shape. Never state a grade percentage that isn\'t literally listed below.',
+        '8. If current grades or stated goals are listed below, weigh them: a class where the grade is low, borderline, or below a stated goal deserves more attention than its due date alone would suggest -- even over a closer deadline in a class that\'s already in good shape. Never state a grade percentage that isn\'t literally listed below.\n' +
+        '9. Anything under "CAN\'T BE SUBMITTED ANYMORE" is closed in Canvas. Never tell the student to finish, submit or prioritize it. Only mention it if asked, and then only to suggest asking the teacher about late credit or reviewing what it covered.',
     },
     { role: 'user', content: `Today is ${todayStr}.\n\nUpcoming work:\n${text}\n\nStudent's question: ${question}` },
   ];
@@ -8687,5 +8699,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/syllabus-extras.js"></script>
 <script src="js/settings-extras.js"></script>
 <script src="js/study-tracking.js"></script>
+<script src="js/closed-extras.js"></script>
 </body>
 </html>

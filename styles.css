@@ -4229,3 +4229,32 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 /* The desktop More tab is only for admins; students already have a tab for
    everything in it. (On phones More stays: the bottom bar has 4 slots.) */
 #tab-more:not(.admin-visible) { display: none; }
+
+/* ===========================
+   CLOSED WORK (coco.1 suggests)
+   Work Canvas has closed, shown as suggestions rather than to-dos.
+=========================== */
+.closed-suggest { margin-top: 18px; padding: 16px; }
+.closed-suggest-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.closed-suggest-count { font-size: 12px; color: var(--text2); font-weight: 600; }
+.closed-suggest-sub { font-size: 13px; color: var(--text2); margin: 8px 0 4px; line-height: 1.45; }
+.closed-item { padding: 12px 0 2px; border-top: 1px solid var(--border); margin-top: 10px; transition: opacity 0.25s, transform 0.25s; }
+.closed-item.closed-leaving { opacity: 0; transform: translateX(14px); }
+.closed-item-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.closed-item-title { border: 0; background: none; padding: 0; font: inherit; font-size: 14.5px; font-weight: 650; color: var(--text1); text-align: left; cursor: pointer; }
+.closed-item-title:hover { text-decoration: underline; text-underline-offset: 3px; }
+.closed-item-tag { flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; padding: 3px 8px; border-radius: 999px; background: color-mix(in oklch, var(--accent) 16%, transparent); color: var(--text1); }
+.closed-item-meta { font-size: 12px; color: var(--text2); margin-top: 3px; }
+.closed-item-text { font-size: 13.5px; color: var(--text1); line-height: 1.5; margin-top: 7px; }
+.closed-item-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 6px; }
+.closed-btn {
+  border: 1px solid var(--border2, var(--border)); background: var(--surface); color: var(--text1);
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 7px 12px; border-radius: 999px; cursor: pointer; text-decoration: none;
+  transition: transform 0.15s, background 0.2s;
+}
+.closed-btn:hover { background: var(--surface2, var(--surface)); }
+.closed-btn:active { transform: scale(0.96); }
+.closed-btn.primary { background: var(--text1); color: var(--bg, #000); border-color: transparent; }
+.closed-see-all { border: 0; background: none; color: var(--text2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px 0 0; }
+.closed-see-all:hover { color: var(--text1); }
+@media (prefers-reduced-motion: reduce) { .closed-item { transition: none; } }

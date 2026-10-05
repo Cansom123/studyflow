@@ -287,7 +287,7 @@ function assignmentDetailBodyHTML(a) {
     ? new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
     : 'No due date';
   const lockedNotice = a.is_locked
-    ? (a.lock_reason === 'unavailable'
+    ? (!isSubmissionClosed(a)
         ? `<div class="due-locked" style="margin-top:6px;">🔒 Not yet available - check Canvas for what's required to unlock it.</div>`
         : `<div class="due-locked" style="margin-top:6px;">🔒 Locked - Canvas is no longer accepting submissions for this assignment.</div>`)
     : '';

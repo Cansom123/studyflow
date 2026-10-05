@@ -87,6 +87,16 @@ function getBadge(type, title) {
   return ['badge-hw','Homework'];
 }
 
+// Canvas has closed this assignment: it is locked because the window to
+// submit is over (not "not open yet"). Older synced rows have no lock_reason,
+// so a locked assignment whose due date has passed counts as closed.
+function isSubmissionClosed(a, now = new Date()) {
+  if (!a || !a.is_locked || a.completed) return false;
+  if (a.lock_reason === 'closed') return true;
+  if (a.lock_reason === 'unavailable') return false;
+  return !!(a.due_date && new Date(a.due_date) < now);
+}
+
 function getDueText(due_date, isOverdue, isLocked, lockReason) {
   // Canvas's "locked" covers two opposite situations: the deadline already
   // passed (closed -- can't submit) and the assignment isn't available yet
@@ -98,7 +108,7 @@ function getDueText(due_date, isOverdue, isLocked, lockReason) {
     const dateStr = due_date
       ? ` (was due ${new Date(due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
       : '';
-    if (lockReason === 'unavailable') {
+    if (lockReason === 'unavailable' || (!lockReason && !(due_date && new Date(due_date) < new Date()))) {
       return `<div class="due-locked">🔒 Not yet available - check Canvas for requirements</div>`;
     }
     return `<div class="due-locked">🔒 Locked${dateStr} - can no longer submit</div>`;

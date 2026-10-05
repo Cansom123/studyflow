@@ -109,7 +109,7 @@ function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cac
 // Structured summary of what's actually due, so coco.1 can't invent assignments,
 // courses, or dates that aren't real. Capped so a heavy course load doesn't
 // blow the small model's context window.
-function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, limit = 20) {
+function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, limit = 20, closedWork = []) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const active = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a))));
   const sorted = [...active].sort((a, b) => {
@@ -149,6 +149,12 @@ function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals
   let text = '';
   if (overdue.length) text += `OVERDUE — ALREADY LATE, the deadline has PASSED (handle these first):\n${overdue.map(fmtLine).join('\n')}\n\n`;
   if (upcoming.length) text += `Upcoming:\n${upcoming.map(fmtLine).join('\n')}`;
+  // Work Canvas has closed. Listed separately and labeled so coco.1 never
+  // tells a student to finish or submit something that can't be turned in.
+  if (closedWork.length) {
+    const closedLine = a => `- ${a.title} (${a.course || 'unknown course'}${a.points_possible ? `, ${a.points_possible} pts` : ''})`;
+    text += `\n\nCAN'T BE SUBMITTED ANYMORE (Canvas closed these; not part of the plan):\n${closedWork.slice(0, 8).map(closedLine).join('\n')}`;
+  }
 
   // Current grades and stated goals -- without this, "which class needs the
   // most attention" was pure guesswork from due dates alone. A class you're

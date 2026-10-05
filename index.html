@@ -1595,8 +1595,10 @@
         <div class="section-label" style="margin-top:20px;">Data</div>
         <div class="card">
           <button class="change-courses-btn" style="margin-bottom:8px;" onclick="openCompletedAssignments()">Completed assignments</button>
-          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAllData()">Export everything (JSON)</button>
-          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAssignmentsCsv()">Assignments &amp; scores for a spreadsheet (CSV)</button>
+          <button class="change-courses-btn" style="margin-bottom:4px;" onclick="exportPdfReport()">Download PDF report</button>
+          <div class="export-note">Grades, assignments, goals and study time on one printable page. Pick <strong>Save as PDF</strong> in the window that opens.</div>
+          <button class="change-courses-btn" style="margin-bottom:4px;" onclick="exportAssignmentsCsv()">Open in Excel / Google Sheets (CSV)</button>
+          <div class="export-note">A spreadsheet file, not a document. Open it with <strong>Excel</strong>. No Excel? Go to <strong>sheets.google.com</strong>, make a blank sheet, then <strong>File &rsaquo; Import &rsaquo; Upload</strong> and pick the file. Opened in Notepad it just looks like text with commas.</div>
           <button class="change-courses-btn" style="margin-bottom:0;" onclick="clearDoneMarks()">Clear "done" checkmarks</button>
         </div>
         <div class="section-label" style="margin-top:20px;">Legal</div>
@@ -2209,7 +2211,7 @@ async function submitProblemReport() {
   }
 }
 
-/* exportAllData now lives in js/settings-extras.js (full export + CSV). */
+/* The PDF report and CSV export live in js/settings-extras.js. */
 
 function clearDoneMarks() {
   doneSet = new Set();

@@ -4263,3 +4263,7 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
    next to ours (js/auth-ui.js). Hide the browser's so there is only one. */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear { display: none; }
+
+/* Small explainer under each export button in Settings > Account. */
+.export-note { font-size: 12px; color: var(--text2); line-height: 1.5; margin: 0 2px 14px; }
+.export-note strong { color: var(--text1); font-weight: 600; }

@@ -2235,6 +2235,8 @@ let cachedAnnouncements = [];
 let cachedMessages = [];
 let cachedFeedback = [];
 let syncInProgress = false;
+let syncPromise = null;          // the sync running right now, shared by every caller
+let onboardingSyncPromise = null; // the first sync, started in the background during onboarding
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 // Kept here (not moved to a module) on purpose: updateLastSyncedLabel() is
@@ -3328,7 +3330,10 @@ async function finishOnboarding() {
       await sbFetchWithRetry('/rest/v1/goals', 'POST', { user_id: USER_ID, goal_text: g });
     }
   }
-  await syncCanvas();
+  // The first sync runs in the background while the student goes through
+  // the tour (it can take a while), so Next always moves the tour along.
+  // They hear how it went once the tour is over (afterOnboardingSync).
+  onboardingSyncPromise = syncCanvas({ silent: true });
   btn.disabled = false; btn.classList.remove('btn-loading');
   // Every new student gets the short tour after setup; its last slide's
   // "Let's go" sends them into the app with the finish celebration.
@@ -3338,13 +3343,31 @@ async function finishOnboarding() {
 // The end of setup is a real moment -- send the student off with confetti
 // from the button they pressed rather than cutting straight to the app.
 function finishOnboardingCelebration(fromEl) {
-  if (prefersReducedMotion() || !fromEl) { showApp(); return; }
+  const enter = async () => { await showApp(); afterOnboardingSync(); };
+  if (prefersReducedMotion() || !fromEl) { enter(); return; }
   const r = fromEl.getBoundingClientRect();
   celebrateUpward(r.left + r.width / 2, r.top, r.width * 0.9, -Math.PI / 2, 1.6, 46);
   const label = fromEl.textContent;
   fromEl.textContent = "You're all set";
   fromEl.classList.add('btn-success');
-  setTimeout(() => { fromEl.classList.remove('btn-success'); fromEl.textContent = label; showApp(); }, 900);
+  setTimeout(() => { fromEl.classList.remove('btn-success'); fromEl.textContent = label; enter(); }, 900);
+}
+
+// After the tour: if the first sync is still going, show its progress
+// (joining it, not starting another); if it already finished, say how it
+// went. Never interrupts the tour itself.
+async function afterOnboardingSync() {
+  const p = onboardingSyncPromise;
+  onboardingSyncPromise = null;
+  if (!p) return;
+  if (syncPromise) { openSyncOverlay({ force: true }); return; }
+  const outcome = await p;
+  if (outcome && outcome.ok) {
+    const n = (cachedAssignments || []).length;
+    showReward(n ? `Synced: ${n} assignment${n !== 1 ? 's' : ''} ready from Canvas.` : 'Synced with Canvas. Nothing due right now.', 'sync', true);
+  } else if (window.showSyncOutcome) {
+    showSyncOutcome(outcome || { ok: false, error: 'Sync did not finish' });
+  }
 }
 
 // One idea per slide, covering the features that actually exist today --
@@ -3906,8 +3929,17 @@ function toggleSettingsCanvasHelp() {
   arrow.classList.toggle('open', !isOpen);
 }
 
-async function syncCanvas({ silent = false } = {}) {
-  if (syncInProgress) return;
+// Only one sync ever runs. Asking again while one is running (the sidebar
+// button during an auto-sync, the welcome screen during the onboarding sync)
+// waits for that same sync and gets its result, instead of starting a
+// second one or failing with "already in progress".
+function syncCanvas(opts = {}) {
+  if (syncPromise) return syncPromise;
+  syncPromise = runCanvasSync(opts).finally(() => { syncPromise = null; });
+  return syncPromise;
+}
+
+async function runCanvasSync({ silent = false } = {}) {
   syncInProgress = true;
   const btn = document.getElementById('sync-btn');
   const statusEl = document.getElementById('sync-status');
@@ -8196,6 +8228,7 @@ function updateLastSyncedLabel() {
 
 async function autoSync() {
   if (userPrefs.autoSyncEnabled === false) return;
+  if (syncPromise) return; // one is already running (e.g. the onboarding sync)
   // Was a bare 'sf_last_sync' key, shared across every account on the same
   // browser -- syncing account A would make account B's auto-sync think IT
   // had just synced too, and skip. Every other stored value in this app is
@@ -8244,7 +8277,7 @@ if (!checkForPasswordRecovery()) routeUser();
   // only exists to stop it firing twice in a row from a quick accidental
   // double-refresh, not to hide it for the rest of the day.
   const wsKey = () => `sf_last_welcome_${typeof USER_ID !== 'undefined' ? USER_ID : ''}`;
-  const DAY_MS = 60 * 1000;
+  const DAY_MS = 24 * 60 * 60 * 1000;
   let wsNewAssignments = [];
 
   function wsPopulateHeader() {
@@ -8353,6 +8386,7 @@ if (!checkForPasswordRecovery()) routeUser();
   // Replaces the existing maybeShowWelcome (assignment wins over hoisted declaration)
   window.maybeShowWelcome = function () {
     if (userPrefs.welcomeToastEnabled === false) return false;
+    if (onboardingSyncPromise) { localStorage.setItem(wsKey(), String(Date.now())); return false; }
     const last = parseInt(localStorage.getItem(wsKey()) || '0', 10);
     if (Date.now() - last < DAY_MS) return false;
     trackEvent('welcome_shown');
@@ -8547,7 +8581,8 @@ if (!checkForPasswordRecovery()) routeUser();
   // "Sync now" clicked from inside the app (sidebar, mobile topbar, Settings) --
   // reuses the same darkened overlay + progress + result sequence as the
   // once-a-day welcome screen, instead of syncing quietly in the background.
-  window.openSyncOverlay = async function () {
+  window.openSyncOverlay = async function (opts = {}) {
+    if (!opts.force && studentIsBusy()) { showSyncBusyPrompt(); return; }
     document.getElementById('ws-overlay').style.display  = 'flex';
     document.getElementById('ws-welcome').style.display  = 'none';
     document.getElementById('ws-result').style.display   = 'none';
@@ -8559,6 +8594,14 @@ if (!checkForPasswordRecovery()) routeUser();
     const outcome = await runSyncWithMessages(msg => { msgEl.textContent = msg; bumpSyncLogo(); });
     await progress.finish();
     if (outcome.ok) showSyncResult(); else showSyncError(outcome.error);
+  };
+
+  // Shows a finished sync's result on the sync screen (used after onboarding,
+  // when the sync ran in the background during the tour).
+  window.showSyncOutcome = function (outcome) {
+    document.getElementById('ws-overlay').style.display = 'flex';
+    wsNewAssignments = [];
+    if (outcome && outcome.ok) showSyncResult(); else showSyncError(outcome && outcome.error);
   };
 
   // State 3: sync failed. A separate screen from the calm "all caught up"
@@ -8699,5 +8742,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/settings-extras.js"></script>
 <script src="js/study-tracking.js"></script>
 <script src="js/closed-extras.js"></script>
+<script src="js/sync-extras.js"></script>
 </body>
 </html>

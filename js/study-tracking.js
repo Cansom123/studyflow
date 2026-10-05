@@ -141,6 +141,34 @@ function flushStudyOnExit() {
 window.addEventListener('pagehide', flushStudyOnExit);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushStudyOnExit(); });
 
+/* ---- The "done" toast, for study time ----------------------------------------- */
+// Same toast as checking off an assignment: today's study total rolls up
+// from what it was before this session, with a bar toward the daily goal.
+// Reaching the goal with this session gets the big version and confetti.
+function celebrateStudyDone(sec, markDone, kind) {
+  if (!(sec > 0) || typeof showDoneToast !== 'function') return;
+  const st = computeStudyStats(cachedStudySessions, userPrefs, new Date());
+  const after = st.todaySec, before = Math.max(0, after - sec);
+  const goalSec = (st.dailyGoal || 0) * 60;
+  const hitGoal = goalSec > 0 && after >= goalSec && before < goalSec;
+  const what = kind === 'deep' ? 'deep work' : 'focus';
+  const message = hitGoal ? "That's today's study goal. Great work."
+    : markDone ? `Session done - ${fmtDuration(sec)} of ${what}.`
+    : `${fmtDuration(sec)} of ${what} logged. Pick it up any time.`;
+  const bar = goalSec > 0
+    ? { from: Math.min(1, before / goalSec), to: Math.min(1, after / goalSec), text: `${fmtDuration(Math.min(after, goalSec))} of ${fmtDuration(goalSec)} goal` }
+    : null;
+  const toast = showDoneToast(fmtDuration(before), fmtDuration(after), null, message, hitGoal, { label: 'studied today', bar, study: true });
+  if (!hitGoal || (typeof prefersReducedMotion === 'function' && prefersReducedMotion())) return;
+  setTimeout(() => {
+    const r = toast.getBoundingClientRect();
+    const midY = r.top + r.height / 2;
+    celebrateUpward(r.left + r.width / 2, midY, r.width * 0.8, -Math.PI / 2, 1.7, 34);
+    celebrateUpward(16, midY, 30, -Math.PI / 2 + 0.55, 1.1, 20);
+    celebrateUpward(window.innerWidth - 16, midY, 30, -Math.PI / 2 - 0.55, 1.1, 20);
+  }, 250);
+}
+
 /* ---- Focus timer: ending ------------------------------------------------------ */
 // Stop button: if any time has been studied, ask how to wrap up (the timer
 // keeps running until a choice is made); if none, just close.
@@ -166,7 +194,8 @@ async function focusEndEarly(markDone) {
   if (sec > 0 || markDone) {
     await applyStudySeconds(sessionId, baseSec || 0, sec, !!markDone);
     if (sec > 0) bumpStudyStreak();
-    showReward(markDone ? `Done - ${fmtDuration(sec)} of focus logged.` : `Saved - ${fmtDuration(sec)} of focus logged.`, 'focus');
+    if (sec > 0) celebrateStudyDone(sec, !!markDone, 'focus');
+    else showReward('Marked done.', 'focus');
   }
 }
 
@@ -178,7 +207,8 @@ async function focusFinish() {
   closeFocusTimer();
   await applyStudySeconds(sessionId, baseSec || 0, sec, true);
   if (sec > 0) bumpStudyStreak();
-  showReward(`Session complete - ${fmtDuration(sec)} of real focus.`, 'focus');
+  if (sec > 0) celebrateStudyDone(sec, true, 'focus');
+  else showReward('Session marked done.', 'focus');
 }
 
 /* ---- Deep work: ending -------------------------------------------------------- */
@@ -204,7 +234,8 @@ async function deepWorkEndEarly(markDone) {
   if (sec > 0 || markDone) {
     await applyStudySeconds(sessionId, baseSec || 0, sec, !!markDone);
     if (sec > 0) bumpStudyStreak();
-    showReward(markDone ? `Done - ${fmtDuration(sec)} of deep work logged.` : `Saved - ${fmtDuration(sec)} of deep work logged.`, 'focus');
+    if (sec > 0) celebrateStudyDone(sec, !!markDone, 'deep');
+    else showReward('Marked done.', 'focus');
   }
 }
 
@@ -215,5 +246,6 @@ async function deepWorkFinish() {
   const { sessionId, baseSec } = deepWorkState;
   closeDeepWorkTimer();
   await applyStudySeconds(sessionId, baseSec || 0, sec, true);
-  showReward(`Deep work logged - ${fmtDuration(sec)}.`, 'focus');
+  if (sec > 0) celebrateStudyDone(sec, true, 'deep');
+  else showReward('Session marked done.', 'focus');
 }

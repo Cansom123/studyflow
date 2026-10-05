@@ -131,3 +131,39 @@ function syncQuietHoursUI() {
     note.textContent = !q.enabled ? '' : same ? 'Pick two different times.' : inQuietHours() ? 'Quiet right now.' : 'Notifications are on right now.';
   }
 }
+
+/* ---- Settings sub-tabs ----------------------------------------------------- */
+// Settings is split into small panels (Display, Canvas, Notifications, Study,
+// Account, Help) so it is never one long wall of options. The last panel
+// opened is remembered on this device.
+const SETTINGS_PANELS = ['display', 'canvas', 'alerts', 'study', 'account', 'help'];
+function showSettingsPanel(id) {
+  if (!SETTINGS_PANELS.includes(id)) id = 'display';
+  document.querySelectorAll('#page-settings .settings-panel').forEach(p => {
+    const on = p.dataset.panel === id;
+    p.hidden = !on;
+    if (on) { p.classList.remove('in'); void p.offsetWidth; p.classList.add('in'); }
+  });
+  document.querySelectorAll('#page-settings .settings-tab').forEach(t => {
+    const on = t.dataset.panel === id;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', String(on));
+    if (on && t.scrollIntoView && t.parentElement.scrollWidth > t.parentElement.clientWidth) {
+      t.parentElement.scrollTo({ left: t.offsetLeft - 16, behavior: 'smooth' });
+    }
+  });
+  try { localStorage.setItem('sf_settings_panel', id); } catch (e) {}
+}
+(function initSettingsPanel() {
+  let id = 'display';
+  try { id = localStorage.getItem('sf_settings_panel') || 'display'; } catch (e) {}
+  showSettingsPanel(id);
+})();
+// Arrow keys move between the sub-tabs, like any tab list.
+document.addEventListener('keydown', e => {
+  const t = e.target.closest && e.target.closest('.settings-tab');
+  if (!t || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
+  const tabs = [...document.querySelectorAll('#page-settings .settings-tab')];
+  const next = tabs[(tabs.indexOf(t) + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+  showSettingsPanel(next.dataset.panel); next.focus(); e.preventDefault();
+});

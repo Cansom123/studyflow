@@ -4195,3 +4195,37 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 .num-input[type="time"] { width: 128px; padding-right: 8px; }
 
 .focus-btn-row.stack .help-toggle-btn { align-self: center; justify-content: center; margin-top: 4px; }
+
+/* Done toast with text values (study time): the new value sets the width. */
+.done-toast.dt-text-odo .dt-old { position: absolute; left: 0; top: 0; }
+.done-toast.dt-text-odo .dt-new { position: relative; }
+
+/* ===========================
+   SETTINGS SUB-TABS
+   One row of glass pills under the header; only the chosen panel shows.
+=========================== */
+.settings-tabs {
+  display: flex; gap: 6px; padding: 5px; margin: 0 0 18px;
+  background: var(--glass-bg, var(--surface)); border: 1px solid var(--glass-border, var(--border));
+  border-radius: 999px; box-shadow: var(--glass-shadow, none);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity;
+}
+.settings-tabs::-webkit-scrollbar { display: none; }
+.settings-tab {
+  flex: 1 0 auto; scroll-snap-align: start;
+  border: 0; background: transparent; color: var(--text2); font: inherit; font-size: 13.5px; font-weight: 600;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.settings-tab:hover { color: var(--text1); background: color-mix(in oklch, var(--text1) 6%, transparent); }
+.settings-tab:active { transform: scale(0.96); }
+.settings-tab.active { background: var(--surface); color: var(--text1); box-shadow: var(--shadow-sm), inset 0 -2px 0 var(--accent); }
+.settings-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.settings-panel.in { animation: settingsPanelIn 0.32s var(--ease-out, ease-out); }
+@keyframes settingsPanelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .settings-panel.in { animation: none; } }
+
+/* The desktop More tab is only for admins; students already have a tab for
+   everything in it. (On phones More stays: the bottom bar has 4 slots.) */
+#tab-more:not(.admin-visible) { display: none; }

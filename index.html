@@ -818,7 +818,7 @@
             <div class="card cal-tip-banner" id="cal-tip-banner" style="display:none;">
               <div class="cal-tip-text"><strong>Did you know?</strong> You can subscribe this calendar to Google or Apple Calendar, so due dates show up right alongside your other events.</div>
               <div class="cal-tip-actions">
-                <button class="cal-tip-btn" onclick="jumpTo('settings');dismissCalTip();">Set it up</button>
+                <button class="cal-tip-btn" onclick="jumpTo('settings');showSettingsPanel('canvas');dismissCalTip();">Set it up</button>
                 <button class="cal-tip-dismiss" onclick="dismissCalTip()" title="Dismiss">✕</button>
               </div>
             </div>
@@ -1284,6 +1284,15 @@
 
       <!-- SETTINGS -->
       <div class="page" id="page-settings">
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <button type="button" class="settings-tab" role="tab" data-panel="display" aria-selected="false" onclick="showSettingsPanel('display')">Display</button>
+          <button type="button" class="settings-tab" role="tab" data-panel="canvas" aria-selected="false" onclick="showSettingsPanel('canvas')">Canvas</button>
+          <button type="button" class="settings-tab" role="tab" data-panel="alerts" aria-selected="false" onclick="showSettingsPanel('alerts')">Notifications</button>
+          <button type="button" class="settings-tab" role="tab" data-panel="study" aria-selected="false" onclick="showSettingsPanel('study')">Study</button>
+          <button type="button" class="settings-tab" role="tab" data-panel="account" aria-selected="false" onclick="showSettingsPanel('account')">Account</button>
+          <button type="button" class="settings-tab" role="tab" data-panel="help" aria-selected="false" onclick="showSettingsPanel('help')">Help</button>
+        </div>
+        <div class="settings-panel" role="tabpanel" data-panel="display" hidden>
         <div class="section-label">Appearance</div>
         <div class="card">
           <div class="tweak-row">
@@ -1367,7 +1376,6 @@
             <label class="switch"><input type="checkbox" id="pref-scroll-animations" checked onchange="onPrefToggle('scrollAnimations', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
           </div>
         </div>
-
         <div class="section-label" style="margin-top:20px;">Layout</div>
         <div class="card">
           <div class="tweak-row">
@@ -1397,73 +1405,9 @@
             <label class="switch"><input type="checkbox" id="pref-show-goals" checked onchange="onPrefToggle('showGoalsTab', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
           </div>
         </div>
-
-        <div class="section-label" style="margin-top:20px;">Notifications</div>
-        <div class="card">
-          <div class="toggle-row">
-            <div><div class="toggle-row-label">Auto-sync Canvas</div><div class="toggle-row-sub">Sync automatically once every 24 hours</div></div>
-            <label class="switch"><input type="checkbox" id="pref-autosync" checked onchange="onPrefToggle('autoSyncEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-row-label">Welcome back message</div><div class="toggle-row-sub">Show the greeting when you open the app</div></div>
-            <label class="switch"><input type="checkbox" id="pref-welcome" checked onchange="onPrefToggle('welcomeToastEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-row-label">Ask box on Syllabus tab</div><div class="toggle-row-sub">Show the "Ask about your syllabi" search</div></div>
-            <label class="switch"><input type="checkbox" id="pref-ask-box" checked onchange="onPrefToggle('showAskBox', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
-          </div>
-          <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <div><div class="toggle-row-label">Email reminders</div><div class="toggle-row-sub">A heads-up email before things are due</div></div>
-              <label class="switch"><input type="checkbox" id="pref-email-reminders" onchange="onPrefToggle('emailRemindersEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
-            </div>
-            <div class="num-input-row" id="reminder-days-row" style="display:none;">
-              <span class="card-sub">Remind me</span>
-              <input type="number" class="num-input" id="pref-reminder-days" min="0" max="7" value="1" onchange="onPrefInput('reminderDaysBefore', parseInt(this.value)||1)">
-              <span class="card-sub">day(s) before it's due</span>
-            </div>
-            <div class="card-sub" style="line-height:1.5;">Reminders go to the email you sign in with.</div>
-          </div>
-          <div class="toggle-row">
-            <div><div class="toggle-row-label">Browser notifications</div><div class="toggle-row-sub">Focus timer alerts and due-soon reminders, right in your browser</div></div>
-            <label class="switch"><input type="checkbox" id="pref-browser-notifications" onchange="onBrowserNotificationsToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
-          </div>
-          <div class="card-sub" style="line-height:1.5;">Only fires while StudyFlow is open in a tab (even in the background) - not when the browser itself is closed.</div>
-          <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <div><div class="toggle-row-label">Quiet hours</div><div class="toggle-row-sub">No browser notifications overnight (email reminders are separate)</div></div>
-              <label class="switch"><input type="checkbox" id="pref-quiet-hours" onchange="onQuietHoursToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
-            </div>
-            <div class="num-input-row" id="quiet-hours-row" style="display:none;">
-              <span class="card-sub">From</span>
-              <input type="time" class="num-input" id="pref-quiet-start" value="22:00" onchange="onQuietHoursTime('start', this.value)" aria-label="Quiet hours start">
-              <span class="card-sub">to</span>
-              <input type="time" class="num-input" id="pref-quiet-end" value="07:00" onchange="onQuietHoursTime('end', this.value)" aria-label="Quiet hours end">
-            </div>
-            <div class="card-sub" id="quiet-hours-note" style="min-height:1em;"></div>
-          </div>
         </div>
-
-        <div class="section-label" style="margin-top:20px;">Academic</div>
-        <div class="card">
-          <div class="tweak-row">
-            <div class="tweak-label">Default final exam weight</div>
-            <div class="num-input-row">
-              <input type="number" class="num-input" id="pref-final-weight" min="1" max="100" value="30" onchange="onPrefInput('defaultFinalWeight', parseInt(this.value)||30)">
-              <span class="card-sub">% - prefills the Goals calculator</span>
-            </div>
-          </div>
-          <div class="tweak-row" style="margin-bottom:0;">
-            <div class="tweak-label">How much goals influence Priority</div>
-            <div class="seg-control" id="tweak-goal-boost">
-              <button class="seg-btn" data-boost="20" onclick="onPrefSeg('priorityGoalBoost',20,this)">Light</button>
-              <button class="seg-btn active" data-boost="50" onclick="onPrefSeg('priorityGoalBoost',50,this)">Normal</button>
-              <button class="seg-btn" data-boost="90" onclick="onPrefSeg('priorityGoalBoost',90,this)">Strong</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="section-label" style="margin-top:20px;">Canvas connection</div>
+        <div class="settings-panel" role="tabpanel" data-panel="canvas" hidden>
+        <div class="section-label">Canvas connection</div>
         <div id="canvas-connected" style="display:none;">
           <div class="card">
             <div class="connected-badge"><span class="connected-dot"></span>Canvas connected</div>
@@ -1521,7 +1465,7 @@
             </div>
           </div>
         </div>
-        <div class="section-label" style="margin-top:20px;">Calendar</div>
+        <div class="section-label" style="margin-top:20px;">Calendar subscription</div>
         <div class="card">
           <div class="card-sub" style="margin-bottom:12px;">Subscribe to your assignments and study time in Google Calendar or Apple Calendar. Updates automatically when you sync Canvas.</div>
           <div id="cal-link-loading" style="color:var(--text2);font-size:13px;">Loading…</div>
@@ -1556,7 +1500,119 @@
             </div>
           </div>
         </div>
-        <div class="section-label" style="margin-top:20px;">Help</div>
+        </div>
+        <div class="settings-panel" role="tabpanel" data-panel="alerts" hidden>
+        <div class="section-label">Notifications</div>
+        <div class="card">
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Auto-sync Canvas</div><div class="toggle-row-sub">Sync automatically once every 24 hours</div></div>
+            <label class="switch"><input type="checkbox" id="pref-autosync" checked onchange="onPrefToggle('autoSyncEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Welcome back message</div><div class="toggle-row-sub">Show the greeting when you open the app</div></div>
+            <label class="switch"><input type="checkbox" id="pref-welcome" checked onchange="onPrefToggle('welcomeToastEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Ask box on Syllabus tab</div><div class="toggle-row-sub">Show the "Ask about your syllabi" search</div></div>
+            <label class="switch"><input type="checkbox" id="pref-ask-box" checked onchange="onPrefToggle('showAskBox', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div><div class="toggle-row-label">Email reminders</div><div class="toggle-row-sub">A heads-up email before things are due</div></div>
+              <label class="switch"><input type="checkbox" id="pref-email-reminders" onchange="onPrefToggle('emailRemindersEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+            </div>
+            <div class="num-input-row" id="reminder-days-row" style="display:none;">
+              <span class="card-sub">Remind me</span>
+              <input type="number" class="num-input" id="pref-reminder-days" min="0" max="7" value="1" onchange="onPrefInput('reminderDaysBefore', parseInt(this.value)||1)">
+              <span class="card-sub">day(s) before it's due</span>
+            </div>
+            <div class="card-sub" style="line-height:1.5;">Reminders go to the email you sign in with.</div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Browser notifications</div><div class="toggle-row-sub">Focus timer alerts and due-soon reminders, right in your browser</div></div>
+            <label class="switch"><input type="checkbox" id="pref-browser-notifications" onchange="onBrowserNotificationsToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div class="card-sub" style="line-height:1.5;">Only fires while StudyFlow is open in a tab (even in the background) - not when the browser itself is closed.</div>
+          <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div><div class="toggle-row-label">Quiet hours</div><div class="toggle-row-sub">No browser notifications overnight (email reminders are separate)</div></div>
+              <label class="switch"><input type="checkbox" id="pref-quiet-hours" onchange="onQuietHoursToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+            </div>
+            <div class="num-input-row" id="quiet-hours-row" style="display:none;">
+              <span class="card-sub">From</span>
+              <input type="time" class="num-input" id="pref-quiet-start" value="22:00" onchange="onQuietHoursTime('start', this.value)" aria-label="Quiet hours start">
+              <span class="card-sub">to</span>
+              <input type="time" class="num-input" id="pref-quiet-end" value="07:00" onchange="onQuietHoursTime('end', this.value)" aria-label="Quiet hours end">
+            </div>
+            <div class="card-sub" id="quiet-hours-note" style="min-height:1em;"></div>
+          </div>
+        </div>
+        </div>
+        <div class="settings-panel" role="tabpanel" data-panel="study" hidden>
+        <div class="section-label">Goals and Priority</div>
+        <div class="card">
+          <div class="tweak-row">
+            <div class="tweak-label">Default final exam weight</div>
+            <div class="num-input-row">
+              <input type="number" class="num-input" id="pref-final-weight" min="1" max="100" value="30" onchange="onPrefInput('defaultFinalWeight', parseInt(this.value)||30)">
+              <span class="card-sub">% - prefills the Goals calculator</span>
+            </div>
+          </div>
+          <div class="tweak-row" style="margin-bottom:0;">
+            <div class="tweak-label">How much goals influence Priority</div>
+            <div class="seg-control" id="tweak-goal-boost">
+              <button class="seg-btn" data-boost="20" onclick="onPrefSeg('priorityGoalBoost',20,this)">Light</button>
+              <button class="seg-btn active" data-boost="50" onclick="onPrefSeg('priorityGoalBoost',50,this)">Normal</button>
+              <button class="seg-btn" data-boost="90" onclick="onPrefSeg('priorityGoalBoost',90,this)">Strong</button>
+            </div>
+          </div>
+        </div>
+        </div>
+        <div class="settings-panel" role="tabpanel" data-panel="account" hidden>
+        <div class="section-label">Account</div>
+        <div class="card">
+          <div class="card-sub" id="account-email" style="margin-bottom:12px;"></div>
+          <button class="disconnect-btn" onclick="signOut()">Sign out</button>
+        </div>
+
+        <div class="card" style="margin-top:8px;">
+          <div class="toggle-row">
+            <div><div class="toggle-row-label">Two-factor authentication</div><div class="toggle-row-sub">Require a code from an authenticator app when signing in</div></div>
+            <label class="switch"><input type="checkbox" id="pref-2fa" onchange="onToggle2FA(this)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+          </div>
+          <div id="mfa-setup-panel" style="display:none;margin-top:14px;">
+            <div id="mfa-qr-host" style="text-align:center;margin-bottom:12px;"></div>
+            <div class="card-sub" style="margin-bottom:10px;text-align:center;">Scan this with Google Authenticator, Authy, or similar, then enter the 6-digit code it shows.</div>
+            <input class="settings-input" id="mfa-setup-code" placeholder="6-digit code" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:4px;" />
+            <button class="settings-btn" onclick="confirmMfaEnroll()">Confirm and enable</button>
+            <div id="mfa-setup-msg" style="margin-top:8px;"></div>
+          </div>
+          <div id="mfa-backup-reveal-panel" style="display:none;margin-top:14px;">
+            <div class="card-sub" style="margin-bottom:10px;">Save these backup codes somewhere safe. Each one signs you in <strong>once</strong> if you lose access to your authenticator app -- they won't be shown again.</div>
+            <div id="mfa-backup-codes-list" style="font-family:ui-monospace,monospace;font-size:14px;line-height:1.9;background:var(--surface2);border-radius:12px;padding:14px;text-align:center;"></div>
+            <button class="settings-btn" style="margin-top:10px;" onclick="downloadBackupCodes()">Download codes</button>
+            <button class="change-courses-btn" style="margin-top:8px;margin-bottom:0;" onclick="dismissBackupCodesReveal()">I've saved these codes</button>
+          </div>
+          <div id="mfa-backup-manage-row" class="toggle-row" style="display:none;margin-top:12px;">
+            <div><div class="toggle-row-label">Backup codes</div><div class="toggle-row-sub" id="mfa-backup-remaining">-</div></div>
+            <button class="change-courses-btn" style="width:auto;margin-bottom:0;white-space:nowrap;" onclick="regenerateBackupCodes()">Regenerate</button>
+          </div>
+        </div>
+        <div class="section-label" style="margin-top:20px;">Data</div>
+        <div class="card">
+          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="openCompletedAssignments()">Completed assignments</button>
+          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAllData()">Export everything (JSON)</button>
+          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAssignmentsCsv()">Assignments &amp; scores for a spreadsheet (CSV)</button>
+          <button class="change-courses-btn" style="margin-bottom:0;" onclick="clearDoneMarks()">Clear "done" checkmarks</button>
+        </div>
+        <div class="section-label" style="margin-top:20px;">Legal</div>
+        <div class="card">
+          <button class="change-courses-btn" onclick="showLegal('privacy')">Privacy Policy</button>
+          <button class="change-courses-btn" style="margin-bottom:0;" onclick="showLegal('terms')">Terms & Conditions</button>
+        </div>
+        </div>
+        <div class="settings-panel" role="tabpanel" data-panel="help" hidden>
+        <div class="section-label">Help</div>
         <div class="card">
           <button class="help-toggle-btn" onclick="toggleCanvasHelp()">
             <span>How to get your Canvas token</span>
@@ -1600,50 +1656,8 @@
           <button class="settings-btn" onclick="submitProblemReport()">Send report</button>
           <div id="report-msg" style="margin-top:10px;"></div>
         </div>
-
-        <div class="section-label" style="margin-top:20px;">Data</div>
-        <div class="card">
-          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="openCompletedAssignments()">Completed assignments</button>
-          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAllData()">Export everything (JSON)</button>
-          <button class="change-courses-btn" style="margin-bottom:8px;" onclick="exportAssignmentsCsv()">Assignments &amp; scores for a spreadsheet (CSV)</button>
-          <button class="change-courses-btn" style="margin-bottom:0;" onclick="clearDoneMarks()">Clear "done" checkmarks</button>
         </div>
 
-        <div class="section-label" style="margin-top:20px;">Account</div>
-        <div class="card">
-          <div class="card-sub" id="account-email" style="margin-bottom:12px;"></div>
-          <button class="disconnect-btn" onclick="signOut()">Sign out</button>
-        </div>
-
-        <div class="card" style="margin-top:8px;">
-          <div class="toggle-row">
-            <div><div class="toggle-row-label">Two-factor authentication</div><div class="toggle-row-sub">Require a code from an authenticator app when signing in</div></div>
-            <label class="switch"><input type="checkbox" id="pref-2fa" onchange="onToggle2FA(this)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
-          </div>
-          <div id="mfa-setup-panel" style="display:none;margin-top:14px;">
-            <div id="mfa-qr-host" style="text-align:center;margin-bottom:12px;"></div>
-            <div class="card-sub" style="margin-bottom:10px;text-align:center;">Scan this with Google Authenticator, Authy, or similar, then enter the 6-digit code it shows.</div>
-            <input class="settings-input" id="mfa-setup-code" placeholder="6-digit code" maxlength="6" inputmode="numeric" style="text-align:center;letter-spacing:4px;" />
-            <button class="settings-btn" onclick="confirmMfaEnroll()">Confirm and enable</button>
-            <div id="mfa-setup-msg" style="margin-top:8px;"></div>
-          </div>
-          <div id="mfa-backup-reveal-panel" style="display:none;margin-top:14px;">
-            <div class="card-sub" style="margin-bottom:10px;">Save these backup codes somewhere safe. Each one signs you in <strong>once</strong> if you lose access to your authenticator app -- they won't be shown again.</div>
-            <div id="mfa-backup-codes-list" style="font-family:ui-monospace,monospace;font-size:14px;line-height:1.9;background:var(--surface2);border-radius:12px;padding:14px;text-align:center;"></div>
-            <button class="settings-btn" style="margin-top:10px;" onclick="downloadBackupCodes()">Download codes</button>
-            <button class="change-courses-btn" style="margin-top:8px;margin-bottom:0;" onclick="dismissBackupCodesReveal()">I've saved these codes</button>
-          </div>
-          <div id="mfa-backup-manage-row" class="toggle-row" style="display:none;margin-top:12px;">
-            <div><div class="toggle-row-label">Backup codes</div><div class="toggle-row-sub" id="mfa-backup-remaining">-</div></div>
-            <button class="change-courses-btn" style="width:auto;margin-bottom:0;white-space:nowrap;" onclick="regenerateBackupCodes()">Regenerate</button>
-          </div>
-        </div>
-
-        <div class="section-label" style="margin-top:20px;">Legal</div>
-        <div class="card">
-          <button class="change-courses-btn" onclick="showLegal('privacy')">Privacy Policy</button>
-          <button class="change-courses-btn" style="margin-bottom:0;" onclick="showLegal('terms')">Terms & Conditions</button>
-        </div>
       </div>
 
     </div>
@@ -2735,6 +2749,7 @@ function maybeShowAdminReports() {
   if (!card) return;
   if (ADMIN_EMAILS.includes(USER_EMAIL)) {
     card.style.display = 'block';
+    document.getElementById('tab-more')?.classList.add('admin-visible');
     loadAdminReportsBadge();
   }
 }
@@ -3273,6 +3288,7 @@ async function saveSelectedCourses() {
     btn.disabled = false; btn.textContent = 'Save classes';
     showApp();
     showPage('settings', document.getElementById('tab-settings') || document.getElementById('nav-settings'));
+    showSettingsPanel('canvas');
     syncCanvas();
   } else {
     btn.disabled = false; btn.textContent = 'Continue';
@@ -5519,6 +5535,7 @@ function hideOverlayAnimated(id, ms = 180) {
 // not just "go to Settings and scroll until you find it".
 function jumpToReportProblem() {
   jumpTo('settings');
+  showSettingsPanel('help');
   const card = document.getElementById('report-message')?.closest('.card');
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   setTimeout(() => document.getElementById('report-message')?.focus(), 300);
@@ -6648,7 +6665,9 @@ function weekDoneProgress() {
 }
 
 let doneToastTimer = null;
-function showDoneToast(prevCount, count, week, message, big) {
+// opts (used by the study toast): label for the rolling number, and a bar
+// { from, to, text } in place of the week's assignment progress.
+function showDoneToast(prevCount, count, week, message, big, opts = {}) {
   document.getElementById('reward-toast')?.classList.remove('reward-toast-show');
   let el = document.getElementById('done-toast');
   if (!el) {
@@ -6667,20 +6686,24 @@ function showDoneToast(prevCount, count, week, message, big) {
   }
   el.querySelector('.dt-old').textContent = prevCount;
   el.querySelector('.dt-new').textContent = count;
-  el.querySelector('.dt-label').textContent = count === 1 ? 'assignment done' : 'assignments done';
+  el.querySelector('.dt-label').textContent = opts.label || (count === 1 ? 'assignment done' : 'assignments done');
   el.querySelector('.dt-msg').textContent = message;
+  // Text values (like "12m 40s") change width, so the new value sets it.
+  el.classList.toggle('dt-text-odo', typeof count === 'string');
+  const barInfo = opts.bar !== undefined ? opts.bar
+    : (week && week.total ? { from: Math.max(0, week.done - 1) / week.total, to: week.done / week.total, text: `${week.done}/${week.total} this week` } : null);
   const weekEl = el.querySelector('.dt-week');
-  weekEl.style.display = week.total ? '' : 'none';
-  if (week.total) {
+  weekEl.style.display = barInfo ? '' : 'none';
+  if (barInfo) {
     const bar = el.querySelector('.dt-bar i');
-    const from = Math.max(0, week.done - 1) / week.total;
     bar.style.transition = 'none';
-    bar.style.transform = `scaleX(${from})`;
+    bar.style.transform = `scaleX(${barInfo.from})`;
     void bar.offsetWidth;
     bar.style.transition = '';
-    requestAnimationFrame(() => { bar.style.transform = `scaleX(${week.done / week.total})`; });
-    el.querySelector('.dt-week-text').textContent = `${week.done}/${week.total} this week`;
+    requestAnimationFrame(() => { bar.style.transform = `scaleX(${barInfo.to})`; });
+    el.querySelector('.dt-week-text').textContent = barInfo.text;
   }
+  el.classList.toggle('dt-study', !!opts.study);
   el.classList.toggle('dt-big', !!big);
   el.classList.remove('show');
   void el.offsetWidth; // restart the entrance + number roll

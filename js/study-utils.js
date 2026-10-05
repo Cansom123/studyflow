@@ -26,7 +26,7 @@ function fmtDuration(totalSec) {
   const sec = Math.max(0, Math.round(totalSec || 0));
   if (sec < 60) return `${sec}s`;
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-  if (h > 0) return `${h}h ${m}m`;
+  if (h > 0) return m ? `${h}h ${m}m` : `${h}h`;
   return s ? `${m}m ${s}s` : `${m}m`;
 }
 

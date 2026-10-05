@@ -110,9 +110,24 @@ function noiseBuffer(ctx, kind) {
       b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898;
       data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
     }
-  } else if (kind === 'drops') {
-    // Sparse random clicks: the patter on top of the rain wash.
-    for (let i = 0; i < len; i++) data[i] = Math.random() < 0.0012 ? (Math.random() * 2 - 1) : 0;
+  } else if (kind === 'patter' || kind === 'patter2' || kind === 'plinks') {
+    // Individual raindrops: each is a tiny pitched "tick" with a fast decay.
+    // patter / patter2 are dense fine drops (one per ear); plinks are the
+    // rarer, bigger, lower drops that hit puddles and leaves.
+    const big = kind === 'plinks';
+    const perSec = big ? 7 : 70;
+    const count = Math.round(perSec * 6);
+    for (let n = 0; n < count; n++) {
+      const start = Math.floor(Math.random() * (len - 2400));
+      const freq = big ? 700 + Math.random() * 1600 : 2200 + Math.random() * 4800;
+      const tau = (big ? 0.004 + Math.random() * 0.006 : 0.0007 + Math.random() * 0.0016) * ctx.sampleRate;
+      const amp = Math.pow(Math.random(), big ? 1.2 : 2.2) * (big ? 0.9 : 1);
+      const span = Math.min(Math.floor(tau * 6), len - start);
+      for (let k = 0; k < span; k++) {
+        const env = Math.exp(-k / tau);
+        data[start + k] += amp * env * (0.7 * Math.sin(2 * Math.PI * freq * k / ctx.sampleRate) + 0.5 * (Math.random() * 2 - 1));
+      }
+    }
   } else {
     for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
   }
@@ -140,16 +155,29 @@ function buildFocusSound(ctx, id) {
     o.connect(g); g.connect(target); sources.push(o); nodes.push(g); // started with the rest below
   };
   if (id === 'rain') {
-    const wash = loopSource(ctx, 'pink');
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.35;
-    const washGain = ctx.createGain(); washGain.gain.value = 0.9;
-    wash.connect(bp); bp.connect(washGain); washGain.connect(out);
-    const drops = loopSource(ctx, 'drops');
-    const dbp = ctx.createBiquadFilter(); dbp.type = 'bandpass'; dbp.frequency.value = 4200; dbp.Q.value = 1.2;
-    const dropGain = ctx.createGain(); dropGain.gain.value = 0.55;
-    drops.connect(dbp); dbp.connect(dropGain); dropGain.connect(out);
-    lfo(0.17, 0.08, washGain.gain);
-    sources.push(wash, drops); nodes.push(bp, washGain, dbp, dropGain);
+    // Body: a soft, low-passed wash like rain on a roof far away.
+    const body = loopSource(ctx, 'pink');
+    const bodyLp = ctx.createBiquadFilter(); bodyLp.type = 'lowpass'; bodyLp.frequency.value = 1400; bodyLp.Q.value = 0.4;
+    const bodyGain = ctx.createGain(); bodyGain.gain.value = 0.55;
+    body.connect(bodyLp); bodyLp.connect(bodyGain); bodyGain.connect(out);
+    // Hiss: the airy sizzle of thousands of tiny drops, kept gentle.
+    const hiss = loopSource(ctx, 'white');
+    const hissHp = ctx.createBiquadFilter(); hissHp.type = 'highpass'; hissHp.frequency.value = 3500;
+    const hissLp = ctx.createBiquadFilter(); hissLp.type = 'lowpass'; hissLp.frequency.value = 9000;
+    const hissGain = ctx.createGain(); hissGain.gain.value = 0.16;
+    hiss.connect(hissHp); hissHp.connect(hissLp); hissLp.connect(hissGain); hissGain.connect(out);
+    // Drops: fine patter in each ear, plus the occasional big plink.
+    const layers = [['patter', -0.6, 0.55], ['patter2', 0.6, 0.55], ['plinks', 0.15, 0.45]];
+    layers.forEach(([kind, pan, level]) => {
+      const src = loopSource(ctx, kind);
+      src.playbackRate.value = 0.97 + Math.random() * 0.06;   // so the loops never line up
+      const g = ctx.createGain(); g.gain.value = level;
+      if (ctx.createStereoPanner) { const pn = ctx.createStereoPanner(); pn.pan.value = pan; src.connect(g); g.connect(pn); pn.connect(out); nodes.push(pn); }
+      else { src.connect(g); g.connect(out); }
+      sources.push(src); nodes.push(g);
+    });
+    lfo(0.13, 0.12, bodyGain.gain);   // the rain swells and eases a little
+    sources.push(body, hiss); nodes.push(bodyLp, bodyGain, hissHp, hissLp, hissGain);
   } else if (id === 'ocean') {
     const src = loopSource(ctx, 'brown');
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
@@ -162,8 +190,13 @@ function buildFocusSound(ctx, id) {
     src.connect(out); sources.push(src);
   } else {
     const src = loopSource(ctx, 'white');
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 9000; // take the harsh edge off
-    src.connect(lp); lp.connect(out); sources.push(src); nodes.push(lp);
+    // Softer white noise: rolled off earlier, a touch of the harsh top
+    // trimmed, and quieter overall.
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4800; lp.Q.value = 0.4;
+    const shelf = ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 2500; shelf.gain.value = -6;
+    const soft = ctx.createGain(); soft.gain.value = 0.55;
+    src.connect(lp); lp.connect(shelf); shelf.connect(soft); soft.connect(out);
+    sources.push(src); nodes.push(lp, shelf, soft);
   }
   sources.forEach(s => s.start());
   return () => {

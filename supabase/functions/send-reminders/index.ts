@@ -42,6 +42,15 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
+  // Off switch: email reminders are paused until StudyFlow has its own
+  // sending domain (without one the provider caps how many can be sent).
+  // Set the EMAIL_REMINDERS_ENABLED secret to "true" to turn them back on.
+  if (Deno.env.get("EMAIL_REMINDERS_ENABLED") !== "true") {
+    return new Response(JSON.stringify({ success: true, sent: 0, reason: "email reminders paused" }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

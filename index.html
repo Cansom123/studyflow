@@ -1519,18 +1519,9 @@
             <div><div class="toggle-row-label">Ask box on Syllabus tab</div><div class="toggle-row-sub">Show the "Ask about your syllabi" search</div></div>
             <label class="switch"><input type="checkbox" id="pref-ask-box" checked onchange="onPrefToggle('showAskBox', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
           </div>
-          <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-              <div><div class="toggle-row-label">Email reminders</div><div class="toggle-row-sub">A heads-up email before things are due</div></div>
-              <label class="switch"><input type="checkbox" id="pref-email-reminders" onchange="onPrefToggle('emailRemindersEnabled', this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
-            </div>
-            <div class="num-input-row" id="reminder-days-row" style="display:none;">
-              <span class="card-sub">Remind me</span>
-              <input type="number" class="num-input" id="pref-reminder-days" min="0" max="7" value="1" onchange="onPrefInput('reminderDaysBefore', parseInt(this.value)||1)">
-              <span class="card-sub">day(s) before it's due</span>
-            </div>
-            <div class="card-sub" style="line-height:1.5;">Reminders go to the email you sign in with.</div>
-          </div>
+          <!-- Email reminders are switched off for now: without our own sending
+               domain the email provider caps how many can go out. The toggle comes
+               back here (and EMAIL_REMINDERS_ENABLED in send-reminders) once it has one. -->
           <div class="toggle-row">
             <div><div class="toggle-row-label">Browser notifications</div><div class="toggle-row-sub">Focus timer alerts and due-soon reminders, right in your browser</div></div>
             <label class="switch"><input type="checkbox" id="pref-browser-notifications" onchange="onBrowserNotificationsToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
@@ -1538,7 +1529,7 @@
           <div class="card-sub" style="line-height:1.5;">Only fires while StudyFlow is open in a tab (even in the background) - not when the browser itself is closed.</div>
           <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
-              <div><div class="toggle-row-label">Quiet hours</div><div class="toggle-row-sub">No browser notifications overnight (email reminders are separate)</div></div>
+              <div><div class="toggle-row-label">Quiet hours</div><div class="toggle-row-sub">No browser notifications overnight</div></div>
               <label class="switch"><input type="checkbox" id="pref-quiet-hours" onchange="onQuietHoursToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
             </div>
             <div class="num-input-row" id="quiet-hours-row" style="display:none;">
@@ -1923,6 +1914,12 @@ async function loadUserPrefs() {
   const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=prefs`);
   const raw = (ok && data && data[0] && data[0].prefs) || {};
   userPrefs = { ...DEFAULT_PREFS, ...raw };
+  // Email reminders are off for now (see Settings > Notifications). Anyone
+  // who had opted in is switched off so the server stops emailing them.
+  if (userPrefs.emailRemindersEnabled) {
+    userPrefs.emailRemindersEnabled = false;
+    saveUserPrefs();
+  }
   applyUserPrefsToUI();
 }
 
@@ -2414,7 +2411,7 @@ const LEGAL_DOCS = {
       <ul>
         <li><strong>Supabase</strong> -- hosts our database and handles authentication. Your data is scoped so only your account can read it.</li>
         <li><strong>Canvas LMS (your school's instance)</strong> -- we read data from Canvas on your behalf using the token you provide; we don't write anything back to Canvas.</li>
-        <li><strong>Resend</strong> -- sends reminder emails, but only if you turn that feature on in Settings.</li>
+        <li><strong>Resend</strong> -- sends reminder emails, but only if you turn that feature on in Settings (email reminders are currently paused).</li>
       </ul>
 
       <h2>Your choices</h2>

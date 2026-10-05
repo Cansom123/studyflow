@@ -4258,3 +4258,8 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 .closed-see-all { border: 0; background: none; color: var(--text2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px 0 0; }
 .closed-see-all:hover { color: var(--text1); }
 @media (prefers-reduced-motion: reduce) { .closed-item { transition: none; } }
+
+/* Edge/IE draw their own "reveal password" eye inside password fields,
+   next to ours (js/auth-ui.js). Hide the browser's so there is only one. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear { display: none; }

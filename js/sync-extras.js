@@ -70,3 +70,67 @@ function showSyncBusyPrompt() {
   document.body.appendChild(el);
   requestAnimationFrame(() => { el.classList.add('show'); el.querySelector('[data-act="bg"]').focus(); });
 }
+
+/* ---- "Updates" after a background sync --------------------------------- */
+// A sync the student didn't watch on the sync screen (Sync in the
+// background, or the daily auto-sync) ends with a small Updates card: the
+// new assignments it found, each one tappable, then it goes away by itself.
+// The timer bar pauses while the pointer or focus is on the card. Nothing
+// new gets the usual short "all caught up" message instead.
+const SYNC_UPDATES_SHOW = 3;
+const SYNC_UPDATES_MS = 9000;
+
+function closeSyncUpdates() {
+  const el = document.getElementById('sync-updates');
+  if (!el) return;
+  el.classList.remove('show');
+  setTimeout(() => el.remove(), 300);
+}
+
+function showSyncUpdates(newWork) {
+  const list = (newWork || []).slice().sort((a, b) =>
+    new Date(a.due_date || '9999-01-01') - new Date(b.due_date || '9999-01-01'));
+  if (!list.length) {
+    showReward(SYNC_REWARD_MESSAGES[Math.floor(Math.random() * SYNC_REWARD_MESSAGES.length)], 'sync', true);
+    return;
+  }
+  document.getElementById('sync-updates')?.remove();
+  const n = list.length;
+  const due = a => a.due_date
+    ? 'Due ' + new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    : 'No due date';
+  const el = document.createElement('div');
+  el.id = 'sync-updates';
+  el.className = 'sync-updates';
+  el.setAttribute('role', 'status');
+  el.style.setProperty('--su-ms', SYNC_UPDATES_MS + 'ms');
+  el.innerHTML = `
+    <div class="su-head">
+      <span class="su-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10a6 6 0 0 1 10.24-4.24L16 7.5"/><path d="M16 4v3.5h-3.5"/><path d="M16 10a6 6 0 0 1-10.24 4.24L4 12.5"/><path d="M4 16v-3.5h3.5"/></svg></span>
+      <div>
+        <div class="su-title">Updates</div>
+        <div class="su-sub">${n} new assignment${n !== 1 ? 's' : ''} from Canvas</div>
+      </div>
+      <button type="button" class="su-close" aria-label="Close">&times;</button>
+    </div>
+    <ul class="su-list">
+      ${list.slice(0, SYNC_UPDATES_SHOW).map(a => `
+        <li><button type="button" class="su-item" data-id="${escapeHtml(String(a.id))}">
+          <span class="su-item-title">${escapeHtml(a.title || 'Untitled')}</span>
+          <span class="su-item-meta">${escapeHtml(cleanCourseName(a.course || ''))} · ${due(a)}</span>
+        </button></li>`).join('')}
+    </ul>
+    ${n > SYNC_UPDATES_SHOW ? `<button type="button" class="su-more">See all ${n} new ›</button>` : ''}
+    <div class="su-timer" aria-hidden="true"><i></i></div>`;
+  el.addEventListener('click', e => {
+    if (e.target.closest('.su-close')) { closeSyncUpdates(); return; }
+    const item = e.target.closest('.su-item');
+    if (item) { closeSyncUpdates(); openAssignmentDetail(item.dataset.id); return; }
+    if (e.target.closest('.su-more')) { closeSyncUpdates(); if (window.wsViewList) wsViewList(list); }
+  });
+  // Goes away when the timer bar runs out (the bar pauses on hover/focus).
+  el.querySelector('.su-timer i').addEventListener('animationend', closeSyncUpdates);
+  if (typeof prefersReducedMotion === 'function' && prefersReducedMotion()) setTimeout(closeSyncUpdates, SYNC_UPDATES_MS);
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+}

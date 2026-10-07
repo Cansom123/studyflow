@@ -4054,6 +4054,8 @@ function syncCanvas(opts = {}) {
 
 async function runCanvasSync({ silent = false } = {}) {
   syncInProgress = true;
+  const keyOf = a => `${a.title}||${a.course}`;
+  const beforeKeys = new Set((cachedAssignments || []).map(keyOf));
   const btn = document.getElementById('sync-btn');
   const statusEl = document.getElementById('sync-status');
   const wsBtn = document.getElementById('ws-sync-btn');
@@ -4111,7 +4113,12 @@ async function runCanvasSync({ silent = false } = {}) {
     // the plain Settings button) -- skipped when the caller already has its
     // own richer completion screen showing (the sync overlay), where this
     // would just be a redundant second popup stacked under it.
-    if (!silent) showReward(SYNC_REWARD_MESSAGES[Math.floor(Math.random() * SYNC_REWARD_MESSAGES.length)], 'sync', true);
+    if (!silent && document.getElementById('ws-overlay')?.style.display !== 'flex') {
+      // A sync the student didn't watch on the sync screen: show what's new.
+      const newWork = (cachedAssignments || []).filter(a => !beforeKeys.has(keyOf(a)) && !a.completed);
+      if (typeof showSyncUpdates === 'function') showSyncUpdates(newWork);
+      else showReward(SYNC_REWARD_MESSAGES[Math.floor(Math.random() * SYNC_REWARD_MESSAGES.length)], 'sync', true);
+    }
     return { ok: true };
   } catch(err) {
     syncInProgress = false;
@@ -8813,6 +8820,11 @@ if (!checkForPasswordRecovery()) routeUser();
     overlay.classList.remove('ws-anim-in');
     void overlay.offsetWidth;
     overlay.classList.add('ws-anim-in');
+  };
+
+  window.wsViewList = function (list) {
+    wsNewAssignments = list || [];
+    window.wsViewNew();
   };
 
   window.wsCloseList = function () {

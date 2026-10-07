@@ -534,7 +534,7 @@ body.auth-mode .auth-form-col > .auth-screen {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
 }
-.topbar-right { display: flex; align-items: center; gap: 6px; }
+.topbar-right { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .topbar-sub { font-size: 10.5px; color: var(--text2); margin-top: 1.5px; letter-spacing: 0.01em; }
 
 /* ===== SIDEBAR (laptop/desktop) ===== */
@@ -4346,3 +4346,40 @@ input[type="password"]::-ms-clear { display: none; }
 .qr-actions .sync-btn, .qr-actions .settings-btn { width: auto; margin: 0; padding-left: 18px; padding-right: 18px; }
 .quick-report-card.sent .qr-icon { background: color-mix(in oklch, var(--green, #2ea043) 18%, transparent); color: var(--green, #2ea043); }
 @media (prefers-reduced-motion: reduce) { .quick-report-backdrop, .quick-report-card { transition: none; } }
+
+/* ===========================
+   UPDATES CARD (background sync, js/sync-extras.js)
+   What a background sync found, shown for a few seconds then gone.
+=========================== */
+.sync-updates {
+  position: fixed; right: 18px; bottom: 18px; z-index: 2500; width: min(340px, calc(100vw - 24px));
+  padding: 14px 14px 12px; border-radius: 18px;
+  background: var(--glass-bg, var(--surface)); border: 1px solid var(--glass-border, var(--border));
+  box-shadow: var(--glass-shadow, 0 18px 40px rgba(0,0,0,0.3));
+  -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
+  opacity: 0; transform: translateY(14px) scale(0.98); pointer-events: none;
+  transition: opacity 0.25s, transform 0.35s var(--ease-spring, ease-out);
+}
+.sync-updates.show { opacity: 1; transform: none; pointer-events: auto; }
+[data-theme="dark"] .sync-updates { background: rgba(20,20,20,0.92); }
+.su-head { display: flex; align-items: center; gap: 10px; }
+.su-icon { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: color-mix(in oklch, var(--accent) 18%, transparent); color: var(--accent); }
+.su-icon svg { width: 16px; height: 16px; }
+.su-title { font-size: 14.5px; font-weight: 700; color: var(--text1); }
+.su-sub { font-size: 12px; color: var(--text2); }
+.su-close { margin-left: auto; border: 0; background: none; color: var(--text2); font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; }
+.su-close:hover { color: var(--text1); }
+.su-list { list-style: none; margin: 10px 0 0; padding: 0; }
+.su-item { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; border: 0; background: none; padding: 7px 8px; border-radius: 10px; cursor: pointer; font: inherit; color: var(--text1); }
+.su-item:hover { background: color-mix(in oklch, var(--text1) 6%, transparent); }
+.su-item-title { font-size: 13.5px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.su-item-meta { font-size: 11.5px; color: var(--text2); }
+.su-more { border: 0; background: none; color: var(--text2); font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 8px 0; cursor: pointer; }
+.su-more:hover { color: var(--text1); }
+.su-timer { height: 2px; margin-top: 10px; border-radius: 2px; background: color-mix(in oklch, var(--text1) 10%, transparent); overflow: hidden; }
+.su-timer i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; }
+.sync-updates.show .su-timer i { animation: suTimer var(--su-ms, 8000ms) linear forwards; }
+.sync-updates:hover .su-timer i, .sync-updates:focus-within .su-timer i { animation-play-state: paused; }
+@keyframes suTimer { to { transform: scaleX(0); } }
+@media (max-width: 600px) { .sync-updates { right: 12px; left: 12px; width: auto; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
+@media (prefers-reduced-motion: reduce) { .sync-updates { transition: opacity 0.2s; transform: none; } .sync-updates.show .su-timer i { animation: none; } }

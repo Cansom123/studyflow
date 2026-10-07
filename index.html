@@ -3180,9 +3180,24 @@ async function handleSignup() {
   msgEl.innerHTML = '<div class="msg-success">Account created! Check your email to confirm, then sign in.</div>';
 }
 
+// Students paste whatever is in their browser's address bar
+// ("https://school.instructure.com/courses/123?login_success=1") or a token
+// that picked up spaces or a line break when copied. Keep only the host
+// name, and only the token's own characters.
+function normalizeCanvasUrl(raw) {
+  let u = String(raw || '').trim().toLowerCase().replace(/\s+/g, '');
+  u = u.replace(/^[a-z]+:\/\//, '');      // https://
+  u = u.split(/[/?#]/)[0];                 // path, query, hash
+  u = u.replace(/^www\./, '').replace(/\.$/, '');
+  return u;
+}
+function normalizeCanvasToken(raw) {
+  return String(raw || '').replace(/^\s*bearer\s+/i, '').replace(/\s+/g, '');
+}
+
 async function saveCanvasOnboard() {
-  const url = document.getElementById('ob-canvas-url').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
-  const token = document.getElementById('ob-canvas-token').value.trim();
+  const url = normalizeCanvasUrl(document.getElementById('ob-canvas-url').value);
+  const token = normalizeCanvasToken(document.getElementById('ob-canvas-token').value);
   const msgEl = document.getElementById('onboard-canvas-msg');
   msgEl.innerHTML = '';
   if (!url) { msgEl.innerHTML = '<div class="msg-error">Please enter your Canvas URL (e.g. yourschool.instructure.com).</div>'; return; }
@@ -3687,8 +3702,8 @@ async function loadCanvasSettings() {
 }
 
 async function saveCanvasSettings() {
-  const url = document.getElementById('canvas-url').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
-  const token = document.getElementById('canvas-token').value.trim();
+  const url = normalizeCanvasUrl(document.getElementById('canvas-url').value);
+  const token = normalizeCanvasToken(document.getElementById('canvas-token').value);
   const msgEl = document.getElementById('canvas-msg');
   if (!url || !token) { msgEl.innerHTML = '<div class="msg-error">Please enter both fields.</div>'; return; }
   msgEl.innerHTML = '<div style="color:var(--text2);font-size:13px;">Validating…</div>';

@@ -614,13 +614,27 @@ body.auth-mode .auth-form-col > .auth-screen {
   #allwork-list > .section-label { grid-column: 1 / -1; }
 }
 
-.theme-btn {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: var(--surface2); border: 1px solid var(--border);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; transition: background 0.15s;
+/* Round icon buttons in the top bar (bug report, theme). */
+.topbar-icon-btn {
+  position: relative; width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.theme-btn:hover { background: var(--btn-secondary-bg); }
+.topbar-icon-btn:hover { background: var(--btn-secondary-bg); color: var(--text1); }
+.topbar-icon-btn:active { transform: scale(0.92); }
+.topbar-icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.topbar-icon-btn svg { width: 16px; height: 16px; }
+.bug-btn:hover { color: var(--red); }
+/* Theme: moon in light mode (tap for dark), sun in dark mode (tap for light).
+   The icon turning swaps in place rather than blinking. */
+.theme-btn .ti { position: absolute; transition: opacity 0.25s, transform 0.4s var(--ease-spring, ease-out); }
+.theme-btn .ti-sun { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+[data-theme="dark"] .theme-btn .ti-moon { opacity: 0; transform: rotate(90deg) scale(0.6); }
+[data-theme="dark"] .theme-btn .ti-sun { opacity: 1; transform: none; }
+.theme-btn:hover .ti-sun { color: oklch(0.8 0.15 85); }
+.theme-btn:hover .ti-moon { color: oklch(0.6 0.15 270); }
+@media (prefers-reduced-motion: reduce) { .theme-btn .ti { transition: opacity 0.15s; } }
 .signout-btn {
   font-size: 12.5px; color: var(--text2); cursor: pointer;
   background: none; border: none; font-weight: 500; font-family: inherit;
@@ -4302,3 +4316,39 @@ input[type="password"]::-ms-clear { display: none; }
 /* Settings > Display: the look is saved to the account (js/display-sync.js). */
 .display-sync-note { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12.5px; color: var(--text2); line-height: 1.4; }
 .display-sync-note svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--text2); }
+
+/* ===========================
+   QUICK REPORT (top bar bug button, js/topbar-extras.js)
+=========================== */
+.quick-report-backdrop {
+  position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(0,0,0,0.45); opacity: 0; transition: opacity 0.2s;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.quick-report-backdrop.show { opacity: 1; }
+.quick-report-card {
+  width: min(440px, 100%); padding: 20px; border-radius: 20px;
+  background: var(--glass-bg, var(--surface)); border: 1px solid var(--glass-border, var(--border));
+  box-shadow: var(--glass-shadow, 0 20px 50px rgba(0,0,0,0.35));
+  -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
+  transform: translateY(10px) scale(0.98); transition: transform 0.25s var(--ease-spring, ease-out);
+}
+.quick-report-backdrop.show .quick-report-card { transform: none; }
+.qr-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.qr-icon { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--red-soft, rgba(255,0,0,0.1)); color: var(--red); }
+.qr-icon svg { width: 19px; height: 19px; }
+.qr-title { font-size: 17px; font-weight: 700; color: var(--text1); }
+.qr-sub { font-size: 12.5px; color: var(--text2); line-height: 1.45; margin-top: 2px; }
+.qr-sub strong { color: var(--text1); font-weight: 600; }
+.qr-close { margin-left: auto; border: 0; background: none; color: var(--text2); font-size: 22px; line-height: 1; cursor: pointer; padding: 0 2px; }
+.qr-close:hover { color: var(--text1); }
+.qr-types { margin-bottom: 10px; }
+.qr-types .seg-btn { flex: 1; }
+.qr-text { width: 100%; min-height: 96px; margin: 0; resize: vertical; }
+.qr-status { min-height: 18px; font-size: 12.5px; color: var(--text2); margin: 8px 0 2px; }
+.qr-status.err { color: var(--error-color, var(--red)); }
+.qr-status.ok { color: var(--green, #2ea043); font-weight: 600; }
+.qr-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.qr-actions .sync-btn, .qr-actions .settings-btn { width: auto; margin: 0; padding-left: 18px; padding-right: 18px; }
+.quick-report-card.sent .qr-icon { background: color-mix(in oklch, var(--green, #2ea043) 18%, transparent); color: var(--green, #2ea043); }
+@media (prefers-reduced-motion: reduce) { .quick-report-backdrop, .quick-report-card { transition: none; } }

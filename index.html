@@ -2877,7 +2877,7 @@ async function handleLogin() {
   const { ok, data } = await sbFetch('/auth/v1/token?grant_type=password', 'POST', { email, password }, false);
   if (!ok) {
     btn.disabled = false; btn.classList.remove('btn-loading');
-    msgEl.innerHTML = `<div class="msg-error">${data.error_description || 'Login failed.'}</div>`; return;
+    msgEl.innerHTML = authErrorHTML(data, 'Login failed. Try again in a moment.', email); return;
   }
 
   // Password alone only proves aal1 -- if a TOTP factor is verified on this
@@ -3124,6 +3124,47 @@ async function disable2FA() {
   }
 }
 
+// Turns a Supabase auth error into something a student can act on. Newer
+// Supabase errors carry the reason in error_code / msg (not
+// error_description), so the bare fallback ("Signup failed.") was all that
+// ever showed -- even for "this email already has an account".
+function authErrorHTML(data, fallback, email) {
+  const code = (data && (data.error_code || data.code)) || '';
+  const raw = (data && (data.error_description || data.msg || data.message)) || '';
+  const safeEmail = escapeHtml(email || '').replace(/'/g, '&#39;');
+  switch (code) {
+    case 'user_already_exists':
+    case 'email_exists':
+      return `<div class="msg-error">There's already an account with this email. <a onclick="goToLoginWithEmail('${safeEmail}')">Sign in</a> instead, or <a onclick="goToForgotWithEmail('${safeEmail}')">reset your password</a> if you don't remember it.</div>`;
+    case 'invalid_credentials':
+      return `<div class="msg-error">That email and password don't match. Check for typos, or <a onclick="goToForgotWithEmail('${safeEmail}')">reset your password</a>.</div>`;
+    case 'email_not_confirmed':
+      return `<div class="msg-error">Confirm your email first: open the link we sent you, then sign in. Check spam if you can't find it.</div>`;
+    case 'weak_password':
+      return `<div class="msg-error">That password is too easy to guess. Try a longer one with a mix of letters and numbers.</div>`;
+    case 'over_email_send_rate_limit':
+    case 'over_request_rate_limit':
+      return `<div class="msg-error">Too many tries in a short time. Wait a few minutes, then try again.</div>`;
+    case 'email_address_invalid':
+      return `<div class="msg-error">That email address doesn't look right. Check it and try again.</div>`;
+    case 'signup_disabled':
+      return `<div class="msg-error">New sign-ups are paused right now. Try again later.</div>`;
+  }
+  return `<div class="msg-error">${escapeHtml(raw || fallback)}</div>`;
+}
+
+function goToLoginWithEmail(email) {
+  showLogin();
+  const el = document.getElementById('login-email');
+  if (el && email) el.value = email;
+  document.getElementById('login-password')?.focus();
+}
+function goToForgotWithEmail(email) {
+  showForgotPassword();
+  const el = document.querySelector('#forgot-password-screen input[type="email"], #forgot-password-screen input');
+  if (el && email) el.value = email;
+}
+
 async function handleSignup() {
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
@@ -3135,7 +3176,7 @@ async function handleSignup() {
   btn.disabled = true; btn.classList.add('btn-loading');
   const { ok, data } = await sbFetch('/auth/v1/signup', 'POST', { email, password }, false);
   btn.disabled = false; btn.classList.remove('btn-loading');
-  if (!ok) { msgEl.innerHTML = `<div class="msg-error">${data.error_description || 'Signup failed.'}</div>`; return; }
+  if (!ok) { msgEl.innerHTML = authErrorHTML(data, 'Signup failed. Try again in a moment.', email); return; }
   msgEl.innerHTML = '<div class="msg-success">Account created! Check your email to confirm, then sign in.</div>';
 }
 

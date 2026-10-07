@@ -46,7 +46,14 @@ Deno.serve(async (req) => {
     while (next) {
       const resp = await fetch(next, { headers: { "Authorization": `Bearer ${token}` } });
       console.log(`validate-canvas host=${url} status=${resp.status}`);
-      if (resp.status === 401) return reply({ error: "invalid_token" });
+      if (resp.status === 401) {
+        // Canvas's own reason ("Invalid access token.", an expired token,
+        // "user authorization required"...): tells a typo'd token from an
+        // expired or revoked one. Contains no token data.
+        const why = (await resp.text().catch(() => "")).slice(0, 200).replace(/\s+/g, " ");
+        console.log(`validate-canvas 401 www-auth=${resp.headers.get("www-authenticate") || "-"} body=${why}`);
+        return reply({ error: "invalid_token" });
+      }
       if (resp.status === 403) return reply({ error: "forbidden" });
       if (!resp.ok) return reply({ error: "canvas_error", status: resp.status });
       const text = await resp.text();

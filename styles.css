@@ -2669,11 +2669,6 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out), visibility 0s 0.6s;
 }
 #boot-splash.done { opacity: 0; transform: scale(1.04); visibility: hidden; pointer-events: none; }
-.boot-glow {
-  position: absolute; width: 560px; height: 560px; max-width: 95vw; max-height: 95vw; border-radius: 50%;
-  background: radial-gradient(circle, oklch(0.5 0.16 275 / 0.3) 0%, transparent 66%);
-  animation: bootBreathe 3.4s ease-in-out infinite;
-}
 .boot-logo { position: relative; animation: bootIn 1s var(--ease-out) both; }
 .boot-logo .logo-mark { color: #fff; width: 48px; height: 48px; }
 .boot-logo .logo-word {
@@ -2705,7 +2700,6 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 @keyframes bootIn { from { opacity: 0; transform: translateY(10px) scale(0.96); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
 @keyframes bootShine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 @keyframes bootSweep { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
-@keyframes bootBreathe { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
 
 /* -- Shown when the app cannot reach the server on startup (offline, outage)
    instead of mistaking that for "no Canvas connected yet". -- */
@@ -2972,7 +2966,7 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .boot-glow, .boot-card, .boot-logo, .boot-logo .logo-word, .boot-bar, .boot-bar::after,
+  .boot-card, .boot-logo, .boot-logo .logo-word, .boot-bar, .boot-bar::after,
   .ws-sync-logo-spin, .ws-sync-logo-wrap::before, .ws-sync-logo-wrap::after,
   #ws-syncing-msg.swap, .ap-card { animation: none; }
   .boot-logo .logo-word { color: #fff; background: none; }

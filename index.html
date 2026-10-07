@@ -1358,6 +1358,7 @@
           <div class="tweak-row">
             <div class="tweak-label">Card corners</div>
             <div class="tweak-swatches" id="tweak-swatches-radius">
+              <div class="swatch radius-swatch" data-r="0" style="border-radius:0;" onclick="setRadius(0,this)" title="Square"></div>
               <div class="swatch radius-swatch" data-r="8" style="border-radius:4px;" onclick="setRadius(8,this)" title="Sharp"></div>
               <div class="swatch radius-swatch active" data-r="14" style="border-radius:10px;" onclick="setRadius(14,this)" title="Rounded"></div>
               <div class="swatch radius-swatch" data-r="20" style="border-radius:18px;" onclick="setRadius(20,this)" title="Pill"></div>
@@ -1373,6 +1374,10 @@
               <button class="seg-btn active" data-density="comfortable" onclick="setDensity('comfortable',this)">Comfortable</button>
               <button class="seg-btn" data-density="compact" onclick="setDensity('compact',this)">Compact</button>
             </div>
+          </div>
+          <div class="display-sync-note">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 14.5a3.5 3.5 0 0 1-.4-7 5 5 0 0 1 9.7 1.2 3 3 0 0 1-.3 5.8z"/><path d="M8 11.5l1.6 1.6L12.5 10"/></svg>
+            <span>Saved to your account, so StudyFlow looks the same on every device you sign in on.</span>
           </div>
           <div class="toggle-row" style="border-top:1px solid var(--border);margin-top:14px;">
             <div><div class="toggle-row-label">Scroll animations</div><div class="toggle-row-sub">Cards rise into place as you scroll to them. Turn off for a calmer, instant layout.</div></div>
@@ -8847,5 +8852,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/study-tracking.js"></script>
 <script src="js/closed-extras.js"></script>
 <script src="js/sync-extras.js"></script>
+<script src="js/display-sync.js"></script>
 </body>
 </html>

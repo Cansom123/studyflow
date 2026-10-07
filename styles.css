@@ -4298,3 +4298,7 @@ input[type="password"]::-ms-clear { display: none; }
 .cce-fixes-label { margin-top: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.85; }
 .cce-fixes { margin: 4px 0 0; padding-left: 18px; }
 .cce-fixes li { margin: 3px 0; }
+
+/* Settings > Display: the look is saved to the account (js/display-sync.js). */
+.display-sync-note { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12.5px; color: var(--text2); line-height: 1.4; }
+.display-sync-note svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--text2); }

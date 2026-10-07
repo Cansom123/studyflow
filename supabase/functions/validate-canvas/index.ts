@@ -32,6 +32,11 @@ Deno.serve(async (req) => {
     const url = String(canvas_url).trim().toLowerCase().replace(/\s+/g, "")
       .replace(/^[a-z]+:\/\//, "").split(/[/?#]/)[0].replace(/^www\./, "");
     const token = String(canvas_token).replace(/^\s*bearer\s+/i, "").replace(/\s+/g, "");
+    // Shape only, never the token: a full Canvas token looks like
+    // "<digits>~<64 characters>", so length and the "~" part show whether a
+    // pasted token was cut short or isn't a Canvas access token at all.
+    const tilde = token.indexOf("~");
+    console.log(`validate-canvas token len=${token.length} prefixDigits=${tilde > 0 && /^\d+$/.test(token.slice(0, tilde))} afterTilde=${tilde >= 0 ? token.length - tilde - 1 : -1} dots=${(token.match(/\./g) || []).length}`);
 
     const baseUrl = `https://${url}/api/v1/courses?per_page=100&enrollment_type=student` +
       `&state[]=available&state[]=completed&state[]=unpublished`;

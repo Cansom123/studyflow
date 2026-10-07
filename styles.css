@@ -2974,24 +2974,28 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
   #boot-splash { transition-duration: 0.01ms; }
 }
 
-/* ===== HOME: square boxes ================================================
-   The Home dashboard's boxes use square corners instead of rounded ones.
-   One variable so the whole page can be softened again by changing it.
-   Count badges and the round check-off circles are labels/controls, not
-   boxes, so they keep their shape. */
-#page-home { --home-radius: 0px; }
+/* ===== HOME: box corners ================================================
+   The Home dashboard's boxes follow Settings > Display > Card corners like
+   every other tab (Square, Sharp, Rounded, Pill). Small pieces inside the
+   boxes (day cells, icons, progress bars) get a smaller version so a big
+   setting doesn't turn them into circles. Count badges and the round
+   check-off circles are labels/controls, not boxes, so they keep their shape. */
+#page-home {
+  --home-radius: var(--card-radius, 14px);
+  --home-radius-sm: min(var(--card-radius, 14px), 10px);
+}
 #page-home .home-tile,
 #page-home .home-week,
-#page-home .hw-day,
-#page-home .ht-icon,
-#page-home .ht-bar, #page-home .ht-bar i,
 #page-home #home-upnext .card,
 #page-home #home-thisweek,
 #page-home #home-grades,
 #page-home #home-study,
 #page-home .home-qlink,
-#page-home .home-qlink-icon,
 #page-home #home-announcements { border-radius: var(--home-radius); }
+#page-home .hw-day,
+#page-home .ht-icon,
+#page-home .ht-bar, #page-home .ht-bar i,
+#page-home .home-qlink-icon { border-radius: var(--home-radius-sm); }
 
 /* ===== LOGIN: motion =====================================================
    A choreographed arrival rather than everything fading at once: panel ->
@@ -4383,3 +4387,14 @@ input[type="password"]::-ms-clear { display: none; }
 @keyframes suTimer { to { transform: scaleX(0); } }
 @media (max-width: 600px) { .sync-updates { right: 12px; left: 12px; width: auto; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
 @media (prefers-reduced-motion: reduce) { .sync-updates { transition: opacity 0.2s; transform: none; } .sync-updates.show .su-timer i { animation: none; } }
+
+/* ===========================
+   SQUARE EVERYTHING (Settings > Display > Card corners > Square)
+   Every box, button, field, tab and pop-up goes square. Things that are
+   round on purpose keep their shape: check-off circles, status dots, color
+   swatches, on/off switches and progress rings. Pseudo-elements (spinners,
+   decorations) are left alone.
+=========================== */
+[data-corners-square] *:not(.done-check):not(.priority-check):not(.course-check):not(.course-check-inner):not(.swatch):not(.switch-track):not(.switch-thumb):not(.dot):not(.connected-dot):not(.announcement-unread-dot):not(.cal-day-study-dot):not(.cal-day-syl-dot):not(.cwd-dot):not(.goal-dot):not(.ft-dot):not(#focus-minibar-dot):not(#deepwork-minibar-dot):not(.tour-mock-dot):not(.tour-mock-cal-dot):not(.confetti-piece):not(.ap-ring):not(.tour-mock-timer-ring) {
+  border-radius: 0 !important;
+}

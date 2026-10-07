@@ -1810,8 +1810,14 @@ function setBgCustom(h) {
   markCustomActive('bg', h);
 }
 
+// Square (0) squares the whole app, not just cards: see [data-corners="square"]
+// in styles.css.
+function setCornersMode(r) {
+  document.documentElement.toggleAttribute('data-corners-square', Number(r) === 0);
+}
 function setRadius(r, el) {
   document.documentElement.style.setProperty('--card-radius', r + 'px');
+  setCornersMode(r);
   document.querySelectorAll('#tweak-swatches-radius .swatch').forEach(s => s.classList.remove('active'));
   if (el) el.classList.add('active');
   saveTweak('cardRadius', String(r));
@@ -1843,6 +1849,7 @@ function applyTweaks(t) {
   if (t.bgHue && t.bgHue !== 'match') document.documentElement.style.setProperty('--bg-h', t.bgHue);
   const bgPreset = document.querySelector(`#tweak-swatches-bg .swatch[data-h="${t.bgHue || 'match'}"]`);
   if (bgPreset) bgPreset.classList.add('active'); else markCustomActive('bg', t.bgHue);
+  setCornersMode(t.cardRadius ?? 14);
   if (t.cardRadius) {
     document.documentElement.style.setProperty('--card-radius', t.cardRadius + 'px');
     document.querySelector(`#tweak-swatches-radius .swatch[data-r="${t.cardRadius}"]`)?.classList.add('active');

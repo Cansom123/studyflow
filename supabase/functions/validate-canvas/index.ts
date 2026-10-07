@@ -52,6 +52,12 @@ Deno.serve(async (req) => {
         // expired or revoked one. Contains no token data.
         const why = (await resp.text().catch(() => "")).slice(0, 200).replace(/\s+/g, " ");
         console.log(`validate-canvas 401 www-auth=${resp.headers.get("www-authenticate") || "-"} body=${why}`);
+        // An expired token needs a different fix (a new token with no or a
+        // later expiry date) than a mistyped one, so say which it is.
+        if (/expired/i.test(why)) {
+          const expiredAt = (why.match(/"expired_at"\s*:\s*"([^"]+)"/) || [])[1] || null;
+          return reply({ error: "expired_token", expired_at: expiredAt });
+        }
         return reply({ error: "invalid_token" });
       }
       if (resp.status === 403) return reply({ error: "forbidden" });

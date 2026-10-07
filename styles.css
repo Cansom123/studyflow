@@ -4291,3 +4291,10 @@ input[type="password"]::-ms-clear { display: none; }
 .sync-busy-skip { border: 0; background: none; color: var(--text2); font: inherit; font-size: 13px; font-weight: 600; padding: 8px; cursor: pointer; }
 .sync-busy-skip:hover { color: var(--text1); }
 @media (prefers-reduced-motion: reduce) { .sync-busy-backdrop, .sync-busy-card { transition: none; } }
+
+/* Canvas connection error with a short "Possible fixes" list. */
+.canvas-connect-error { text-align: left; line-height: 1.5; }
+.cce-title { font-weight: 650; }
+.cce-fixes-label { margin-top: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.85; }
+.cce-fixes { margin: 4px 0 0; padding-left: 18px; }
+.cce-fixes li { margin: 3px 0; }

@@ -3195,6 +3195,67 @@ function normalizeCanvasToken(raw) {
   return String(raw || '').replace(/^\s*bearer\s+/i, '').replace(/\s+/g, '');
 }
 
+// What went wrong connecting to Canvas, in plain words, with a short list of
+// things to try. Used by onboarding and by Settings > Canvas.
+function canvasConnectErrorHTML(result) {
+  const r = result || {};
+  const NEW_TOKEN = 'In Canvas, go to <strong>Account &rsaquo; Settings &rsaquo; + New Access Token</strong>';
+  let title, fixes;
+  switch (r.error) {
+    case 'expired_token': {
+      const when = r.expired_at
+        ? new Date(r.expired_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+        : '';
+      title = `This Canvas token has expired${when ? ` (it stopped working on ${when})` : ''}.`;
+      fixes = [
+        `${NEW_TOKEN} and make a new one.`,
+        'Leave the <strong>Expires</strong> date empty, or pick a date months from now. A date that has passed makes the token stop working right away.',
+        'Copy the new token and paste it here.',
+      ];
+      break;
+    }
+    case 'invalid_token':
+      title = "Canvas didn't accept this token.";
+      fixes = [
+        'Copy the token right after clicking <strong>Generate Token</strong>, with the copy button on that popup. Canvas only shows the full token once; the list in Settings shows just the end of it.',
+        "Make the token on the same Canvas as the URL above (your college's Canvas, not your high school's).",
+        "Check it wasn't deleted under <strong>Approved Integrations</strong> in Canvas Settings.",
+        `If none of that helps, ${NEW_TOKEN.charAt(0).toLowerCase() + NEW_TOKEN.slice(1)} and paste the new one.`,
+      ];
+      break;
+    case 'forbidden':
+      title = 'Canvas blocked this token from reading your classes.';
+      fixes = [
+        `${NEW_TOKEN} and try a fresh one.`,
+        "Some schools limit access tokens. If a new one doesn't work either, your school's Canvas may not allow apps like StudyFlow.",
+      ];
+      break;
+    case 'not_canvas':
+      title = "That address isn't a Canvas site.";
+      fixes = [
+        'Open Canvas in your browser and copy the address bar up to the first <strong>/</strong>, like <strong>yourschool.instructure.com</strong>.',
+        "Most schools use <strong>schoolname.instructure.com</strong> even if their login page has a different address.",
+      ];
+      break;
+    case 'canvas_error':
+      title = `Canvas sent back an error${r.status ? ` (code ${r.status})` : ''}.`;
+      fixes = [
+        'Double-check the Canvas URL: it should look like <strong>yourschool.instructure.com</strong>.',
+        'Canvas may be having a problem. Try again in a few minutes.',
+      ];
+      break;
+    default:
+      title = "Couldn't reach Canvas.";
+      fixes = [
+        'Check the URL spelling: it should look like <strong>yourschool.instructure.com</strong>.',
+        "Make sure you're connected to the internet, then try again.",
+      ];
+  }
+  return `<div class="msg-error canvas-connect-error"><div class="cce-title">${title}</div>
+    <div class="cce-fixes-label">Possible fixes</div>
+    <ol class="cce-fixes">${fixes.map(f => `<li>${f}</li>`).join('')}</ol></div>`;
+}
+
 async function saveCanvasOnboard() {
   const url = normalizeCanvasUrl(document.getElementById('ob-canvas-url').value);
   const token = normalizeCanvasToken(document.getElementById('ob-canvas-token').value);
@@ -3214,21 +3275,9 @@ async function saveCanvasOnboard() {
       body: JSON.stringify({ canvas_url: url, canvas_token: token })
     });
     const result = await validateResp.json();
-    if (result.error === 'invalid_token') {
+    if (!result.ok) {
       btn.disabled = false; btn.classList.remove('btn-loading');
-      msgEl.innerHTML = '<div class="msg-error">That API token wasn\'t accepted by Canvas. Please go back to Canvas Settings, generate a new token, and paste the full value here.</div>'; return;
-    }
-    if (result.error === 'forbidden') {
-      btn.disabled = false; btn.classList.remove('btn-loading');
-      msgEl.innerHTML = '<div class="msg-error">Canvas denied access. Make sure your token has permission to read courses.</div>'; return;
-    }
-    if (result.error === 'canvas_error') {
-      btn.disabled = false; btn.classList.remove('btn-loading');
-      msgEl.innerHTML = `<div class="msg-error">Canvas returned an unexpected error (code ${result.status}). Double-check your URL and token, then try again.</div>`; return;
-    }
-    if (result.error === 'unreachable' || !result.ok) {
-      btn.disabled = false; btn.classList.remove('btn-loading');
-      msgEl.innerHTML = '<div class="msg-error">Couldn\'t reach Canvas. Double-check your URL - it should look like <strong>yourschool.instructure.com</strong> - and make sure you\'re connected to the internet.</div>'; return;
+      msgEl.innerHTML = canvasConnectErrorHTML(result); return;
     }
     validCourses = result.courses;
   } catch (e) {
@@ -3321,6 +3370,10 @@ async function loadCoursesForSelection() {
     });
     const result = await validateResp.json();
     const loadingEl = document.getElementById('course-list-loading');
+    if (result.error === 'expired_token') {
+      loadingEl.textContent = 'Your Canvas token has expired. Go back and make a new one with no expiry date (or a date months away).';
+      loadingEl.style.display = 'block'; return;
+    }
     if (result.error === 'invalid_token') {
       loadingEl.textContent = 'Your Canvas token is no longer valid. Go back and generate a new one.';
       loadingEl.style.display = 'block'; return;
@@ -3717,14 +3770,8 @@ async function saveCanvasSettings() {
       body: JSON.stringify({ canvas_url: url, canvas_token: token })
     });
     const result = await validateResp.json();
-    if (result.error === 'invalid_token') {
-      msgEl.innerHTML = '<div class="msg-error">Token not accepted by Canvas. Generate a new one and try again.</div>'; return;
-    }
-    if (result.error === 'forbidden') {
-      msgEl.innerHTML = '<div class="msg-error">Canvas denied access. Make sure your token has permission to read courses.</div>'; return;
-    }
     if (!result.ok) {
-      msgEl.innerHTML = '<div class="msg-error">Couldn\'t reach Canvas. Check your URL and try again.</div>'; return;
+      msgEl.innerHTML = canvasConnectErrorHTML(result); return;
     }
     validCourses = result.courses;
   } catch(e) {

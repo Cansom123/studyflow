@@ -4398,3 +4398,10 @@ input[type="password"]::-ms-clear { display: none; }
 [data-corners-square] *:not(.done-check):not(.priority-check):not(.course-check):not(.course-check-inner):not(.swatch):not(.switch-track):not(.switch-thumb):not(.dot):not(.connected-dot):not(.announcement-unread-dot):not(.cal-day-study-dot):not(.cal-day-syl-dot):not(.cwd-dot):not(.goal-dot):not(.ft-dot):not(#focus-minibar-dot):not(#deepwork-minibar-dot):not(.tour-mock-dot):not(.tour-mock-cal-dot):not(.confetti-piece):not(.ap-ring):not(.tour-mock-timer-ring) {
   border-radius: 0 !important;
 }
+
+/* Native controls (dropdown lists, date pickers, scrollbars) follow the app
+   theme. Without this a <select>'s open list stayed white in dark mode while
+   the options inherited white text, so they were invisible until hovered. */
+:root { color-scheme: light; }
+[data-theme="dark"] { color-scheme: dark; }
+select option, select optgroup { background-color: var(--surface); color: var(--text1); }

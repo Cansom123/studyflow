@@ -4,9 +4,6 @@ const corsHeaders = {
 };
 
 function preserveIds(jsonText: string): string {
-  // Walk the raw JSON text character-by-character so we can track whether we're
-  // inside a string value. Only replace bare 16+-digit numbers that appear as JSON
-  // property values (after a colon, outside of any string), never text inside strings.
   let result = '';
   let inString = false;
   let i = 0;
@@ -16,7 +13,7 @@ function preserveIds(jsonText: string): string {
       result += ch;
       if (ch === '\\') {
         i++;
-        if (i < jsonText.length) result += jsonText[i]; // escaped char, pass through
+        if (i < jsonText.length) result += jsonText[i];
       } else if (ch === '"') {
         inString = false;
       }
@@ -60,8 +57,8 @@ function isTermConcluded(courseName: string, now: Date): boolean {
 // rest of the attribute into the description as visible text.
 const TAG_ATTRS = `(?:[^>"']|"[^"]*"|'[^']*')*`;
 const NAMED_ENTITIES: Record<string, string> = {
-  nbsp: " ", lt: "<", gt: ">", quot: '"', apos: "'", ndash: "\u2013", mdash: "\u2014",
-  lsquo: "\u2018", rsquo: "\u2019", ldquo: "\u201c", rdquo: "\u201d", hellip: "\u2026", bull: "\u2022",
+  nbsp: " ", lt: "<", gt: ">", quot: '"', apos: "'", ndash: "–", mdash: "—",
+  lsquo: "‘", rsquo: "’", ldquo: "“", rdquo: "”", hellip: "…", bull: "•",
 };
 
 function htmlToText(html: string | null | undefined): string | null {
@@ -71,7 +68,7 @@ function htmlToText(html: string | null | undefined): string | null {
     .replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, "")
     .replace(new RegExp(`<br\\b${TAG_ATTRS}>`, "gi"), "\n")
     .replace(/<\/(p|div|li|h[1-6]|tr)\s*>/gi, "\n")
-    .replace(new RegExp(`<li\\b${TAG_ATTRS}>`, "gi"), "\u2022 ")
+    .replace(new RegExp(`<li\\b${TAG_ATTRS}>`, "gi"), "• ")
     .replace(new RegExp(`<[a-zA-Z!/]${TAG_ATTRS}>`, "g"), "")
     .replace(/<\/?[a-zA-Z][^>]*>/g, "") // anything left with an unbalanced quote
     .replace(/&([a-z]+);/gi, (m, n) => NAMED_ENTITIES[n.toLowerCase()] ?? m)
@@ -82,7 +79,7 @@ function htmlToText(html: string | null | undefined): string | null {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   if (!text) return null;
-  if (text.length > 4000) text = text.slice(0, 4000).trim() + "\u2026";
+  if (text.length > 4000) text = text.slice(0, 4000).trim() + "…";
   return text;
 }
 
@@ -133,9 +130,10 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
 
+    // Only a signed-in student can sync, and only their own account. (A
+    // user_id in the request body used to be accepted when sign-in failed,
+    // which let anyone trigger a sync of anyone's account.)
     let userId: string | null = null;
-    let authedViaToken = false;
-
     if (token && token !== supabaseKey) {
       const r = await fetch(`${supabaseUrl}/auth/v1/user`, {
         headers: { Authorization: `Bearer ${token}`, apikey: supabaseKey },
@@ -143,40 +141,39 @@ Deno.serve(async (req) => {
       if (r.ok) {
         const u = await r.json();
         userId = u.id;
-        authedViaToken = true;
       } else {
         console.warn(`[run ${runId}] token auth failed ${r.status}`);
       }
     }
-
     if (!userId) {
-      let body: any = null;
-      try { body = await req.json(); } catch (_) {}
-      const bid = body?.user_id;
-      if (!bid || typeof bid !== "string") {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-      }
-      userId = bid;
+      return new Response(JSON.stringify({ error: "Please sign in again, then sync." }), { status: 401, headers: corsHeaders });
     }
 
     console.log(`[run ${runId}] user=${userId}`);
 
-    const sHdrs = authedViaToken
-      ? { Authorization: `Bearer ${token}`, apikey: supabaseKey }
-      : { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey };
+    const sHdrs = { Authorization: `Bearer ${token}`, apikey: supabaseKey };
 
     const settingsResp = await fetch(
-      `${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}&select=canvas_url,canvas_token,selected_courses`,
+      `${supabaseUrl}/rest/v1/user_settings?user_id=eq.${userId}&select=canvas_url,selected_courses`,
       { headers: sHdrs },
     );
     const settings = await settingsResp.json();
 
-    if (!settings?.length || !settings[0].canvas_token) {
+    // The Canvas token is kept encrypted (Supabase Vault); only this
+    // server-side function can read it, through get_canvas_token.
+    const tokenResp = await fetch(`${supabaseUrl}/rest/v1/rpc/get_canvas_token`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_user_id: userId }),
+    });
+    const canvasToken: string | null = tokenResp.ok ? await tokenResp.json() : null;
+
+    if (!settings?.length || !canvasToken) {
       return new Response(JSON.stringify({ error: "No Canvas token found" }), { status: 400, headers: corsHeaders });
     }
 
     const canvasUrl = `https://${settings[0].canvas_url}`;
-    const canvasAuth = `Bearer ${settings[0].canvas_token}`;
+    const canvasAuth = `Bearer ${canvasToken}`;
     const selectedCourses: Array<{ id: number | string; name: string }> =
       Array.isArray(settings[0].selected_courses) ? settings[0].selected_courses : [];
 
@@ -261,9 +258,8 @@ Deno.serve(async (req) => {
     const allAssignments: any[] = [];
     const allGrades: any[] = [];
     let blockedCourseCount = 0;
-    const debugStates: Record<string, number> = {}; // aggregate workflow_state counts across all courses
+    const debugStates: Record<string, number> = {};
 
-    // Undated assignments: keep anything created since school year start (Aug 1 of fall year).
     const undatedCutoff = new Date(fallYearSY, 7, 1);
 
     await Promise.all(activeCourses.map(async (course: any) => {
@@ -283,10 +279,8 @@ Deno.serve(async (req) => {
       for (const a of rawAssignments) {
         const types: string[] = a.submission_types ?? [];
 
-        // Skip non-gradable assignment types
         if (types.includes("not_graded") || types.includes("none") || types.includes("wiki_page")) continue;
 
-        // Drop dated assignments more than 90 days past due (truly stale, no action possible)
         const dueCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         if (a.due_at != null && new Date(a.due_at) < dueCutoff) continue;
 
@@ -301,12 +295,6 @@ Deno.serve(async (req) => {
         const isSubmitted = !!(sub?.submitted_at || state === "submitted" ||
           state === "complete" || state === "pending_review");
 
-        // Canvas's locked_for_user is ambiguous: it's true both when the deadline
-        // has passed (closed) AND when the assignment simply isn't available yet
-        // (a future unlock_at, or a module prerequisite not yet met). Those need
-        // opposite messaging to the student, so don't collapse them into one flag.
-        // lock_at having actually passed is ground truth we can compute ourselves,
-        // independent of whatever Canvas's own flag says.
         const lockAtPassed = a.lock_at != null && new Date(a.lock_at) < now;
         const isLocked = a.locked_for_user === true || lockAtPassed;
         const lockReason = !isLocked ? null : (lockAtPassed ? "closed" : "unavailable");
@@ -325,9 +313,6 @@ Deno.serve(async (req) => {
           is_locked: isLocked,
           lock_reason: lockReason,
           description: htmlToText(a.description),
-          // Feeds the Grades page's "what's affecting this grade" breakdown --
-          // score/missing/excused already come back on `submission` (we already
-          // request include[]=submission above), just weren't persisted before.
           score: sub?.score ?? null,
           is_missing: !!sub?.missing,
           is_excused: !!sub?.excused,

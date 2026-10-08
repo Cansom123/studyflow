@@ -2625,7 +2625,7 @@ async function routeUser() {
   if (!ACCESS_TOKEN || !USER_ID) { showLoginScreen(); return; }
   let res;
   try {
-    res = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token`);
+    res = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_connected,canvas_token`);
   } catch (e) {
     // fetch() itself threw -- offline, DNS, blocked. That says nothing about
     // whether Canvas is connected, so it must not fall through to onboarding.
@@ -2638,7 +2638,7 @@ async function routeUser() {
   // answer to "is Canvas connected?" -- only a successful reply with no token
   // on file means onboarding is actually needed.
   if (!ok) { showConnectionProblem(); return; }
-  if (!data || data.length === 0 || !data[0].canvas_token) { showOnboardCanvas(); return; }
+  if (!data || data.length === 0 || !(data[0].canvas_connected || data[0].canvas_token)) { showOnboardCanvas(); return; }
   bootSplashHeld = true;
   showApp();
 }
@@ -3365,7 +3365,7 @@ async function loadCoursesForSelection() {
   document.getElementById('course-list').innerHTML = '';
   selectedCoursesTemp = [];
   // Fetch canvas credentials AND existing selected_courses so we can pre-check them
-  const { ok, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token,selected_courses`);
+  const { ok, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=selected_courses`);
   if (!ok || !settings || settings.length === 0) return;
   const existingSelected = settings[0].selected_courses || [];
   // Pre-check non-concluded courses by ID; for concluded ones, pre-check their
@@ -3383,7 +3383,8 @@ async function loadCoursesForSelection() {
     const validateResp = await fetch(`${SB_URL}/functions/v1/validate-canvas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
-      body: JSON.stringify({ canvas_url: settings[0].canvas_url, canvas_token: settings[0].canvas_token })
+      // No token: the server re-checks the student's saved, encrypted one.
+      body: JSON.stringify({})
     });
     const result = await validateResp.json();
     const loadingEl = document.getElementById('course-list-loading');
@@ -3760,8 +3761,8 @@ async function renderSelectedCoursesTab() {
 }
 
 async function loadCanvasSettings() {
-  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token`);
-  if (ok && data && data.length > 0 && data[0].canvas_token) {
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_connected,canvas_token`);
+  if (ok && data && data.length > 0 && (data[0].canvas_connected || data[0].canvas_token)) {
     document.getElementById('canvas-connected').style.display = 'block';
     document.getElementById('canvas-form').style.display = 'none';
     document.getElementById('canvas-url-display').textContent = data[0].canvas_url;
@@ -3871,7 +3872,7 @@ function copyCalendarLink() {
 }
 
 async function disconnectCanvas() {
-  await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_token: null, selected_courses: [] });
+  await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_token: null, canvas_token_secret: null, selected_courses: [] });
   await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}`, 'DELETE');
   showOnboardCanvas();
 }
@@ -5914,7 +5915,7 @@ function jumpToDueDay(key) {
 =========================== */
 let cachedSyllabi = [];
 let syllabusCourses = [];
-let syllabusCanvas = { url: '', token: '' };
+let syllabusCanvas = { url: '', connected: false };
 let syllabusDetailCourseId = null;
 
 function syllabusFor(courseId) {
@@ -5931,11 +5932,11 @@ async function loadSyllabi() {
   if (emptyEl) emptyEl.style.display = 'none';
   if (listEl) listEl.style.display = 'none';
 
-  const { ok: sOk, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_token,selected_courses`);
+  const { ok: sOk, data: settings } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_connected,canvas_token,selected_courses`);
   syllabusCourses = (sOk && settings && settings[0] && settings[0].selected_courses) || [];
   syllabusCanvas = {
     url: (sOk && settings && settings[0] && settings[0].canvas_url) || '',
-    token: (sOk && settings && settings[0] && settings[0].canvas_token) || '',
+    connected: !!(sOk && settings && settings[0] && (settings[0].canvas_connected || settings[0].canvas_token)),
   };
   renderClassLinks();
 
@@ -6247,12 +6248,13 @@ async function saveSyllabusManual() {
 }
 
 async function fetchSyllabusForCourse(course) {
-  if (!syllabusCanvas.url || !syllabusCanvas.token) return;
+  if (!syllabusCanvas.url || !syllabusCanvas.connected) return;
   try {
     const resp = await fetch(`${SB_URL}/functions/v1/fetch-syllabus`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
-      body: JSON.stringify({ canvas_url: syllabusCanvas.url, canvas_token: syllabusCanvas.token, course_id: course.id }),
+      // The server uses the student's saved, encrypted Canvas token.
+      body: JSON.stringify({ course_id: course.id }),
     });
     const result = await resp.json();
     if (result.ok && result.found) {
@@ -6264,7 +6266,7 @@ async function fetchSyllabusForCourse(course) {
 }
 
 async function autoFetchMissingSyllabi() {
-  if (!syllabusCanvas.url || !syllabusCanvas.token) return;
+  if (!syllabusCanvas.url || !syllabusCanvas.connected) return;
   const missing = syllabusCourses.filter(c => {
     const s = syllabusFor(c.id);
     return !s || (!s.content && s.source !== 'manual');

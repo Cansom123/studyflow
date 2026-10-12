@@ -4557,3 +4557,40 @@ body.auth-mode .auth-page > .auth-form-col { height: 100vh; }
 .story-static .story-step { display: block; }
 @media (prefers-reduced-motion: reduce) { .how-scroll-hint, .how-scroll-hint svg { animation: none; } }
 @media (max-width: 900px) { .story[data-phase="3"] .story-cta { display: flex; margin-top: 12px; } }
+
+/* ===========================
+   MOTION EXTRAS (js/motion-extras.js)
+=========================== */
+/* The detail overlay's own fade/slide steps aside while it grows from a card. */
+.detail-overlay.grow, .detail-overlay.grow .detail-inner { animation: none; }
+
+/* Sidebar highlight that glides between tabs (desktop). */
+@media (min-width: 601px) {
+  .tabs.has-glider { position: sticky; }
+  .tab-glider {
+    position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; opacity: 0;
+    border-radius: 10px; background: var(--accent-soft);
+    transition: transform 0.5s cubic-bezier(.3,1.25,.45,1), width 0.3s ease, height 0.3s ease, opacity 0.2s;
+  }
+  .tab-glider::before {
+    content: ''; position: absolute; left: 0; top: 24%; bottom: 24%; width: 3px; border-radius: 99px; background: var(--accent);
+  }
+  .tabs.has-glider .tab { z-index: 1; }
+  .tabs.has-glider .tab.active { background: transparent; }
+  .tabs.has-glider .tab::before { display: none; }
+}
+@media (max-width: 600px) { .tab-glider { display: none; } }
+@media (prefers-reduced-motion: reduce) { .tab-glider { transition: none; } }
+
+/* Checking an assignment off draws a line through its title, like crossing
+   it off by hand, instead of the strike-through just appearing. */
+@property --sf-strike { syntax: '<percentage>'; inherits: false; initial-value: 100%; }
+.card.done .card-title:has(.card-title-link) { text-decoration: none; }
+.card.done .card-title-link {
+  text-decoration: none; -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background-image: linear-gradient(currentColor, currentColor); background-repeat: no-repeat;
+  background-position: 0 56%; background-size: var(--sf-strike) 1.5px;
+}
+.card.done.done-flash .card-title-link { animation: sfStrike 0.5s 0.08s cubic-bezier(.6,0,.2,1) both; }
+@keyframes sfStrike { from { --sf-strike: 0%; } to { --sf-strike: 100%; } }
+@media (prefers-reduced-motion: reduce) { .card.done.done-flash .card-title-link { animation: none; } }

@@ -243,6 +243,91 @@
     <button class="auth-btn" id="reset-password-btn" onclick="handleResetPassword()">Save new password</button>
   </div>
   </div>
+
+  <!-- HOW IT WORKS: below the sign-in screen (scroll, or the arrow). Each
+       step's drawing plays once in order as the section arrives, then loops
+       on its own; drawings pause while off screen. See js/auth-how.js. -->
+  <button type="button" class="how-scroll-hint" id="how-scroll-hint" onclick="scrollToHowItWorks()" aria-label="See how StudyFlow works">
+    <span>See how it works</span>
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+  </button>
+  <section class="how" id="how-it-works" aria-labelledby="how-title">
+    <div class="how-inner">
+      <div class="how-eyebrow" data-how-reveal>How StudyFlow works</div>
+      <h2 class="how-title" id="how-title" data-how-reveal>Connect once. StudyFlow keeps your whole semester in order.</h2>
+      <p class="how-sub" data-how-reveal>Four steps, about two minutes, and you never copy a due date by hand again.</p>
+      <div class="how-track" aria-hidden="true"><i></i></div>
+      <ol class="how-grid">
+        <li class="how-card" data-how-reveal data-step="1">
+          <span class="how-num">1</span>
+          <h3>Connect Canvas</h3>
+          <p>Paste a Canvas access token once. It's stored encrypted and only our server can use it.</p>
+          <div class="how-art art-connect" aria-hidden="true">
+            <svg viewBox="0 0 240 150">
+              <rect class="ac-frame" x="30" y="16" width="180" height="118" rx="14"/>
+              <rect class="ac-bar" x="30" y="16" width="180" height="22" rx="14"/>
+              <circle class="ac-dot" cx="46" cy="27" r="3"/><circle class="ac-dot" cx="57" cy="27" r="3"/><circle class="ac-dot" cx="68" cy="27" r="3"/>
+              <rect class="ac-line" x="50" y="56" width="96" height="9" rx="4.5"/>
+              <rect class="ac-line" x="50" y="78" width="124" height="9" rx="4.5"/>
+              <rect class="ac-line" x="50" y="100" width="72" height="9" rx="4.5"/>
+              <rect class="ac-scan" x="30" y="40" width="180" height="16"/>
+              <g class="ac-badge" transform="translate(182 112)">
+                <circle r="17"/>
+                <path class="ac-lock" d="M-6 -1h12v9h-12zM-3.5 -1v-3a3.5 3.5 0 0 1 7 0v3"/>
+                <path class="ac-tick" d="M-6 0.5l4 4 8-8.5"/>
+              </g>
+            </svg>
+          </div>
+        </li>
+        <li class="how-card" data-how-reveal data-step="2">
+          <span class="how-num">2</span>
+          <h3>Everything syncs in</h3>
+          <p>Assignments, due dates, grades, announcements and teacher feedback from every class, in one place.</p>
+          <div class="how-art art-sync" aria-hidden="true">
+            <svg viewBox="0 0 240 150">
+              <rect class="as-frame" x="34" y="14" width="172" height="122" rx="14"/>
+              <g class="as-row r1"><rect x="48" y="30" width="144" height="24" rx="8"/><circle cx="61" cy="42" r="5"/><rect class="as-txt" x="73" y="39" width="70" height="6" rx="3"/></g>
+              <g class="as-row r2"><rect x="48" y="62" width="144" height="24" rx="8"/><circle cx="61" cy="74" r="5"/><rect class="as-txt" x="73" y="71" width="92" height="6" rx="3"/></g>
+              <g class="as-row r3"><rect x="48" y="94" width="144" height="24" rx="8"/><circle cx="61" cy="106" r="5"/><rect class="as-txt" x="73" y="103" width="56" height="6" rx="3"/></g>
+            </svg>
+            <span class="as-count"><span class="as-odo"><b>0</b><b>3</b><b>12</b></span> synced</span>
+          </div>
+        </li>
+        <li class="how-card" data-how-reveal data-step="3">
+          <span class="how-num">3</span>
+          <h3>Know what's first</h3>
+          <p>Priority ranks your work by due date, points, your grades and your goals, and tells you why.</p>
+          <div class="how-art art-rank" aria-hidden="true">
+            <svg viewBox="0 0 240 150">
+              <g class="ar-row ar-a"><rect x="40" y="14" width="160" height="34" rx="10"/><rect class="ar-txt" x="80" y="28" width="76" height="6" rx="3"/></g>
+              <g class="ar-row ar-b"><rect x="40" y="58" width="160" height="34" rx="10"/><rect class="ar-txt" x="80" y="72" width="96" height="6" rx="3"/></g>
+              <g class="ar-row ar-c"><rect x="40" y="102" width="160" height="34" rx="10"/><rect class="ar-txt" x="80" y="116" width="60" height="6" rx="3"/></g>
+              <g class="ar-ranks"><circle cx="60" cy="31" r="10"/><circle cx="60" cy="75" r="10"/><circle cx="60" cy="119" r="10"/>
+                <text x="60" y="35">1</text><text x="60" y="79">2</text><text x="60" y="123">3</text></g>
+            </svg>
+          </div>
+        </li>
+        <li class="how-card" data-how-reveal data-step="4">
+          <span class="how-num">4</span>
+          <h3>Focus and get it done</h3>
+          <p>Start a timer on the top task, and every minute you study counts toward your goals, to the second.</p>
+          <div class="how-art art-focus" aria-hidden="true">
+            <svg viewBox="0 0 240 150">
+              <circle class="af-track" cx="120" cy="75" r="50"/>
+              <circle class="af-ring" cx="120" cy="75" r="50" pathLength="100"/>
+              <path class="af-tick" d="M104 76l11 11 22-24"/>
+            </svg>
+            <span class="af-time">25:00</span>
+            <span class="af-plus">+25m</span>
+          </div>
+        </li>
+      </ol>
+      <div class="how-cta" data-how-reveal>
+        <button type="button" class="auth-btn how-cta-btn" onclick="howStartSignup()">Create your free account</button>
+        <button type="button" class="how-cta-link" onclick="howBackToSignIn()">I already have one, sign in</button>
+      </div>
+    </div>
+  </section>
 </div>
 
   <!-- ONBOARDING: full-page flow, 4 steps sliding horizontally under a
@@ -8891,5 +8976,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/sync-extras.js"></script>
 <script src="js/display-sync.js"></script>
 <script src="js/topbar-extras.js"></script>
+<script src="js/auth-how.js"></script>
 </body>
 </html>

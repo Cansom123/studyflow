@@ -4428,3 +4428,152 @@ select option, select optgroup { background-color: var(--surface); color: var(--
 .new-work-chip[hidden], .new-work-link[hidden] { display: none; }
 .nwc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 @media (min-width: 601px) { .new-work-chip { display: none !important; } }
+
+/* ===========================
+   HOW IT WORKS (sign-in page, js/auth-how.js)
+   A second screen under the sign-in split: the page now scrolls to it.
+   Drawings are inline SVG animated with CSS; each one's base styles are its
+   finished frame (shown with reduce-motion), and the animations start
+   paused on their first frame until the script lets them play.
+=========================== */
+body.auth-mode .auth-page { height: auto; min-height: 100%; overflow: visible; grid-template-rows: 100vh auto; }
+.auth-page > .auth-brand, .auth-page > .auth-form-col { grid-row: 1; }
+body.auth-mode .auth-page > .auth-form-col { height: 100vh; }
+
+.how-scroll-hint {
+  grid-row: 1; grid-column: 1 / -1; align-self: end; justify-self: center; z-index: 3;
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px; padding: 7px 14px 7px 16px;
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; background: rgba(255,255,255,0.04);
+  color: #b3b3b3; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  transition: opacity 0.35s, transform 0.35s, color 0.2s, border-color 0.2s;
+  animation: howHintIn 0.8s 1.6s var(--ease-out, ease-out) backwards;
+}
+.how-scroll-hint:hover { color: #fff; border-color: rgba(255,255,255,0.28); }
+.how-scroll-hint svg { width: 15px; height: 15px; animation: howHintBob 1.8s ease-in-out infinite; }
+.how-scroll-hint.gone { opacity: 0; transform: translateY(8px); pointer-events: none; }
+@keyframes howHintIn { from { opacity: 0; transform: translateY(10px); } }
+@keyframes howHintBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+
+.how { grid-row: 2; grid-column: 1 / -1; padding: 96px 48px 120px; border-top: 1px solid #262626; color: #fff; }
+.how-inner { max-width: 1180px; margin: 0 auto; }
+.how-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8a8a8a; }
+.how-title { margin: 12px 0 0; max-width: 760px; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.08; letter-spacing: -0.03em; font-weight: 700; }
+.how-sub { margin: 16px 0 0; max-width: 560px; font-size: 16.5px; line-height: 1.55; color: #9a9a9a; }
+
+/* A thin line along the top of the steps that draws across as they arrive. */
+.how-track { position: relative; height: 1px; margin: 48px 0 -1px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.how-track i { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,0), #fff 40%, rgba(255,255,255,0.35)); transform: scaleX(0); transform-origin: left; transition: transform 2.6s cubic-bezier(.16,1,.3,1) 0.3s; }
+.how.how-on .how-track i, .how.how-static .how-track i { transform: scaleX(1); }
+
+.how-grid { list-style: none; margin: 0; padding: 22px 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.how-card {
+  position: relative; display: flex; flex-direction: column; min-height: 372px; padding: 24px 22px 18px;
+  border-radius: 28px; border: 1px solid rgba(255,255,255,0.10);
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, -40%), rgba(255,255,255,0.075), transparent 62%), rgba(255,255,255,0.025);
+  transition: border-color 0.3s, transform 0.45s var(--ease-spring, ease-out), opacity 0.8s ease, translate 0.9s cubic-bezier(.16,1,.3,1);
+}
+.how-card:hover { border-color: rgba(255,255,255,0.22); transform: translateY(-4px); }
+.how-num {
+  position: absolute; top: 22px; right: 20px; width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.05); color: #fff;
+}
+.how-card.play .how-num { animation: howNumPop 0.6s var(--ease-spring, ease-out); }
+@keyframes howNumPop { 40% { transform: scale(1.22); background: #fff; color: #000; } }
+.how-card h3 { margin: 0; padding-right: 44px; font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
+.how-card p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: #8f8f8f; }
+
+/* Fade-up as things scroll in (the cards use the standalone `translate`
+   property so their hover lift can still use `transform`). */
+[data-how-reveal] { opacity: 0; translate: 0 34px; transition: opacity 0.8s ease, translate 0.9s cubic-bezier(.16,1,.3,1); }
+.how-card[data-how-reveal] { transition: border-color 0.3s, transform 0.45s var(--ease-spring, ease-out), opacity 0.8s ease, translate 0.9s cubic-bezier(.16,1,.3,1); }
+[data-how-reveal].in { opacity: 1; translate: 0 0; }
+
+.how-cta { margin-top: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; }
+.how-cta-btn { width: auto; padding-left: 26px; padding-right: 26px; margin: 0; }
+.how-cta-link { border: 0; background: none; color: #9a9a9a; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 6px 2px; }
+.how-cta-link:hover { color: #fff; }
+
+/* ---- Drawings ---- */
+.how-art { position: relative; height: 150px; margin-top: auto; padding-top: 18px; }
+.how-art svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.how-art * { animation-play-state: paused; }
+.how.how-on .how-card.play .how-art * { animation-play-state: running; }
+.how.how-static .how-art * { animation: none !important; }
+
+/* 1. Connect: a scan passes over a Canvas window, then the lock turns into a tick. */
+.ac-frame { fill: rgba(255,255,255,0.03); stroke: rgba(255,255,255,0.16); }
+.ac-bar { fill: rgba(255,255,255,0.05); }
+.ac-dot { fill: rgba(255,255,255,0.22); }
+.ac-line { fill: rgba(255,255,255,0.13); }
+.ac-scan { fill: rgba(255,255,255,0.10); opacity: 0; animation: acScan 3.6s cubic-bezier(.45,0,.25,1) infinite; }
+.ac-badge circle { fill: rgba(30,215,96,0.18); stroke: #1ed760; stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: acBadge 3.6s ease infinite; }
+.ac-lock { fill: none; stroke: #fff; stroke-width: 1.8; stroke-linejoin: round; opacity: 0; animation: acLock 3.6s ease infinite; }
+.ac-tick { fill: none; stroke: #1ed760; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 22; stroke-dashoffset: 0; animation: acTick 3.6s ease infinite; }
+@keyframes acScan { 0% { opacity: 0; transform: translateY(0); } 8% { opacity: 1; } 52% { opacity: 1; transform: translateY(78px); } 60%, 100% { opacity: 0; transform: translateY(78px); } }
+@keyframes acBadge { 0%, 56% { fill: rgba(255,255,255,0.06); stroke: rgba(255,255,255,0.3); transform: scale(1); } 62% { transform: scale(1.18); } 68%, 92% { fill: rgba(30,215,96,0.18); stroke: #1ed760; transform: scale(1); } 100% { fill: rgba(255,255,255,0.06); stroke: rgba(255,255,255,0.3); } }
+@keyframes acLock { 0%, 55% { opacity: 1; } 60%, 95% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes acTick { 0%, 58% { opacity: 0; stroke-dashoffset: 22; } 60% { opacity: 1; stroke-dashoffset: 22; } 72%, 92% { opacity: 1; stroke-dashoffset: 0; } 100% { opacity: 0; stroke-dashoffset: 0; } }
+
+/* 2. Sync: assignments drop into the list and the count rolls up. */
+.as-frame { fill: rgba(255,255,255,0.03); stroke: rgba(255,255,255,0.16); }
+.as-row rect:first-child { fill: rgba(255,255,255,0.06); }
+.as-row circle { fill: none; stroke: rgba(255,255,255,0.4); stroke-width: 1.5; }
+.as-txt { fill: rgba(255,255,255,0.22); }
+.as-row { animation-duration: 3.6s; animation-timing-function: cubic-bezier(.2,.9,.3,1.2); animation-iteration-count: infinite; }
+.as-row.r1 { animation-name: asRow1; } .as-row.r2 { animation-name: asRow2; } .as-row.r3 { animation-name: asRow3; }
+@keyframes asRow1 { 0%, 6% { opacity: 0; transform: translateY(-14px); } 16%, 86% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; transform: none; } }
+@keyframes asRow2 { 0%, 18% { opacity: 0; transform: translateY(-14px); } 28%, 86% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; transform: none; } }
+@keyframes asRow3 { 0%, 30% { opacity: 0; transform: translateY(-14px); } 40%, 86% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; transform: none; } }
+.as-count { position: absolute; right: 12px; top: 8px; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #fff; color: #000; font-size: 11.5px; font-weight: 700; }
+.as-odo { display: inline-block; height: 1.25em; line-height: 1.25em; overflow: hidden; vertical-align: bottom; }
+.as-odo b { display: block; text-align: right; transform: translateY(-200%); animation: asOdo 3.6s cubic-bezier(.3,1.4,.5,1) infinite; }
+@keyframes asOdo { 0%, 12% { transform: translateY(0); } 20%, 30% { transform: translateY(-100%); } 40%, 92% { transform: translateY(-200%); } 100% { transform: translateY(0); } }
+
+/* 3. Rank: the task that matters most rises to #1 and lights up. */
+.ar-row rect:first-child { fill: rgba(255,255,255,0.05); stroke: rgba(255,255,255,0.12); }
+.ar-txt { fill: rgba(255,255,255,0.22); }
+.ar-ranks circle { fill: rgba(255,255,255,0.08); }
+.ar-ranks text { fill: #fff; font-size: 11px; font-weight: 700; text-anchor: middle; font-family: inherit; }
+.ar-row { animation-duration: 4s; animation-timing-function: cubic-bezier(.65,0,.25,1); animation-iteration-count: infinite; }
+.ar-a, .ar-b { animation-name: arDown; transform: translateY(44px); }
+.ar-c { animation-name: arUp; transform: translateY(-88px); }
+.ar-c rect:first-child { animation: arLit 4s ease infinite; fill: rgba(255,255,255,0.12); stroke: #fff; }
+@keyframes arUp { 0%, 24% { transform: none; } 50%, 86% { transform: translateY(-88px); } 100% { transform: none; } }
+@keyframes arDown { 0%, 24% { transform: none; } 50%, 86% { transform: translateY(44px); } 100% { transform: none; } }
+@keyframes arLit { 0%, 46% { fill: rgba(255,255,255,0.05); stroke: rgba(255,255,255,0.12); } 56%, 84% { fill: rgba(255,255,255,0.12); stroke: #fff; } 100% { fill: rgba(255,255,255,0.05); stroke: rgba(255,255,255,0.12); } }
+
+/* 4. Focus: the timer ring fills, a tick lands and the minutes count. */
+.af-track { fill: none; stroke: rgba(255,255,255,0.10); stroke-width: 8; }
+.af-ring { fill: none; stroke: #fff; stroke-width: 8; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 0; transform: rotate(-90deg); transform-box: fill-box; transform-origin: center; animation: afRing 4.2s cubic-bezier(.5,0,.3,1) infinite; }
+.af-tick { fill: none; stroke: #1ed760; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 50; stroke-dashoffset: 0; animation: afTick 4.2s ease infinite; }
+.af-time { position: absolute; left: 0; right: 0; top: calc(9px + 50% - 11px); text-align: center; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; opacity: 0; animation: afTime 4.2s ease infinite; }
+.af-plus { position: absolute; right: 16%; top: 20px; padding: 3px 9px; border-radius: 999px; background: rgba(30,215,96,0.18); color: #1ed760; font-size: 12px; font-weight: 700; animation: afPlus 4.2s ease infinite; }
+@keyframes afRing { 0%, 6% { stroke-dashoffset: 100; } 64%, 90% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 100; } }
+@keyframes afTick { 0%, 64% { opacity: 0; stroke-dashoffset: 50; } 66% { opacity: 1; stroke-dashoffset: 50; } 76%, 90% { opacity: 1; stroke-dashoffset: 0; } 100% { opacity: 0; } }
+@keyframes afTime { 0%, 4% { opacity: 0; } 10%, 58% { opacity: 1; } 64%, 100% { opacity: 0; } }
+@keyframes afPlus { 0%, 70% { opacity: 0; transform: translateY(8px); } 78%, 90% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-6px); } }
+
+@media (max-width: 1100px) { .how-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .how { padding: 64px 16px 88px; }
+  .how-grid { grid-template-columns: 1fr; }
+  .how-card { min-height: 320px; }
+  .how-track { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-how-reveal] { opacity: 1; translate: none; transition: none; }
+  .how-scroll-hint, .how-scroll-hint svg { animation: none; }
+}
+/* Placed explicitly: the arrow spans both columns of row 1, and without
+   fixed columns the brand panel and form were pushed into new ones. */
+.auth-page > .auth-brand { grid-column: 1; }
+.auth-page > .auth-form-col { grid-column: 2; }
+@media (max-width: 900px) { .auth-page > .auth-form-col { grid-column: 1; } }
+/* Each drawing keeps its own 240x150 shape and fills the card's width, so
+   the badges laid over it (synced count, timer) stay on the drawing. */
+.how-art { height: auto; width: 100%; max-width: 300px; aspect-ratio: 240 / 150; margin: auto auto 0; padding-top: 0; }
+.as-count { right: 4%; top: 2%; }
+.af-time { top: calc(50% - 11px); }
+.af-plus { right: 12%; top: 6%; }

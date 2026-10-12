@@ -8,8 +8,10 @@
      2. Ranked, with reasons: the list re-sorts by priority and opens up
         under #1 to show why it's first.
      3. Then you focus: #1 becomes a running timer; the study chain grows.
-   The scene follows the scroll through a spring (it catches up with a
-   little weight instead of jumping), and only animates while on screen.
+   The scene glides after the scroll (eases in, never overshoots), stops
+   gently at each step, and only animates while on screen. A progress bar
+   and a "keep scrolling" cue say what's happening; the sign-in screen
+   lifts away as the story takes over.
    Reduce motion: no pinning; the ranked list is shown as a still.
 =========================== */
 
@@ -53,6 +55,23 @@ const STORY_PHASE_AT = [0.06, 0.36, 0.62, 0.92]; // scroll progress shown for ea
   const chainN = scene.querySelector('.scc-n');
   const ghost = scene.querySelector('.sc-canvas-ghost');
   const steps = [...section.querySelectorAll('.story-step')];
+  const copy = section.querySelector('.story-copy');
+  const bar = document.createElement('div');
+  bar.className = 'story-progress';
+  bar.innerHTML = '<span class="sp-track"><i></i></span><span class="sp-label">Step 1 of 4</span>';
+  copy.insertBefore(bar, copy.querySelector('.story-steps'));
+  const barFill = bar.querySelector('i'), barLabel = bar.querySelector('.sp-label');
+  const cue = document.createElement('div');
+  cue.className = 'story-cue';
+  cue.innerHTML = '<span class="sc-mouse"><i></i></span>Keep scrolling';
+  scene.appendChild(cue);
+  // Gentle stops: one per step, so a scroll moves one step at a time.
+  const snaps = STORY_PHASE_AT.map(() => { const m = document.createElement('div'); m.className = 'story-snap'; section.appendChild(m); return m; });
+  const placeSnaps = () => {
+    const sc0 = scroller(); if (!sc0) return;
+    const span = section.offsetHeight - sc0.clientHeight;
+    snaps.forEach((m, k) => { m.style.top = Math.round(STORY_PHASE_AT[k] * span) + 'px'; });
+  };
 
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
   const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -111,10 +130,15 @@ const STORY_PHASE_AT = [0.06, 0.36, 0.62, 0.92]; // scroll progress shown for ea
     const phase = p < 0.22 ? 0 : p < 0.48 ? 1 : p < 0.74 ? 2 : 3;
     steps.forEach((s2, k) => { s2.classList.toggle('active', k === phase); s2.classList.toggle('past', k < phase); });
     if (section.dataset.phase !== String(phase)) section.dataset.phase = phase;
+    barFill.style.transform = `scaleX(${p.toFixed(4)})`;
+    barLabel.textContent = `Step ${phase + 1} of 4`;
+    cue.style.opacity = (1 - clamp(p * 14)).toFixed(3);
   }
 
   let target = 0, cur = 0, vel = 0, running = false, visible = false;
   measure();
+  placeSnaps();
+  window.addEventListener('resize', placeSnaps);
   // The scene changes size with the window and, on phones, when the last
   // step shows its buttons: re-measure whenever it does.
   if ('ResizeObserver' in window) new ResizeObserver(() => { measure(); render(cur); }).observe(scene);
@@ -134,14 +158,24 @@ const STORY_PHASE_AT = [0.06, 0.36, 0.62, 0.92]; // scroll progress shown for ea
     const span = r.height - sc.clientHeight;
     return span > 0 ? clamp((top - r.top) / span) : 0;
   }
-  function tick() {
-    vel = vel * 0.74 + (target - cur) * 0.085;
-    cur += vel;
-    if (Math.abs(target - cur) < 0.0004 && Math.abs(vel) < 0.0004) { cur = target; running = false; }
+  let last = 0;
+  function tick(now) {
+    const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+    last = now;
+    cur += (target - cur) * (1 - Math.exp(-dt * 6.5));
+    if (Math.abs(target - cur) < 0.0005) { cur = target; running = false; last = 0; }
     render(cur);
     if (running) requestAnimationFrame(tick);
   }
+  const authPage = document.getElementById('auth-page');
   function kick() {
+    const s0 = scroller();
+    if (s0 && authPage) {
+      const h = clamp(s0.scrollTop / (s0.clientHeight * 0.9));
+      authPage.style.setProperty('--hero', h.toFixed(3));
+      // Only while lifting: at rest the sign-in screen has no transform at all.
+      authPage.toggleAttribute('data-lifting', h > 0.001);
+    }
     target = progress();
     if (!running && visible) { running = true; requestAnimationFrame(tick); }
   }
@@ -155,6 +189,8 @@ const STORY_PHASE_AT = [0.06, 0.36, 0.62, 0.92]; // scroll progress shown for ea
     const r = section.getBoundingClientRect(), top = s3.getBoundingClientRect().top;
     const sectionTop = r.top - top + s3.scrollTop, span = r.height - s3.clientHeight;
     s3.scrollTo({ top: sectionTop + STORY_PHASE_AT[k] * span, behavior: 'smooth' });
+    const dot = steps[k] && steps[k].querySelector('.ss-dot');
+    if (dot && dot.animate) dot.animate([{ boxShadow: '0 0 0 0 rgba(255,255,255,0.5)' }, { boxShadow: '0 0 0 14px rgba(255,255,255,0)' }], { duration: 700, easing: 'ease-out' });
   };
 
   // The "See how it works" arrow hides once the student starts scrolling.

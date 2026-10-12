@@ -677,6 +677,7 @@
           <div class="sidebar-sync-sub" id="sidebar-sync-sub">Not synced yet</div>
         </span>
       </button>
+      <button type="button" class="new-work-link" id="new-work-link" hidden onclick="openNewWork()"></button>
       <button class="tab active" id="tab-home" onclick="showPage('home',this)" title="Home">
         <span class="tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 3l7 6.5"/><path d="M5 8.5V17h10V8.5"/></svg></span>
         <span>Home</span>
@@ -744,6 +745,7 @@
         </div>
       </div>
       <div class="topbar-right">
+        <button type="button" class="new-work-chip" id="new-work-chip" hidden onclick="openNewWork()"></button>
         <button class="mobile-sync-btn" onclick="openSyncOverlay()" title="Sync assignments now">
           <span class="mobile-sync-icon">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -4121,9 +4123,13 @@ async function runCanvasSync({ silent = false } = {}) {
     // the plain Settings button) -- skipped when the caller already has its
     // own richer completion screen showing (the sync overlay), where this
     // would just be a redundant second popup stacked under it.
+    const newWork = (cachedAssignments || []).filter(a => !beforeKeys.has(keyOf(a)) && !a.completed);
+    // Remembered for the "New" tags and the "3 new" link, so it can be found
+    // again after the Updates card or the sync screen is gone. Not on a
+    // first-ever sync, when everything would count as new.
+    if (beforeKeys.size && typeof rememberNewWork === 'function') rememberNewWork(newWork);
     if (!silent && document.getElementById('ws-overlay')?.style.display !== 'flex') {
       // A sync the student didn't watch on the sync screen: show what's new.
-      const newWork = (cachedAssignments || []).filter(a => !beforeKeys.has(keyOf(a)) && !a.completed);
       if (typeof showSyncUpdates === 'function') showSyncUpdates(newWork);
       else showReward(SYNC_REWARD_MESSAGES[Math.floor(Math.random() * SYNC_REWARD_MESSAGES.length)], 'sync', true);
     }

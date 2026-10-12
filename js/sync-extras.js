@@ -134,3 +134,115 @@ function showSyncUpdates(newWork) {
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
 }
+
+/* ---- What's new since the last sync -------------------------------------- */
+// The assignments the latest syncs brought in stay "new" until the student
+// opens one or checks it off: a "New" tag on its card, and an "N new" link
+// under Sync now (a chip next to the sync button on phones) that reopens the
+// list any time. Kept per account on this device.
+const newWorkKey = () => 'sf_new_work_' + USER_ID;
+const workKeyOf = a => `${a.title}||${a.course}`;
+
+function newWorkKeys() {
+  try { return new Set(JSON.parse(localStorage.getItem(newWorkKey()) || '[]')); } catch (e) { return new Set(); }
+}
+function saveNewWorkKeys(set) {
+  try { localStorage.setItem(newWorkKey(), JSON.stringify([...set])); } catch (e) {}
+}
+
+function isNewWork(a) {
+  if (!a || a.completed) return false;
+  const k = workKeyOf(a);
+  return newWorkKeys().has(k) && !doneSet.has(k);
+}
+
+// Still-open new assignments, soonest due first.
+function currentNewWork() {
+  const keys = newWorkKeys();
+  return (cachedAssignments || [])
+    .filter(a => keys.has(workKeyOf(a)) && !a.completed && !doneSet.has(workKeyOf(a)))
+    .sort((a, b) => new Date(a.due_date || '9999-01-01') - new Date(b.due_date || '9999-01-01'));
+}
+
+function rememberNewWork(list) {
+  const keys = newWorkKeys();
+  // Drop anything that's gone from Canvas since, then add this sync's.
+  const present = new Set((cachedAssignments || []).map(workKeyOf));
+  [...keys].forEach(k => { if (!present.has(k)) keys.delete(k); });
+  (list || []).forEach(a => keys.add(workKeyOf(a)));
+  saveNewWorkKeys(keys);
+  refreshNewWorkViews();
+}
+
+function markNewWorkSeen(a) {
+  if (!a) return;
+  const keys = newWorkKeys();
+  if (keys.delete(workKeyOf(a))) { saveNewWorkKeys(keys); refreshNewWorkViews(); }
+}
+
+function renderNewWorkLink() {
+  const n = currentNewWork().length;
+  const label = `${n} new assignment${n !== 1 ? 's' : ''} since your last sync`;
+  const link = document.getElementById('new-work-link');
+  if (link) { link.hidden = !n; link.textContent = `${n} new since your last sync ›`; link.title = label; }
+  const chip = document.getElementById('new-work-chip');
+  if (chip) {
+    chip.hidden = !n;
+    chip.innerHTML = `<span class="nwc-dot"></span>${n} new`;
+    chip.setAttribute('aria-label', label);
+    chip.title = label;
+  }
+}
+
+function refreshNewWorkViews() {
+  renderNewWorkLink();
+  const list = cachedAssignments || [];
+  ['renderDueSoon', 'renderAllWork', 'renderPriority'].forEach(fn => { if (typeof window[fn] === 'function') window[fn](list); });
+  if (typeof renderHome === 'function') renderHome();
+}
+
+function openNewWork() {
+  const list = currentNewWork();
+  if (!list.length) { renderNewWorkLink(); return; }
+  if (window.wsViewList) wsViewList(list);
+}
+
+// Opening an assignment counts as having seen it; checked-off work is never
+// "new". The link count follows along with every Home render.
+(function hookNewWorkSeen() {
+  const orig = window.openAssignmentDetail;
+  if (typeof orig === 'function') {
+    window.openAssignmentDetail = function (id) {
+      const a = (cachedAssignments || []).find(x => String(x.id) === String(id));
+      const r = orig.apply(this, arguments);
+      if (a && isNewWork(a)) markNewWorkSeen(a);
+      return r;
+    };
+  }
+  const origHome = window.renderHome;
+  if (typeof origHome === 'function') {
+    window.renderHome = function () { const r = origHome.apply(this, arguments); renderNewWorkLink(); return r; };
+  }
+})();
+
+// Checking one off clears it right away too (the card is updated in place,
+// so its tag would otherwise linger until the next redraw).
+(function hookNewWorkDone() {
+  const wrapDone = (name, findA) => {
+    const orig = window[name];
+    if (typeof orig !== 'function') return;
+    window[name] = function () {
+      const a = findA.apply(null, arguments);
+      const r = orig.apply(this, arguments);
+      if (a && newWorkKeys().has(workKeyOf(a))) {
+        Promise.resolve(r).then(() => markNewWorkSeen(a));
+      }
+      return r;
+    };
+  };
+  const byKey = key => (cachedAssignments || []).find(x => doneKey(x) === key);
+  const byId = id => (cachedAssignments || []).find(x => String(x.id) === String(id));
+  wrapDone('toggleDone', byKey);
+  wrapDone('markPriorityDone', byId);
+  wrapDone('toggleDoneFromDetail', byId);
+})();

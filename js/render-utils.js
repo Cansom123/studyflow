@@ -95,10 +95,12 @@ function aCard(a, isOverdue, redTint = false, doneSet) {
   const isDone = a.completed || doneSet.has(decodeURIComponent(key));
   const cardClass = `card${isDone ? ' done' : ''}${redTint && !isDone ? ' overdue-card' : ''}`;
   const overdueTag = redTint && !isDone ? `<span class="overdue-pill">OVERDUE</span>` : '';
+  // "New" until the student opens it or checks it off (js/sync-extras.js).
+  const newTag = !isDone && typeof isNewWork === 'function' && isNewWork(a) ? `<span class="new-tag">New</span>` : '';
   const noteTag = (typeof assignmentHasNote === 'function' && assignmentHasNote(a)) ? noteIndicatorHTML() : '';
   const titleInner = a.id
-    ? `<span class="card-title-link" onclick="event.stopPropagation();openAssignmentDetail('${a.id}')">${a.title}${overdueTag}</span>${noteTag}`
-    : `${a.title}${overdueTag}${noteTag}`;
+    ? `<span class="card-title-link" onclick="event.stopPropagation();openAssignmentDetail('${a.id}')">${a.title}${newTag}${overdueTag}</span>${noteTag}`
+    : `${a.title}${newTag}${overdueTag}${noteTag}`;
   const canvasLink = a.assignment_url
     ? `<a href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" class="canvas-link" onclick="event.stopPropagation()">Open in Canvas →</a>`
     : '';

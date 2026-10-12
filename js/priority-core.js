@@ -98,7 +98,7 @@ function priorityListHTML(scored, completedToday) {
       <button class="priority-check" onclick="markPriorityDone('${a.id}')" title="Mark as done">✓</button>
       <div class="priority-num ${colors[i] || 'p5'}">${i + 1}</div>
       <div class="priority-info">
-        <div class="card-row"><div class="card-title">${a.title}</div><span class="badge ${bc}">${bl}</span></div>
+        <div class="card-row"><div class="card-title">${a.title}${(typeof isNewWork === 'function' && isNewWork(a)) ? '<span class="new-tag">New</span>' : ''}</div><span class="badge ${bc}">${bl}</span></div>
         <div class="card-sub" style="margin-top:3px;">${a.course || ''} · ${dueText}</div>
         <button type="button" class="priority-why${typeof priorityWhyOpen !== 'undefined' && priorityWhyOpen.has(String(a.id)) ? ' open' : ''}" aria-expanded="${typeof priorityWhyOpen !== 'undefined' && priorityWhyOpen.has(String(a.id))}" onclick="togglePriorityWhy('${a.id}', this)">Why #${i + 1}?<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4"/></svg></button>
         <div class="priority-why-panel"><ul>${(a.reasons || []).map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ul></div>

@@ -450,7 +450,7 @@ function homeGradesListHTML(cachedGrades, limit = 4) {
     return `<div class="hg-row">
       <div class="hg-top">
         <span class="hg-name">${escapeHtml(cleanCourseName(g.course_name))}</span>
-        <span class="hg-score">${hasScore ? `<span class="hg-pct">${score.toFixed(1)}%</span>` : ''}<span class="hg-letter ${letterClass}">${escapeHtml(letter || '-')}</span></span>
+        <span class="hg-score">${hasScore ? `<span class="hg-pct" data-count-to="${score.toFixed(1)}" data-count-decimals="1" data-count-suffix="%">${score.toFixed(1)}%</span>` : ''}<span class="hg-letter ${letterClass}">${escapeHtml(letter || '-')}</span></span>
       </div>
       ${barWidth > 0 ? `<div class="ht-bar"><i style="width:${barWidth}%;background:${barColors[letterClass] || 'var(--accent)'}"></i></div>` : ''}
     </div>`;

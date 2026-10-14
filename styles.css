@@ -4667,3 +4667,29 @@ body.auth-mode .app { scroll-snap-type: y proximity; }
   .sc-mouse i, .auth-btn:hover::before { animation: none; }
   body.auth-mode .app { scroll-snap-type: none; }
 }
+
+/* ===========================
+   DASHBOARD MOTION (js/dashboard-motion.js)
+=========================== */
+/* A checked-off card is held in its list (absolutely placed) while it leaves. */
+#home-upnext, #home-thisweek { position: relative; }
+
+/* The page being left stays put and fades out over the one arriving. */
+.page.page-leaving {
+  display: block; position: absolute; margin: 0; box-sizing: border-box;
+  pointer-events: none; z-index: 0; animation: pageLeave 0.2s ease forwards;
+}
+@keyframes pageLeave { to { opacity: 0; transform: translateY(-6px); } }
+
+/* Soft pointer light on Home's boxes (mouse only). */
+@property --sf-lit { syntax: '<number>'; inherits: false; initial-value: 0; }
+@media (hover: hover) and (pointer: fine) {
+  #page-home :is(.home-tile, .home-week, #home-grades, #home-study, #home-upnext > .card, #home-thisweek > .card):not(.overdue-card) {
+    background-image: radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklch, var(--accent) calc(var(--sf-lit) * 11%), transparent), transparent 70%);
+  }
+  #page-home .sf-lit { --sf-lit: 1; }
+  #page-home .home-tile { transition: transform 0.35s var(--ease-spring), border-color 0.2s, box-shadow 0.25s, --sf-lit 0.4s; }
+  #page-home .card { transition: border-color 0.2s, transform 0.35s var(--ease-spring), box-shadow 0.25s, --sf-lit 0.4s; }
+  #page-home .home-week { transition: --sf-lit 0.4s; }
+}
+@media (prefers-reduced-motion: reduce) { .page.page-leaving { display: none; animation: none; } }

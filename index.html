@@ -3942,7 +3942,9 @@ async function saveCanvasSettings() {
     .filter(c => !isCourseTermConcluded(c.name || ''))
     .map(c => ({ id: String(c.id), name: c.name }));
   // Upgrading from Quick start: the token replaces the calendar link, which
-  // is deleted (clearing canvas_feed_secret removes it from Vault).
+  // is deleted (clearing canvas_feed_secret removes it from Vault). What
+  // the student checked off is noted first, to carry over after the sync.
+  const feedDone = canvasMode === 'feed' && typeof feedCheckedOffLinks === 'function' ? await feedCheckedOffLinks() : null;
   await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', {
     canvas_url: url, canvas_token: token, selected_courses: allCourses, canvas_feed_secret: null
   });
@@ -3950,7 +3952,8 @@ async function saveCanvasSettings() {
   document.documentElement.classList.remove('sf-feed-mode');
   msgEl.innerHTML = '';
   loadCanvasSettings();
-  syncCanvas();
+  const synced = await syncCanvas();
+  if (feedDone && feedDone.size && synced && synced.ok) await carryOverFeedCheckOffs(feedDone);
 }
 
 // Keeps each student's real IANA timezone current server-side so

@@ -112,16 +112,25 @@ export function htmlToText(html: string | null | undefined): string | null {
   return text;
 }
 
-// Only assignments: Canvas gives them UIDs like "event-assignment-123".
-// Ordinary calendar events ("event-calendar-event-…") are left out.
+// Only assignments. From Canvas's calendar_event.rb (IcalEvent#to_ics):
+//   UID      "event-assignment-<id>", "event-assignment-override-<override id>"
+//            (a personal or section due date), "event-sub-assignment-<id>"
+//            (a discussion checkpoint). Ordinary events are left out.
+//   SUMMARY  "<title> [<course CODE>]" -- the course code, not its full name.
+//   URL      "https://<host>/calendar?include_contexts=course_<id>&month=..#assignment_<id>"
+//            The fragment always names the real assignment, overrides included.
+//   DTSTART  UTC; a whole-day item is VALUE=DATE with no DTEND.
 export function parseCanvasFeed(text: string, fallbackTz = "UTC"): FeedAssignment[] {
   if (!/BEGIN:VCALENDAR/i.test(text)) throw new Error("not_calendar");
   const out: FeedAssignment[] = [];
+  const seen = new Set<string>(); // one row per assignment, even if it's listed twice
   let ev: Record<string, Prop> | null = null;
   for (const line of unfold(text)) {
     if (/^BEGIN:VEVENT$/i.test(line.trim())) { ev = {}; continue; }
     if (/^END:VEVENT$/i.test(line.trim())) {
-      if (ev) { const a = toAssignment(ev, fallbackTz); if (a) out.push(a); }
+      const a = ev ? toAssignment(ev, fallbackTz) : null;
+      const key = a ? `${a.courseId}/${a.canvasAssignmentId}` : "";
+      if (a && !seen.has(key)) { seen.add(key); out.push(a); }
       ev = null; continue;
     }
     if (!ev) continue;
@@ -133,11 +142,11 @@ export function parseCanvasFeed(text: string, fallbackTz = "UTC"): FeedAssignmen
 
 function toAssignment(ev: Record<string, Prop>, tz: string): FeedAssignment | null {
   const uid = ev.UID?.value.trim() || "";
-  const idMatch = uid.match(/^event-assignment-(?:override-)?(\d+)/i);
-  if (!idMatch) return null;
+  const uidMatch = uid.match(/^event-(assignment|assignment-override|sub-assignment)-(\d+)/i);
+  if (!uidMatch) return null;
   const rawUrl = ev.URL?.value.trim() || null;
 
-  // "Lab Report [Biology 101]" -> title "Lab Report", course "Biology 101"
+  // "Lab Report [BIO-101]" -> title "Lab Report", course "BIO-101"
   const summary = unescapeText(ev.SUMMARY?.value || "").trim();
   const cm = summary.match(/^(.*?)\s*\[([^\[\]]+)\]\s*$/);
   const title = (cm ? cm[1] : summary).trim();
@@ -146,15 +155,20 @@ function toAssignment(ev: Record<string, Prop>, tz: string): FeedAssignment | nu
 
   // The course id comes from the link (".../courses/678/assignments/123" or
   // "...calendar?include_contexts=course_678#assignment_123").
-  let courseId: string | null = null, host: string | null = null;
+  let courseId: string | null = null, host: string | null = null, fragId: string | null = null;
   if (rawUrl) {
     try {
       const u = new URL(rawUrl);
       host = u.hostname;
       courseId = u.pathname.match(/\/courses\/(\d+)/)?.[1] ?? u.searchParams.get("include_contexts")?.match(/course_(\d+)/)?.[1] ?? null;
+      fragId = u.hash.match(/^#assignment_(\d+)$/)?.[1] ?? u.pathname.match(/\/assignments\/(\d+)/)?.[1] ?? null;
     } catch { /* keep nulls */ }
   }
-  const assignmentId = idMatch[1];
+  // An override's UID carries the override's id, not the assignment's; the
+  // link's fragment always has the assignment's.
+  const plainAssignment = uidMatch[1].toLowerCase() === "assignment";
+  const assignmentId = fragId ?? (plainAssignment ? uidMatch[2] : null);
+  if (!assignmentId) return null;
   // Same address Canvas's API gives the assignment, so the two connection
   // methods describe each assignment the same way.
   const url = host && courseId ? `https://${host}/courses/${courseId}/assignments/${assignmentId}` : rawUrl;

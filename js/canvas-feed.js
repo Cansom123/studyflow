@@ -21,6 +21,7 @@ const CANVAS_PLAN_ROWS = [
   ['Grades and "what I need on the final"', false, true],
   ['Announcements, messages and teacher feedback', false, true],
   ['Syllabi, and coco.1 answers from them', false, true],
+  ['Class names', 'Short codes, like BIO-101', 'Full names'],
   ['Setup', 'About 30 seconds', 'About 2 minutes'],
   ['What StudyFlow can see', 'Your Canvas calendar', 'Your Canvas account (it only reads)'],
 ];
@@ -132,6 +133,37 @@ async function saveCanvasFeedOnboard() {
   setCanvasMode({ canvas_feed_connected: true });
   await loadCoursesForSelection();
   showOnboardCourses();
+}
+
+/* ---- Upgrading to Full sync keeps what was checked off --------------------
+   The calendar link labels classes by course code ("BIO-101"), the token by
+   full name, so the same assignment's title||course key changes on upgrade.
+   Its Canvas link (/courses/<id>/assignments/<id>) is the same in both, so
+   check-offs are matched by link. */
+async function feedCheckedOffLinks() {
+  const links = new Set();
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&completed=eq.true&select=assignment_url`);
+  if (ok && Array.isArray(data)) data.forEach(r => r.assignment_url && links.add(r.assignment_url));
+  (cachedAssignments || []).forEach(a => {
+    if (a.assignment_url && doneSet.has(decodeURIComponent(doneKey(a)))) links.add(a.assignment_url);
+  });
+  return links;
+}
+
+async function carryOverFeedCheckOffs(links) {
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&completed=eq.false&select=id,title,course,assignment_url`);
+  if (!ok || !Array.isArray(data)) return;
+  const matches = data.filter(a => a.assignment_url && links.has(a.assignment_url));
+  if (!matches.length) return;
+  const now = new Date().toISOString();
+  // doneSet too: a token sync re-reads "completed" from Canvas each time, and
+  // doneSet is what keeps a StudyFlow check-off for work Canvas doesn't
+  // count as submitted.
+  matches.forEach(a => doneSet.add(decodeURIComponent(doneKey(a))));
+  try { localStorage.setItem('sf_done_' + USER_ID, JSON.stringify([...doneSet])); } catch (e) {}
+  const ids = matches.map(a => a.id).join(',');
+  await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}&id=in.(${ids})`, 'PATCH', { completed: true, completed_at: now });
+  await loadAssignments();
 }
 
 /* ---- "Comes with Full sync" in place of what the link can't provide ----- */

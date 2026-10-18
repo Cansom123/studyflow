@@ -303,13 +303,67 @@
       <div class="onboard-flow-track" id="onboard-flow-track">
 
         <!-- STEP 1: CONNECT CANVAS -->
-        <div id="onboard-canvas" class="onboard-flow-panel">
+        <!-- Three views, switched by data-ob-view: pick a way to connect
+             (Quick start with the calendar link, or Full sync with a token),
+             then that one's form. js/canvas-feed.js -->
+        <div id="onboard-canvas" class="onboard-flow-panel" data-ob-view="choose">
           <div class="onboard-flow-panel-body">
+            <div class="ob-view ob-view-choose">
+              <div class="onboard-title-row">
+                <span class="onboard-title-icon">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 11.5l3-3"/><path d="M9.5 6.5l1-1a3 3 0 0 1 4.2 4.2l-1 1M10.5 13.5l-1 1a3 3 0 0 1-4.2-4.2l1-1"/></svg>
+                </span>
+                <div class="onboard-title">Connect Canvas</div>
+              </div>
+              <div class="onboard-sub">Pick how StudyFlow gets your assignments. You can switch anytime in Settings.</div>
+              <div class="cplan-choices">
+                <button type="button" class="cplan-card cplan-card-feed" onclick="obChooseCanvasMode('feed')">
+                  <span class="cplan-tag">Recommended</span>
+                  <span class="cplan-name">Quick start</span>
+                  <span class="cplan-meta">About 30 seconds · your Canvas calendar link</span>
+                  <span class="cplan-desc">Everything that's due, in one place. Nothing to generate.</span>
+                </button>
+                <button type="button" class="cplan-card" onclick="obChooseCanvasMode('token')">
+                  <span class="cplan-name">Full sync</span>
+                  <span class="cplan-meta">About 2 minutes · a Canvas access token</span>
+                  <span class="cplan-desc">Adds grades, announcements and syllabi, and knows what you've turned in.</span>
+                </button>
+              </div>
+              <div class="cplan-compare-host" id="ob-plan-compare"></div>
+            </div>
+
+            <div class="ob-view ob-view-feed">
+              <button type="button" class="ob-back-link" onclick="obChooseCanvasMode(null)">‹ Other ways to connect</button>
+              <div class="onboard-title-row">
+                <span class="onboard-title-icon">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="13" height="12" rx="2"/><path d="M3.5 8h13M7 3v3M13 3v3"/></svg>
+                </span>
+                <div class="onboard-title">Paste your calendar link</div>
+              </div>
+              <div class="onboard-sub">StudyFlow reads your due dates from your Canvas calendar. It can't see your grades or messages.</div>
+              <div id="onboard-feed-msg"></div>
+              <div class="auth-label">Canvas calendar link</div>
+              <input class="auth-input" type="url" id="ob-feed-url" placeholder="https://yourschool.instructure.com/feeds/calendars/user_…" autocomplete="off" spellcheck="false" />
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title" style="margin-bottom:6px;font-size:13px;">How to find it</div>
+                <ol class="token-steps">
+                  <li><span>Log into Canvas and click <b>Calendar</b> in the left menu</span></li>
+                  <li><span>On the right side, scroll down and click <b>Calendar Feed</b></span></li>
+                  <li><span>Copy the link that pops up and paste it above</span></li>
+                </ol>
+              </div>
+              <div class="help-note" style="margin-top:-6px;">
+                This link only shows your calendar. To stop StudyFlow reading it, open the same Calendar Feed box in Canvas and reset the link.
+              </div>
+            </div>
+
+            <div class="ob-view ob-view-token">
+            <button type="button" class="ob-back-link" onclick="obChooseCanvasMode(null)">‹ Other ways to connect</button>
             <div class="onboard-title-row">
               <span class="onboard-title-icon">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 11.5l3-3"/><path d="M9.5 6.5l1-1a3 3 0 0 1 4.2 4.2l-1 1M10.5 13.5l-1 1a3 3 0 0 1-4.2-4.2l1-1"/></svg>
               </span>
-              <div class="onboard-title">Connect Canvas</div>
+              <div class="onboard-title">Connect with a token</div>
             </div>
             <div class="onboard-sub">Enter your school's Canvas URL and API token so StudyFlow can see your assignments.</div>
             <div id="onboard-canvas-msg"></div>
@@ -331,9 +385,10 @@
                 <li><span>Name it "StudyFlow" and paste it above</span></li>
               </ol>
             </div>
+            </div>
           </div>
           <div class="onboard-flow-panel-footer">
-            <button class="onboard-btn" id="ob-canvas-btn" onclick="saveCanvasOnboard()">Save & continue</button>
+            <button class="onboard-btn" id="ob-canvas-btn" onclick="obCanvasContinue()">Save & continue</button>
           </div>
         </div>
 
@@ -1465,14 +1520,26 @@
         <div id="canvas-connected" style="display:none;">
           <div class="card">
             <div class="connected-badge"><span class="connected-dot"></span>Canvas connected</div>
+            <div class="canvas-mode-label" id="canvas-mode-label"></div>
             <div class="card-sub" id="canvas-url-display" style="margin-bottom:12px;"></div>
             <button class="sync-btn" id="sync-btn" onclick="openSyncOverlay()">Sync assignments now</button>
             <div id="sync-status" class="sync-status"></div>
             <button class="change-courses-btn" style="margin-top:8px;" onclick="showCourseSelection()">Did we miss a class?</button>
             <button class="disconnect-btn" style="margin-top:8px;" onclick="disconnectCanvas()">Disconnect Canvas</button>
-            <div class="help-note" style="margin-top:10px;margin-bottom:0;">
+            <div class="help-note canvas-mode-token-only" style="margin-top:10px;margin-bottom:0;">
               Your Canvas token works like a password - StudyFlow only uses it to read your assignments, syllabi, and grades, and never shares it. Note that <strong>Disconnect Canvas removes it from StudyFlow only</strong> - the token itself stays active in Canvas until you also remove it there, under Canvas → Settings → Approved Integrations.
             </div>
+            <div class="help-note canvas-mode-feed-only" style="margin-top:10px;margin-bottom:0;display:none;">
+              You're connected with your Canvas calendar link, which only shows due dates. Since it can't tell what you turned in, check work off in StudyFlow when you finish it. To cut off access completely, reset the link in Canvas → Calendar → Calendar Feed.
+            </div>
+          </div>
+        </div>
+        <!-- Quick start students: what Full sync adds, then the token form below. -->
+        <div id="canvas-upgrade" style="display:none;">
+          <div class="card cplan-upgrade">
+            <div class="cplan-upgrade-title">Upgrade to Full sync</div>
+            <div class="card-sub">Add a Canvas access token to unlock everything below. Your assignments and what you've checked off carry over.</div>
+            <div class="cplan-compare-host" id="settings-plan-compare"></div>
           </div>
         </div>
         <div id="canvas-form" style="display:none;">
@@ -2294,6 +2361,17 @@ let cachedMessages = [];
 let cachedFeedback = [];
 let syncInProgress = false;
 let syncPromise = null;          // the sync running right now, shared by every caller
+// How this student is connected to Canvas: 'token' (Full sync), 'feed'
+// (Quick start, the Canvas calendar link) or null (not connected yet).
+// The <html> class lets pages show "comes with Full sync" in place of
+// what the calendar link can't provide (grades, announcements, syllabi).
+let canvasMode = null;
+function setCanvasMode(row) {
+  canvasMode = row && (row.canvas_connected || row.canvas_token) ? 'token'
+    : row && row.canvas_feed_connected ? 'feed' : null;
+  document.documentElement.classList.toggle('sf-feed-mode', canvasMode === 'feed');
+  return canvasMode;
+}
 let onboardingSyncPromise = null; // the first sync, started in the background during onboarding
 
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -2666,7 +2744,7 @@ async function routeUser() {
   if (!ACCESS_TOKEN || !USER_ID) { showLoginScreen(); return; }
   let res;
   try {
-    res = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_connected,canvas_token`);
+    res = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_connected,canvas_token,canvas_feed_connected`);
   } catch (e) {
     // fetch() itself threw -- offline, DNS, blocked. That says nothing about
     // whether Canvas is connected, so it must not fall through to onboarding.
@@ -2679,7 +2757,7 @@ async function routeUser() {
   // answer to "is Canvas connected?" -- only a successful reply with no token
   // on file means onboarding is actually needed.
   if (!ok) { showConnectionProblem(); return; }
-  if (!data || data.length === 0 || !(data[0].canvas_connected || data[0].canvas_token)) { showOnboardCanvas(); return; }
+  if (!data || data.length === 0 || !setCanvasMode(data[0])) { showOnboardCanvas(); return; }
   bootSplashHeld = true;
   showApp();
 }
@@ -3421,14 +3499,20 @@ async function loadCoursesForSelection() {
       .filter(Boolean)
   );
   try {
-    const validateResp = await fetch(`${SB_URL}/functions/v1/validate-canvas`, {
+    // Quick start: the classes come from the saved calendar link.
+    const fromFeed = canvasMode === 'feed';
+    const validateResp = await fetch(`${SB_URL}/functions/v1/${fromFeed ? 'canvas-feed-sync' : 'validate-canvas'}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
       // No token: the server re-checks the student's saved, encrypted one.
-      body: JSON.stringify({})
+      body: JSON.stringify(fromFeed ? { action: 'courses' } : {})
     });
     const result = await validateResp.json();
     const loadingEl = document.getElementById('course-list-loading');
+    if (fromFeed && !result.ok) {
+      loadingEl.textContent = result.message || 'Could not read your Canvas calendar. Go back and paste the link again.';
+      loadingEl.style.display = 'block'; return;
+    }
     if (result.error === 'expired_token') {
       loadingEl.textContent = 'Your Canvas token has expired. Go back and make a new one with no expiry date (or a date months away).';
       loadingEl.style.display = 'block'; return;
@@ -3802,15 +3886,28 @@ async function renderSelectedCoursesTab() {
 }
 
 async function loadCanvasSettings() {
-  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_connected,canvas_token`);
-  if (ok && data && data.length > 0 && (data[0].canvas_connected || data[0].canvas_token)) {
-    document.getElementById('canvas-connected').style.display = 'block';
-    document.getElementById('canvas-form').style.display = 'none';
-    document.getElementById('canvas-url-display').textContent = data[0].canvas_url;
+  const { ok, data } = await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}&select=canvas_url,canvas_connected,canvas_token,canvas_feed_connected`);
+  const mode = ok && data && data.length > 0 ? setCanvasMode(data[0]) : null;
+  const connectedEl = document.getElementById('canvas-connected');
+  const formEl = document.getElementById('canvas-form');
+  const upgradeEl = document.getElementById('canvas-upgrade');
+  if (mode) {
+    connectedEl.style.display = 'block';
+    document.getElementById('canvas-url-display').textContent = data[0].canvas_url || '';
+    document.getElementById('canvas-mode-label').textContent = mode === 'feed' ? 'Quick start · calendar link' : 'Full sync · access token';
+    // Quick start students see what Full sync adds, with the token form
+    // right there to upgrade.
+    if (upgradeEl) upgradeEl.style.display = mode === 'feed' ? 'block' : 'none';
+    formEl.style.display = mode === 'feed' ? 'block' : 'none';
+    const urlInput = document.getElementById('canvas-url');
+    if (mode === 'feed' && urlInput && !urlInput.value) urlInput.value = data[0].canvas_url || '';
   } else {
-    document.getElementById('canvas-connected').style.display = 'none';
-    document.getElementById('canvas-form').style.display = 'block';
+    connectedEl.style.display = 'none';
+    if (upgradeEl) upgradeEl.style.display = 'none';
+    formEl.style.display = 'block';
   }
+  document.querySelectorAll('.canvas-mode-token-only').forEach(el => { el.style.display = mode === 'token' ? '' : 'none'; });
+  document.querySelectorAll('.canvas-mode-feed-only').forEach(el => { el.style.display = mode === 'feed' ? '' : 'none'; });
 }
 
 async function saveCanvasSettings() {
@@ -3844,9 +3941,13 @@ async function saveCanvasSettings() {
   const allCourses = validCourses
     .filter(c => !isCourseTermConcluded(c.name || ''))
     .map(c => ({ id: String(c.id), name: c.name }));
+  // Upgrading from Quick start: the token replaces the calendar link, which
+  // is deleted (clearing canvas_feed_secret removes it from Vault).
   await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', {
-    canvas_url: url, canvas_token: token, selected_courses: allCourses
+    canvas_url: url, canvas_token: token, selected_courses: allCourses, canvas_feed_secret: null
   });
+  canvasMode = 'token';
+  document.documentElement.classList.remove('sf-feed-mode');
   msgEl.innerHTML = '';
   loadCanvasSettings();
   syncCanvas();
@@ -3913,8 +4014,9 @@ function copyCalendarLink() {
 }
 
 async function disconnectCanvas() {
-  await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_token: null, canvas_token_secret: null, selected_courses: [] });
+  await sbFetchWithRetry(`/rest/v1/user_settings?user_id=eq.${USER_ID}`, 'PATCH', { canvas_token: null, canvas_token_secret: null, canvas_feed_secret: null, selected_courses: [] });
   await sbFetchWithRetry(`/rest/v1/assignments?user_id=eq.${USER_ID}`, 'DELETE');
+  setCanvasMode(null);
   showOnboardCanvas();
 }
 
@@ -4118,14 +4220,16 @@ async function runCanvasSync({ silent = false } = {}) {
   try {
     // Ensure we have a fresh token before calling the edge function
     if (REFRESH_TOKEN) await refreshSession();
-    const resp = await fetch(`${SB_URL}/functions/v1/canvas-sync-v3`, {
+    // Quick start students sync from their Canvas calendar link instead.
+    const fromFeed = canvasMode === 'feed';
+    const resp = await fetch(`${SB_URL}/functions/v1/${fromFeed ? 'canvas-feed-sync' : 'canvas-sync-v3'}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },
-      body: JSON.stringify({ user_id: USER_ID })
+      body: JSON.stringify(fromFeed ? {} : { user_id: USER_ID })
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.message || result.error || 'Sync failed');
-    await Promise.all([loadAssignments(), loadGrades(), loadAnnouncements(), loadMessages(), loadFeedback()]);
+    await Promise.all(fromFeed ? [loadAssignments()] : [loadAssignments(), loadGrades(), loadAnnouncements(), loadMessages(), loadFeedback()]);
     localStorage.setItem('sf_last_sync_' + USER_ID, Date.now());
     updateLastSyncedLabel();
     syncInProgress = false;
@@ -4139,7 +4243,10 @@ async function runCanvasSync({ silent = false } = {}) {
       const totalA = result.assignments || 0;
       const activeA = result.active_assignments != null ? result.active_assignments : totalA;
       const gradeCount = result.grades || 0;
-      let msg = totalA === 0
+      let msg = fromFeed
+        ? (totalA === 0 ? 'Synced from your Canvas calendar - no assignments found.'
+          : `Synced from your Canvas calendar - ${activeA} assignment${activeA !== 1 ? 's' : ''} to do.`)
+        : totalA === 0
         ? `Synced - no assignments found, ${gradeCount} grade${gradeCount !== 1 ? 's' : ''}.`
         : activeA < totalA
           ? `Synced - ${activeA} assignment${activeA !== 1 ? 's' : ''} to do (${totalA} found, ${totalA - activeA} completed), ${gradeCount} grade${gradeCount !== 1 ? 's' : ''}.`
@@ -8939,5 +9046,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/motion-extras.js"></script>
 <script src="js/auth-live.js"></script>
 <script src="js/dashboard-motion.js"></script>
+<script src="js/canvas-feed.js"></script>
 </body>
 </html>

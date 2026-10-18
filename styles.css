@@ -4693,3 +4693,76 @@ body.auth-mode .app { scroll-snap-type: y proximity; }
   #page-home .home-week { transition: --sf-lit 0.4s; }
 }
 @media (prefers-reduced-motion: reduce) { .page.page-leaving { display: none; animation: none; } }
+
+/* ===========================
+   QUICK START vs FULL SYNC (js/canvas-feed.js)
+=========================== */
+/* Setup screen: one of three views at a time. */
+#onboard-canvas .ob-view { display: none; }
+#onboard-canvas[data-ob-view="choose"] .ob-view-choose,
+#onboard-canvas[data-ob-view="feed"] .ob-view-feed,
+#onboard-canvas[data-ob-view="token"] .ob-view-token { display: block; }
+#onboard-canvas[data-ob-view="choose"] .onboard-flow-panel-footer { display: none; }
+.ob-back-link {
+  display: inline-flex; align-items: center; gap: 4px; margin: 0 0 14px; padding: 4px 0;
+  background: none; border: 0; font: inherit; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer;
+}
+.ob-back-link:hover, .ob-back-link:focus-visible { color: var(--text1); }
+
+.cplan-choices { display: grid; gap: 12px; margin: -8px 0 22px; }
+@media (min-width: 520px) { .cplan-choices { grid-template-columns: 1fr 1fr; } }
+.cplan-card {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;
+  padding: 16px 16px 15px; text-align: left; font: inherit; color: var(--text1); cursor: pointer;
+  background: var(--surface2); border: 1.5px solid var(--border2); border-radius: var(--card-radius, 14px);
+  transition: border-color 0.2s, transform 0.3s var(--ease-spring, ease), box-shadow 0.2s;
+}
+.cplan-card:hover, .cplan-card:focus-visible { border-color: var(--accent); outline: none; }
+.cplan-card:active { transform: scale(0.985); }
+.cplan-card-feed { border-color: color-mix(in oklch, var(--accent) 55%, var(--border2)); }
+.cplan-tag {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin-bottom: 4px;
+}
+.cplan-name { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+.cplan-meta { font-size: 12px; font-weight: 600; color: var(--text2); }
+.cplan-desc { font-size: 13.5px; color: var(--text2); line-height: 1.45; margin-top: 4px; }
+
+/* The comparison table (setup and Settings). */
+.cplan-compare-scroll { overflow-x: auto; }
+.cplan-compare { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 320px; }
+.cplan-compare th, .cplan-compare td { padding: 9px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border2); }
+.cplan-compare thead th { font-size: 12px; font-weight: 700; color: var(--text1); border-bottom-width: 1.5px; }
+.cplan-compare thead th small { display: block; font-size: 10.5px; font-weight: 600; color: var(--accent); margin-top: 1px; }
+.cplan-compare tbody th { font-weight: 500; color: var(--text1); width: 46%; }
+.cplan-compare td { width: 27%; color: var(--text2); }
+.cplan-compare tr:last-child th, .cplan-compare tr:last-child td { border-bottom: 0; }
+.cplan-yes { color: var(--green); font-weight: 800; }
+.cplan-no { color: var(--text2); opacity: 0.6; }
+.cplan-text { font-size: 12.5px; }
+.cplan-compare .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Settings > Canvas */
+.canvas-mode-label { font-size: 12.5px; font-weight: 600; color: var(--text2); margin: 2px 0 2px; }
+.cplan-upgrade { margin-bottom: 8px; }
+.cplan-upgrade-title { font-size: 15px; font-weight: 700; color: var(--text1); margin-bottom: 4px; }
+.cplan-upgrade .card-sub { margin-bottom: 10px; }
+
+/* "Comes with Full sync" cards: only for Quick start students. */
+.feed-upgrade { display: none; }
+.sf-feed-mode .feed-upgrade {
+  display: block; padding: 18px; margin-bottom: 14px; border-radius: var(--card-radius, 14px);
+  background: color-mix(in oklch, var(--accent) 8%, var(--surface)); border: 1px solid color-mix(in oklch, var(--accent) 25%, var(--border));
+}
+.feed-upgrade-title { font-size: 15px; font-weight: 700; color: var(--text1); margin-bottom: 4px; }
+.feed-upgrade-body { font-size: 13.5px; color: var(--text2); line-height: 1.5; max-width: 60ch; }
+.feed-upgrade-btn {
+  margin-top: 12px; padding: 8px 14px; border-radius: 10px; border: 0; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600;
+  background: var(--btn-bg); color: var(--btn-fg); transition: transform 0.25s var(--ease-spring, ease), opacity 0.15s;
+}
+.feed-upgrade-btn:hover { opacity: 0.9; }
+.feed-upgrade-btn:active { transform: scale(0.97); }
+.sf-feed-mode .feed-upgrade-mini { padding: 14px 16px; }
+.sf-feed-mode .feed-upgrade-mini .feed-upgrade-btn { margin-top: 10px; }
+/* What the upgrade card stands in for. */
+.sf-feed-mode #grades-empty, .sf-feed-mode #grades-loading, .sf-feed-mode #home-grades { display: none !important; }

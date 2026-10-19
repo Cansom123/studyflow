@@ -4280,8 +4280,12 @@ async function runCanvasSync({ silent = false } = {}) {
     if (beforeKeys.size && typeof rememberNewWork === 'function') rememberNewWork(newWork);
     if (!silent && document.getElementById('ws-overlay')?.style.display !== 'flex') {
       // A sync the student didn't watch on the sync screen: show what's new.
-      if (typeof showSyncUpdates === 'function') showSyncUpdates(newWork);
+      if (typeof showSyncUpdates === 'function') showSyncUpdates(newWork, { graded: result.graded, gradeChanges: result.grade_changes });
       else showReward(SYNC_REWARD_MESSAGES[Math.floor(Math.random() * SYNC_REWARD_MESSAGES.length)], 'sync', true);
+    } else if (!silent && ((result.graded || []).length || (result.grade_changes || []).length)) {
+      // Watched on the sync screen, which lists new work but not grades:
+      // the grades card shows once that screen closes (js/sync-extras.js).
+      window.pendingGradedUpdate = { graded: result.graded, gradeChanges: result.grade_changes };
     }
     return { ok: true };
   } catch(err) {

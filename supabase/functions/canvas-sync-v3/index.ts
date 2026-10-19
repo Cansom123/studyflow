@@ -91,6 +91,17 @@ async function fetchAllPages(url: string, auth: string): Promise<any[] | null> {
     let resp: Response;
     try {
       resp = await fetch(next, { headers: { Authorization: auth } });
+      // Everything below runs at once, so Canvas may ask us to slow down
+      // (429, or 403 "Rate Limit Exceeded"). Wait a moment and try again
+      // rather than treating the class as blocked.
+      for (let attempt = 1; attempt <= 3 && (resp.status === 429 || resp.status === 403); attempt++) {
+        if (resp.status === 403) {
+          const body = await resp.clone().text().catch(() => "");
+          if (!/rate limit/i.test(body)) break;
+        }
+        await new Promise((r) => setTimeout(r, 400 * attempt + Math.random() * 300));
+        resp = await fetch(next, { headers: { Authorization: auth } });
+      }
     } catch (e: any) {
       console.warn(`fetch error: ${e?.message}`);
       if (firstRequest) return null;
@@ -261,8 +272,22 @@ Deno.serve(async (req) => {
     const debugStates: Record<string, number> = {};
 
     const undatedCutoff = new Date(fallYearSY, 7, 1);
+    const blockedCourseNames: string[] = [];
+    const svcHdr = { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, "Content-Type": "application/json" };
+    const t0 = Date.now();
 
-    await Promise.all(activeCourses.map(async (course: any) => {
+    // Everything below is fetched at the same time (it used to run one step
+    // after another, ~10s; together it's about as long as the slowest step).
+
+    // What the last sync saved, so the reply can say what just got graded.
+    const prevPhase = Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/assignments?user_id=eq.${userId}&select=title,course,score`, { headers: svcHdr })
+        .then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      fetch(`${supabaseUrl}/rest/v1/grades?user_id=eq.${userId}&select=course_name,current_score`, { headers: svcHdr })
+        .then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    ]);
+
+    const assignmentsPhase = Promise.all(activeCourses.map(async (course: any) => {
       const courseId = String(course.id);
       const rawAssignments = await fetchAllPages(
         `${canvasUrl}/api/v1/courses/${courseId}/assignments?per_page=100&order_by=due_at&include[]=submission`,
@@ -270,6 +295,7 @@ Deno.serve(async (req) => {
       );
       if (rawAssignments === null) {
         blockedCourseCount++;
+        blockedCourseNames.push(course.name);
         console.warn(`[run ${runId}] blocked: "${course.name}"`);
         return;
       }
@@ -322,7 +348,7 @@ Deno.serve(async (req) => {
       console.log(`[run ${runId}] "${course.name}": ${rawAssignments.length} raw -> ${kept} kept (${completedCount} completed) states:${JSON.stringify(debugStates)}`);
     }));
 
-    try {
+    const gradesPhase = (async () => { try {
       const courseIdToName = new Map(activeCourses.map((c: any) => [String(c.id), c.name as string]));
       const enrollments = await fetchAllPages(
         `${canvasUrl}/api/v1/users/self/enrollments?type[]=StudentEnrollment&include[]=grades&include[]=course&per_page=100`,
@@ -353,7 +379,7 @@ Deno.serve(async (req) => {
       }
     } catch (e: any) {
       console.warn(`[run ${runId}] grades error: ${e?.message}`);
-    }
+    } })();
 
     // Teacher feedback -- comments left directly on a submission, fetched
     // via the bulk "submissions for multiple assignments" endpoint so this
@@ -362,7 +388,7 @@ Deno.serve(async (req) => {
     // whose author isn't that id is someone else replying (a teacher or
     // grader), not the student's own note-to-self.
     const allFeedback: any[] = [];
-    try {
+    const feedbackPhase = (async () => { try {
       await Promise.all(activeCourses.map(async (course: any) => {
         const courseId = String(course.id);
         const submissions = await fetchAllPages(
@@ -394,7 +420,7 @@ Deno.serve(async (req) => {
       console.log(`[run ${runId}] feedback: ${allFeedback.length}`);
     } catch (e: any) {
       console.warn(`[run ${runId}] feedback error: ${e?.message}`);
-    }
+    } })();
 
     // Announcements -- one call across all active courses (Canvas's
     // /announcements endpoint takes a context_codes[] list) rather than a
@@ -402,7 +428,7 @@ Deno.serve(async (req) => {
     // assignments/grades above) so a student's read/unread state survives
     // the next sync instead of resetting every time.
     const allAnnouncements: any[] = [];
-    try {
+    const announcementsPhase = (async () => { try {
       if (activeCourses.length > 0) {
         const announceCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         const contextParams = activeCourses
@@ -432,7 +458,7 @@ Deno.serve(async (req) => {
       }
     } catch (e: any) {
       console.warn(`[run ${runId}] announcements error: ${e?.message}`);
-    }
+    } })();
 
     // Canvas Inbox/Conversations -- a separate feature from announcements
     // (private messages, not course-wide posts), not gated on selected
@@ -442,7 +468,7 @@ Deno.serve(async (req) => {
     // announcements.read already is, so marking it read in the app doesn't
     // get overwritten by Canvas's own workflow_state on the next sync.
     const allMessages: any[] = [];
-    try {
+    const messagesPhase = (async () => { try {
       const rawConversations = await fetchAllPages(
         `${canvasUrl}/api/v1/conversations?scope=inbox&per_page=50`,
         canvasAuth,
@@ -466,6 +492,39 @@ Deno.serve(async (req) => {
       console.log(`[run ${runId}] messages: ${allMessages.length}`);
     } catch (e: any) {
       console.warn(`[run ${runId}] messages error: ${e?.message}`);
+    } })();
+
+    const [[prevAssignments, prevGrades]] = await Promise.all([
+      prevPhase, assignmentsPhase, gradesPhase, feedbackPhase, announcementsPhase, messagesPhase,
+    ]);
+    console.log(`[run ${runId}] fetched from Canvas in ${Date.now() - t0}ms`);
+
+    // What got graded since the last sync: a score that's new or changed on
+    // an assignment, and class grades that moved. Not on a first sync, when
+    // everything would count.
+    const graded: any[] = [];
+    const gradeChanges: any[] = [];
+    if (Array.isArray(prevAssignments) && prevAssignments.length > 0) {
+      const prevScore = new Map(prevAssignments.map((p: any) => [`${p.title}||${p.course}`, p.score]));
+      for (const a of allAssignments) {
+        if (a.score == null) continue;
+        const key = `${a.title}||${a.course}`;
+        if (!prevScore.has(key)) continue; // new assignment, not a new grade
+        const before = prevScore.get(key);
+        if (before == null || Number(before) !== Number(a.score)) {
+          graded.push({ title: a.title, course: a.course, score: a.score, points_possible: a.points_possible, previous: before ?? null });
+        }
+      }
+    }
+    if (Array.isArray(prevGrades) && prevGrades.length > 0) {
+      const prev = new Map(prevGrades.map((g: any) => [g.course_name, g.current_score]));
+      for (const g of allGrades) {
+        if (!prev.has(g.course_name) || g.current_score == null) continue;
+        const before = prev.get(g.course_name);
+        if (before == null || Math.abs(Number(before) - Number(g.current_score)) >= 0.01) {
+          gradeChanges.push({ course: g.course_name, from: before ?? null, to: g.current_score });
+        }
+      }
     }
 
     if (syncAll && activeCourses.length > 0) {
@@ -477,24 +536,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    const svcHdr = { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, "Content-Type": "application/json" };
-    await fetch(`${supabaseUrl}/rest/v1/assignments?user_id=eq.${userId}`, { method: "DELETE", headers: svcHdr });
-    if (allAssignments.length > 0) {
-      await fetch(`${supabaseUrl}/rest/v1/assignments`, {
-        method: "POST",
-        headers: { ...svcHdr, Prefer: "return=minimal" },
-        body: JSON.stringify(allAssignments),
-      });
-    }
-    await fetch(`${supabaseUrl}/rest/v1/grades?user_id=eq.${userId}`, { method: "DELETE", headers: svcHdr });
-    if (allGrades.length > 0) {
-      await fetch(`${supabaseUrl}/rest/v1/grades`, {
-        method: "POST",
-        headers: { ...svcHdr, Prefer: "return=minimal" },
-        body: JSON.stringify(allGrades),
-      });
-    }
+    // Each table is saved on its own track, all at the same time.
+    const tWrite = Date.now();
+    // A class Canvas wouldn't return this time keeps its saved assignments
+    // instead of losing them until the next sync.
+    const quoteList = (names: string[]) => `(${names.map((n) => `"${String(n).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",")})`;
+    const keepBlocked = blockedCourseNames.length ? `&course=not.in.${encodeURIComponent(quoteList(blockedCourseNames))}` : "";
+    const saveAssignments = async () => {
+      await fetch(`${supabaseUrl}/rest/v1/assignments?user_id=eq.${userId}${keepBlocked}`, { method: "DELETE", headers: svcHdr });
+      if (allAssignments.length > 0) {
+        await fetch(`${supabaseUrl}/rest/v1/assignments`, {
+          method: "POST",
+          headers: { ...svcHdr, Prefer: "return=minimal" },
+          body: JSON.stringify(allAssignments),
+        });
+      }
+    };
+    const saveGrades = async () => {
+      await fetch(`${supabaseUrl}/rest/v1/grades?user_id=eq.${userId}`, { method: "DELETE", headers: svcHdr });
+      if (allGrades.length > 0) {
+        await fetch(`${supabaseUrl}/rest/v1/grades`, {
+          method: "POST",
+          headers: { ...svcHdr, Prefer: "return=minimal" },
+          body: JSON.stringify(allGrades),
+        });
+      }
+    };
 
+    const saveAnnouncements = async () => {
     // Upsert (not delete-then-reinsert) so a previously-read announcement
     // doesn't flip back to unread just because it came back in this sync.
     if (allAnnouncements.length > 0) {
@@ -512,7 +581,9 @@ Deno.serve(async (req) => {
       `${supabaseUrl}/rest/v1/announcements?user_id=eq.${userId}&canvas_announcement_id=not.in.${keepList}`,
       { method: "DELETE", headers: svcHdr },
     );
+    };
 
+    const saveMessages = async () => {
     // Upsert (not delete-then-reinsert) so `read` -- StudyFlow's own state,
     // not part of this payload -- survives the next sync the same way
     // announcements.read does.
@@ -531,7 +602,9 @@ Deno.serve(async (req) => {
       `${supabaseUrl}/rest/v1/canvas_messages?user_id=eq.${userId}&canvas_conversation_id=not.in.${keepMsgList}`,
       { method: "DELETE", headers: svcHdr },
     );
+    };
 
+    const saveFeedback = async () => {
     // Upsert (not delete-then-reinsert) so `read` survives the next sync,
     // same reasoning as canvas_messages above.
     if (allFeedback.length > 0) {
@@ -548,6 +621,10 @@ Deno.serve(async (req) => {
       `${supabaseUrl}/rest/v1/assignment_feedback?user_id=eq.${userId}&canvas_comment_id=not.in.${keepFeedbackList}`,
       { method: "DELETE", headers: svcHdr },
     );
+    };
+
+    await Promise.all([saveAssignments(), saveGrades(), saveAnnouncements(), saveMessages(), saveFeedback()]);
+    console.log(`[run ${runId}] saved in ${Date.now() - tWrite}ms`);
 
     const effectiveCourses = syncAll ? activeCourses.map((c: any) => ({ id: String(c.id), name: c.name })) : activeSel;
     const assignmentsByCourse = new Map<string, any[]>();
@@ -576,6 +653,8 @@ Deno.serve(async (req) => {
         messages: allMessages.length,
         feedback: allFeedback.length,
         blocked_courses: blockedCourseCount,
+        graded: graded.slice(0, 50),
+        grade_changes: gradeChanges,
         courses: courseSummaries,
         sync_all: syncAll,
         debug_states: debugStates,

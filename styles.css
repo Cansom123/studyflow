@@ -4857,3 +4857,7 @@ body.auth-mode .app { scroll-snap-type: y proximity; }
 .sf-feed-mode .hero-overdue { color: var(--amber) !important; }
 .sf-feed-mode .home-tile.tone-red .ht-icon { background: color-mix(in oklch, var(--amber) 18%, transparent); color: var(--amber); }
 .sf-feed-mode .home-tile.tone-red .ht-value { color: var(--amber); }
+
+/* Updates card: what the sync graded (js/sync-extras.js). */
+.su-section { font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text2); margin: 10px 0 2px; }
+.su-graded .su-item-meta b { color: var(--text1); font-weight: 700; }

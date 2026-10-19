@@ -87,15 +87,37 @@ function closeSyncUpdates() {
   setTimeout(() => el.remove(), 300);
 }
 
-function showSyncUpdates(newWork) {
+// What a sync newly graded, as list rows: "Unit 2 Test · 46/50 (92%)", and
+// class grades that moved ("MATH 132 · 91.2% → 93.2%").
+function syncGradedRowsHTML(graded, gradeChanges) {
+  const pct = (s, p) => (p ? ` (${Math.round((Number(s) / Number(p)) * 1000) / 10}%)` : '');
+  const num = v => (Number.isInteger(Number(v)) ? String(Number(v)) : Number(v).toFixed(1));
+  const rows = (graded || []).slice(0, SYNC_UPDATES_SHOW).map(g => `
+    <li><button type="button" class="su-item su-graded" data-grades="1">
+      <span class="su-item-title">${escapeHtml(g.title || 'Assignment')}</span>
+      <span class="su-item-meta">${escapeHtml(cleanCourseName(g.course || ''))} · <b>${num(g.score)}${g.points_possible ? '/' + num(g.points_possible) : ''}${pct(g.score, g.points_possible)}</b></span>
+    </button></li>`);
+  (gradeChanges || []).slice(0, 2).forEach(c => rows.push(`
+    <li><button type="button" class="su-item su-graded" data-grades="1">
+      <span class="su-item-title">${escapeHtml(cleanCourseName(c.course || ''))}</span>
+      <span class="su-item-meta">Class grade ${c.from != null ? `${Number(c.from).toFixed(1)}% → ` : ''}<b>${Number(c.to).toFixed(1)}%</b></span>
+    </button></li>`));
+  return rows.join('');
+}
+
+function showSyncUpdates(newWork, extra = {}) {
   const list = (newWork || []).slice().sort((a, b) =>
     new Date(a.due_date || '9999-01-01') - new Date(b.due_date || '9999-01-01'));
-  if (!list.length) {
+  const graded = Array.isArray(extra.graded) ? extra.graded : [];
+  const gradeChanges = Array.isArray(extra.gradeChanges) ? extra.gradeChanges : [];
+  if (!list.length && !graded.length && !gradeChanges.length) {
     showReward(SYNC_REWARD_MESSAGES[Math.floor(Math.random() * SYNC_REWARD_MESSAGES.length)], 'sync', true);
     return;
   }
   document.getElementById('sync-updates')?.remove();
   const n = list.length;
+  const g = graded.length;
+  const subParts = [n ? `${n} new assignment${n !== 1 ? 's' : ''}` : '', g ? `${g} newly graded` : '', !g && gradeChanges.length ? 'a class grade changed' : ''].filter(Boolean);
   const due = a => a.due_date
     ? 'Due ' + new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
     : 'No due date';
@@ -109,10 +131,12 @@ function showSyncUpdates(newWork) {
       <span class="su-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10a6 6 0 0 1 10.24-4.24L16 7.5"/><path d="M16 4v3.5h-3.5"/><path d="M16 10a6 6 0 0 1-10.24 4.24L4 12.5"/><path d="M4 16v-3.5h3.5"/></svg></span>
       <div>
         <div class="su-title">Updates</div>
-        <div class="su-sub">${n} new assignment${n !== 1 ? 's' : ''} from Canvas</div>
+        <div class="su-sub">${subParts.join(' · ')} from Canvas</div>
       </div>
       <button type="button" class="su-close" aria-label="Close">&times;</button>
     </div>
+    ${g || gradeChanges.length ? `<div class="su-section">Graded</div><ul class="su-list">${syncGradedRowsHTML(graded, gradeChanges)}</ul>` : ''}
+    ${n && (g || gradeChanges.length) ? '<div class="su-section">New</div>' : ''}
     <ul class="su-list">
       ${list.slice(0, SYNC_UPDATES_SHOW).map(a => `
         <li><button type="button" class="su-item" data-id="${escapeHtml(String(a.id))}">
@@ -125,6 +149,7 @@ function showSyncUpdates(newWork) {
   el.addEventListener('click', e => {
     if (e.target.closest('.su-close')) { closeSyncUpdates(); return; }
     const item = e.target.closest('.su-item');
+    if (item && item.dataset.grades) { closeSyncUpdates(); jumpTo('grades'); return; }
     if (item) { closeSyncUpdates(); openAssignmentDetail(item.dataset.id); return; }
     if (e.target.closest('.su-more')) { closeSyncUpdates(); if (window.wsViewList) wsViewList(list); }
   });
@@ -245,4 +270,18 @@ function openNewWork() {
   wrapDone('toggleDone', byKey);
   wrapDone('markPriorityDone', byId);
   wrapDone('toggleDoneFromDetail', byId);
+})();
+
+// A sync watched on the sync screen: what it graded shows once that screen
+// closes, so a new test score isn't buried in the Grades tab.
+(function gradedAfterSyncScreen() {
+  const orig = window.wsClose;
+  if (typeof orig !== 'function') return;
+  window.wsClose = function () {
+    const r = orig.apply(this, arguments);
+    const pending = window.pendingGradedUpdate;
+    window.pendingGradedUpdate = null;
+    if (pending) setTimeout(() => showSyncUpdates([], pending), 450);
+    return r;
+  };
 })();

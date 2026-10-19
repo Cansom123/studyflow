@@ -1,4 +1,4 @@
-// Run with: node --test tests/
+// Run with: node --test   (from the project folder; runs every test file)
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { assignmentKind, estimateMinutes, studiedMinutesByAssignment, estimateSourceText, fmtEstimate, pickToday3 } = require('../js/today-core.js');

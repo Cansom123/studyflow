@@ -4861,3 +4861,59 @@ body.auth-mode .app { scroll-snap-type: y proximity; }
 /* Updates card: what the sync graded (js/sync-extras.js). */
 .su-section { font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text2); margin: 10px 0 2px; }
 .su-graded .su-item-meta b { color: var(--text1); font-weight: 700; }
+
+/* ===========================
+   TODAY'S 3 (js/today-three.js)
+=========================== */
+/* It takes the place of "Up next". */
+.home-col-main.has-today3 > #home-upnext,
+.home-col-main.has-today3 > .section-label:has(+ #home-upnext) { display: none; }
+.today3 {
+  margin: 0 0 18px; padding: 16px 16px 12px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--home-radius, 20px);
+  box-shadow: var(--glass-shadow); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.t3-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.t3-title { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.2px; color: var(--text1); }
+.t3-sub { font-size: 12.5px; color: var(--text2); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.t3-dots { display: flex; gap: 5px; padding-top: 8px; }
+.t3-dots i { width: 8px; height: 8px; border-radius: 50%; background: color-mix(in oklch, var(--text1) 14%, transparent); transition: background 0.3s, transform 0.35s var(--ease-spring, ease); }
+.t3-dots i.on { background: var(--green); transform: scale(1.15); }
+.t3-list { list-style: none; margin: 0; padding: 0; }
+.t3-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--glass-border); min-width: 0; }
+.t3-item:first-child { border-top: 0; }
+.t3-check { position: relative; flex-shrink: 0; }
+.t3-check .t3-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--text2); }
+.t3-check.checked .t3-num { display: none; }
+.t3-check:not(.checked) .done-check-icon { opacity: 0; }
+.t3-body { flex: 1; min-width: 0; }
+.t3-name {
+  display: block; max-width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer;
+  font: inherit; font-size: 14.5px; font-weight: 650; color: var(--text1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.t3-name:hover, .t3-name:focus-visible { color: var(--accent); outline: none; }
+.t3-meta { font-size: 12px; color: var(--text2); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t3-why { font-weight: 600; color: var(--text1); }
+.t3-item.late .t3-why { color: var(--amber); }
+.t3-time {
+  flex-shrink: 0; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--text1); cursor: help;
+}
+.t3-go {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--btn-bg); color: var(--btn-fg); transition: transform 0.25s var(--ease-spring, ease), opacity 0.15s;
+}
+.t3-go svg { width: 14px; height: 14px; margin-left: 2px; }
+.t3-go:hover { opacity: 0.9; }
+.t3-go:active { transform: scale(0.92); }
+.t3-item.done .t3-name { color: var(--text2); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.t3-item.done .t3-time { opacity: 0.5; }
+.t3-more {
+  display: block; width: 100%; margin-top: 8px; padding: 10px; border-radius: 11px; border: 0; cursor: pointer;
+  font: inherit; font-weight: 700; background: var(--btn-secondary-bg); color: var(--btn-secondary-color, var(--text1));
+}
+.t3-note { font-size: 11.5px; color: var(--text2); margin-top: 8px; }
+@media (max-width: 420px) { .t3-time { padding: 3px 7px; font-size: 11.5px; } .t3-item { gap: 9px; } }
+@media (prefers-reduced-motion: reduce) { .t3-dots i { transition: none; } }

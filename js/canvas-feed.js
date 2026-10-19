@@ -76,7 +76,7 @@ function canvasFeedErrorHTML(r) {
     case 'feed_not_found':
       title = "Canvas didn't recognize that link.";
       fixes = [
-        'Copy it again from Canvas → Calendar → Calendar Feed. If the link was reset, the old one stops working.',
+        'Copy it again from Canvas → Calendar → Calendar Feed.',
         'Make sure you copied the whole link, all the way to <strong>.ics</strong>.',
       ];
       break;
@@ -105,6 +105,9 @@ async function saveCanvasFeedOnboard() {
 
   let result;
   try {
+    // A session left open a while can be stale; refresh it first, the
+    // same way a sync does.
+    if (REFRESH_TOKEN) await refreshSession();
     const resp = await fetch(`${SB_URL}/functions/v1/canvas-feed-sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },

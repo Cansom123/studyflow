@@ -353,7 +353,7 @@
                 </ol>
               </div>
               <div class="help-note" style="margin-top:-6px;">
-                This link only shows your calendar. To stop StudyFlow reading it, open the same Calendar Feed box in Canvas and reset the link.
+                This link only shows your calendar, so keep it private like a password. StudyFlow stores it encrypted, and Disconnect Canvas in Settings deletes it.
               </div>
             </div>
 
@@ -1530,7 +1530,7 @@
               Your Canvas token works like a password - StudyFlow only uses it to read your assignments, syllabi, and grades, and never shares it. Note that <strong>Disconnect Canvas removes it from StudyFlow only</strong> - the token itself stays active in Canvas until you also remove it there, under Canvas → Settings → Approved Integrations.
             </div>
             <div class="help-note canvas-mode-feed-only" style="margin-top:10px;margin-bottom:0;display:none;">
-              You're connected with your Canvas calendar link, which only shows due dates. Since it can't tell what you turned in, check work off in StudyFlow when you finish it. To cut off access completely, reset the link in Canvas → Calendar → Calendar Feed.
+              You're connected with your Canvas calendar link, which only shows due dates. Since it can't tell what you turned in, check work off in StudyFlow when you finish it. Disconnect Canvas deletes the link from StudyFlow.
             </div>
           </div>
         </div>
@@ -3501,6 +3501,7 @@ async function loadCoursesForSelection() {
   try {
     // Quick start: the classes come from the saved calendar link.
     const fromFeed = canvasMode === 'feed';
+    if (fromFeed && REFRESH_TOKEN) await refreshSession();
     const validateResp = await fetch(`${SB_URL}/functions/v1/${fromFeed ? 'canvas-feed-sync' : 'validate-canvas'}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${ACCESS_TOKEN || SB_KEY}` },

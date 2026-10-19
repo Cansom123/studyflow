@@ -59,7 +59,9 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
 
-    // Signed-in students only, and only their own account.
+    // Signed-in students only, and only their own account. Checked here
+    // (deployed with verify_jwt off, like validate-canvas) so a stale session
+    // gets a clear "sign in again" instead of the gateway's bare 401.
     let userId: string | null = null;
     if (token && token !== anonKey) {
       const r = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { Authorization: `Bearer ${token}`, apikey: anonKey } });
@@ -101,7 +103,7 @@ Deno.serve(async (req) => {
     if (!r.ok) {
       console.warn(`[run ${runId}] user=${userId} feed -> ${r.error}${r.status ? ` (${r.status})` : ""}`);
       return json({ ...r, message: r.error === "feed_not_found"
-        ? "Your Canvas calendar link stopped working. It may have been reset. Copy it again from Canvas > Calendar > Calendar Feed."
+        ? "Your Canvas calendar link stopped working. Copy it again from Canvas > Calendar > Calendar Feed and reconnect in Settings."
         : "Couldn't read your Canvas calendar. Try again in a few minutes." }, 502);
     }
 

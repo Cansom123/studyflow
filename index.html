@@ -4318,7 +4318,10 @@ async function loadAssignments() {
   // lists (and Priority, and the counts) and becomes a coco.1 suggestion
   // instead: ask the teacher about late credit, review it, or clear it.
   cachedClosedAssignments = recent.filter(a => isSubmissionClosed(a));
-  const assignments = recent.filter(a => !isSubmissionClosed(a));
+  let assignments = recent.filter(a => !isSubmissionClosed(a));
+  // Quick start: past-due work leaves the lists for a "Did you turn this
+  // in?" check-in instead of sitting there red (js/feed-checkin.js).
+  if (canvasMode === 'feed' && typeof sortOutFeedCheckins === 'function') assignments = sortOutFeedCheckins(assignments);
   if (!ok || assignments.length === 0) {
     console.warn('[loadAssignments] no data — ok:', ok, 'raw:', rawAssignments.length);
     document.getElementById('due-empty').style.display     = 'block';
@@ -9051,5 +9054,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/auth-live.js"></script>
 <script src="js/dashboard-motion.js"></script>
 <script src="js/canvas-feed.js"></script>
+<script src="js/feed-checkin.js"></script>
 </body>
 </html>

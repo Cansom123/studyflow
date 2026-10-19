@@ -4766,3 +4766,94 @@ body.auth-mode .app { scroll-snap-type: y proximity; }
 .sf-feed-mode .feed-upgrade-mini .feed-upgrade-btn { margin-top: 10px; }
 /* What the upgrade card stands in for. */
 .sf-feed-mode #grades-empty, .sf-feed-mode #grades-loading, .sf-feed-mode #home-grades { display: none !important; }
+
+/* ===========================
+   QUICK START CHECK-INS (js/feed-checkin.js)
+=========================== */
+/* "Late": amber, never red -- the student told us, it isn't a failure. */
+.card.feed-late { border-color: color-mix(in oklch, var(--amber) 45%, var(--border)); }
+.late-pill {
+  display: inline-block; margin-left: 7px; padding: 1px 7px; border-radius: 999px; vertical-align: 2px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em;
+  background: color-mix(in oklch, var(--amber) 22%, transparent); color: var(--text1);
+}
+.due-late { font-size: 12px; font-weight: 600; color: var(--amber); margin-top: 3px; }
+
+/* Home: what's waiting for an answer. */
+.feed-checkin-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; margin: 4px 0 14px; padding: 13px 16px;
+  text-align: left; font: inherit; color: var(--text1); cursor: pointer;
+  background: color-mix(in oklch, var(--accent) 9%, var(--surface)); border: 1px solid color-mix(in oklch, var(--accent) 30%, var(--border));
+  border-radius: var(--home-radius, var(--card-radius, 14px));
+  transition: transform 0.3s var(--ease-spring, ease), border-color 0.2s;
+}
+.feed-checkin-card:hover { border-color: var(--accent); }
+.feed-checkin-card:active { transform: scale(0.985); }
+.fcc-count {
+  flex-shrink: 0; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: var(--on-accent, #fff); font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums;
+}
+.fcc-text { flex: 1; min-width: 0; font-size: 13.5px; color: var(--text2); line-height: 1.4; }
+.fcc-text b { color: var(--text1); font-weight: 700; }
+.fcc-arrow { font-size: 20px; color: var(--text2); }
+
+/* The check-in window. */
+.fci-overlay {
+  position: fixed; inset: 0; z-index: 2200; display: none; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(0,0,0,0.5);
+}
+.fci-overlay.show { display: flex; animation: fciFade 0.2s ease; }
+.fci-sheet {
+  width: 100%; max-width: 520px; max-height: min(640px, 88dvh); display: flex; flex-direction: column;
+  background: var(--surface); color: var(--text1); border: 1px solid var(--border2); border-radius: 18px;
+  box-shadow: 0 24px 60px -20px rgba(0,0,0,0.6); overflow: hidden;
+}
+.fci-overlay.show .fci-sheet { animation: fciRise 0.32s cubic-bezier(.16,1,.3,1); }
+@keyframes fciFade { from { opacity: 0; } }
+@keyframes fciRise { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
+.fci-head { display: flex; align-items: flex-start; gap: 12px; padding: 18px 18px 12px; }
+.fci-head > div { flex: 1; min-width: 0; }
+.fci-title { font-size: 19px; font-weight: 800; letter-spacing: -0.2px; }
+.fci-sub { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.45; }
+.fci-close { background: none; border: 0; color: var(--text2); font-size: 16px; cursor: pointer; padding: 4px; }
+.fci-list { overflow-y: auto; padding: 0 18px; flex: 1; min-height: 0; }
+.fci-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--border2); }
+.fci-item-text { flex: 1; min-width: 0; }
+.fci-item-title { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.fci-item-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.fci-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.fci-done, .fci-late {
+  padding: 7px 12px; border-radius: 9px; border: 0; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600;
+  transition: transform 0.2s var(--ease-spring, ease), opacity 0.15s;
+}
+.fci-done { background: var(--btn-bg); color: var(--btn-fg); }
+.fci-late { background: color-mix(in oklch, var(--amber) 20%, transparent); color: var(--text1); }
+.fci-done:active, .fci-late:active { transform: scale(0.95); }
+.fci-empty { padding: 18px 0; color: var(--text2); font-size: 14px; }
+.fci-foot { display: flex; gap: 8px; padding: 14px 18px 18px; border-top: 1px solid var(--border2); }
+.fci-all { flex: 1; padding: 11px; border-radius: 11px; border: 0; cursor: pointer; font: inherit; font-weight: 700; background: var(--btn-bg); color: var(--btn-fg); }
+.fci-later { padding: 11px 14px; border-radius: 11px; border: 0; cursor: pointer; font: inherit; font-weight: 600; background: var(--btn-secondary-bg); color: var(--btn-secondary-color, var(--text1)); }
+@media (max-width: 420px) { .fci-item { flex-wrap: wrap; } .fci-item-actions { width: 100%; } .fci-done, .fci-late { flex: 1; } }
+
+/* Due today, when browser notifications are off. */
+.due-today-pop {
+  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 2150;
+  width: min(340px, calc(100vw - 32px)); padding: 14px 40px 14px 16px; border-radius: 14px;
+  background: var(--surface); color: var(--text1); border: 1px solid color-mix(in oklch, var(--accent) 35%, var(--border2));
+  box-shadow: 0 18px 44px -18px rgba(0,0,0,0.6);
+  opacity: 0; transform: translateY(12px); transition: opacity 0.25s, transform 0.35s cubic-bezier(.16,1,.3,1);
+}
+.due-today-pop.show { opacity: 1; transform: none; }
+@media (max-width: 600px) { .due-today-pop { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+.dtp-label { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); }
+.dtp-title { font-size: 14.5px; font-weight: 700; margin-top: 3px; overflow-wrap: anywhere; }
+.dtp-sub { font-size: 12.5px; color: var(--text2); margin-top: 2px; }
+.dtp-close { position: absolute; top: 10px; right: 10px; background: none; border: 0; color: var(--text2); cursor: pointer; font-size: 14px; padding: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  .fci-overlay.show, .fci-overlay.show .fci-sheet { animation: none; }
+  .due-today-pop { transition: none; }
+}
+.sf-feed-mode .hero-overdue { color: var(--amber) !important; }
+.sf-feed-mode .home-tile.tone-red .ht-icon { background: color-mix(in oklch, var(--amber) 18%, transparent); color: var(--amber); }
+.sf-feed-mode .home-tile.tone-red .ht-value { color: var(--amber); }

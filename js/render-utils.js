@@ -93,8 +93,12 @@ function aCard(a, isOverdue, redTint = false, doneSet) {
   const [bc, bl] = getBadge(a.assignment_type, a.title);
   const key = doneKey(a);
   const isDone = a.completed || doneSet.has(decodeURIComponent(key));
-  const cardClass = `card${isDone ? ' done' : ''}${redTint && !isDone ? ' overdue-card' : ''}`;
-  const overdueTag = redTint && !isDone ? `<span class="overdue-pill">OVERDUE</span>` : '';
+  // Quick start (calendar link) can't tell what's turned in, so work the
+  // student said is running late is amber "Late", never red "Overdue"
+  // (js/feed-checkin.js sets feed_late / feed_ask_on).
+  const late = !!a.feed_late && !isDone;
+  const cardClass = `card${isDone ? ' done' : ''}${late ? ' feed-late' : ''}${redTint && !isDone && !late ? ' overdue-card' : ''}`;
+  const overdueTag = late ? `<span class="late-pill">LATE</span>` : redTint && !isDone ? `<span class="overdue-pill">OVERDUE</span>` : '';
   // "New" until the student opens it or checks it off (js/sync-extras.js).
   const newTag = !isDone && typeof isNewWork === 'function' && isNewWork(a) ? `<span class="new-tag">New</span>` : '';
   const noteTag = (typeof assignmentHasNote === 'function' && assignmentHasNote(a)) ? noteIndicatorHTML() : '';
@@ -109,11 +113,17 @@ function aCard(a, isOverdue, redTint = false, doneSet) {
       <button class="done-check${isDone ? ' checked' : ''}" onclick="toggleDone('${key}',this)" title="Mark as done"><span class="done-check-icon">✓</span></button>
       <div style="flex:1;min-width:0;">
         <div class="card-row"><div style="flex:1;min-width:0;"><div class="card-title">${titleInner}</div><div class="card-sub">${a.course||''}</div></div><span class="badge ${bc}">${bl}</span></div>
-        ${getDueText(a.due_date, isOverdue, a.is_locked, a.lock_reason)}
+        ${late ? lateDueText(a) : getDueText(a.due_date, isOverdue, a.is_locked, a.lock_reason)}
         ${canvasLink}
       </div>
     </div>
   </div>`;
+}
+
+function lateDueText(a) {
+  const fmt = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const was = a.due_date ? `Was due ${fmt(a.due_date)}` : 'Running late';
+  return `<div class="due-late">${was}${a.feed_ask_on ? ` · we'll check in ${fmt(a.feed_ask_on)}` : ''}</div>`;
 }
 
 // Renders one checklist step, or its inline edit form when it's the step

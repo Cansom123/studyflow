@@ -4408,7 +4408,7 @@ async function loadGrades() {
   // rows (it's feeding Priority/Due Soon), so graded/missing work never
   // lands in cachedAssignments at all.
   const { ok: okScored, data: scoredData } = await sbFetchWithRetry(
-    `/rest/v1/assignments?user_id=eq.${USER_ID}&select=title,course,points_possible,score,is_missing,is_excused,due_date,assignment_type`
+    `/rest/v1/assignments?user_id=eq.${USER_ID}&select=title,course,points_possible,score,is_missing,is_excused,due_date,assignment_type,completed,assignment_group,group_weight`
   );
   cachedGradedAssignments = (okScored && Array.isArray(scoredData)) ? scoredData : [];
 

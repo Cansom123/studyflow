@@ -1,7 +1,7 @@
 // Run with: node --test   (from the project folder; runs every test file)
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { examSignal, collectExams, planStudyDays, plannedSessionCount, examStudyTitle, examWhenText, examWorthText } = require('../js/exam-core.js');
+const { examSignal, collectExams, undatedExams, planStudyDays, plannedSessionCount, examStudyTitle, examWhenText, examWorthText } = require('../js/exam-core.js');
 
 test('real exams are recognised', () => {
   for (const title of ['Exam 2', 'Midterm', 'Midterm Exam', 'Final Exam', 'Unit 3 Test', 'Chapter 4-6 Test', 'FINAL']) {
@@ -44,7 +44,7 @@ test('collects upcoming exams from Canvas and ones added by hand, soonest first'
     hidden: [],
   });
   assert.deepEqual(list.map(e => [e.title, e.daysUntil, e.source]), [['Chem midterm', 2, 'manual'], ['Exam 2', 6, 'canvas']]);
-  assert.equal(examWorthText(list[1]), '100 pts · Exams are 40% of your grade');
+  assert.equal(examWorthText(list[1]), '100 pts · about 40% of your grade'); // the only thing in a 40% category
   assert.equal(examWorthText(list[0]), '');
   assert.equal(examWhenText(list[0]), 'In 2 days');
 });
@@ -67,4 +67,33 @@ test('knows how many sessions are already planned', () => {
   const e = { title: 'Exam 2' };
   assert.equal(examStudyTitle(e), 'Study for Exam 2');
   assert.equal(plannedSessionCount(e, [{ title: 'Study for Exam 2' }, { title: 'study for exam 2' }, { title: 'Exam 2' }]), 2);
+});
+
+// A real MATH 132 setup: exams are given in class, so Canvas has them with
+// points and a category but no date; "Final Grade" is a 0% placeholder.
+const MATH = 'MATH 132 1007 - 2026 Fall';
+const math = [
+  { title: 'Exam 1', course: MATH, due_date: null, points_possible: 70, score: 65, assignment_group: 'Exams', group_weight: 60 },
+  { title: 'Exam 2', course: MATH, due_date: null, points_possible: 70, score: null, assignment_group: 'Exams', group_weight: 60 },
+  { title: 'Exam 3', course: MATH, due_date: null, points_possible: 70, score: null, assignment_group: 'Exams', group_weight: 60 },
+  { title: 'Final Exam', course: MATH, due_date: null, points_possible: 100, score: null, assignment_group: 'Final Exam', group_weight: 30 },
+  { title: 'Final Grade', course: MATH, due_date: null, points_possible: 100, score: null, assignment_group: 'Final Grade', group_weight: 0 },
+  { title: 'HW 5.2', course: MATH, due_date: at(1), points_possible: 10, assignment_group: 'Assignments', group_weight: 10 },
+];
+
+test('a 0% placeholder category is never an exam', () => {
+  assert.equal(examSignal(math[4]), null);
+});
+
+test('exams Canvas has no date for are listed to be dated, with their real share of the grade', () => {
+  const list = undatedExams({ assignments: math, manual: [], hidden: [] });
+  assert.deepEqual(list.map(e => [e.title, e.share]), [['Exam 2', 20], ['Exam 3', 20], ['Final Exam', 30]]); // Exam 1 is already graded
+  assert.equal(examWorthText(list[0]), '70 pts · about 20% of your grade');
+});
+
+test('once the student adds a date, the exam keeps its Canvas points and share', () => {
+  const manual = [{ id: 'm9', title: 'Exam 2', course: MATH, exam_date: '2026-10-27' }];
+  assert.deepEqual(undatedExams({ assignments: math, manual, hidden: [] }).map(e => e.title), ['Exam 3', 'Final Exam']);
+  const [e] = collectExams({ now: NOW, assignments: math, manual, hidden: [] });
+  assert.deepEqual([e.title, e.source, e.daysUntil, examWorthText(e)], ['Exam 2', 'manual', 7, '70 pts · about 20% of your grade']);
 });

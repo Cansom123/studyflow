@@ -4972,3 +4972,8 @@ body.auth-mode .app { scroll-snap-type: y proximity; }
 }
 .er-form-actions { display: flex; align-items: center; gap: 14px; }
 @media (max-width: 420px) { .er-row { grid-template-columns: 1fr; } .er-when { width: 48px; height: 48px; } }
+.er-undated-head { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text2); margin: 12px 0 2px; }
+.er-undated { list-style: none; margin: 0; padding: 0; }
+.er-undated li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--glass-border); }
+.er-undated li:first-child { border-top: 0; }
+.er-undated .er-meta b { color: var(--text1); font-weight: 600; }

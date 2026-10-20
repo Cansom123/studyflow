@@ -11,6 +11,7 @@
 let cachedExams = [];
 let examsLoaded = false;
 let examFormOpen = false;
+let examFormPrefill = null; // { title, course } when dating an exam Canvas already knows about
 
 async function loadExams() {
   const { ok, data } = await sbFetchWithRetry(`/rest/v1/exams?user_id=eq.${USER_ID}&select=*&order=exam_date.asc`);
@@ -19,9 +20,23 @@ async function loadExams() {
   renderExamRadar();
 }
 
+// Open work plus graded work (Full sync), so each exam's share of the
+// grade is worked out from its whole category.
+const examAllAssignments = () => [...(cachedAssignments || []), ...(cachedGradedAssignments || [])];
+
 function examRadarList() {
   return collectExams({
     assignments: cachedAssignments || [],
+    allAssignments: examAllAssignments(),
+    manual: cachedExams,
+    hidden: (userPrefs && userPrefs.examRadarHidden) || [],
+  });
+}
+
+function examUndatedList() {
+  return undatedExams({
+    assignments: cachedAssignments || [],
+    allAssignments: examAllAssignments(),
     manual: cachedExams,
     hidden: (userPrefs && userPrefs.examRadarHidden) || [],
   });
@@ -73,12 +88,28 @@ function renderExamRadar() {
     </li>`;
   }).join('');
 
+  // Exams Canvas knows about but has no date for (given in class): one tap
+  // to date them, then they join the countdown and study planning.
+  const undated = examFormOpen ? [] : examUndatedList();
+  const undatedHTML = undated.length ? `
+    <div class="er-undated-head">No date in Canvas yet</div>
+    <ul class="er-undated">${undated.map(e => {
+      const worth = examWorthText(e);
+      return `<li>
+        <div class="er-body"><div class="er-title">${escapeHtml(e.title)}</div>
+          <div class="er-meta">${escapeHtml(cleanCourseName(e.course))}${worth ? ` · <b>${escapeHtml(worth)}</b>` : ''}</div></div>
+        <button type="button" class="er-add" onclick="toggleExamForm(true, '${encodeURIComponent(e.key)}')">Add date</button>
+      </li>`;
+    }).join('')}</ul>` : '';
+
   const courses = examCourseOptions();
+  const pre = examFormPrefill || {};
+  if (pre.course && !courses.includes(pre.course)) courses.unshift(pre.course);
   const form = examFormOpen ? `
     <form class="er-form" onsubmit="event.preventDefault(); saveExam();">
-      <label class="er-field"><span>Exam</span><input id="er-title" type="text" maxlength="120" placeholder="e.g. Midterm 2" required></label>
+      <label class="er-field"><span>Exam</span><input id="er-title" type="text" maxlength="120" placeholder="e.g. Midterm 2" required value="${escapeHtml(pre.title || '')}"></label>
       <label class="er-field"><span>Class</span>
-        <select id="er-course">${courses.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(cleanCourseName(c))}</option>`).join('')}<option value="">Other / not listed</option></select>
+        <select id="er-course">${courses.map(c => `<option value="${escapeHtml(c)}"${c === pre.course ? ' selected' : ''}>${escapeHtml(cleanCourseName(c))}</option>`).join('')}<option value="">Other / not listed</option></select>
       </label>
       <div class="er-row">
         <label class="er-field"><span>Date</span><input id="er-date" type="date" required min="${ymd(new Date())}"></label>
@@ -98,15 +129,22 @@ function renderExamRadar() {
       ${examFormOpen ? '' : `<button type="button" class="er-add" onclick="toggleExamForm(true)">+ Add exam</button>`}
     </div>
     ${form}
-    ${exams.length ? `<ol class="er-list">${rows}</ol>` : examFormOpen ? '' : `<div class="er-empty">No exams found in Canvas. If a teacher announced one in class, add it so StudyFlow can plan around it.</div>`}
+    ${exams.length ? `<ol class="er-list">${rows}</ol>` : examFormOpen || undated.length ? '' : `<div class="er-empty">No exams found in Canvas. If a teacher announced one in class, add it so StudyFlow can plan around it.</div>`}
+    ${undatedHTML}
     ${glimpse}`;
   remindExamsTomorrow(exams);
 }
 
-function toggleExamForm(open) {
+// encKey: an undated Canvas exam to date (fills in its name and class).
+function toggleExamForm(open, encKey) {
   examFormOpen = open;
+  examFormPrefill = null;
+  if (open && encKey) {
+    const e = examUndatedList().find(x => x.key === decodeURIComponent(encKey));
+    if (e) examFormPrefill = { title: e.title, course: e.course };
+  }
   renderExamRadar();
-  if (open) setTimeout(() => document.getElementById('er-title')?.focus(), 30);
+  if (open) setTimeout(() => document.getElementById(examFormPrefill ? 'er-date' : 'er-title')?.focus(), 30);
 }
 
 async function saveExam() {
@@ -121,6 +159,7 @@ async function saveExam() {
   if (!ok) { msg.innerHTML = '<div class="msg-error">Couldn\'t save that exam. Try again.</div>'; return; }
   if (Array.isArray(data) && data[0]) cachedExams.push(data[0]);
   examFormOpen = false;
+  examFormPrefill = null;
   renderExamRadar();
   if (typeof showReward === 'function') showReward('Exam added to your radar.', 'calendar');
 }

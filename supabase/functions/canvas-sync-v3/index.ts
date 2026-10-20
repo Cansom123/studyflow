@@ -289,10 +289,18 @@ Deno.serve(async (req) => {
 
     const assignmentsPhase = Promise.all(activeCourses.map(async (course: any) => {
       const courseId = String(course.id);
-      const rawAssignments = await fetchAllPages(
-        `${canvasUrl}/api/v1/courses/${courseId}/assignments?per_page=100&order_by=due_at&include[]=submission`,
-        canvasAuth,
-      );
+      // The class's grade categories ("Exams", worth 40%) come alongside, so
+      // an exam is recognised whatever it's named, and its weight is known.
+      const [rawAssignments, rawGroups] = await Promise.all([
+        fetchAllPages(
+          `${canvasUrl}/api/v1/courses/${courseId}/assignments?per_page=100&order_by=due_at&include[]=submission`,
+          canvasAuth,
+        ),
+        fetchAllPages(`${canvasUrl}/api/v1/courses/${courseId}/assignment_groups?per_page=100`, canvasAuth),
+      ]);
+      const groupById = new Map((rawGroups ?? []).map((g: any) => [String(g.id), g]));
+      // Weights only mean something when the class actually uses them.
+      const weighted = course.apply_assignment_group_weights === true;
       if (rawAssignments === null) {
         blockedCourseCount++;
         blockedCourseNames.push(course.name);
@@ -342,6 +350,8 @@ Deno.serve(async (req) => {
           score: sub?.score ?? null,
           is_missing: !!sub?.missing,
           is_excused: !!sub?.excused,
+          assignment_group: groupById.get(String(a.assignment_group_id))?.name ?? null,
+          group_weight: weighted ? (groupById.get(String(a.assignment_group_id))?.group_weight ?? null) : null,
         });
         kept++;
       }

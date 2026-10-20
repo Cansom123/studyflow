@@ -78,7 +78,9 @@ function dayDiff(due_date, ref) {
 function getBadge(type, title) {
   const n = (title || '').toLowerCase();
   if (/\bquiz/.test(n)) return ['badge-quiz','Quiz'];
-  if (/\b(test|exam|midterm)s?\b/.test(n)) return ['badge-test','Test'];
+  // "Midterm Feedback Survey" mentions an exam without being one (same rule
+  // as the exam radar, js/exam-core.js).
+  if (/\b(test|exam|midterm)s?\b/.test(n) && !/\b(survey|feedback|review|drafts?|practice|reflection)\b/.test(n)) return ['badge-test','Test'];
   if (/\b(essay|paper|thesis)s?\b/.test(n)) return ['badge-essay','Essay'];
   if (/\b(discussion|forum)s?\b/.test(n)) return ['badge-discussion','Discussion'];
   const t = (type || '').toLowerCase();

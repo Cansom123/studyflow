@@ -16,7 +16,8 @@ function assignmentKind(a) {
   const t = String((a && a.title) || '').toLowerCase();
   const type = String((a && a.assignment_type) || '').toLowerCase();
   if (/\bquiz|inquizitive/.test(t) || type.includes('quiz')) return 'quiz';
-  if (/\b(test|exam|midterm|final)s?\b/.test(t)) return 'test';
+  // "Midterm Feedback Survey" mentions an exam without being one.
+  if (/\b(test|exam|midterm|final)s?\b/.test(t) && !/\b(survey|feedback|review|drafts?|practice|reflection)\b|\bfinal\s+(project|paper|essay|presentation|portfolio|report)/.test(t)) return 'test';
   if (/\b(essay|paper|thesis|report)s?\b/.test(t)) return 'essay';
   if (/\b(presentation|speech|slides)s?\b/.test(t)) return 'presentation';
   if (/\b(project)s?\b/.test(t)) return 'project';

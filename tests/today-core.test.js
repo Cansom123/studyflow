@@ -16,6 +16,9 @@ test('kinds come from the title first', () => {
   assert.equal(assignmentKind({ title: 'Chapter 6 Reading' }), 'reading');
   assert.equal(assignmentKind({ title: 'Budget Worksheet' }), 'homework');
   assert.equal(assignmentKind({ title: 'Something', assignment_type: 'online_quiz' }), 'quiz');
+  // Mentions an exam without being one (real Canvas titles).
+  assert.notEqual(assignmentKind({ title: 'Midterm Feedback Survey' }), 'test');
+  assert.equal(assignmentKind({ title: 'Reviewing Your World Essay Final Draft' }), 'essay');
 });
 
 test('no history: a plain default for the kind', () => {

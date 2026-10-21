@@ -6026,10 +6026,9 @@ function renderHomeTiles(overdueCount, soon) {
   const stats = computeStudyStats(cachedStudySessions, userPrefs, today);
   const chain = computeStudyChainLength(studyChainDayTotals());
   const nextDue = [...soon].sort((a, b) => new Date(a.due_date) - new Date(b.due_date))[0];
-  const scores = cachedGrades.map(g => parseFloat(g.current_score != null ? g.current_score : g.final_score)).filter(n => !isNaN(n));
-  const avg = scores.length ? scores.reduce((s, n) => s + n, 0) / scores.length : null;
+  const { avg, count: gradedCount } = averageGrade(cachedGrades);
 
-  const sig = JSON.stringify([overdueCount, soon.length, nextDue && nextDue.title, stats.todaySec, stats.dailyGoal, chain, avg && avg.toFixed(1), scores.length]);
+  const sig = JSON.stringify([overdueCount, soon.length, nextDue && nextDue.title, stats.todaySec, stats.dailyGoal, chain, avg && avg.toFixed(1), gradedCount]);
   if (el.dataset.sig === sig) return;
   el.dataset.sig = sig;
 
@@ -6055,7 +6054,7 @@ function renderHomeTiles(overdueCount, soon) {
     homeTileHTML({
       icon: 'grade', label: 'Average grade', onclick: "jumpTo('grades')",
       valueHTML: avg == null ? '--' : `<span data-count-to="${avg.toFixed(1)}" data-count-decimals="1" data-count-suffix="%">${avg.toFixed(1)}%</span>`,
-      sub: scores.length ? `Across ${scores.length} class${scores.length === 1 ? '' : 'es'}` : 'No grades yet',
+      sub: gradedCount ? `Across ${gradedCount} class${gradedCount === 1 ? '' : 'es'}` : 'No grades yet',
     }),
   ].join('');
 }
@@ -8431,10 +8430,9 @@ var PAGE_HEADS = { // var: refreshPageHeads may run (via renderHome) before this
     return s.dailyGoal ? `${fmtDuration(s.todaySec)} of ${s.dailyGoal} min studied today` : `${fmtDuration(s.todaySec)} studied today`;
   } },
   grades:   { title: 'Grades', sub: () => {
-    const pcts = (cachedGrades || []).map(g => g.current_score != null ? g.current_score : g.final_score).filter(p => p != null).map(Number);
-    if (!pcts.length) return 'No grades posted yet';
-    const avg = pcts.reduce((a, b) => a + b, 0) / pcts.length;
-    return `Averaging ${avg.toFixed(1)}% across ${pcts.length} ${pcts.length === 1 ? 'class' : 'classes'}`;
+    const { avg, count } = averageGrade(cachedGrades);
+    if (!count) return 'No grades posted yet';
+    return `Averaging ${avg.toFixed(1)}% across ${count} ${count === 1 ? 'class' : 'classes'}`;
   } },
   goals:    { title: 'Goals', sub: () => {
     if (!userGoals.length) return 'Tell StudyFlow what you are aiming for';

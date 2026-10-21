@@ -1042,6 +1042,13 @@ body.auth-mode .auth-form-col > .auth-screen {
 .grade-b  { color: var(--accent); }
 .grade-c  { color: var(--amber);  }
 .grade-df { color: var(--red);    }
+/* No letter and nothing counted yet: a plain dash, not a failing-red one. */
+.grade-none { color: var(--text2); }
+/* "est." beside a letter estimated from the percentage (displayLetter). */
+.grade-est {
+  display: inline-block; margin-left: 3px; vertical-align: super;
+  font-size: 9px; font-weight: 500; letter-spacing: 0.02em; color: var(--text2);
+}
 .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--grade-sep); }
 .grade-row:last-child { border-bottom: none; }
 .grade-name { font-size: 13px; color: var(--text1); }

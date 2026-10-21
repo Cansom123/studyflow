@@ -161,7 +161,7 @@ function checklistStepCardHTML(s, editingChecklistStepId) {
 // passed in already-computed rather than read from cached state here.
 function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
   const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
-  const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
+  const { letter, estimated } = displayLetter(grade);
   const { graded, missing, lowPerformers, openWork, allClosed } = breakdown;
   // Soonest due first -- a higher point value doesn't help a student get
   // ahead of anything if it isn't due for weeks. Undated items (not yet
@@ -175,7 +175,7 @@ function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
 
   let html = '';
   if (pct != null || letter) {
-    html += `<div class="card-sub" style="margin-bottom:16px;">Current grade: <strong style="color:var(--text1);">${pct != null ? escapeHtml(String(pct)) + '%' : ''}${letter ? ' (' + escapeHtml(letter) + ')' : ''}</strong></div>`;
+    html += `<div class="card-sub" style="margin-bottom:16px;">Current grade: <strong style="color:var(--text1);">${pct != null ? escapeHtml(String(pct)) + '%' : ''}${letter ? ' (' + escapeHtml(letter) + (estimated ? ', estimated' : '') + ')' : ''}</strong>${estimated ? `<div style="margin-top:4px;">Canvas doesn't give this class a letter grade, so it's estimated from the usual scale (93% A, 90% A-, 87% B+...). Your teacher's cut-offs may differ.</div>` : ''}</div>`;
   }
 
   if (!lowPerformers.length && !missing.length && !openWorkRanked.length && !graded.length) {
@@ -422,7 +422,7 @@ function gradeCardsHTML(withGrades) {
   const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
   return withGrades.map(g => {
     const score = g.current_score != null ? parseFloat(g.current_score) : parseFloat(g.final_score);
-    const letter = g.current_grade || g.final_grade || '';
+    const { letter, estimated } = displayLetter(g);
     const cleanName = cleanCourseName(g.course_name);
     const letterClass = letterGradeClass(letter);
     const scoreText = !isNaN(score) ? `${score.toFixed(1)}%` : '';
@@ -436,7 +436,7 @@ function gradeCardsHTML(withGrades) {
         <div class="grade-breakdown-hint">Tap to see what's affecting this grade</div>
       </div>
       <div class="grade-card-right">
-        <div class="grade-card-letter ${letterClass}">${letter || '-'}</div>
+        <div class="grade-card-letter ${letterClass}"${estimated ? ` title="${ESTIMATED_LETTER_TIP}"` : ''}>${escapeHtml(letter) || '–'}${estimated ? '<span class="grade-est">est.</span>' : ''}</div>
         ${scoreText ? `<div class="grade-card-pct" data-count-to="${score.toFixed(1)}" data-count-decimals="1" data-count-suffix="%">${scoreText}</div>` : ''}
       </div>
     </div>`;
@@ -452,7 +452,7 @@ function homeGradesListHTML(cachedGrades, limit = 4) {
   }
   const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
   return withGrades.slice(0, limit).map(g => {
-    const letter = g.current_grade || g.final_grade || '';
+    const { letter, estimated } = displayLetter(g);
     const letterClass = letterGradeClass(letter);
     const score = parseFloat(g.current_score != null ? g.current_score : g.final_score);
     const hasScore = !isNaN(score);
@@ -460,7 +460,7 @@ function homeGradesListHTML(cachedGrades, limit = 4) {
     return `<div class="hg-row">
       <div class="hg-top">
         <span class="hg-name">${escapeHtml(cleanCourseName(g.course_name))}</span>
-        <span class="hg-score">${hasScore ? `<span class="hg-pct" data-count-to="${score.toFixed(1)}" data-count-decimals="1" data-count-suffix="%">${score.toFixed(1)}%</span>` : ''}<span class="hg-letter ${letterClass}">${escapeHtml(letter || '-')}</span></span>
+        <span class="hg-score">${hasScore ? `<span class="hg-pct" data-count-to="${score.toFixed(1)}" data-count-decimals="1" data-count-suffix="%">${score.toFixed(1)}%</span>` : ''}<span class="hg-letter ${letterClass}"${estimated ? ` title="${ESTIMATED_LETTER_TIP}"` : ''}>${escapeHtml(letter || '–')}${estimated ? '<span class="grade-est">est.</span>' : ''}</span></span>
       </div>
       ${barWidth > 0 ? `<div class="ht-bar"><i style="width:${barWidth}%;background:${barColors[letterClass] || 'var(--accent)'}"></i></div>` : ''}
     </div>`;
@@ -759,10 +759,10 @@ function allWorkByClassHTML(assignments, doneSet, grades, collapsed, today) {
     const overdue = g.items.filter(isOverdue).length;
     const grade = (grades || []).find(x => norm(x.course_name) === norm(g.name));
     const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
-    const letter = grade ? (grade.current_grade || grade.final_grade || '') : '';
+    const { letter, estimated } = displayLetter(grade);
     const gradeBtn = grade && (pct != null || letter)
-      ? `<button class="awc-grade" onclick="event.stopPropagation();openGradeDetail(${escapeHtml(JSON.stringify(grade.course_name))})" title="See what's affecting this grade">
-           ${letter ? `<b>${escapeHtml(letter)}</b>` : ''}${pct != null ? `<span>${Number(pct).toFixed(1)}%</span>` : ''}
+      ? `<button class="awc-grade" onclick="event.stopPropagation();openGradeDetail(${escapeHtml(JSON.stringify(grade.course_name))})" title="See what's affecting this grade${estimated ? ' (letter estimated from the usual scale)' : ''}">
+           ${letter ? `<b>${escapeHtml(letter)}${estimated ? '<span class="grade-est">est.</span>' : ''}</b>` : ''}${pct != null ? `<span>${Number(pct).toFixed(1)}%</span>` : ''}
          </button>`
       : '';
     const meta = [`${g.items.length} ${g.items.length === 1 ? 'assignment' : 'assignments'}`]

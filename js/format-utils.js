@@ -167,8 +167,43 @@ function fmtClock(totalSec) {
 // Grades tab's course cards and Home's mini grade list (previously
 // duplicated verbatim between them).
 function letterGradeClass(letter) {
+  if (!letter) return 'grade-none';
   if (letter.startsWith('A')) return 'grade-a';
   if (letter.startsWith('B')) return 'grade-b';
   if (letter.startsWith('C')) return 'grade-c';
   return 'grade-df';
+}
+
+// The letter to show for a course. Canvas sends one only when the class has a
+// grading scheme set up; without one, this estimates it from the percentage
+// on the common US scale, marked `estimated` because a class's own cut-offs
+// can differ. A 0% with no letter means nothing counted yet (non-academic or
+// brand-new courses), so it shows no letter rather than an F. Display only:
+// coco.1's grade context keeps Canvas's real letter so it never states a
+// guess as fact.
+const ESTIMATED_LETTER_TIP = 'Estimated from the usual grading scale. Canvas has no letter grade for this class, and your teacher may use different cut-offs.';
+const US_LETTER_SCALE = [[93, 'A'], [90, 'A-'], [87, 'B+'], [83, 'B'], [80, 'B-'], [77, 'C+'], [73, 'C'], [70, 'C-'], [67, 'D+'], [63, 'D'], [60, 'D-'], [0, 'F']];
+function displayLetter(grade) {
+  const real = grade ? (grade.current_grade || grade.final_grade || '') : '';
+  if (real) return { letter: real, estimated: false };
+  const raw = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
+  const pct = raw != null ? parseFloat(raw) : NaN;
+  if (isNaN(pct) || pct <= 0) return { letter: '', estimated: false };
+  return { letter: US_LETTER_SCALE.find(([min]) => pct >= min)[1], estimated: true };
+}
+
+// Average of the classes that actually count, for "Average grade" on Home and
+// the Grades header. A 0% course with no letter (a placement test, an
+// orientation course) is left out, the same rule displayLetter uses to show
+// a plain dash -- otherwise two of those dragged a real ~90% down to 64%.
+function averageGrade(grades) {
+  const scores = (grades || [])
+    .map(g => ({ g, pct: parseFloat(g.current_score != null ? g.current_score : g.final_score) }))
+    .filter(({ g, pct }) => !isNaN(pct) && (pct > 0 || g.current_grade || g.final_grade))
+    .map(({ pct }) => pct);
+  return { avg: scores.length ? scores.reduce((s, n) => s + n, 0) / scores.length : null, count: scores.length };
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { letterGradeClass, displayLetter, averageGrade, US_LETTER_SCALE, ESTIMATED_LETTER_TIP };
 }

@@ -6,7 +6,18 @@
 <title>StudyFlow</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@300;400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+<!-- Light/dark is set before first paint (same rule as applyThemeMode), so the
+     splash and sign-in page never flash the wrong theme. -->
+<script>
+(function () {
+  try {
+    var mode = localStorage.getItem('sf_theme_mode') || 'system';
+    var dark = mode === 'system' ? window.matchMedia('(prefers-color-scheme: dark)').matches : mode === 'dark';
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  } catch (e) {}
+})();
+</script>
 <script type="application/json" id="tweak-defaults">{"accent":"217","cardRadius":"14","fontScale":"1"}</script>
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -16,14 +27,10 @@
      to show -- see hideAll() and showApp(). -->
 <div id="boot-splash" role="status" aria-label="Loading StudyFlow">
   <div class="boot-card">
-    <div class="boot-logo logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
-        </svg>
-      </div>
-      <span class="logo-word">Study<em>Flow</em></span>
-    </div>
+    <span class="nb-logo nb-logo-lg" aria-hidden="true">
+      <svg class="nb-cap" viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg>
+      <span class="nb-word">studyflow</span>
+    </span>
     <div class="boot-bar"></div>
     <div class="boot-slow">Taking longer than usual to connect.<button type="button" onclick="location.reload()">Retry</button></div>
   </div>
@@ -32,14 +39,10 @@
      so that is never mistaken for "no Canvas connected yet" and sent to onboarding. -->
 <div id="conn-problem" role="alert">
   <div class="conn-card">
-    <div class="auth-logo logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
-        </svg>
-      </div>
-      <span class="logo-word">Study<em>Flow</em></span>
-    </div>
+    <span class="nb-logo" aria-hidden="true">
+      <svg class="nb-cap" viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg>
+      <span class="nb-word">studyflow</span>
+    </span>
     <div class="conn-title">Can't reach StudyFlow</div>
     <div class="conn-sub">Check your internet connection and try again. Nothing has been lost - your account and data are exactly where you left them.</div>
     <button class="auth-btn" id="conn-retry-btn" onclick="retryConnection()">Try again</button>
@@ -74,27 +77,27 @@
 <div class="app">
 
 <div class="auth-page" id="auth-page">
+  <!-- Notebook sign-in: top bar, then the headline and form on the left and a
+       sample "Your week" ticket on the right (js/auth-ticket.js). Every screen,
+       id and handler inside .auth-form-col is unchanged. -->
+  <div class="nb-hero">
+  <header class="nb-top">
+    <span class="nb-logo" aria-label="StudyFlow">
+      <svg class="nb-cap" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg>
+      <span class="nb-word" aria-hidden="true">studyflow</span>
+    </span>
+    <nav class="nb-nav">
+      <button type="button" class="nb-nav-how" onclick="scrollToHowItWorks()">How it works</button>
+      <button type="button" class="nb-out" onclick="showSignup()">Create account</button>
+    </nav>
+  </header>
+
+  <div class="nb-left">
   <div class="auth-brand">
     <div class="auth-brand-inner">
-      <div class="auth-brand-logo logo">
-        <div class="logo-mark">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
-          </svg>
-        </div>
-        <span class="logo-word">Study<em>Flow</em></span>
-      </div>
-      <div class="auth-brand-tagline">Your semester, finally under control.</div>
-      <ul class="auth-brand-points">
-        <li>Every Canvas assignment, synced automatically</li>
-        <li>One list that tells you what to do first</li>
-        <li>Grades and teacher feedback, all in one place</li>
-      </ul>
-      <div class="auth-preview" aria-hidden="true">
-        <div class="ap-card c1"><span class="ap-ring"></span><div class="ap-body"><div class="ap-title">Cell Respiration Lab</div><div class="ap-sub">Biology · due tomorrow</div></div><span class="ap-badge">Essay</span></div>
-        <div class="ap-card c2"><div class="ap-body"><div class="ap-title">AP Calculus</div><div class="ap-bar"><i></i></div></div><span class="ap-grade">A</span></div>
-        <div class="ap-card c3"><span class="ap-rank">1</span><div class="ap-body"><div class="ap-title">Start the essay draft</div><div class="ap-sub">Top priority today</div></div></div>
-      </div>
+      <span class="nb-kicker">For students on Canvas</span>
+      <h1 class="nb-h">Every deadline.<br>One <span class="nb-hl">calm</span> week.</h1>
+      <p class="nb-sub">StudyFlow pulls your due dates, grades and exams from Canvas, then tells you the three things worth doing today.</p>
     </div>
   </div>
 
@@ -116,9 +119,11 @@
     <input class="auth-input" type="email" id="login-email" placeholder="you@email.com" />
     <div class="auth-label">Password</div>
     <input class="auth-input" type="password" id="login-password" placeholder="••••••••" />
-    <button class="auth-btn" id="login-btn" onclick="handleLogin()">Sign in</button>
-    <div class="auth-switch">New to StudyFlow? <a onclick="showSignup()">Create an account</a></div>
-    <div class="auth-switch" style="margin-top:8px;"><a onclick="showForgotPassword()">Forgot password?</a></div>
+    <div class="nb-btns">
+      <button class="auth-btn" id="login-btn" onclick="handleLogin()">Sign in</button>
+      <button type="button" class="nb-link" onclick="showForgotPassword()">Forgot password?</button>
+    </div>
+    <div class="nb-new"><b>New here?</b> Start with just your Canvas calendar link. No school password, nothing to install. <button type="button" class="nb-link nb-strong" onclick="showSignup()">Create a free account →</button></div>
   </div>
 
   <!-- 2FA CODE -->
@@ -243,6 +248,30 @@
     <button class="auth-btn" id="reset-password-btn" onclick="handleResetPassword()">Save new password</button>
   </div>
   </div>
+  </div>
+
+  <!-- Sample week: decorative, checks itself off (js/auth-ticket.js). -->
+  <div class="nb-right" aria-hidden="true">
+    <div class="nb-slip">
+      <div class="nb-ticket">
+        <div class="nb-tk-head"><b>Your week</b><span>MON → SUN</span></div>
+        <ul class="nb-tk-list" id="nb-tk-list">
+          <li class="done"><span class="nb-bx">✓</span><span class="nb-t"><span class="nb-nm">Problem set 5</span><small>MATH 132</small></span><span class="nb-d">MON</span></li>
+          <li class="now"><span class="nb-bx">✓</span><span class="nb-t"><span class="nb-nm">Lab report: Titration</span><small>CHEM 121</small></span><span class="nb-d">TONIGHT</span></li>
+          <li class="exam"><span class="nb-bx"></span><span class="nb-t"><span class="nb-nm">Exam 2</span><small>MATH 132 · 20% of grade</small></span><span class="nb-d">THU</span></li>
+          <li><span class="nb-bx">✓</span><span class="nb-t"><span class="nb-nm">Read ch. 7 + quiz</span><small>PSY 101</small></span><span class="nb-d">FRI</span></li>
+          <li><span class="nb-bx">✓</span><span class="nb-t"><span class="nb-nm">Essay draft</span><small>ENGL 102</small></span><span class="nb-d">SUN</span></li>
+        </ul>
+        <div class="nb-tk-strip"><i style="height:45%"></i><i style="height:60%"></i><i style="height:55%"></i><i class="x" style="height:100%"></i><i style="height:35%"></i><i style="height:15%"></i><i style="height:40%"></i></div>
+        <div class="nb-tk-days"><span class="t">MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span></div>
+        <div class="nb-tk-foot"><span><b id="nb-tk-done">1</b> DONE</span><span><b id="nb-tk-left">4</b> TO GO</span></div>
+      </div>
+    </div>
+    <div class="nb-sticky">
+      <span class="nb-who"><i></i>coco.1</span>
+      Exam 2 is Thursday. <b>Finish the lab tonight</b> so Tuesday and Wednesday are free to study.
+    </div>
+  </div>
 
   <!-- HOW IT WORKS: a pinned scroll story under the sign-in screen (scroll,
        or the arrow). Scroll position drives the scene; see js/auth-how.js. -->
@@ -250,6 +279,7 @@
     <span>See how it works</span>
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
   </button>
+  </div>
   <section class="story" id="how-it-works" aria-labelledby="story-title">
     <div class="story-stage">
       <div class="story-copy">
@@ -9072,6 +9102,7 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/auth-how.js"></script>
 <script src="js/motion-extras.js"></script>
 <script src="js/auth-live.js"></script>
+<script src="js/auth-ticket.js"></script>
 <script src="js/dashboard-motion.js"></script>
 <script src="js/canvas-feed.js"></script>
 <script src="js/feed-checkin.js"></script>

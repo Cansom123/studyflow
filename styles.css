@@ -4977,3 +4977,295 @@ body.auth-mode .app { scroll-snap-type: y proximity; }
 .er-undated li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--glass-border); }
 .er-undated li:first-child { border-top: 0; }
 .er-undated .er-meta b { color: var(--text1); font-weight: 600; }
+
+/* ===========================
+   SIGN-IN: NOTEBOOK REDESIGN
+   Ruled notebook paper (navy "Notebook at night" in dark theme), a top bar,
+   the headline and form on the left, a sample "Your week" ticket on the
+   right. Covers the sign-in screens, the startup splash, the connection
+   screen and the How it works story. Comes last so it overrides the older
+   black-glass auth styles above without touching how any screen works.
+=========================== */
+.auth-page, #boot-splash, #conn-problem {
+  --nb-paper: #f6f1e4; --nb-card: #fbf8f0; --nb-card-2: #f2ece0; --nb-input: #ffffff;
+  --nb-ink: #1c2340; --nb-ink-2: #545b78; --nb-ink-3: #8b8fa3;
+  --nb-line: rgba(40,50,90,0.11); --nb-line-2: rgba(40,50,90,0.2);
+  --nb-rule: rgba(39,71,214,0.14); --nb-margin: rgba(229,72,77,0.55);
+  --nb-blue: #2747d6; --nb-red: #e5484d; --nb-mark: #f3ff4a; --nb-mark-ink: #1c2340;
+  --nb-btn: #1c2340; --nb-btn-fg: #fbf8f0; --nb-shadow: rgba(28,35,64,0.35);
+  --nb-mono: "Geist Mono", ui-monospace, monospace; --nb-sans: "Geist", "DM Sans", system-ui, sans-serif;
+  /* the shared tokens the auth screens read */
+  --bg: var(--nb-paper); --surface: var(--nb-card); --surface2: var(--nb-card-2);
+  --border: var(--nb-line-2); --border2: var(--nb-line-2);
+  --text1: var(--nb-ink); --text2: var(--nb-ink-2);
+  --input-bg: var(--nb-input); --input-focus-bg: var(--nb-input);
+  --accent: var(--nb-blue); --accent-soft: rgba(39,71,214,0.14); --accent-text: var(--nb-blue);
+  --on-accent: #fff; --btn-bg: var(--nb-btn); --btn-fg: var(--nb-btn-fg);
+  --red: #c9363b; --red-soft: rgba(229,72,77,0.12);
+  --green: #1f8a5b; --green-soft: rgba(31,138,91,0.12);
+  color-scheme: light;
+}
+[data-theme="dark"] :is(.auth-page, #boot-splash, #conn-problem) {
+  --nb-paper: #121628; --nb-card: #161a2e; --nb-card-2: #1f243d; --nb-input: #1f243d;
+  --nb-ink: #eef0fb; --nb-ink-2: #aab0cc; --nb-ink-3: #757b98;
+  --nb-line: rgba(190,200,255,0.09); --nb-line-2: rgba(190,200,255,0.18);
+  --nb-rule: rgba(111,136,255,0.11); --nb-margin: rgba(255,107,111,0.45);
+  --nb-blue: #6f88ff; --nb-red: #ff6b6f;
+  --nb-btn: #eef0fb; --nb-btn-fg: #121628; --nb-shadow: rgba(0,0,0,0.6);
+  --accent-soft: rgba(111,136,255,0.18); --on-accent: #0e1120;
+  --red: #ff8a8d; --red-soft: rgba(255,107,111,0.14);
+  --green: #4fd18b; --green-soft: rgba(79,209,139,0.14);
+  color-scheme: dark;
+}
+
+/* -- Page and layout -- */
+.auth-page {
+  grid-template-columns: minmax(0, 1fr);
+  font-family: var(--nb-sans); color: var(--nb-ink);
+  background:
+    linear-gradient(90deg, transparent 30px, var(--nb-margin) 30px, var(--nb-margin) 32px, transparent 32px),
+    repeating-linear-gradient(180deg, transparent 0 31px, var(--nb-rule) 31px 32px),
+    var(--nb-paper);
+}
+body.auth-mode .auth-page { grid-template-rows: auto auto; }
+/* the old floating caps sit behind the sign-in page; onboarding keeps them */
+#auth-bg-glow:not(.onboard-glow) { display: none !important; }
+/* The body's 20px app padding would show around the paper as a strip (the old
+   black backdrop used to cover it), so it goes while the sign-in page is up. */
+body.auth-mode:has(#auth-page[style*="grid"]) { padding: 0; }
+
+.nb-hero {
+  grid-row: 1; grid-column: 1; position: relative;
+  min-height: 100vh; width: 100%; max-width: 1220px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); grid-template-rows: auto 1fr;
+  column-gap: 70px; padding: 0 56px 96px; scroll-snap-align: start;
+}
+.auth-page[data-lifting] .nb-hero {
+  opacity: calc(1 - var(--hero, 0) * 0.85);
+  translate: 0 calc(var(--hero, 0) * -70px);
+}
+.nb-top { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 26px 0; }
+.nb-nav { display: flex; align-items: center; gap: 20px; }
+.nb-nav button { background: none; border: 0; font: inherit; font-size: 14px; color: var(--nb-ink); cursor: pointer; padding: 4px 0; }
+.nb-nav .nb-out {
+  padding: 9px 16px; border: 1.5px solid currentColor; border-radius: 999px;
+  font-family: var(--nb-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.nb-left { grid-column: 1; align-self: center; padding: 16px 0; min-width: 0; }
+.nb-right { grid-column: 2; align-self: center; position: relative; display: flex; justify-content: center; padding: 20px 0 110px; }
+
+/* -- Logo: the grad cap tipped onto the first letter -- */
+.nb-logo { position: relative; display: inline-flex; align-items: center; line-height: 1; padding-top: 6px; }
+.nb-cap { position: absolute; left: -7px; top: -5px; width: 25px; height: 25px; transform: rotate(-22deg); color: var(--nb-blue); overflow: visible; }
+.nb-word { font-family: "Space Grotesk", var(--nb-sans); font-weight: 700; font-size: 26px; letter-spacing: -0.045em; color: var(--nb-ink); white-space: nowrap; }
+.nb-logo-lg .nb-cap { width: 36px; height: 36px; left: -10px; top: -8px; }
+.nb-logo-lg .nb-word { font-size: 38px; }
+
+/* -- Headline column (the old brand panel, now just the words) -- */
+.auth-page .auth-brand { display: block; padding: 0; border: 0; position: static; }
+.auth-page .auth-brand::before, .auth-page .auth-brand::after, .auth-page .auth-spot { display: none; }
+.auth-page .auth-brand-inner { max-width: none; }
+.nb-kicker {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--nb-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--nb-ink-2);
+}
+.nb-kicker::before { content: ''; width: 24px; height: 1.5px; background: currentColor; }
+.nb-h {
+  margin: 18px 0 22px; font-family: var(--nb-mono); font-weight: 300;
+  font-size: clamp(42px, 5.4vw, 82px); line-height: 1.02; letter-spacing: -0.045em; color: var(--nb-ink);
+}
+.nb-hl { background: linear-gradient(transparent 58%, var(--nb-mark) 58%, var(--nb-mark) 92%, transparent 92%); padding: 0 0.06em; }
+/* dark: the highlight covers the whole word so dark letters never sit on the navy page */
+[data-theme="dark"] .nb-hl { background: var(--nb-mark); color: var(--nb-mark-ink); border-radius: 0.12em; padding: 0 0.08em 0.04em; }
+.nb-sub { font-size: 17px; line-height: 1.55; max-width: 36ch; color: var(--nb-ink-2); margin: 0; }
+
+/* -- Form column: no glass card, the fields sit on the page under the headline -- */
+.auth-page .auth-form-col,
+body.auth-mode .auth-page .auth-form-col {
+  display: block; height: auto; overflow: visible; padding: 0; margin-top: 30px; max-width: 460px;
+}
+.auth-page .auth-form-col .auth-screen,
+body.auth-mode .auth-page .auth-form-col > .auth-screen {
+  max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0;
+  background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.auth-page .auth-form-col .auth-logo { display: none; }
+.auth-page .auth-heading { font-family: var(--nb-sans); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--nb-ink); margin: 0 0 6px; }
+.auth-page .auth-sub { font-size: 14.5px; color: var(--nb-ink-2); margin-bottom: 20px; }
+/* the big headline already welcomes you on the sign-in screen; keep these for screen readers */
+#login-screen .auth-heading, #login-screen .auth-sub {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.auth-page .auth-label {
+  font-family: var(--nb-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: var(--nb-ink-2); margin-bottom: 6px;
+}
+.auth-page .auth-label:has(+ .auth-input:focus),
+.auth-page .auth-label:has(+ .auth-input-wrap .auth-input:focus) { color: var(--nb-ink); }
+.auth-page .auth-input {
+  background: var(--nb-input); border: 1.5px solid var(--nb-line-2); border-radius: 12px;
+  padding: 13px 15px; font-size: 15px; color: var(--nb-ink); margin-bottom: 14px;
+}
+.auth-page .auth-input-wrap { margin-bottom: 14px; }
+.auth-page .auth-input-wrap .auth-input { margin-bottom: 0; }
+.auth-page .auth-input::placeholder { color: var(--nb-ink-3); }
+.auth-page .auth-input:focus { background: var(--nb-input); border-color: var(--nb-blue); box-shadow: 0 0 0 3px var(--accent-soft); }
+.auth-page .auth-eye:hover { background: var(--nb-line); }
+.auth-page .auth-btn {
+  background: var(--nb-btn); color: var(--nb-btn-fg); border-radius: 12px;
+  padding: 14px 24px; font-size: 15px; font-weight: 500; box-shadow: none; animation: fadeUp 0.6s var(--ease-out) 350ms backwards;
+}
+.auth-page .auth-btn::before { display: none; }
+.auth-page .auth-btn:hover:not(:disabled) { opacity: 0.92; box-shadow: none; }
+.nb-btns { display: flex; align-items: center; gap: 18px; margin-top: 4px; }
+.nb-btns .auth-btn { width: auto; margin: 0; }
+.nb-link { background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--nb-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.nb-link:hover { color: var(--nb-blue); }
+.nb-strong { font-weight: 600; }
+.nb-new {
+  margin-top: 22px; padding: 12px 14px; border: 1.5px dashed var(--nb-line-2); border-radius: 12px;
+  font-size: 13.5px; line-height: 1.5; color: var(--nb-ink-2);
+}
+.nb-new b { color: var(--nb-ink); font-weight: 600; }
+.nb-new .nb-link { font-size: 13.5px; }
+.auth-page .auth-switch { text-align: left; font-size: 14px; color: var(--nb-ink-2); margin-top: 16px; }
+.auth-page .auth-switch a { color: var(--nb-blue); }
+
+/* -- The sample week ticket -- */
+.nb-slip { width: min(380px, 100%); transform: rotate(2.2deg); filter: drop-shadow(0 26px 28px var(--nb-shadow)); }
+.nb-ticket {
+  background: var(--nb-card); color: var(--nb-ink); padding: 32px 24px 28px;
+  -webkit-mask: radial-gradient(circle at 9px 0, transparent 6px, #000 6.5px) top left / 18px 51% repeat-x,
+                radial-gradient(circle at 9px 100%, transparent 6px, #000 6.5px) bottom left / 18px 51% repeat-x;
+          mask: radial-gradient(circle at 9px 0, transparent 6px, #000 6.5px) top left / 18px 51% repeat-x,
+                radial-gradient(circle at 9px 100%, transparent 6px, #000 6.5px) bottom left / 18px 51% repeat-x;
+}
+.nb-tk-head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 14px; border-bottom: 1.5px dashed var(--nb-line-2); font-family: var(--nb-mono); font-size: 11.5px; letter-spacing: 0.12em; color: var(--nb-ink-2); }
+.nb-tk-head b { font-family: var(--nb-sans); font-size: 18px; font-weight: 500; letter-spacing: -0.01em; color: var(--nb-ink); }
+.nb-tk-list { list-style: none; margin: 6px 0 0; padding: 0; }
+.nb-tk-list li { display: grid; grid-template-columns: 20px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--nb-line); }
+.nb-bx { width: 18px; height: 18px; border: 1.5px solid var(--nb-ink-3); border-radius: 5px; display: grid; place-items: center; font-size: 11px; line-height: 1; color: transparent; transition: background 0.25s, border-color 0.25s, color 0.25s; }
+.nb-tk-list li.done .nb-bx { background: var(--nb-blue); border-color: var(--nb-blue); color: var(--on-accent); }
+.nb-t { font-size: 14px; font-weight: 500; line-height: 1.25; min-width: 0; }
+.nb-t small { display: block; margin-top: 3px; font-family: var(--nb-mono); font-size: 10.5px; font-weight: 400; letter-spacing: 0.04em; color: var(--nb-ink-3); }
+.nb-nm { background: linear-gradient(currentColor, currentColor) left 55% / 0% 1.5px no-repeat; transition: background-size 0.55s ease, color 0.3s; }
+.nb-tk-list li.done .nb-nm { background-size: 100% 1.5px; color: var(--nb-ink-3); }
+.nb-d { font-family: var(--nb-mono); font-size: 11px; color: var(--nb-ink-2); white-space: nowrap; }
+.nb-tk-list li.now .nb-d { background: var(--nb-mark); color: var(--nb-mark-ink); padding: 2px 6px; border-radius: 5px; }
+.nb-tk-list li.exam .nb-nm, .nb-tk-list li.exam .nb-d { color: var(--nb-red); font-weight: 600; }
+.nb-tk-list li.exam .nb-bx { border-color: var(--nb-red); border-style: dashed; }
+.nb-tk-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; align-items: end; height: 52px; margin-top: 18px; }
+.nb-tk-strip i { display: block; background: var(--nb-blue); border-radius: 4px 4px 0 0; }
+.nb-tk-strip i.x { background: var(--nb-red); }
+.nb-tk-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; border-top: 1.5px solid var(--nb-ink); padding-top: 5px; }
+.nb-tk-days span { text-align: center; font-family: var(--nb-mono); font-size: 9.5px; color: var(--nb-ink-3); }
+.nb-tk-days span.t { background: var(--nb-mark); color: var(--nb-mark-ink); border-radius: 4px; }
+.nb-tk-foot { display: flex; justify-content: space-between; margin-top: 16px; padding-top: 12px; border-top: 1.5px dashed var(--nb-line-2); font-family: var(--nb-mono); font-size: 11.5px; letter-spacing: 0.08em; color: var(--nb-ink-2); }
+.nb-tk-foot b { color: var(--nb-ink); font-weight: 500; }
+
+/* -- coco.1 on a sticky note, tucked under the ticket's corner -- */
+.nb-sticky {
+  position: absolute; right: -34px; bottom: -34px; z-index: 3; width: 210px; transform: rotate(-4deg);
+  padding: 24px 18px 18px; border-radius: 2px 2px 16px 2px;
+  background: color-mix(in srgb, var(--nb-mark) 55%, #fffbe8); color: var(--nb-mark-ink);
+  box-shadow: 0 16px 24px -16px rgba(0,0,0,0.4); font-size: 15px; line-height: 1.38;
+}
+.nb-sticky::before { content: ''; position: absolute; top: -11px; left: 50%; width: 78px; height: 22px; transform: translateX(-50%) rotate(-3deg); background: rgba(255,255,255,0.55); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+.nb-sticky b { font-weight: 600; }
+.nb-who { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; font-family: var(--nb-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; }
+.nb-who i { width: 7px; height: 7px; border-radius: 50%; background: #2747d6; }
+
+/* -- "See how it works" pill, at the bottom of the first screen -- */
+.nb-hero .how-scroll-hint {
+  position: absolute; left: 0; right: 0; bottom: 22px; width: max-content; margin: 0 auto;
+  background: var(--nb-card); border: 1.5px solid var(--nb-line-2); color: var(--nb-ink-2);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.nb-hero .how-scroll-hint:hover { color: var(--nb-ink); border-color: var(--nb-ink-3); }
+
+/* -- How it works story, on the same paper -- */
+.auth-page .story { color: var(--nb-ink); border-top: 1.5px dashed var(--nb-line-2); }
+.auth-page .story-eyebrow { font-family: var(--nb-mono); font-weight: 500; color: var(--nb-ink-2); }
+.auth-page .story-title { font-family: var(--nb-sans); font-weight: 600; }
+.auth-page .story-steps::before { background: var(--nb-line-2); }
+.auth-page .ss-dot { background: var(--nb-paper); border-color: var(--nb-ink-3); }
+.auth-page .ss-text b { color: var(--nb-ink-3); }
+.auth-page .ss-text > span { color: var(--nb-ink-2); }
+.auth-page .story-step.past .ss-dot { background: var(--nb-ink-3); border-color: transparent; }
+.auth-page .story-step.active .ss-dot { background: var(--nb-blue); border-color: var(--nb-blue); box-shadow: 0 0 0 5px var(--accent-soft); }
+.auth-page .story-step.active .ss-text b, .auth-page .story-step button:hover .ss-text b { color: var(--nb-ink); }
+.auth-page .story-step button:focus-visible { outline-color: var(--nb-blue); }
+.auth-page .story-cta-link { color: var(--nb-ink-2); }
+.auth-page .story-cta-link:hover { color: var(--nb-ink); }
+.auth-page .story-scene { background: var(--nb-card); border: 1.5px solid var(--nb-line-2); border-radius: 22px; }
+.auth-page .sc-canvas-ghost span { border-color: var(--nb-line-2); }
+.auth-page .sc-card { background: var(--nb-input); border-color: var(--nb-line-2); box-shadow: 0 10px 24px -16px var(--nb-shadow); }
+.auth-page .sc-card.top { border: 2px solid var(--nb-ink); box-shadow: 0 14px 28px -16px var(--nb-shadow); }
+.auth-page .scx-rank { background: var(--nb-mark); color: var(--nb-mark-ink); }
+.auth-page .scx-body span { color: var(--nb-ink-3); }
+.auth-page .scx-due { background: var(--nb-card-2); color: var(--nb-ink-2); }
+.auth-page .sc-list-head { color: var(--nb-ink-2); font-family: var(--nb-mono); font-weight: 500; }
+.auth-page .sc-count { background: var(--nb-ink); color: var(--nb-paper); }
+.auth-page .sc-why { border-color: var(--nb-line-2); background: var(--nb-card-2); }
+.auth-page .sc-why-title { color: var(--nb-ink); }
+.auth-page .sc-why li { color: var(--nb-ink-2); }
+.auth-page .sc-why li::before { background: var(--nb-blue); }
+.auth-page .sct-track { stroke: var(--nb-line-2); }
+.auth-page .sct-ring { stroke: var(--nb-blue); }
+.auth-page .sct-read span { color: var(--nb-ink-2); }
+.auth-page .sc-chain { background: var(--nb-card-2); border-color: var(--nb-line-2); }
+.auth-page .scc-label { color: var(--nb-ink-2); }
+.auth-page .scc-days i { background: var(--nb-line-2); }
+.auth-page .scc-days i.on { background: var(--nb-blue); }
+.auth-page .sp-track { background: var(--nb-line-2); }
+.auth-page .sp-track i { background: var(--nb-blue); }
+.auth-page .sp-label { color: var(--nb-ink-3); }
+.auth-page .story-cue { color: var(--nb-ink-3); }
+.auth-page .sc-mouse { border-color: var(--nb-ink-3); }
+.auth-page .sc-mouse i { background: var(--nb-ink-2); }
+
+/* -- Startup splash and connection screen, on the same paper -- */
+#boot-splash, #conn-problem {
+  color: var(--nb-ink);
+  background: repeating-linear-gradient(180deg, transparent 0 31px, var(--nb-rule) 31px 32px), var(--nb-paper);
+  --glass-bg: var(--nb-card); --glass-border: var(--nb-line-2); --glass-shadow: 0 24px 50px -30px var(--nb-shadow);
+}
+#boot-splash .boot-card { -webkit-backdrop-filter: none; backdrop-filter: none; }
+#boot-splash .nb-word {
+  color: transparent; -webkit-background-clip: text; background-clip: text; background-size: 250% 100%;
+  background-image: linear-gradient(100deg, var(--nb-ink-3) 20%, var(--nb-ink) 45%, var(--nb-ink-3) 70%);
+  animation: bootShine 2.4s ease-in-out infinite;
+}
+#boot-splash .boot-bar { background: var(--nb-line-2); }
+#boot-splash .boot-bar::after { background: linear-gradient(90deg, transparent, var(--nb-blue), transparent); }
+#boot-splash .boot-slow { color: var(--nb-ink-2); }
+#boot-splash .boot-slow button { color: var(--nb-ink); }
+#conn-problem .conn-card {
+  padding: 32px 30px 28px; border-radius: 20px; background: var(--nb-card); border: 1.5px solid var(--nb-line-2);
+  box-shadow: 0 24px 50px -30px var(--nb-shadow); -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+#conn-problem .nb-logo { margin-bottom: 18px; }
+#conn-problem .auth-btn { background: var(--nb-btn); color: var(--nb-btn-fg); box-shadow: none; }
+
+/* -- Phones and narrow windows: one column, ticket under the form -- */
+@media (max-width: 900px) {
+  .auth-page {
+    background: repeating-linear-gradient(180deg, transparent 0 31px, var(--nb-rule) 31px 32px), var(--nb-paper);
+  }
+  .nb-hero { grid-template-columns: minmax(0, 1fr); column-gap: 0; padding: 0 20px 110px; }
+  .nb-top { padding: 20px 0; }
+  .nb-nav .nb-nav-how { display: none; }
+  .nb-left { padding: 6px 0 0; }
+  .nb-h { font-size: clamp(40px, 12vw, 64px); }
+  .auth-page .auth-form-col, body.auth-mode .auth-page .auth-form-col { max-width: none; }
+  .nb-right { grid-column: 1; padding: 44px 0 150px; }
+  .nb-slip { transform: rotate(1.2deg); }
+  .nb-sticky { right: 4px; bottom: -4px; width: 190px; }
+  /* the ticket sits below the form here, so it must not fade while you scroll to it */
+  .auth-page[data-lifting] .nb-hero { opacity: 1; translate: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-page .auth-btn, #boot-splash .nb-word { animation: none; }
+  #boot-splash .nb-word { color: var(--nb-ink); background: none; }
+  .nb-nm, .nb-bx { transition: none; }
+  .auth-page[data-lifting] .nb-hero { opacity: 1; translate: none; }
+}

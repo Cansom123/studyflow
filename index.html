@@ -5375,11 +5375,22 @@ function cocoRate(rowId, feature, positive) {
 /* cocoClauseWindow, cocoVerifyPlanning, and cocoDeterministicPlan now live
    in js/coco-verify.js -- see the module bridge near the end of this file. */
 
+// What the rest of the app knows (exam radar, Today's 3, how the student is
+// connected), so coco.1's advice agrees with what's on screen.
+function cocoAppExtras() {
+  const x = { mode: canvasMode };
+  try {
+    if (typeof examRadarList === 'function') { x.exams = examRadarList(); x.undatedExams = examUndatedList(); }
+  } catch (e) { console.warn('[coco.1] exams', e); }
+  try { if (typeof today3Summary === 'function') x.today3 = today3Summary(); } catch (e) { console.warn('[coco.1] today3', e); }
+  return x;
+}
+
 async function cocoAskPlanning(question) {
   if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
 
   const ctx = cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, 20,
-    typeof closedSuggestionList === 'function' ? closedSuggestionList() : []);
+    typeof closedSuggestionList === 'function' ? closedSuggestionList() : [], cocoAppExtras());
   const { text, count } = ctx;
   if (count === 0) {
     return { answer: "You don't have any upcoming assignments synced right now - nothing to plan around yet.", confidence: 'none' };
@@ -5400,7 +5411,11 @@ async function cocoAskPlanning(question) {
         '6. If the student already has study time scheduled, build on it rather than ignoring it.\n' +
         '7. Reply in 2-4 plain sentences, as ONE continuous paragraph with no blank lines. No markdown, no bullet lists, no restating the whole list back verbatim.\n' +
         '8. If current grades or stated goals are listed below, weigh them: a class where the grade is low, borderline, or below a stated goal deserves more attention than its due date alone would suggest -- even over a closer deadline in a class that\'s already in good shape. Never state a grade percentage that isn\'t literally listed below.\n' +
-        '9. Anything under "CAN\'T BE SUBMITTED ANYMORE" is closed in Canvas. Never tell the student to finish, submit or prioritize it. Only mention it if asked, and then only to suggest asking the teacher about late credit or reviewing what it covered.',
+        '9. Anything under "CAN\'T BE SUBMITTED ANYMORE" is closed in Canvas. Never tell the student to finish, submit or prioritize it. Only mention it if asked, and then only to suggest asking the teacher about late credit or reviewing what it covered.\n' +
+        '10. Exams under "UPCOMING EXAMS" are real. An exam within the next week usually deserves study time ahead of small assignments, especially one worth a big share of the grade. Only state a share or points value that is literally listed. If study sessions are already planned for it, point to them.\n' +
+        '11. Exams under "EXAMS WITH NO DATE IN CANVAS YET" are real exams given in class. Never call them not assigned or not covered yet, and never state a date for them. If relevant, suggest adding the date in the exam radar.\n' +
+        '12. "TODAY\'S 3" is what the app already shows as today\'s focus. If the question is about today, keep your plan consistent with it, and use its time estimates when you mention how long something takes.\n' +
+        '13. An item the student said they are "still working on (running late)" is not a failure: help them finish it, never scold.',
     },
     { role: 'user', content: `Today is ${todayStr}.\n\nUpcoming work:\n${text}\n\nStudent's question: ${question}` },
   ];
@@ -5470,7 +5485,7 @@ async function askCocoPlanning() {
 async function cocoAskGradeTips(courseName, question) {
   if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
 
-  const ctx = cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cachedAssignments);
+  const ctx = cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cachedAssignments, cocoAppExtras());
   if (!ctx.hasData) {
     return { answer: "There's no graded work synced for this class yet, so there's nothing concrete to point to - check back once a few assignments are graded.", confidence: 'none' };
   }
@@ -5492,7 +5507,8 @@ async function cocoAskGradeTips(courseName, question) {
         '9. Phrase recommendations as suggestions, not commands - "it might be worth", "probably", "could help" rather than flat orders like "start with X". You are inferring the best move from partial data, not stating a certainty.\n' +
         '10. Do not just stack facts back to back with periods (grade, then weak spot, then next item, then points, then description) - that reads like a report, not a conversation. Connect them with real transitions ("since", "which means", "so") so it flows as a few warm sentences, not a list of disconnected statements.\n' +
         '11. Sound like an encouraging, direct coach - honest about what is dragging the grade down, not vague positivity. End on something that feels genuinely earned by this specific situation (a real strength, a real fixable weak point, a real reason the next step is manageable) - never a generic "you got this!" tacked on regardless of what the data actually says.\n' +
-        '12. Never state a percentage, score, or points value that is not literally in the data below.',
+        '12. Never state a percentage, score, or points value that is not literally in the data below.\n' +
+        '13. Exams listed under "Upcoming exams" or "Exams ... with no date in Canvas yet" are real and coming, even without a date (they are usually given in class). Rule 3 does not apply to them. An exam worth a large share of the grade is often the biggest lever on it, so it is fair to suggest preparing for it, using only the share listed. Never state a date for an undated exam.',
     },
     { role: 'user', content: `${ctx.text}\nStudent's question: ${question || 'What is bringing this grade down, and how can I improve it?'}` },
   ];

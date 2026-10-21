@@ -97,6 +97,15 @@ function renderToday3() {
     <div class="t3-note">Times are estimates. ${rows.some(r => r.est.source !== 'default') ? 'They come from your study timer.' : 'They get more accurate as you use the study timer.'}</div>`;
 }
 
+// Today's picks and estimates as plain data, for coco.1 (so its advice
+// matches what Home shows).
+function today3Summary() {
+  const picks = pickToday3(today3Ranked(), cachedAssignments || [], today3ItemKey, today3Saved(), today3IsDone);
+  const studied = studiedMinutesByAssignment(cachedStudySessions || [], studySessionSec, cleanCourseName);
+  const history = [...(cachedAssignments || []), ...(cachedGradedAssignments || [])];
+  return picks.map(a => ({ title: a.title, course: a.course, minutes: estimateMinutes(a, history, studied, cleanCourseName).left, done: today3IsDone(a) }));
+}
+
 // After finishing all three: today's picks start over from the ranking.
 function today3PickMore() {
   today3Save([]);

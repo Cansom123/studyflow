@@ -53,6 +53,21 @@ function cocoVerifyPlanning(answer, ctx) {
     }
   }
 
+  // 1b. A date given to an exam that has none. Canvas doesn't know when
+  //     these in-class exams are, so any day the model attaches is invented.
+  for (const e of ctx.undatedExams || []) {
+    const t = cocoNormalize(e.title || '');
+    if (!t) continue;
+    let at = ans.indexOf(t);
+    while (at !== -1) {
+      const after = ans.slice(at + t.length, at + t.length + 45).split(/[.;!?]|\band\b|\bthen\b/)[0];
+      if (/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|today|tomorrow|tonight|next week|this week|in \d+ days?|on (jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)|\d{1,2}\/\d{1,2})\b/.test(after)) {
+        return { ok: false, reason: `date invented for an undated exam: ${e.title}` };
+      }
+      at = ans.indexOf(t, at + t.length);
+    }
+  }
+
   // 2. Contradicting the overdue list. "You're all caught up" when something
   //    is genuinely late is both wrong and actively harmful.
   if (ctx.overdue.length > 0 &&
@@ -207,6 +222,15 @@ function cocoDeterministicPlan(ctx) {
       const pct = atRisk.current_score != null ? atRisk.current_score : atRisk.final_score;
       parts.push(`Also worth extra time: you're at ${pct}% in ${atRisk.course_name}, so don't let that slip.`);
     }
+  }
+
+  // An exam this week (from the exam radar) gets its own line, with its
+  // share of the grade when Canvas gives one.
+  const soonExam = (ctx.exams || []).find(e => e.daysUntil <= 7);
+  if (soonExam) {
+    const when = soonExam.daysUntil === 0 ? 'today' : soonExam.daysUntil === 1 ? 'tomorrow' : `in ${soonExam.daysUntil} days`;
+    const share = soonExam.share ? `, about ${soonExam.share % 1 ? soonExam.share.toFixed(1) : soonExam.share}% of your grade` : '';
+    parts.push(`${name(soonExam)} is ${when}${share}, so set some study time aside for it${soonExam.daysUntil > 0 ? ' (the exam radar on Home can plan the sessions)' : ''}.`);
   }
 
   if (!parts.length) return "You don't have any dated work coming up right now.";

@@ -42,7 +42,9 @@ function gradeBreakdownForCourse(courseName, cachedGradedAssignments, cachedAssi
 // from and is verified against (see cocoVerifyGradeTips in coco-verify.js).
 // Same refactor as gradeBreakdownForCourse above: used to read cachedGrades
 // directly, now every dependency is a plain parameter.
-function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cachedAssignments) {
+// extras.exams / extras.undatedExams: the exam radar's lists (any course;
+// filtered to this one here).
+function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cachedAssignments, extras = {}) {
   const norm = s => (s || '').trim().toLowerCase();
   const grade = cachedGrades.find(g => norm(g.course_name) === norm(courseName));
   const pct = grade ? (grade.current_score != null ? grade.current_score : grade.final_score) : null;
@@ -78,8 +80,14 @@ function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cac
     .filter(a => a.due_date)
     .map(a => ({ ...a, descriptionExcerpt: assignmentDescriptionExcerpt(a, 240) }))
     .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
-  const undatedOpenWork = openWork.filter(a => !a.due_date);
+  // Exams with no date are real (usually given in class), not "not covered
+  // yet" -- they're listed with the exams below instead.
+  const isExam = a => typeof examSignal === 'function' && examSignal(a);
+  const undatedOpenWork = openWork.filter(a => !a.due_date && !isExam(a));
   const undescribedOpenWork = openWorkRanked.filter(a => !a.descriptionExcerpt);
+  const inCourse = e => norm(e.course) === norm(courseName);
+  const courseExams = (extras.exams || []).filter(inCourse);
+  const courseUndatedExams = (extras.undatedExams || []).filter(inCourse);
 
   if (allClosed) {
     text += `No open, gradable work remains in this course right now -- everything left is either submitted or past its deadline and locked.\n`;
@@ -98,8 +106,19 @@ function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cac
     text += `Also on Canvas but with no due date scheduled yet, so likely not yet covered by the teacher -- do NOT recommend starting these, only the dated items above:\n` +
       undatedOpenWork.map(a => `- ${a.title}`).join('\n') + '\n';
   }
+  const pctText = n => `${n % 1 ? Number(n).toFixed(1) : n}%`;
+  const worthBits = e => [e.points ? `${e.points} pts` : '', e.share ? `about ${pctText(e.share)} of this grade` : ''].filter(Boolean).join(', ');
+  if (courseExams.length) {
+    text += `\nUpcoming exams in this course (real, from the exam radar):\n` +
+      courseExams.map(e => `- ${e.title}${worthBits(e) ? ', ' + worthBits(e) : ''}, ${e.daysUntil === 0 ? 'today' : e.daysUntil === 1 ? 'tomorrow' : `in ${e.daysUntil} days`}`).join('\n') + '\n';
+  }
+  if (courseUndatedExams.length) {
+    text += `\nExams in this course with no date in Canvas yet (real exams, usually given in class -- never say they are not assigned or not covered, and never state a date for them):\n` +
+      courseUndatedExams.map(e => `- ${e.title}${worthBits(e) ? ', ' + worthBits(e) : ''}`).join('\n') + '\n';
+  }
 
   return {
+    exams: courseExams, undatedExams: courseUndatedExams,
     text, courseName, pct, letter, allClosed, lowPerformers, missing,
     openWork: openWorkRanked, undatedOpenWork, undescribedOpenWork,
     hasData: graded.length > 0 || missing.length > 0,
@@ -109,9 +128,19 @@ function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cac
 // Structured summary of what's actually due, so coco.1 can't invent assignments,
 // courses, or dates that aren't real. Capped so a heavy course load doesn't
 // blow the small model's context window.
-function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, limit = 20, closedWork = []) {
+// extras (all optional, from the rest of the app so coco.1 agrees with it):
+//   exams         upcoming exams from the exam radar (exam-core.js collectExams)
+//   undatedExams  exams Canvas knows about with no date yet (undatedExams)
+//   today3        Today's 3 picks: [{ title, course, minutes }]
+//   mode          'feed' when connected with the calendar link (no grades)
+function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, limit = 20, closedWork = [], extras = {}) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const active = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a))));
+  const exams = extras.exams || [];
+  const undated = extras.undatedExams || [];
+  // An exam with no date is listed with the exams below, not as an undated
+  // assignment the teacher "hasn't covered yet".
+  const isUndatedExam = a => !a.due_date && typeof examSignal === 'function' && examSignal(a);
+  const active = cachedAssignments.filter(a => !a.completed && !doneSet.has(decodeURIComponent(doneKey(a))) && !isUndatedExam(a));
   const sorted = [...active].sort((a, b) => {
     const ad = a.due_date ? new Date(a.due_date) : new Date('9999-01-01');
     const bd = b.due_date ? new Date(b.due_date) : new Date('9999-01-01');
@@ -134,6 +163,8 @@ function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals
     const points = a.points_possible ? `, ${a.points_possible} pts` : '';
     let dueStr;
     if (d === null) dueStr = 'no due date';
+    // Quick start: the student answered "Late" -- still working on it.
+    else if (a.feed_late) dueStr = `was due ${dow}; the student said they are still working on it (running late)`;
     else if (d < 0) {
       const n = Math.abs(d);
       dueStr = `was due ${dow}, now ${n} day${n !== 1 ? 's' : ''} LATE (deadline passed, not submitted)`;
@@ -199,6 +230,31 @@ function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals
 
   if (studyLines.length) text += `\n\nAlready scheduled study time this week:\n${studyLines.join('\n')}`;
 
+  // Exams from the exam radar, with what they're worth when Canvas says.
+  const pctText = n => `${n % 1 ? Number(n).toFixed(1) : n}%`;
+  const examLine = e => {
+    const dow = DOW[e.date.getDay()];
+    const when = e.daysUntil === 0 ? `TODAY (${dow})` : e.daysUntil === 1 ? `TOMORROW (${dow})` : `in ${e.daysUntil} days (${dow})`;
+    const worth = [e.points ? `${e.points} pts` : '', e.share ? `about ${pctText(e.share)} of the grade` : ''].filter(Boolean).join(', ');
+    const planned = (cachedStudySessions || []).filter(s => String(s.title || '').toLowerCase() === `study for ${e.title}`.slice(0, 80).toLowerCase()).length;
+    return `- ${e.title} (${e.course || 'unknown course'}${worth ? ', ' + worth : ''}) — ${when}${planned ? `; ${planned} study session${planned === 1 ? '' : 's'} already planned for it` : ''}`;
+  };
+  if (exams.length) text += `\n\nUPCOMING EXAMS (real; from the exam radar):\n${exams.slice(0, 6).map(examLine).join('\n')}`;
+  if (undated.length) {
+    const undatedLine = e => `- ${e.title} (${e.course || 'unknown course'}${e.points ? `, ${e.points} pts` : ''}${e.share ? `, about ${pctText(e.share)} of the grade` : ''})`;
+    text += `\n\nEXAMS WITH NO DATE IN CANVAS YET (real exams, usually given in class; the date is unknown, so never state one):\n${undated.slice(0, 6).map(undatedLine).join('\n')}`;
+  }
+
+  // What the app's Home already shows as today's focus, so coco.1 and the
+  // app don't contradict each other.
+  if ((extras.today3 || []).length) {
+    text += `\n\nTODAY'S 3 (what the app already shows as today's focus, with time estimates):\n${extras.today3.map(t => `- ${t.title} (${t.course || 'unknown course'}) — about ${t.minutes} min${t.done ? ' — already done' : ''}`).join('\n')}`;
+  }
+
+  if (extras.mode === 'feed') {
+    text += `\n\nNOTE: This student is connected with their Canvas calendar link, which has no grades, points or submission status. Never mention a grade, a score, or whether something was submitted.`;
+  }
+
   // Every weekday the student actually has something on. The model likes to
   // translate dates into weekday names and gets them wrong ("Chem review on
   // Friday" for a Thursday block), so the verifier needs the real set.
@@ -221,6 +277,11 @@ function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals
     validWeekdays.add(day);
     if (s.title) itemDays.push({ title: s.title, day });
   });
+  exams.forEach(e => {
+    const day = DAY_NAMES[e.date.getDay()];
+    validWeekdays.add(day);
+    itemDays.push({ title: e.title, day });
+  });
 
-  return { text, count: sorted.length, overdue, upcoming, today, validWeekdays, itemDays, grades: gradedCourses, goals };
+  return { text, count: sorted.length + exams.length + undated.length, overdue, upcoming, today, validWeekdays, itemDays, grades: gradedCourses, goals, exams, undatedExams: undated };
 }

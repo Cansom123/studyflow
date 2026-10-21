@@ -5373,3 +5373,113 @@ button, input, select, textarea { font-family: inherit; }
   letter-spacing: -0.045em; text-transform: lowercase;
 }
 #ws-logo-row .logo-mark { color: var(--accent); }
+
+/* ===========================
+   NOTEBOOK THEME: BINDER TABS (step 2)
+   Laptops and tablets: the sidebar becomes a row of binder tabs across the
+   top, with the sync/theme/sign-out controls at the right end, and the page
+   underneath is one paper sheet the active tab joins. Layout only, done in
+   CSS: .main-col is display:contents so its top bar and content become cells
+   of the same grid as the tabs; every button keeps its handler. Phones keep
+   the bottom bar.
+=========================== */
+@media (min-width: 601px) {
+  .main-app {
+    display: grid !important; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr;
+    align-items: end; min-height: 100vh;
+  }
+  .main-col { display: contents; }
+
+  /* the tab strip */
+  .tabs, .tabs.collapsed {
+    grid-column: 1; grid-row: 1; position: sticky; top: 0; z-index: 101; align-self: stretch;
+    display: flex; flex-direction: row; align-items: flex-end; gap: 3px;
+    width: auto; flex: none; height: auto; padding: 16px 0 0 28px;
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+    background: var(--bg); border: 0;
+  }
+  .sidebar-logo, .tabs.collapsed .sidebar-logo { align-self: center; padding: 0 22px 12px 2px; margin: 0; }
+  .tabs.collapsed .logo-word { display: inline; }
+  .tabs.collapsed .logo-mark { position: absolute; top: -10px; left: 1px; width: 28px; height: 28px; margin: 0; transform: rotate(-24deg); }
+  .sidebar-toggle-btn, .nav-group-label, .tab-glider { display: none; }
+
+  .tab, .tabs.collapsed .tab, .tabs.has-glider .tab {
+    position: relative; top: 1px; flex: none; justify-content: center; gap: 6px;
+    padding: 10px 14px; border-radius: 12px 12px 0 0; margin: 0;
+    background: var(--surface2); color: var(--text2);
+    border: 1px solid var(--border); border-bottom: 0 !important;
+    font-size: 13.5px; font-weight: 500; white-space: nowrap; box-shadow: none;
+  }
+  .tab .tab-icon { display: none; }
+  .tabs.collapsed .tab span:not(.tab-icon) { display: inline; }
+  .tab:hover { background: var(--surface); color: var(--text1); }
+  .tab.active, .tabs.has-glider .tab.active {
+    background: var(--surface); color: var(--text1); font-weight: 600;
+    padding-top: 13px; z-index: 2; box-shadow: none;
+  }
+  .tab.active::after {
+    content: ''; position: absolute; left: 12px; right: 12px; top: 0; height: 3px;
+    border-radius: 0 0 3px 3px; background: var(--accent);
+  }
+  #tab-settings { margin-top: 0; }
+  .tab-badge, .tabs.collapsed .tab-badge {
+    position: static; margin: 0 0 0 4px; min-width: 0; height: auto; padding: 0;
+    background: none; color: var(--accent); font-family: var(--font-mono); font-size: 11px; font-weight: 500; line-height: 1;
+  }
+
+  /* sync: a compact pill at the end of the strip ("synced ..." moves to its tooltip) */
+  .sidebar-sync {
+    order: 99; align-self: center; flex: none; width: auto; margin: 0 0 12px 14px; padding: 7px 12px; gap: 8px;
+    border-radius: 999px; border: 1px solid var(--border); background: var(--surface); box-shadow: none;
+  }
+  .sidebar-sync-sub, .tabs.collapsed .sidebar-sync-text { display: none; }
+  .sidebar-sync-label { font-size: 12.5px; }
+
+  /* the right end: report, theme, sign out */
+  .topbar {
+    grid-column: 2; grid-row: 1; position: sticky; top: 0; z-index: 101; align-self: stretch;
+    padding: 16px 28px 12px 14px; background: var(--bg); border: 0;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+
+  /* the page: one paper sheet the active tab sits on */
+  .content {
+    grid-column: 1 / -1; grid-row: 2; align-self: start; width: auto; max-width: none;
+    margin: 0 28px 28px; padding: 28px 32px 36px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+    box-shadow: var(--shadow-sm); position: relative; z-index: 1;
+  }
+  .content .card { background: var(--surface2); box-shadow: none; }
+}
+@media (min-width: 601px) and (max-width: 900px) {
+  .tabs, .tabs.collapsed { padding-left: 16px; }
+  .topbar { padding-right: 16px; }
+  .content { margin: 0 16px 20px; padding: 22px 20px 28px; }
+}
+@media (min-width: 601px) {
+  /* tighter tabs so the whole row fits a 1366px laptop; sync becomes a round icon button */
+  .tabs, .tabs.collapsed { gap: 2px; }
+  .sidebar-logo, .tabs.collapsed .sidebar-logo { padding-right: 16px; }
+  .tab, .tabs.collapsed .tab, .tabs.has-glider .tab { padding: 10px 12px; font-size: 13px; }
+  .tab.active, .tabs.has-glider .tab.active { padding-top: 13px; }
+  .sidebar-sync { width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 50%; }
+  .sidebar-sync-text, .sidebar-sync .sidebar-sync-label { display: none; }
+  /* when the window is narrower than the row, the strip scrolls; a soft fade at
+     the right edge says there is more */
+  .tabs { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+          mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+}
+@media (min-width: 601px) {
+  .tabs { -webkit-mask-image: none; mask-image: none; }
+  .sidebar-sync { order: 0; margin: 0 14px 12px 0; }
+  .sidebar-logo, .tabs.collapsed .sidebar-logo { padding-right: 12px; }
+}
+@media (min-width: 901px) { .tabs, .tabs.collapsed { padding-left: 24px; } }
+@media (min-width: 601px) and (max-width: 1279px) {
+  /* smaller laptops: icon-only sign out and slimmer tabs, so more of the row fits */
+  .signout-btn-text { display: none; }
+  .signout-btn { padding: 7px; }
+  .tab, .tabs.collapsed .tab, .tabs.has-glider .tab { padding: 9px 10px; font-size: 12.5px; }
+  .tab.active, .tabs.has-glider .tab.active { padding-top: 12px; }
+  .topbar { padding-left: 8px; }
+}

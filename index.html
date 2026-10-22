@@ -8823,7 +8823,7 @@ if (!checkForPasswordRecovery()) routeUser();
       // Only the "found something" branch gets the confetti treatment --
       // it was firing unconditionally before, including on a routine "all
       // caught up" sync where nothing actually happened worth celebrating.
-      celebrateFromElement(document.getElementById('ws-check-badge'));
+      celebrateFromElement(countEl); // the headline (the check badge is hidden in the ticket design)
     } else {
       resultEl.classList.add('ws-result-calm');
       countEl.textContent   = "You're all caught up";

@@ -445,26 +445,32 @@ function gradeCardsHTML(withGrades) {
 
 // Home's compact grade list: just name + letter, capped at `limit` courses,
 // with the same empty-state message as the original.
-function homeGradesListHTML(cachedGrades, limit = 4) {
+// Home's report card: one ruled row per class (name, a solid bar, the
+// percent, the letter). Classes that don't count (0% with no letter, like a
+// placement test) go last and dim, the same rule the average uses.
+function homeReportCardHTML(cachedGrades, limit = 6) {
   const withGrades = cachedGrades.filter(g => g.current_score != null || g.final_score != null || g.current_grade || g.final_grade);
   if (withGrades.length === 0) {
-    return `<div style="color:var(--text2);font-size:13px;">No grades published yet.</div>`;
+    return `<div class="hm-empty">No grades published yet.</div>`;
   }
-  const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
-  return withGrades.slice(0, limit).map(g => {
-    const { letter, estimated } = displayLetter(g);
-    const letterClass = letterGradeClass(letter);
+  const rows = withGrades.map(g => {
     const score = parseFloat(g.current_score != null ? g.current_score : g.final_score);
+    const { letter, estimated } = displayLetter(g);
+    const counts = averageGrade([g]).count > 0;
+    return { g, score, letter, estimated, counts };
+  }).sort((x, y) => (y.counts - x.counts));
+  return `<ul class="rc-list">${rows.slice(0, limit).map(({ g, score, letter, estimated, counts }) => {
     const hasScore = !isNaN(score);
     const barWidth = hasScore ? Math.min(Math.max(score, 0), 100) : 0;
-    return `<div class="hg-row">
-      <div class="hg-top">
-        <span class="hg-name">${escapeHtml(cleanCourseName(g.course_name))}</span>
-        <span class="hg-score">${hasScore ? `<span class="hg-pct" data-count-to="${score.toFixed(1)}" data-count-decimals="1" data-count-suffix="%">${score.toFixed(1)}%</span>` : ''}<span class="hg-letter ${letterClass}"${estimated ? ` title="${ESTIMATED_LETTER_TIP}"` : ''}>${escapeHtml(letter || '–')}${estimated ? '<span class="grade-est">est.</span>' : ''}</span></span>
-      </div>
-      ${barWidth > 0 ? `<div class="ht-bar"><i style="width:${barWidth}%;background:${barColors[letterClass] || 'var(--accent)'}"></i></div>` : ''}
-    </div>`;
-  }).join('');
+    const full = cleanCourseName(g.course_name);
+    const code = (full.match(/^[A-Z]{2,5}[ -]?\d{3}[A-Z]?\b/) || [full])[0]; // "MATH 132 1007 - 2026 Fall" -> "MATH 132"
+    return `<li class="rc-row${counts ? '' : ' rc-off'}">
+      <span class="rc-name" title="${escapeHtml(full)}">${escapeHtml(code)}</span>
+      <span class="rc-bar"><i style="width:${barWidth}%"></i></span>
+      <span class="rc-pct">${hasScore ? `${score.toFixed(1)}%` : ''}</span>
+      <span class="rc-letter ${letterGradeClass(letter)}"${estimated ? ` title="${ESTIMATED_LETTER_TIP}"` : ''}>${escapeHtml(letter || '–')}${estimated ? '<span class="grade-est">est.</span>' : ''}</span>
+    </li>`;
+  }).join('')}</ul>`;
 }
 
 // Card list for the "what's new since your last visit" overlay. Uses its

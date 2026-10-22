@@ -1574,7 +1574,7 @@
             <button class="change-courses-btn" style="margin-top:8px;" onclick="showCourseSelection()">Did we miss a class?</button>
             <button class="disconnect-btn" style="margin-top:8px;" onclick="disconnectCanvas()">Disconnect Canvas</button>
             <div class="help-note canvas-mode-token-only" style="margin-top:10px;margin-bottom:0;">
-              Your Canvas token works like a password - Duesday only uses it to read your assignments, syllabi, and grades, and never shares it. Note that <strong>Disconnect Canvas removes it from Duesday only</strong> - the token itself stays active in Canvas until you also remove it there, under Canvas → Settings → Approved Integrations.
+              Your Canvas token works like a password. Duesday only uses it to read your assignments, syllabi, and grades, and never shares it. Note that <strong>Disconnect Canvas removes it from Duesday only</strong>: the token itself stays active in Canvas until you also remove it there, under Canvas → Settings → Approved Integrations.
             </div>
             <div class="help-note canvas-mode-feed-only" style="margin-top:10px;margin-bottom:0;display:none;">
               You're connected with your Canvas calendar link, which only shows due dates. Since it can't tell what you turned in, check work off in Duesday when you finish it. Disconnect Canvas deletes the link from Duesday.
@@ -1596,7 +1596,7 @@
             <div class="auth-label">Canvas API Token</div>
             <input class="settings-input" type="password" id="canvas-token" placeholder="Paste your token here" />
             <div class="help-note">
-              Treat this token like a password - Duesday only uses it to pull your assignments, syllabi, and grades, and never shares it. You can revoke it anytime from Canvas → Settings → Approved Integrations, independent of Duesday.
+              Treat this token like a password. Duesday only uses it to pull your assignments, syllabi, and grades, and never shares it. You can revoke it anytime from Canvas → Settings → Approved Integrations, independent of Duesday.
             </div>
             <div id="canvas-msg"></div>
             <button class="settings-btn" onclick="saveCanvasSettings()">Save & connect</button>
@@ -1623,7 +1623,7 @@
                 </div>
                 <div class="help-step">
                   <div class="help-step-num">4</div>
-                  <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything - "Duesday" works great.</div>
+                  <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything. "Duesday" works great.</div>
                 </div>
                 <div class="help-step">
                   <div class="help-step-num">5</div>
@@ -1642,7 +1642,7 @@
               <button class="sync-btn" onclick="addToAppleCalendar()">Add to Apple Calendar</button>
               <button class="sync-btn" onclick="addToGoogleCalendar()">Try one-click Google Calendar</button>
             </div>
-            <div class="help-note" style="margin-bottom:8px;">Google's one-click add is unreliable - it sometimes just opens Google Calendar without subscribing. If nothing happens, use the manual steps below - they always work.</div>
+            <div class="help-note" style="margin-bottom:8px;">Google's one-click add is unreliable. It sometimes just opens Google Calendar without subscribing. If nothing happens, use the manual steps below. They always work.</div>
             <button class="help-toggle-btn" onclick="toggleCalendarCopyHelp()" style="margin-top:4px;">
               <span style="font-size:13px;color:var(--text2);">Add manually instead (recommended)</span>
               <span class="help-toggle-arrow" id="cal-copy-arrow">›</span>
@@ -1691,7 +1691,7 @@
             <div><div class="toggle-row-label">Browser notifications</div><div class="toggle-row-sub">Focus timer alerts and due-soon reminders, right in your browser</div></div>
             <label class="switch"><input type="checkbox" id="pref-browser-notifications" onchange="onBrowserNotificationsToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
           </div>
-          <div class="card-sub" style="line-height:1.5;">Only fires while Duesday is open in a tab (even in the background) - not when the browser itself is closed.</div>
+          <div class="card-sub" style="line-height:1.5;">Only fires while Duesday is open in a tab (even in the background), not when the browser itself is closed.</div>
           <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <div><div class="toggle-row-label">Quiet hours</div><div class="toggle-row-sub">No browser notifications overnight</div></div>
@@ -1807,7 +1807,7 @@
               </div>
               <div class="help-step">
                 <div class="help-step-num">4</div>
-                <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything you like - "Duesday" works great.</div>
+                <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything you like. "Duesday" works great.</div>
               </div>
               <div class="help-step">
                 <div class="help-step-num">5</div>
@@ -1818,7 +1818,7 @@
         </div>
         <div class="section-label" style="margin-top:20px;">Report a problem</div>
         <div class="card">
-          <div class="card-sub" style="margin-bottom:12px;">Found a bug or have an idea? Send it straight through - no email needed.</div>
+          <div class="card-sub" style="margin-bottom:12px;">Found a bug or have an idea? Send it straight through, no email needed.</div>
           <div class="seg-control" id="report-type-toggle" style="margin-bottom:12px;">
             <button class="seg-btn active" data-type="bug" onclick="setReportType('bug',this)">🐛 Bug</button>
             <button class="seg-btn" data-type="idea" onclick="setReportType('idea',this)">💡 Idea</button>
@@ -9031,5 +9031,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/updates-inbox.js"></script>
 <script src="js/links-cards.js"></script>
 <script src="js/syllabus-binder.js"></script>
+<script src="js/settings-index.js"></script>
 </body>
 </html>

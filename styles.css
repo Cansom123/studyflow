@@ -6556,3 +6556,53 @@ button, input, select, textarea { font-family: inherit; }
 }
 .syl-pane mark { background: var(--mark); color: var(--mark-ink); border-radius: 2px; }
 .syl-pane .syllabus-textarea { background: var(--surface2); }
+
+/* ===========================
+   SETTINGS: AN INDEX AND A PANEL
+   On laptops the sections are a sticky list down the left (like the
+   Assignments filter column) with a short status in mono, and the open
+   section is on the right. Every setting reads as its own row: what it is
+   on the left, the control on the right. Phones keep the tabs on top.
+   js/settings-index.js.
+=========================== */
+.settings-tab .st-k { display: none; }
+#page-settings .section-label {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2);
+}
+#page-settings .settings-panel .card { border-radius: 16px; background: var(--surface); box-shadow: none; }
+#page-settings .tweak-label { font-family: var(--font-sans); font-size: 14px; font-weight: 600; letter-spacing: -0.005em; text-transform: none; color: var(--text1); }
+#page-settings .toggle-row-label { font-size: 14px; font-weight: 600; }
+#page-settings .toggle-row-sub { font-size: 12.5px; }
+@media (min-width: 700px) {
+  /* label (and its note) on the left, the control on the right */
+  #page-settings .tweak-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 18px; align-items: center; padding: 4px 0; }
+  #page-settings .tweak-row > .tweak-label { grid-column: 1; margin: 0; }
+  #page-settings .tweak-row > .card-sub { grid-column: 1; margin: 2px 0 0 !important; }
+  #page-settings .tweak-row > :not(.tweak-label):not(.card-sub):not(.theme-mode-note) { grid-column: 2; grid-row: 1; }
+  #page-settings .tweak-row:has(> .card-sub) > :not(.tweak-label):not(.card-sub):not(.theme-mode-note) { grid-row: 1 / span 2; }
+  #page-settings .tweak-row > .seg-control .seg-btn { white-space: nowrap; }
+  #page-settings .tweak-row > .theme-mode-note { grid-column: 1 / -1; }
+  #page-settings .tweak-row:has(> .theme-grid) { display: block; }
+  #page-settings .tweak-row:has(> .theme-grid) > .tweak-label { margin-bottom: 10px; }
+  #page-settings .tweak-row + .tweak-row { border-top: 1px solid var(--border2); padding-top: 14px; }
+  #page-settings .tweak-slider { width: 200px; }
+}
+@media (min-width: 1100px) {
+  #page-settings.active { display: grid; grid-template-columns: 220px minmax(0, 1fr); column-gap: 30px; align-items: start; }
+  #page-settings > .page-head { grid-column: 1 / -1; }
+  #page-settings > .settings-tabs {
+    grid-column: 1; grid-row: 2; position: sticky; top: 80px; flex-direction: column; gap: 2px; padding: 0; margin: 0;
+    background: none; border: 0; border-radius: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: visible;
+  }
+  #page-settings > .settings-panel { grid-column: 2; grid-row: 2; min-width: 0; }
+  #page-settings > .settings-panel[hidden] { display: none; }
+  #page-settings > .settings-panel > .section-label:first-child { margin-top: 0; }
+  #page-settings .settings-tab {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex: none; width: 100%;
+    padding: 10px 12px 10px 14px; text-align: left; font-size: 14.5px; font-weight: 400;
+    border-left: 3px solid transparent; border-radius: 0 10px 10px 0;
+  }
+  #page-settings .settings-tab:active { transform: none; }
+  #page-settings .settings-tab.active { background: var(--surface2); box-shadow: none; border-left-color: var(--accent); font-weight: 600; }
+  #page-settings .settings-tab .st-k { display: inline; font-family: var(--font-mono); font-size: 10.5px; font-weight: 400; color: var(--text2); white-space: nowrap; }
+}

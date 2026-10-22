@@ -51,7 +51,7 @@ function buildReportHTML() {
     ? `<table><thead><tr>${head.map((h, i) => `<th${/pts|grade|%|now|target|letter/i.test(h) && i ? ' class="num"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`
     : `<p class="empty">${empty}</p>`;
 
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Duesday Report - ${esc(today.toLocaleDateString('en-US'))}</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Duesday Report, ${esc(today.toLocaleDateString('en-US'))}</title>
 <style>
   @page { margin: 16mm 14mm; }
   * { box-sizing: border-box; }
@@ -75,7 +75,7 @@ function buildReportHTML() {
   footer { margin-top: 26px; font-size: 8.5pt; color: #777; border-top: 1px solid #ddd; padding-top: 6px; }
 </style></head><body>
 <header>
-  <div class="brand">Study<i>Flow</i></div>
+  <div class="brand">duesday</div>
   <div class="who">${name ? esc(name) + '<br>' : ''}${esc(USER_EMAIL || '')}<br>Report from ${esc(today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }))}</div>
 </header>
 

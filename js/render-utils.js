@@ -444,7 +444,7 @@ function syllabusSearchResultsHTML(cachedSyllabi, syllabusCourses, query) {
   });
 
   if (matches.length === 0) {
-    return `<div class="empty-box"><div class="empty-title">No matches</div><div class="empty-sub">Try a different word - like "office hours," "late policy," or "grading."</div></div>`;
+    return `<div class="empty-box"><div class="empty-title">No matches</div><div class="empty-sub">Try a different word, like "office hours," "late policy," or "grading."</div></div>`;
   }
 
   return matches.map(m => {
@@ -645,7 +645,7 @@ function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
     ? (s.source === 'canvas' ? 'Pulled automatically from Canvas' : 'Added manually')
     : "Duesday couldn't find this on Canvas. Paste it in yourself below.";
   const linkOnlyNotice = (hasContent && !hasRealText)
-    ? `<div class="msg-error" style="margin-bottom:12px;">This looks like just a link, not the actual syllabus text - Choom can't open links, only read text. Open the link below, then paste the real text into the box at the bottom so it can answer questions about it.</div>`
+    ? `<div class="msg-error" style="margin-bottom:12px;">This looks like just a link, not the actual syllabus text. Choom can't open links, only read text. Open the link below, then paste the real text into the box at the bottom so it can answer questions about it.</div>`
     : '';
   return `
     <div class="card-sub" style="margin-bottom:14px;">${escapeHtml(sourceLabel)}</div>
@@ -657,7 +657,7 @@ function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
     </div>
     <div id="syl-ai-banner-host">${bannerHTML}</div>
     <div class="syl-inline-search-row">
-      <input class="settings-input" id="syl-inline-search" oninput="handleSylSearchInput()" onkeydown="if(event.key==='Enter'){searchWithinSyllabus();}" placeholder='Ask about this syllabus - "what is the grading policy?"' style="margin-bottom:0;flex:1;" />
+      <input class="settings-input" id="syl-inline-search" oninput="handleSylSearchInput()" onkeydown="if(event.key==='Enter'){searchWithinSyllabus();}" placeholder='Ask about this syllabus, like "what is the grading policy?"' style="margin-bottom:0;flex:1;" />
       ${sylSearchMode === 'ask' ? `<button class="goal-add-btn" style="flex-shrink:0;" onclick="searchWithinSyllabus()">Ask</button>` : ''}
       <button class="detail-close" style="width:30px;height:30px;flex-shrink:0;" onclick="jumpSyllabusMatch(-1)" title="Previous match">‹</button>
       <button class="detail-close" style="width:30px;height:30px;flex-shrink:0;" onclick="jumpSyllabusMatch(1)" title="Next match">›</button>

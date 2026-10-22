@@ -163,7 +163,7 @@ function renderSyllabusKeyDates() {
     <div class="syl-dates-head">
       <div><div class="syl-dates-title">Key dates from your syllabi</div><div class="syl-dates-sub">Read from the text, so double-check the important ones.</div></div>
       <label class="syl-switch" title="Show these on the Upcoming calendar"><span>On Upcoming</span>
-        <input type="checkbox" ${sylShowOnCalendar() ? 'checked' : ''} onchange="setSyllabusDatesOnCalendar(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
+        <span class="switch"><input type="checkbox" ${sylShowOnCalendar() ? 'checked' : ''} onchange="setSyllabusDatesOnCalendar(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></span></label>
     </div>
     ${visible.length ? `<div class="syl-dates-list">${shown.map(d => `<div class="syl-date-row">
         <div class="syl-date-chip"><b>${d.date.getDate()}</b><span>${SYL_SHORT_MONTHS[d.date.getMonth()]}</span></div>

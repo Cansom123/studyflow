@@ -125,9 +125,9 @@ function getDueText(due_date, isOverdue, isLocked, lockReason) {
       ? ` (was due ${new Date(due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
       : '';
     if (lockReason === 'unavailable' || (!lockReason && !(due_date && new Date(due_date) < new Date()))) {
-      return `<div class="due-locked">🔒 Not yet available - check Canvas for requirements</div>`;
+      return `<div class="due-locked">🔒 Not yet available. Check Canvas for requirements.</div>`;
     }
-    return `<div class="due-locked">🔒 Locked${dateStr} - can no longer submit</div>`;
+    return `<div class="due-locked">🔒 Locked${dateStr}, can no longer submit</div>`;
   }
   if (!due_date) return `<div class="due-ok">No due date</div>`;
   const due = new Date(due_date);

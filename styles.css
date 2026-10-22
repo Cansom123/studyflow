@@ -5384,8 +5384,11 @@ button, input, select, textarea { font-family: inherit; }
    the bottom bar.
 =========================== */
 @media (min-width: 601px) {
+  /* !important beats the inline display:flex the app sets when it shows
+     itself; the :not() keeps its inline display:none (sign-in, setup) working */
+  .main-app:not([style*="none"]) { display: grid !important; }
   .main-app {
-    display: grid !important; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr;
     align-items: end; min-height: 100vh;
   }
   .main-col { display: contents; }
@@ -5508,16 +5511,16 @@ button, input, select, textarea { font-family: inherit; }
 }
 .hm-cal::before { left: 24px; }
 .hm-cal::after { right: 24px; }
-.cal-dow {
+.hm-cal-dow {
   display: block; padding: 7px 0 6px; border-radius: 12px 12px 0 0;
   background: var(--accent); color: var(--on-accent);
   font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.16em;
 }
-.cal-num {
+.hm-cal-num {
   display: block; padding: 8px 0 2px; color: var(--text1);
   font-family: "Space Grotesk", var(--font-sans); font-weight: 700; font-size: 56px; line-height: 1; letter-spacing: -0.04em;
 }
-.cal-mon { display: block; padding-bottom: 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; color: var(--text2); }
+.hm-cal-mon { display: block; padding-bottom: 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; color: var(--text2); }
 
 #home-greeting { margin: 0; min-width: 0; }
 .hm-hello { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; color: var(--text1); }
@@ -5697,9 +5700,9 @@ button, input, select, textarea { font-family: inherit; }
   .hm-today { gap: 18px 16px; padding-bottom: 22px; }
   .hm-cal { width: 70px; margin-top: 6px; }
   .hm-cal::before { left: 16px; } .hm-cal::after { right: 16px; }
-  .cal-dow { font-size: 10.5px; padding: 5px 0 4px; }
-  .cal-num { font-size: 38px; padding-top: 6px; }
-  .cal-mon { font-size: 10px; padding-bottom: 7px; }
+  .hm-cal-dow { font-size: 10.5px; padding: 5px 0 4px; }
+  .hm-cal-num { font-size: 38px; padding-top: 6px; }
+  .hm-cal-mon { font-size: 10px; padding-bottom: 7px; }
   .hm-hello { font-size: 25px; }
   .hm-sum { font-size: 14.5px; }
   .hm-actions .hm-btn { flex: 1 1 auto; }
@@ -5886,3 +5889,86 @@ button, input, select, textarea { font-family: inherit; }
 .grade-card-right { padding-left: 6px; }
 .grade-card-letter { font-family: "Space Grotesk", var(--font-sans); font-size: 28px; letter-spacing: -0.03em; }
 .grade-card-pct { font-family: var(--font-mono); font-size: 12.5px; font-weight: 400; margin-top: 4px; }
+
+/* ===========================
+   NOTEBOOK THEME: THE OTHER PAGES, DETAIL PANEL, SETUP (step 5)
+   Shared pieces that show up on every page (assignment cards, tags,
+   checkboxes, filter chips, segmented switches), the Study page's big
+   numbers and tracker, Syllabus dates, the assignment detail panel, and the
+   setup screens on notebook paper. Calm: flat paper, no washes or glows.
+=========================== */
+
+/* -- assignment cards: overdue gets a red margin line, not a red wash -- */
+.card.overdue-card, [data-theme="dark"] .card.overdue-card {
+  background: var(--surface2); border-color: var(--border);
+  box-shadow: inset 3px 0 0 var(--red);
+}
+#page-home .card.overdue-card, .hm-box .card.overdue-card { background: var(--surface); }
+#home-upnext .card { animation-name: none; }
+.done-check, [data-theme="dark"] .done-check { border: 1.5px solid color-mix(in srgb, var(--text1) 38%, transparent); }
+.done-check.checked, [data-theme="dark"] .done-check.checked { border-color: var(--accent); }
+.card-sub { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.01em; }
+#syllabus-list .card-sub { font-family: var(--font-sans); font-size: 12.5px; letter-spacing: 0; }
+.due-ok, .due-soon, .due-locked { font-family: var(--font-mono); font-size: 11.5px; }
+.overdue-pill, .late-pill {
+  font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.08em; border-radius: 5px;
+}
+.canvas-link { font-size: 12.5px; }
+
+/* tags: small mono labels with a hairline, one ink color each */
+.badge {
+  font-family: var(--font-mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase;
+  border-radius: 6px; padding: 3px 7px; background: transparent !important; border: 1px solid currentColor;
+}
+
+/* filter chips and segmented switches */
+.aw-chip { border-radius: 10px; }
+.aw-chip span { font-family: var(--font-mono); font-weight: 500; }
+.seg-control { border: 1px solid var(--border); border-radius: 11px; }
+.seg-btn.active { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+
+/* -- Study: flat paper for the big number, ink for deep work -- */
+.study-hero-card, [data-theme="dark"] .study-hero-card {
+  background: var(--surface2); background-image: none; border: 1px solid var(--border); box-shadow: none;
+}
+.study-hero-num { font-family: "Space Grotesk", var(--font-sans); letter-spacing: -0.04em; }
+.study-hero-row b, .study-hero-row strong { font-family: var(--font-mono); font-weight: 500; }
+.deepwork-btn, [data-theme="dark"] .deepwork-btn { background: var(--btn-bg); color: var(--btn-fg); box-shadow: none; }
+.cal-day.missed { background: color-mix(in srgb, var(--red) 7%, var(--surface)); }
+.cal-day.study-complete { background: color-mix(in srgb, var(--green) 12%, var(--surface)); }
+
+/* -- Syllabus: each key date is a tiny tear-off calendar -- */
+.syl-date-chip {
+  background: var(--surface); color: var(--text1); border: 1.5px solid var(--text1); border-radius: 9px; overflow: hidden; padding: 0;
+}
+.syl-date-chip b { font-family: "Space Grotesk", var(--font-sans); font-weight: 700; padding: 3px 0 1px; }
+.syl-date-chip span { display: block; background: var(--accent); color: var(--on-accent); font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.12em; padding: 1px 0 2px; }
+.badge-syl { color: var(--accent-text); }
+
+/* -- assignment detail panel: the description reads like a ruled page -- */
+.detail-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+#a-detail-body .syllabus-text {
+  background:
+    linear-gradient(90deg, transparent 22px, color-mix(in srgb, var(--red) 40%, transparent) 22px 23.5px, transparent 23.5px),
+    repeating-linear-gradient(180deg, transparent 0 25px, var(--border2) 25px 26px),
+    var(--surface);
+  background-attachment: local; line-height: 26px; padding-left: 36px;
+}
+
+/* -- setup screens: the same notebook paper as sign-in -- */
+#onboard-flow {
+  background:
+    linear-gradient(90deg, transparent 30px, color-mix(in srgb, var(--red) 35%, transparent) 30px 32px, transparent 32px),
+    repeating-linear-gradient(180deg, transparent 0 31px, var(--border2) 31px 32px),
+    var(--bg);
+}
+.onboard-flow-header { background: color-mix(in srgb, var(--bg) 94%, transparent); border-bottom: 1.5px dashed var(--border); }
+.onboard-step { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.12em; }
+.onboard-title-icon { display: none; }
+.onboard-title { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; }
+.cplan-card { background: var(--surface); border: 1px solid var(--border); box-shadow: none; }
+.cplan-tag { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.1em; background: var(--mark); color: #1c2340; }
+@media (max-width: 600px) {
+  #onboard-flow { background: repeating-linear-gradient(180deg, transparent 0 31px, var(--border2) 31px 32px), var(--bg); }
+  .onboard-title { font-size: 26px; }
+}

@@ -63,7 +63,7 @@
   function renderCal() {
     const now = new Date();
     setHTML(document.getElementById('home-cal'),
-      `<span class="cal-dow">${DOW[now.getDay()]}</span><span class="cal-num">${now.getDate()}</span><span class="cal-mon">${MON[now.getMonth()]}</span>`);
+      `<span class="hm-cal-dow">${DOW[now.getDay()]}</span><span class="hm-cal-num">${now.getDate()}</span><span class="hm-cal-mon">${MON[now.getMonth()]}</span>`);
   }
 
   // "9 things due in the next two weeks. Your busiest day is Thursday, and

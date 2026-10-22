@@ -8784,9 +8784,11 @@ if (!checkForPasswordRecovery()) routeUser();
       if (pctEl) pctEl.textContent = `${Math.round(p)}%`;
     };
     setPct(0);
+    // Past the cap it keeps creeping toward 99 in ever smaller steps, so a
+    // slow Canvas never leaves the number sitting still.
     const timer = setInterval(() => {
-      if (pct >= cap) return;
-      setPct(Math.min(cap, pct + Math.random() * 7 + 2));
+      if (pct < cap) setPct(Math.min(cap, pct + Math.random() * 7 + 2));
+      else if (pct < 99) setPct(Math.min(99, pct + (99 - pct) * 0.04));
     }, 280);
     return {
       finish: async () => {

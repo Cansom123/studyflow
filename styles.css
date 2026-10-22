@@ -6641,7 +6641,16 @@ button, input, select, textarea { font-family: inherit; }
   letter-spacing: -0.05em; line-height: 0.9; color: var(--text1);
 }
 .ws-sync-bar { height: 10px; margin: 22px 0 14px; border-radius: 5px; background: var(--surface); border: 1px solid var(--border2); overflow: hidden; }
-.ws-sync-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s ease-out; }
+.ws-sync-bar i { position: relative; display: block; height: 100%; width: 0; overflow: hidden; background: var(--accent); transition: width 0.3s ease-out; }
+/* A soft light sliding along the filled part: still working, even when
+   the number moves slowly while Canvas answers. */
+.ws-sync-bar i::after {
+  content: ''; position: absolute; inset: 0; width: 40%;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--surface) 55%, transparent), transparent);
+  animation: wsBarSlide 1.6s ease-in-out infinite;
+}
+@keyframes wsBarSlide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .ws-sync-bar i::after { animation: none; display: none; } }
 #ws-syncing-msg { margin: 0; font-size: 14px; color: var(--text2); }
 
 /* welcome */

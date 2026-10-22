@@ -1102,102 +1102,102 @@
 
       <!-- STUDY -->
       <div class="page" id="page-study">
-        <div class="study-hero-card">
-          <div class="study-hero-num" id="study-stat-today">0m</div>
-          <div class="study-hero-label">studied today</div>
-          <div class="study-hero-row">
-            <div class="study-hero-mini"><span class="study-hero-mini-val" id="study-stat-week">0m</span><span class="study-hero-mini-label">this week</span></div>
-            <div class="study-hero-mini"><span class="study-hero-mini-val" id="study-stat-total">0h 0m</span><span class="study-hero-mini-label">all-time</span></div>
-            <div class="study-hero-mini"><span class="study-hero-mini-val" id="study-stat-deepwork-total">0h 0m</span><span class="study-hero-mini-label">deep work</span></div>
-          </div>
-        </div>
-
-        <div class="section-label" style="margin-top:0;">Last 7 days</div>
-        <div class="card study-chart" id="study-chart" style="margin-bottom:22px;"></div>
-
-        <div class="section-label">Quick start</div>
-        <div class="card" style="padding:20px;margin-bottom:16px;">
-          <input class="settings-input" id="quick-study-title" placeholder="What are you studying?" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){quickStartFocus();}" />
-          <button class="settings-btn" onclick="quickStartFocus()">▶ Start focus session</button>
-        </div>
-
-        <div class="card" style="padding:20px;margin-bottom:28px;">
-          <div class="focus-phase-label" style="margin-bottom:8px;">Deep work</div>
-          <input class="settings-input" id="quick-deepwork-title" placeholder="What are you doing deep work on?" style="margin-bottom:12px;" onkeydown="if(event.key==='Enter'){quickStartDeepWork();}" />
-          <button class="deepwork-btn" onclick="quickStartDeepWork()">Start deep work block</button>
-          <div class="card-sub" style="margin-top:10px;font-size:12px;">One long uninterrupted block, no breaks. Pick a length and name what you're avoiding before you start.</div>
-        </div>
-
-        <div class="section-label">Today's scheduled study time</div>
-        <div id="study-today-empty" class="card-sub" style="padding:2px 2px 8px;">Nothing scheduled for today. Add study time from the Upcoming calendar, or start a quick session above.</div>
-        <div id="study-today-list" style="margin-bottom:28px;"></div>
-
-        <div class="section-label">Study tracker</div>
-        <div class="card" style="padding:16px;margin-bottom:28px;">
-          <div class="cal-header">
-            <button class="cal-nav-btn" onclick="shiftStudyChainMonth(-1)" title="Previous month">‹</button>
-            <div class="cal-title" id="study-chain-title"></div>
-            <div style="display:flex;gap:6px;">
-              <button class="cal-today-btn" onclick="studyChainToday()">Today</button>
-              <button class="cal-nav-btn" onclick="shiftStudyChainMonth(1)" title="Next month">›</button>
+        <!-- The study desk (js/study-desk.js): the focus timer first, today's
+             goals beside it, then what's planned, the last 7 days, and the
+             month as a wall calendar beside deep work. -->
+        <div class="sd-top">
+          <section class="sd-timer" aria-labelledby="sd-timer-title">
+            <div class="hm-sec-h"><h2 id="sd-timer-title">Focus timer</h2><span class="hm-k">Quick start</span></div>
+            <div class="sd-clock" id="sd-clock" aria-hidden="true">20:00</div>
+            <input class="settings-input" id="quick-study-title" placeholder="What are you working on?" aria-label="What are you working on?" onkeydown="if(event.key==='Enter'){quickStartFocus();}" />
+            <div class="sd-lens" id="sd-lens" role="radiogroup" aria-label="Focus length"></div>
+            <div class="hm-actions">
+              <button type="button" class="hm-btn hm-btn-p" onclick="quickStartFocus()">▶ Start</button>
+              <button type="button" class="hm-btn" onclick="studyGoDeepWork()">Deep work block</button>
             </div>
-          </div>
-          <div class="cal-grid cal-dow-row">
-            <div class="cal-dow">S</div><div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
-          </div>
-          <div class="cal-grid" id="study-chain-grid"></div>
-          <div id="study-chain-detail"></div>
-          <div class="chain-lead-lag-row">
-            <div class="chain-lead-lag-card">
-              <div class="chain-lead-lag-label">Lead measure</div>
-              <div class="chain-lead-lag-value" id="chain-lead-value">0 day chain</div>
-              <div class="chain-lead-lag-sub">what you're doing right now</div>
+          </section>
+          <section class="hm-box sd-today" aria-labelledby="sd-today-title">
+            <div class="hm-sec-h"><h2 id="sd-today-title">Today</h2><span class="hm-k"><b id="study-stat-today">0m</b> studied</span></div>
+            <div class="goal-progress-row">
+              <div class="goal-progress-label"><span>Today</span><span id="study-goal-today-text">0 / 60 min</span></div>
+              <div class="goal-progress-track"><div class="goal-progress-fill" id="study-goal-today-fill" style="width:0%;"></div></div>
             </div>
-            <div class="chain-lead-lag-card clickable" onclick="jumpTo('goals')">
-              <div class="chain-lead-lag-label">Lag measure</div>
-              <div class="chain-lead-lag-value" id="chain-lag-value">0 goals</div>
-              <div class="chain-lead-lag-sub">what it's building toward</div>
+            <div class="goal-progress-row">
+              <div class="goal-progress-label"><span>This week</span><span id="study-goal-week-text">0 / 300 min</span></div>
+              <div class="goal-progress-track"><div class="goal-progress-fill" id="study-goal-week-fill" style="width:0%;"></div></div>
             </div>
-          </div>
-        </div>
-
-        <div class="section-label">Study goals</div>
-        <div class="card" style="padding:24px;margin-bottom:16px;">
-          <div class="goal-progress-row">
-            <div class="goal-progress-label"><span>Today</span><span id="study-goal-today-text">0 / 60 min</span></div>
-            <div class="goal-progress-track"><div class="goal-progress-fill" id="study-goal-today-fill" style="width:0%;"></div></div>
-          </div>
-          <div class="goal-progress-row" style="margin-top:24px;">
-            <div class="goal-progress-label"><span>This week</span><span id="study-goal-week-text">0 / 300 min</span></div>
-            <div class="goal-progress-track"><div class="goal-progress-fill" id="study-goal-week-fill" style="width:0%;"></div></div>
-          </div>
-          <div id="study-goal-nudge" class="card-sub" style="margin-top:20px;font-size:13px;"></div>
-          <div class="chain-lead-lag-row" style="margin-top:20px;">
-            <div class="chain-lead-lag-card">
-              <div class="chain-lead-lag-label">Daily goal hit</div>
-              <div class="chain-lead-lag-value" id="study-goal-daily-hits">0 times</div>
+            <div class="sd-chain">
+              <div class="goal-progress-label"><span>Chain</span><span id="chain-lead-value">0 day chain</span></div>
+              <div class="sd-chain7" id="sd-chain7"></div>
             </div>
-            <div class="chain-lead-lag-card">
-              <div class="chain-lead-lag-label">Weekly goal hit</div>
-              <div class="chain-lead-lag-value" id="study-goal-weekly-hits">0 times</div>
+            <div id="study-goal-nudge" class="sd-nudge"></div>
+            <div class="sd-foot">
+              <span>Daily goal hit <b id="study-goal-daily-hits">0 times</b></span>
+              <span>Weekly goal hit <b id="study-goal-weekly-hits">0 times</b></span>
+              <span>This week <b id="study-stat-week">0m</b></span>
+              <span>All time <b id="study-stat-total">0h 0m</b></span>
             </div>
-          </div>
-          <button class="help-toggle-btn" onclick="toggleStudyGoalEdit()" style="margin-top:20px;">
-            <span style="font-size:13px;color:var(--text2);">Change goals</span>
-            <span class="help-toggle-arrow" id="study-goal-edit-arrow">›</span>
-          </button>
-          <div id="study-goal-edit" style="display:none;margin-top:16px;">
-            <div class="study-form-row">
-              <div style="flex:1;">
-                <div class="card-sub" style="margin-bottom:8px;">Daily goal (min)</div>
-                <input class="settings-input" type="number" min="0" step="5" id="study-goal-daily-input" style="margin-bottom:0;" onchange="saveStudyGoals()" />
-              </div>
-              <div style="flex:1;">
-                <div class="card-sub" style="margin-bottom:8px;">Weekly goal (min)</div>
-                <input class="settings-input" type="number" min="0" step="15" id="study-goal-weekly-input" style="margin-bottom:0;" onchange="saveStudyGoals()" />
+            <button class="help-toggle-btn" onclick="toggleStudyGoalEdit()">
+              <span style="font-size:13px;color:var(--text2);">Change goals</span>
+              <span class="help-toggle-arrow" id="study-goal-edit-arrow">›</span>
+            </button>
+            <div id="study-goal-edit" style="display:none;margin-top:12px;">
+              <div class="study-form-row">
+                <div style="flex:1;">
+                  <div class="card-sub" style="margin-bottom:8px;">Daily goal (min)</div>
+                  <input class="settings-input" type="number" min="0" step="5" id="study-goal-daily-input" style="margin-bottom:0;" onchange="saveStudyGoals()" />
+                </div>
+                <div style="flex:1;">
+                  <div class="card-sub" style="margin-bottom:8px;">Weekly goal (min)</div>
+                  <input class="settings-input" type="number" min="0" step="15" id="study-goal-weekly-input" style="margin-bottom:0;" onchange="saveStudyGoals()" />
+                </div>
               </div>
             </div>
-          </div>
+          </section>
+        </div>
+
+        <section class="sd-planned" aria-labelledby="sd-planned-title">
+          <div class="hm-sec-h"><h2 id="sd-planned-title">Planned for today</h2><button type="button" class="hm-k" onclick="jumpTo('due')">Plan on Upcoming</button></div>
+          <div id="study-today-empty" class="hm-empty">Nothing planned for today. Drag a study block onto a day on Upcoming, or start the timer above.</div>
+          <div id="study-today-list"></div>
+        </section>
+
+        <section class="sd-week" aria-labelledby="sd-week-title">
+          <div class="hm-sec-h"><h2 id="sd-week-title">The last 7 days</h2></div>
+          <div class="study-chart" id="study-chart"></div>
+        </section>
+
+        <div class="sd-row">
+          <section class="hm-box sd-wall" aria-labelledby="study-chain-title">
+            <div class="cal-header">
+              <button class="cal-nav-btn" onclick="shiftStudyChainMonth(-1)" title="Previous month">‹</button>
+              <h2 class="cal-title" id="study-chain-title"></h2>
+              <div style="display:flex;gap:6px;">
+                <button class="cal-today-btn" onclick="studyChainToday()">Today</button>
+                <button class="cal-nav-btn" onclick="shiftStudyChainMonth(1)" title="Next month">›</button>
+              </div>
+            </div>
+            <div class="cal-grid cal-dow-row">
+              <div class="cal-dow">S</div><div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
+            </div>
+            <div class="cal-grid" id="study-chain-grid"></div>
+            <div class="sd-key"><span><i class="s"></i>Studied</span><span><i class="x">✕</i>Deep work day</span></div>
+            <div id="study-chain-detail"></div>
+            <div class="chain-lead-lag-row">
+              <div class="chain-lead-lag-card clickable" onclick="jumpTo('goals')">
+                <div class="chain-lead-lag-label">Building toward</div>
+                <div class="chain-lead-lag-value" id="chain-lag-value">0 goals</div>
+                <div class="chain-lead-lag-sub">your goals</div>
+              </div>
+            </div>
+          </section>
+          <section class="sd-deep" id="sd-deep" aria-labelledby="sd-deep-title">
+            <div class="hm-sec-h"><h2 id="sd-deep-title">Deep work</h2><span class="hm-k">No breaks</span></div>
+            <div class="sd-deep-total"><b id="study-stat-deepwork-total">0h 0m</b><span>of deep work, all time</span></div>
+            <input class="settings-input" id="quick-deepwork-title" placeholder="What are you doing deep work on?" aria-label="What are you doing deep work on?" onkeydown="if(event.key==='Enter'){quickStartDeepWork();}" />
+            <button class="deepwork-btn" onclick="quickStartDeepWork()">Start deep work block</button>
+            <div class="sd-deep-note">One long uninterrupted block, no breaks. You pick a length and name what you're avoiding before you start.</div>
+          </section>
         </div>
       </div>
 
@@ -1690,7 +1690,7 @@
             <div class="tweak-label">Default final exam weight</div>
             <div class="num-input-row">
               <input type="number" class="num-input" id="pref-final-weight" min="1" max="100" value="30" onchange="onPrefInput('defaultFinalWeight', parseInt(this.value)||30)">
-              <span class="card-sub">% - prefills the Goals calculator</span>
+              <span class="card-sub">%, fills in the Goals calculator</span>
             </div>
           </div>
           <div class="tweak-row" style="margin-bottom:0;">
@@ -1699,6 +1699,17 @@
               <button class="seg-btn" data-boost="20" onclick="onPrefSeg('priorityGoalBoost',20,this)">Light</button>
               <button class="seg-btn active" data-boost="50" onclick="onPrefSeg('priorityGoalBoost',50,this)">Normal</button>
               <button class="seg-btn" data-boost="90" onclick="onPrefSeg('priorityGoalBoost',90,this)">Strong</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-label">Study calendar</div>
+        <div class="card">
+          <div class="tweak-row" style="margin-bottom:0;">
+            <div class="tweak-label">Deep work mark</div>
+            <div class="card-sub" style="margin:-4px 0 10px;">How deep work days show on your Study calendar.</div>
+            <div class="seg-control" id="tweak-dwmark">
+              <button class="seg-btn active" data-dwmark="highlight" onclick="setDeepWorkMark('highlight')">✕ on highlighter</button>
+              <button class="seg-btn" data-dwmark="bold" onclick="setDeepWorkMark('bold')">Bold ✕</button>
             </div>
           </div>
         </div>
@@ -7420,7 +7431,11 @@ async function quickStartFocus() {
   const created = ok && Array.isArray(data) && data[0]
     ? data[0]
     : cachedStudySessions.find(s => s.title === title && s.session_date === ymd(new Date()) && !s.completed);
-  if (created) openFocusTimer(created.id);
+  if (created) {
+    openFocusTimer(created.id);
+    // Start at the length picked on the Study page's timer card (js/study-desk.js).
+    if (typeof studyDeskMin === 'number' && focusState) focusPickDuration('study', studyDeskMin);
+  }
 }
 
 const STUDY_DONE_REWARD_MESSAGES = [
@@ -8063,13 +8078,13 @@ function renderStudyChainDetail(byDate) {
   const d = new Date(studyChainSelectedDate + 'T00:00:00');
   const dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   if (!entry || (entry.studyMin + entry.deepMin) === 0) {
-    el.textContent = `${dateLabel} — no study logged`;
+    el.textContent = `${dateLabel}: no study logged`;
     return;
   }
   const parts = [];
   if (entry.studyMin > 0) parts.push(`${fmtDuration(entry.studyMin * 60)} study`);
   if (entry.deepMin > 0) parts.push(`${fmtDuration(entry.deepMin * 60)} deep work`);
-  el.textContent = `${dateLabel} — ${parts.join(' + ')}`;
+  el.textContent = `${dateLabel}: ${parts.join(' + ')}`;
 }
 
 function selectStudyChainDate(key) {
@@ -8986,5 +9001,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/exam-core.js"></script>
 <script src="js/exam-radar.js"></script>
 <script src="js/home-notebook.js"></script>
+<script src="js/study-desk.js"></script>
 </body>
 </html>

@@ -6201,3 +6201,115 @@ button, input, select, textarea { font-family: inherit; }
   .aw-row .aw-tag, .aw-row .aw-open { display: none; }
   .aw-day { padding-left: 52px; }
 }
+
+/* ===========================
+   STUDY: THE TIMER DESK
+   The focus timer first (a ticket with a big clock), today's goals and a
+   7-day chain beside it, then what's planned, the last 7 days as solid
+   bars, and the month as a wall calendar beside deep work. Deep work days
+   get a ✕ on a stroke of highlighter (Settings > Study can make it a bigger,
+   bold ✕ instead), in the theme's exam color. js/study-desk.js.
+=========================== */
+.sd-top { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; align-items: stretch; }
+.sd-timer, .sd-deep {
+  display: flex; flex-direction: column; gap: 14px; padding: 26px 24px 24px; background: var(--surface2);
+  -webkit-mask: radial-gradient(circle at 9px 0, transparent 6px, #000 6.5px) top left / 18px 51% repeat-x,
+                radial-gradient(circle at 9px 100%, transparent 6px, #000 6.5px) bottom left / 18px 51% repeat-x;
+          mask: radial-gradient(circle at 9px 0, transparent 6px, #000 6.5px) top left / 18px 51% repeat-x,
+                radial-gradient(circle at 9px 100%, transparent 6px, #000 6.5px) bottom left / 18px 51% repeat-x;
+}
+.sd-timer .hm-sec-h, .sd-deep .hm-sec-h, .sd-today .hm-sec-h { margin-bottom: 0; }
+.sd-clock { font-family: "Space Grotesk", var(--font-sans); font-weight: 700; font-size: 88px; letter-spacing: -0.05em; line-height: 0.9; color: var(--text1); }
+.sd-timer .settings-input, .sd-deep .settings-input { margin: 0; background: var(--surface); }
+.sd-lens { display: flex; flex-wrap: wrap; gap: 6px; }
+.sd-lens button {
+  padding: 6px 11px; border-radius: 9px; cursor: pointer;
+  font-family: var(--font-mono); font-size: 12px; color: var(--text2); background: var(--surface); border: 1px solid var(--border);
+}
+.sd-lens button.on { background: var(--text1); border-color: var(--text1); color: var(--surface); }
+.sd-timer .hm-actions { margin-top: 2px; }
+
+.sd-today { display: flex; flex-direction: column; gap: 16px; }
+.sd-today .hm-k b { font-family: var(--font-mono); font-weight: 500; color: var(--text1); }
+.sd-today .goal-progress-label { margin-bottom: 7px; font-size: 12px; font-weight: 500; font-family: var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text2); }
+.sd-today .goal-progress-label span:last-child { text-transform: none; letter-spacing: 0; color: var(--text1); }
+.sd-today .goal-progress-track { background: var(--surface); border: 1px solid var(--border2); }
+.sd-chain7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.sd-chain7 span { text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--text2); }
+.sd-chain7 i {
+  display: grid; place-items: center; height: 30px; margin-bottom: 4px; border-radius: 8px; font-style: normal;
+  font-size: 15px; font-weight: 700; color: var(--accent); background: var(--surface); border: 1px solid var(--border);
+}
+.sd-chain7 span.t i { border: 2px solid var(--accent); }
+.sd-nudge { font-size: 13px; color: var(--text2); }
+.sd-nudge:empty { display: none; }
+.sd-foot { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); }
+.sd-foot b { font-weight: 500; color: var(--text1); }
+.sd-today .help-toggle-btn { margin-top: -4px; }
+
+.sd-planned, .sd-week { margin-top: 26px; }
+.sd-week .study-chart { padding: 0; }
+.sd-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; margin-top: 26px; align-items: start; }
+.sd-wall .cal-title { margin: 0; font-size: 18px; font-weight: 600; }
+.sd-deep-total b { display: block; font-family: "Space Grotesk", var(--font-sans); font-weight: 700; font-size: 40px; letter-spacing: -0.04em; line-height: 1; color: var(--text1); }
+.sd-deep-total span { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text2); }
+.sd-deep-note { font-size: 12.5px; line-height: 1.45; color: var(--text2); }
+
+/* the last 7 days: solid bars like Home, today in highlighter */
+.sd-week .sc-total b { font-family: "Space Grotesk", var(--font-sans); font-weight: 700; }
+.sd-week .sc-bar { background: var(--accent); border-radius: 5px 5px 0 0; }
+.sd-week .sc-col.met .sc-bar, .sd-week .sc-col.today.met .sc-bar { background: var(--accent); }
+.sd-week .sc-col.today .sc-bar { background: var(--mark); }
+.sd-week .sc-val, .sd-week .sc-day { font-family: var(--font-mono); font-weight: 400; }
+.sd-week .sc-plot { border-bottom: 1.5px solid color-mix(in srgb, var(--text1) 55%, transparent); }
+.sd-week .sc-goal span { background: var(--surface); font-family: var(--font-mono); font-weight: 400; }
+
+/* the wall calendar */
+#study-chain-grid { gap: 4px; }
+#study-chain-grid .cal-day {
+  position: relative; aspect-ratio: 1.5; align-items: flex-start; justify-content: flex-start; padding: 4px 6px;
+  border: 1px solid var(--border2); border-radius: 7px; background: var(--surface);
+}
+#study-chain-grid .cal-day-num { font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--text2); }
+#study-chain-grid .cal-day.study-complete,
+#study-chain-grid .cal-day:has(.cal-day-chain-x) { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+#study-chain-grid .cal-day.missed { background: var(--surface); }
+#study-chain-grid .cal-day.today { border: 2px solid var(--accent); }
+#study-chain-grid .cal-day.selected { box-shadow: 0 0 0 2px var(--text1); }
+#study-chain-grid .cal-day-dots { position: absolute; inset: 0; pointer-events: none; }
+#study-chain-grid .cal-day-chain-x { position: absolute; inset: 0; filter: none; }
+#study-chain-grid .cal-day-chain-x::before {
+  content: ''; position: absolute; left: 16%; right: 16%; top: 46%; width: auto; height: 28%;
+  background: var(--mark); opacity: 0.85; border-radius: 2px; clip-path: none; transform: rotate(-4deg);
+}
+#study-chain-grid .cal-day-chain-x::after {
+  content: '✕'; position: absolute; inset: 0; top: 4px; width: auto; height: auto; display: grid; place-items: center;
+  background: none; clip-path: none; transform: rotate(-6deg);
+  font-size: 20px; font-weight: 800; line-height: 1; color: var(--dw-x, var(--exam));
+}
+[data-dwmark="bold"] #study-chain-grid .cal-day-chain-x::before { display: none; }
+[data-dwmark="bold"] #study-chain-grid .cal-day-chain-x::after { font-size: 28px; font-weight: 900; color: var(--exam); }
+/* themes whose exam color is too close to their highlighter get a darker ✕
+   of their own on the swipe (the bold ✕ sits on the page, so it keeps the
+   exam color) */
+:root[data-palette="lamp"] { --dw-x: #c2410c; }
+:root[data-palette="chalk"] { --dw-x: #0b5a3a; }
+:root[data-palette="bears"] { --dw-x: #0b162a; }
+.sd-key { display: flex; gap: 16px; margin-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); }
+.sd-key i { display: inline-block; margin-right: 6px; font-style: normal; vertical-align: -1px; }
+.sd-key i.s { width: 12px; height: 12px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 18%, var(--surface)); border: 1px solid var(--border); vertical-align: -2px; }
+.sd-key i.x { padding: 0 3px; font-weight: 800; font-size: 13px; color: var(--dw-x, var(--exam)); background: linear-gradient(transparent 40%, var(--mark) 40% 85%, transparent 85%); }
+[data-dwmark="bold"] .sd-key i.x { background: none; color: var(--exam); }
+#study-chain-detail { margin-top: 8px; font-size: 12.5px; color: var(--text2); }
+#study-chain-detail:empty { display: none; }
+
+@media (max-width: 900px) {
+  .sd-top, .sd-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .sd-clock { font-size: 64px; }
+  .sd-timer, .sd-deep { padding: 22px 18px 20px; }
+  #study-chain-grid .cal-day { aspect-ratio: 1; padding: 3px 4px; }
+  #study-chain-grid .cal-day-chain-x::after { font-size: 16px; }
+  [data-dwmark="bold"] #study-chain-grid .cal-day-chain-x::after { font-size: 22px; }
+}

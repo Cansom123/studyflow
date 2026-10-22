@@ -14,6 +14,7 @@
 const DISPLAY_KEYS = {
   themeMode: 'sf_theme_mode',
   palette: 'sf_tweak_palette',
+  dwMark: 'sf_tweak_dwMark',
   accent: 'sf_tweak_accent',
   btnAccent: 'sf_tweak_btnAccent',
   bgHue: 'sf_tweak_bgHue',
@@ -55,6 +56,7 @@ function reapplyDisplayFromLocal() {
   if (fontEl) fontEl.value = tweakDefaults.fontScale || '1';
   applyThemeMode(); // the theme and light / dark
   const l = readLocalDisplay();
+  if (typeof applyDeepWorkMark === 'function') applyDeepWorkMark(l.dwMark);
   applyTweaks({
     cardRadius: l.cardRadius || tweakDefaults.cardRadius,
     fontScale: l.fontScale || tweakDefaults.fontScale,

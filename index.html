@@ -7,13 +7,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@300;400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-<!-- Light/dark is set before first paint (same rule as applyThemeMode), so the
-     splash and sign-in page never flash the wrong theme. -->
+<!-- The theme and light/dark are set before first paint (same rule as
+     applyThemeMode), so the splash and sign-in page never flash the wrong
+     look. Themes other than Notebook have one look each (THEMES below). -->
 <script>
 (function () {
   try {
+    var palette = localStorage.getItem('sf_tweak_palette') || 'notebook';
+    var fixed = { glam: 'light', club: 'light', lamp: 'dark', chalk: 'dark', doom: 'dark', bears: 'dark' }[palette];
+    if (fixed) document.documentElement.setAttribute('data-palette', palette);
     var mode = localStorage.getItem('sf_theme_mode') || 'system';
-    var dark = mode === 'system' ? window.matchMedia('(prefers-color-scheme: dark)').matches : mode === 'dark';
+    var dark = fixed ? fixed === 'dark' : mode === 'system' ? window.matchMedia('(prefers-color-scheme: dark)').matches : mode === 'dark';
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   } catch (e) {}
 })();
@@ -1453,60 +1457,16 @@
         <div class="card">
           <div class="tweak-row">
             <div class="tweak-label">Theme</div>
+            <div class="theme-grid" id="theme-grid" role="radiogroup" aria-label="Theme"></div>
+          </div>
+          <div class="tweak-row" id="theme-mode-row">
+            <div class="tweak-label">Light or dark</div>
             <div class="seg-control" id="theme-seg">
               <button class="seg-btn" data-mode="light" onclick="setThemeMode('light')">Light</button>
               <button class="seg-btn" data-mode="dark" onclick="setThemeMode('dark')">Dark</button>
               <button class="seg-btn" data-mode="system" onclick="setThemeMode('system')">System</button>
             </div>
-          </div>
-          <div class="tweak-row">
-            <div class="tweak-label">Accent color</div>
-            <div class="tweak-swatches" id="tweak-swatches-accent">
-              <div class="swatch" data-h="white" style="background:#ffffff;box-shadow:inset 0 0 0 1.5px var(--border2);" onclick="resetAccentToWhite(this)" title="White"></div>
-              <div class="swatch" data-h="25" style="background:oklch(0.56 0.2 25);" onclick="setAccent(25,this)" title="Red"></div>
-              <div class="swatch" data-h="45" style="background:oklch(0.6 0.18 45);" onclick="setAccent(45,this)" title="Orange"></div>
-              <div class="swatch" data-h="75" style="background:oklch(0.66 0.16 75);" onclick="setAccent(75,this)" title="Amber"></div>
-              <div class="swatch" data-h="125" style="background:oklch(0.62 0.17 125);" onclick="setAccent(125,this)" title="Lime"></div>
-              <div class="swatch" data-h="145" style="background:oklch(0.52 0.16 145);" onclick="setAccent(145,this)" title="Green"></div>
-              <div class="swatch" data-h="170" style="background:oklch(0.52 0.18 170);" onclick="setAccent(170,this)" title="Teal"></div>
-              <div class="swatch" data-h="200" style="background:oklch(0.56 0.15 200);" onclick="setAccent(200,this)" title="Cyan"></div>
-              <div class="swatch" data-h="220" style="background:oklch(0.56 0.2 220);" onclick="setAccent(220,this)" title="Blue"></div>
-              <div class="swatch" data-h="255" style="background:oklch(0.5 0.2 255);" onclick="setAccent(255,this)" title="Indigo"></div>
-              <div class="swatch" data-h="275" style="background:oklch(0.56 0.2 275);" onclick="setAccent(275,this)" title="Violet"></div>
-              <div class="swatch" data-h="300" style="background:oklch(0.52 0.2 300);" onclick="setAccent(300,this)" title="Purple"></div>
-              <div class="swatch" data-h="330" style="background:oklch(0.55 0.2 330);" onclick="setAccent(330,this)" title="Pink"></div>
-              <div class="swatch" data-h="355" style="background:oklch(0.56 0.2 355);" onclick="setAccent(355,this)" title="Rose"></div>
-              <div class="swatch" data-h="gray" style="background:oklch(0.6 0 0);" onclick="setAccentGray(this)" title="Gray"></div>
-              <button type="button" class="swatch swatch-custom" id="accent-custom-swatch" onclick="toggleCustomHue('accent')" title="Custom color" aria-label="Custom accent color" aria-expanded="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></button>
-            </div>
-            <div class="hue-picker" id="accent-hue-picker" hidden>
-              <input type="range" min="0" max="359" step="1" class="hue-slider" id="accent-hue-slider" aria-label="Accent hue" oninput="setAccentCustom(this.value)">
-              <span class="hue-preview" id="accent-hue-preview"></span>
-            </div>
-          </div>
-          <div class="tweak-row">
-            <div class="tweak-label">Background color</div>
-            <div class="tweak-swatches" id="tweak-swatches-bg">
-              <div class="swatch active" data-h="match" style="background:conic-gradient(from 0deg,#a78bfa,#60a5fa,#34d399,#fbbf24,#f472b6,#a78bfa);" onclick="setBgHue('match',this)" title="Match accent"></div>
-              <div class="swatch" data-h="355" style="background:oklch(0.9 0.03 355);" onclick="setBgHue(355,this)" title="Rose"></div>
-              <div class="swatch" data-h="30" style="background:oklch(0.9 0.03 30);" onclick="setBgHue(30,this)" title="Warm"></div>
-              <div class="swatch" data-h="75" style="background:oklch(0.92 0.035 75);" onclick="setBgHue(75,this)" title="Sand"></div>
-              <div class="swatch" data-h="125" style="background:oklch(0.9 0.035 125);" onclick="setBgHue(125,this)" title="Lime"></div>
-              <div class="swatch" data-h="145" style="background:oklch(0.88 0.03 145);" onclick="setBgHue(145,this)" title="Green"></div>
-              <div class="swatch" data-h="170" style="background:oklch(0.88 0.035 170);" onclick="setBgHue(170,this)" title="Teal"></div>
-              <div class="swatch" data-h="200" style="background:oklch(0.9 0.03 200);" onclick="setBgHue(200,this)" title="Sky"></div>
-              <div class="swatch" data-h="220" style="background:oklch(0.9 0.03 220);" onclick="setBgHue(220,this)" title="Blue"></div>
-              <div class="swatch" data-h="255" style="background:oklch(0.9 0.03 255);" onclick="setBgHue(255,this)" title="Indigo"></div>
-              <div class="swatch" data-h="275" style="background:oklch(0.9 0.03 275);" onclick="setBgHue(275,this)" title="Violet"></div>
-              <div class="swatch" data-h="300" style="background:oklch(0.9 0.03 300);" onclick="setBgHue(300,this)" title="Lilac"></div>
-              <div class="swatch" data-h="330" style="background:oklch(0.9 0.03 330);" onclick="setBgHue(330,this)" title="Pink"></div>
-              <div class="swatch" data-h="0"   style="background:oklch(0.92 0 0);" onclick="setBgHue(0,this)" title="Neutral gray"></div>
-              <button type="button" class="swatch swatch-custom" id="bg-custom-swatch" onclick="toggleCustomHue('bg')" title="Custom tint" aria-label="Custom background tint" aria-expanded="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></button>
-            </div>
-            <div class="hue-picker" id="bg-hue-picker" hidden>
-              <input type="range" min="0" max="359" step="1" class="hue-slider" id="bg-hue-slider" aria-label="Background tint hue" oninput="setBgCustom(this.value)">
-              <span class="hue-preview" id="bg-hue-preview"></span>
-            </div>
+            <div class="theme-mode-note" id="theme-mode-note" hidden></div>
           </div>
           <div class="tweak-row">
             <div class="tweak-label">Card corners</div>
@@ -1885,89 +1845,53 @@
    TWEAKS
 =========================== */
 const tweakDefaults = JSON.parse(document.getElementById('tweak-defaults').textContent);
-// Gray sets --accent directly (chroma 0) rather than through --accent-h, so
-// switching back to a real color has to explicitly clear those inline
-// overrides -- otherwise they'd outrank the hue-based CSS rule forever.
+// The old accent color picker set inline --accent overrides; themes replace
+// it, so any left over from before are cleared (display-sync.js too).
 function clearAccentOverrides() {
   ['--accent', '--accent-mid', '--accent-soft', '--accent-text'].forEach(v => document.documentElement.style.removeProperty(v));
 }
-function setAccent(h, el) {
-  clearAccentOverrides();
-  document.documentElement.style.setProperty('--accent-h', h);
-  document.documentElement.setAttribute('data-btn-accent', '1');
-  document.querySelectorAll('#tweak-swatches-accent .swatch').forEach(s => s.classList.remove('active'));
-  if (el) el.classList.add('active');
-  saveTweak('accent', String(h));
-  saveTweak('btnAccent', '1');
+
+/* ---- Themes -------------------------------------------------------------
+   Picked in Settings > Display, saved like every other display tweak (so
+   they follow the account, js/display-sync.js). Notebook is the default and
+   has light and dark; the others have one look each (`mode`), which the
+   early script in <head> also knows. Colors live in styles.css (THEMES).
+   `preview`: page, ink, highlighter, exam, for the little sample card. */
+const THEMES = [
+  { id: 'notebook', name: 'Notebook', mode: null, desc: 'Cream paper, blue ink and a highlighter. The default.', preview: ['#fbf8f0', '#2747d6', '#f3ff4a', '#e5484d'] },
+  { id: 'glam', name: 'Glam', mode: 'light', desc: 'Blush pink, a hot pink pen and a golden highlighter.', preview: ['#fffcfa', '#f0437e', '#ffd45c', '#2a1620'] },
+  { id: 'club', name: 'Club room', mode: 'light', desc: 'Sky blue and cherry blossom, ribbon red for exams.', preview: ['#fdfdfb', '#3f9ad6', '#ffd84a', '#d9455f'] },
+  { id: 'lamp', name: 'Desk lamp', mode: 'dark', desc: 'Warm dark with lamp orange, for late nights.', preview: ['#17110e', '#ff7a2f', '#e4ff3a', '#ffc15c'] },
+  { id: 'chalk', name: 'Chalkboard', mode: 'dark', desc: 'Classroom green, chalk white and chalk yellow.', preview: ['#0e1a15', '#3ddc97', '#ffe36e', '#effaf4'] },
+  { id: 'doom', name: 'Doomsday', mode: 'dark', desc: 'Neon cyan, doom red exams and a night city grid.', preview: ['#100b18', '#00e5ff', '#f5ef0a', '#ff2a55'] },
+  { id: 'bears', name: 'Navy & Orange', mode: 'dark', desc: 'Deep navy and burnt orange.', preview: ['#11203a', '#e2571d', '#ff8a3d', '#f4f1ea'] },
+];
+
+function currentPalette() {
+  let id = null;
+  try { id = localStorage.getItem('sf_tweak_palette'); } catch (e) {}
+  return THEMES.some(t => t.id === id) ? id : 'notebook';
 }
-function resetAccentToWhite(el) {
-  clearAccentOverrides();
-  document.documentElement.removeAttribute('data-btn-accent');
-  document.querySelectorAll('#tweak-swatches-accent .swatch').forEach(s => s.classList.remove('active'));
-  if (el) el.classList.add('active');
-  localStorage.removeItem('sf_tweak_btnAccent');
-  localStorage.removeItem('sf_tweak_accent');
+
+function renderThemeGrid() {
+  const grid = document.getElementById('theme-grid');
+  if (!grid) return;
+  const cur = currentPalette();
+  grid.innerHTML = THEMES.map(t => {
+    const [bg, ink, mark, exam] = t.preview;
+    return `<button type="button" class="theme-card" role="radio" aria-checked="${t.id === cur}" onclick="setPalette('${t.id}')">
+      <span class="theme-prev" style="--tp-bg:${bg};--tp-ink:${ink};--tp-mark:${mark};--tp-exam:${exam}" aria-hidden="true"><b></b><i style="height:38%"></i><i style="height:64%"></i><i class="x" style="height:52%"></i><i style="height:28%"></i></span>
+      <span class="theme-name">${t.name}</span>
+      <span class="theme-desc">${t.desc}</span>
+      <span class="theme-tag">${t.mode ? (t.mode === 'dark' ? 'Dark' : 'Light') : 'Light or dark'}</span>
+    </button>`;
+  }).join('');
 }
-function setAccentGray(el) {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const l = isDark ? 0.72 : 0.5;
-  document.documentElement.setAttribute('data-btn-accent', '1');
-  document.documentElement.style.setProperty('--accent', `oklch(${l} 0 0)`);
-  document.documentElement.style.setProperty('--accent-mid', `oklch(${l - 0.06} 0 0)`);
-  document.documentElement.style.setProperty('--accent-soft', `oklch(${l} 0 0 / 0.16)`);
-  document.documentElement.style.setProperty('--accent-text', `oklch(${l} 0 0)`);
-  document.querySelectorAll('#tweak-swatches-accent .swatch').forEach(s => s.classList.remove('active'));
-  if (el) el.classList.add('active');
-  saveTweak('accent', 'gray');
-  saveTweak('btnAccent', '1');
-}
-function setBgHue(h, el) {
-  if (h === 'match') document.documentElement.style.removeProperty('--bg-h');
-  else document.documentElement.style.setProperty('--bg-h', h);
-  document.querySelectorAll('#tweak-swatches-bg .swatch').forEach(s => s.classList.remove('active'));
-  if (el) el.classList.add('active');
-  saveTweak('bgHue', String(h));
-}
-// "Custom" swatch: opens a hue slider for any accent / background tint, not
-// just the presets. The slider starts at the current hue, and the custom
-// swatch itself shows the chosen color once one is picked.
-function toggleCustomHue(kind) {
-  const picker = document.getElementById(kind + '-hue-picker');
-  const swatch = document.getElementById(kind + '-custom-swatch');
-  if (!picker) return;
-  const open = picker.hidden;
-  picker.hidden = !open;
-  swatch?.setAttribute('aria-expanded', String(open));
-  if (open) {
-    const cs = getComputedStyle(document.documentElement);
-    const cur = parseFloat(cs.getPropertyValue(kind === 'accent' ? '--accent-h' : '--bg-h')) || 217;
-    const slider = document.getElementById(kind + '-hue-slider');
-    slider.value = Math.round(cur) % 360;
-    updateHuePreview(kind, slider.value);
-    slider.focus();
-  }
-}
-function updateHuePreview(kind, h) {
-  const prev = document.getElementById(kind + '-hue-preview');
-  const color = kind === 'accent' ? `oklch(0.56 0.2 ${h})` : `oklch(0.9 0.035 ${h})`;
-  if (prev) prev.style.background = color;
-  const swatch = document.getElementById(kind + '-custom-swatch');
-  if (swatch) { swatch.style.setProperty('--custom', color); swatch.classList.add('has-color'); }
-}
-function markCustomActive(kind, h) {
-  document.querySelectorAll(`#tweak-swatches-${kind} .swatch`).forEach(s => s.classList.remove('active'));
-  document.getElementById(kind + '-custom-swatch')?.classList.add('active');
-  updateHuePreview(kind, h);
-}
-function setAccentCustom(h) {
-  h = String(Math.round(Number(h)) % 360);
-  setAccent(h, null);
-  markCustomActive('accent', h);
-}
-function setBgCustom(h) {
-  h = String(Math.round(Number(h)) % 360);
-  setBgHue(h, null);
-  markCustomActive('bg', h);
+
+function setPalette(id) {
+  if (!THEMES.some(t => t.id === id)) return;
+  saveTweak('palette', id);
+  applyThemeMode();
 }
 
 // Square (0) squares the whole app, not just cards: see [data-corners="square"]
@@ -1995,20 +1919,9 @@ function setDensity(mode, el) {
 function saveTweak(key, val) {
   localStorage.setItem('sf_tweak_' + key, val);
 }
+// Colors come from the theme now (setPalette); an accent or background tint
+// saved by the old pickers is ignored.
 function applyTweaks(t) {
-  if (t.accent === 'gray') setAccentGray();
-  else if (t.accent) document.documentElement.style.setProperty('--accent-h', t.accent);
-  if (t.btnAccent) {
-    document.documentElement.setAttribute('data-btn-accent', '1');
-    const preset = document.querySelector(`#tweak-swatches-accent .swatch[data-h="${t.accent}"]`);
-    // A hue picked with the custom slider has no preset swatch of its own.
-    if (preset) preset.classList.add('active'); else if (t.accent) markCustomActive('accent', t.accent);
-  } else {
-    document.querySelector('#tweak-swatches-accent .swatch[data-h="white"]')?.classList.add('active');
-  }
-  if (t.bgHue && t.bgHue !== 'match') document.documentElement.style.setProperty('--bg-h', t.bgHue);
-  const bgPreset = document.querySelector(`#tweak-swatches-bg .swatch[data-h="${t.bgHue || 'match'}"]`);
-  if (bgPreset) bgPreset.classList.add('active'); else markCustomActive('bg', t.bgHue);
   setCornersMode(t.cardRadius ?? 14);
   if (t.cardRadius) {
     document.documentElement.style.setProperty('--card-radius', t.cardRadius + 'px');
@@ -2035,11 +1948,25 @@ function applyTweaks(t) {
 /* ===========================
    THEME MODE
 =========================== */
+// The theme first (a theme with one look decides light or dark itself), then
+// the student's light / dark / system choice for Notebook.
 function applyThemeMode() {
+  const theme = THEMES.find(t => t.id === currentPalette());
+  if (theme.id === 'notebook') document.documentElement.removeAttribute('data-palette');
+  else document.documentElement.setAttribute('data-palette', theme.id);
   const mode = localStorage.getItem('sf_theme_mode') || 'system';
-  const dark = mode === 'system' ? window.matchMedia('(prefers-color-scheme: dark)').matches : mode === 'dark';
+  const dark = theme.mode ? theme.mode === 'dark'
+    : mode === 'system' ? window.matchMedia('(prefers-color-scheme: dark)').matches : mode === 'dark';
   applyTheme(dark);
   document.querySelectorAll('#theme-seg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const row = document.getElementById('theme-mode-row');
+  const note = document.getElementById('theme-mode-note');
+  if (row) row.classList.toggle('is-fixed', !!theme.mode);
+  if (note) {
+    note.hidden = !theme.mode;
+    note.textContent = theme.mode ? `${theme.name} is always ${theme.mode}. Light or dark applies to Notebook.` : '';
+  }
+  renderThemeGrid();
 }
 function setThemeMode(mode) {
   localStorage.setItem('sf_theme_mode', mode);

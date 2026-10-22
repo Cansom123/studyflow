@@ -1,7 +1,6 @@
 /* ===========================
    DISPLAY PREFERENCES ON THE ACCOUNT
-   Theme, accent color, background tint, card corners, text size and
-   density used to live only in this browser (localStorage), so every new
+   Theme, light / dark, card corners, text size and density used to live only in this browser (localStorage), so every new
    device or browser started from the defaults. They are now also saved in
    the account's prefs (user_settings.prefs.display) and applied on sign-in,
    so StudyFlow looks the same wherever the student signs in.
@@ -14,6 +13,7 @@
 
 const DISPLAY_KEYS = {
   themeMode: 'sf_theme_mode',
+  palette: 'sf_tweak_palette',
   accent: 'sf_tweak_accent',
   btnAccent: 'sf_tweak_btnAccent',
   bgHue: 'sf_tweak_bgHue',
@@ -47,20 +47,15 @@ function writeLocalDisplay(d) {
 function reapplyDisplayFromLocal() {
   const root = document.documentElement;
   clearAccentOverrides();
-  root.removeAttribute('data-btn-accent');
   ['--accent-h', '--bg-h', '--card-radius', '--font-scale'].forEach(v => root.style.removeProperty(v));
   document.body.classList.remove('density-compact');
-  document.querySelectorAll('#tweak-swatches-accent .swatch, #tweak-swatches-bg .swatch, #tweak-swatches-radius .swatch, #tweak-density .seg-btn')
+  document.querySelectorAll('#tweak-swatches-radius .swatch, #tweak-density .seg-btn')
     .forEach(el => el.classList.remove('active'));
   const fontEl = document.getElementById('tweak-font-size');
   if (fontEl) fontEl.value = tweakDefaults.fontScale || '1';
-  // Theme first: the gray accent is worked out from light vs dark.
-  applyThemeMode();
+  applyThemeMode(); // the theme and light / dark
   const l = readLocalDisplay();
   applyTweaks({
-    accent: l.accent || tweakDefaults.accent,
-    btnAccent: l.btnAccent || null,
-    bgHue: l.bgHue || 'match',
     cardRadius: l.cardRadius || tweakDefaults.cardRadius,
     fontScale: l.fontScale || tweakDefaults.fontScale,
     density: l.density || 'comfortable',
@@ -96,8 +91,7 @@ function syncDisplayToAccount() {
       return r;
     };
   };
-  wrap('saveTweak');          // accent, background, corners, text size, density
-  wrap('resetAccentToWhite'); // clears the accent keys without saveTweak
+  wrap('saveTweak');          // theme, corners, text size, density
   wrap('setThemeMode');       // light / dark / system
 })();
 

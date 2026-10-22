@@ -1,7 +1,8 @@
 /* ===========================
    ASSIGNMENTS EXTRAS
-   - Type chips (Quiz / Test / Essay / Discussion / Homework) that narrow the
-     list, alongside the search box and the By due date / By class toggle.
+   - Type chips (Quiz / Test / Essay / Discussion / Homework) and class
+     filters that narrow the list, a "show finished work" switch and time
+     estimates, alongside the search box and the By due date / By class toggle.
    - Private notes on any assignment: a text box in its detail panel. Notes
      live in the prefs blob as userPrefs.assignmentNotes[title|course] and are
      keyed the way done-state is (title + class), not by row id, because
@@ -46,6 +47,52 @@ function renderAllWorkChips(assignments) {
 function setAllWorkType(type) {
   allWorkTypeFilter = (type && allWorkTypeFilter !== type) ? type : null;
   renderAllWork(cachedAssignments);
+}
+
+/* ---- Class filter, "show finished work", time estimates ------------------ */
+let allWorkClassFilter = null;
+let allWorkShowDone = (() => { try { return localStorage.getItem('sf_allwork_done') === '1'; } catch (e) { return false; } })();
+
+function allWorkClassOf(a) { return cleanCourseName(a.course || a.course_name || '') || 'Other'; }
+
+// One entry per class with unfinished work, busiest first, plus All.
+function renderAllWorkClasses(assignments) {
+  const host = document.getElementById('allwork-classes');
+  if (!host) return;
+  const counts = new Map();
+  (assignments || []).forEach(a => {
+    if (isAssignmentDoneNow(a)) return;
+    const c = allWorkClassOf(a);
+    counts.set(c, (counts.get(c) || 0) + 1);
+  });
+  if (allWorkClassFilter && !counts.has(allWorkClassFilter)) allWorkClassFilter = null;
+  if (counts.size < 2) { host.innerHTML = ''; allWorkClassFilter = null; return; }
+  const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  const item = (label, n, c) => `<button type="button" class="aw-chip${allWorkClassFilter === c ? ' active' : ''}" aria-pressed="${allWorkClassFilter === c}" title="${escapeHtml(c || label)}" onclick="setAllWorkClass(${c ? escapeHtml(JSON.stringify(c)) : 'null'})">${escapeHtml(c ? courseCode(c) : label)}<span>${n}</span></button>`;
+  host.innerHTML = item('All classes', total, null)
+    + [...counts.entries()].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).map(([c, n]) => item(c, n, c)).join('');
+  const check = document.getElementById('allwork-show-done');
+  if (check) check.checked = allWorkShowDone;
+}
+
+function setAllWorkClass(c) {
+  allWorkClassFilter = (c && allWorkClassFilter !== c) ? c : null;
+  renderAllWork(cachedAssignments);
+}
+
+// Remembered on this device only, like the By due date / By class choice.
+function setAllWorkShowDone(on) {
+  allWorkShowDone = !!on;
+  try { localStorage.setItem('sf_allwork_done', allWorkShowDone ? '1' : '0'); } catch (e) {}
+  renderAllWork(cachedAssignments);
+}
+
+// "~45 min" per assignment, the same estimates as Today's 3 (js/today-core.js).
+function allWorkEstimator() {
+  if (typeof estimateMinutes !== 'function') return null;
+  const studied = studiedMinutesByAssignment(cachedStudySessions || [], studySessionSec, cleanCourseName);
+  const history = [...(cachedAssignments || []), ...(cachedGradedAssignments || [])];
+  return a => (isAssignmentDoneNow(a) ? null : fmtEstimate(estimateMinutes(a, history, studied, cleanCourseName).left));
 }
 
 /* ---- Private notes ---------------------------------------------------------- */
@@ -114,7 +161,7 @@ function saveAssignmentNote(a, value, statusEl) {
 
 // Updates the little note icon on cards already on screen.
 function syncNoteIndicators() {
-  document.querySelectorAll('.card[data-done-key]').forEach(card => {
+  document.querySelectorAll('.card[data-done-key], .aw-row[data-done-key]').forEach(card => {
     const key = decodeURIComponent(card.dataset.doneKey);
     const has = !!((userPrefs.assignmentNotes || {})[key] || {}).text;
     const title = card.querySelector('.card-title');

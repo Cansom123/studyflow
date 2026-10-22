@@ -1041,6 +1041,10 @@
 
       <!-- ALL WORK -->
       <div class="page" id="page-allwork">
+        <!-- Laptops: the search and filters sit in a column on the left like
+             notebook dividers, the ruled list on the right. Stacked on phones. -->
+        <div class="aw-layout">
+        <aside class="aw-rail" aria-label="Filter assignments">
         <div class="aw-search">
           <svg class="aw-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8.8" cy="8.8" r="5.3"/><path d="M12.8 12.8l3.7 3.7"/></svg>
           <input id="allwork-search" type="search" placeholder="Search by title, class, or type…" autocomplete="off" spellcheck="false" aria-label="Search assignments" oninput="onAllWorkSearch()" onkeydown="if(event.key==='Escape'){clearAllWorkSearch();}" />
@@ -1048,7 +1052,11 @@
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l8 8M14 6l-8 8"/></svg>
           </button>
         </div>
-        <div class="aw-chips" id="allwork-chips" style="display:none;" role="group" aria-label="Filter by type"></div>
+        <div class="aw-idx"><div class="aw-idx-h">Type</div><div class="aw-chips" id="allwork-chips" style="display:none;" role="group" aria-label="Filter by type"></div></div>
+        <div class="aw-idx"><div class="aw-idx-h">Class</div><div class="aw-chips" id="allwork-classes" role="group" aria-label="Filter by class"></div></div>
+        <label class="aw-done-toggle"><input type="checkbox" id="allwork-show-done" onchange="setAllWorkShowDone(this.checked)"> Show finished work</label>
+        </aside>
+        <div class="aw-col">
         <div class="aw-toolbar">
           <div class="aw-search-count" id="allwork-search-count"></div>
           <div class="seg-control aw-view" id="allwork-view" role="tablist" aria-label="Group assignments">
@@ -1064,6 +1072,8 @@
         </div>
         <div id="allwork-list" style="display:none;"></div>
         <div id="closed-suggest-allwork"></div>
+        </div><!-- /aw-col -->
+        </div><!-- /aw-layout -->
       </div>
 
       <!-- PRIORITY -->
@@ -8091,12 +8101,18 @@ function renderAllWork(assignments) {
     b.classList.toggle('active', on);
     b.setAttribute('aria-selected', String(on));
   });
-  // Pure bucketing/sorting/HTML building lives in js/render-utils.js.
+  // Pure bucketing/sorting/HTML building lives in js/render-utils.js; the
+  // type and class filters, "show finished" and time estimates in
+  // js/assignments-extras.js.
+  const estimate = allWorkEstimator();
   const body = list => allWorkView === 'class'
-    ? allWorkByClassHTML(list, doneSet, cachedGrades, allWorkCollapsed, today)
-    : allWorkBodyHTML(list, doneSet, today);
+    ? allWorkByClassHTML(list, doneSet, cachedGrades, allWorkCollapsed, today, estimate)
+    : allWorkBodyHTML(list, doneSet, today, { showDone: allWorkShowDone, estimate });
   renderAllWorkChips(assignments);
-  const typed = allWorkTypeFilter ? (assignments || []).filter(a => assignmentTypeOf(a) === allWorkTypeFilter) : (assignments || []);
+  renderAllWorkClasses(assignments);
+  const typed = (assignments || [])
+    .filter(a => !allWorkTypeFilter || assignmentTypeOf(a) === allWorkTypeFilter)
+    .filter(a => !allWorkClassFilter || allWorkClassOf(a) === allWorkClassFilter);
   if (!query) {
     if (countEl) {
       const left = typed.filter(a => !isAssignmentDoneNow(a)).length;

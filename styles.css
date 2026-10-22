@@ -6122,3 +6122,82 @@ button, input, select, textarea { font-family: inherit; }
 .theme-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); }
 .theme-mode-note { font-size: 12.5px; color: var(--text2); margin-top: 8px; }
 #theme-mode-row.is-fixed .seg-control { opacity: 0.45; pointer-events: none; }
+
+/* ===========================
+   ASSIGNMENTS: A RULED TO-DO LIST
+   One row per assignment on a ruled sheet with a red margin line, under a
+   heading per day (Overdue, Today, Tomorrow, the weekday, Next week, Later).
+   On laptops the search and the type / class filters are a column on the
+   left like notebook dividers. js/assignments-extras.js, awRowHTML and
+   allWorkBodyHTML in js/render-utils.js.
+=========================== */
+#allwork-list { display: block; }
+.aw-idx-h {
+  margin: 0 0 6px 2px; font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2);
+}
+.aw-idx:has(> .aw-chips:empty) { display: none; }
+.aw-done-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); cursor: pointer; padding: 2px; }
+.aw-done-toggle input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+
+.aw-sheet { border: 1px solid var(--border); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.aw-day {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 16px 18px 8px 58px; border-bottom: 1.5px solid var(--border);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text2);
+}
+.aw-day b { margin-right: 6px; font-family: var(--font-sans); font-size: 15px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; color: var(--text1); }
+.aw-day.overdue, .aw-day.overdue b { color: var(--red); }
+.aw-row {
+  position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 84px 22px; gap: 12px; align-items: center;
+  min-height: 54px; padding: 8px 14px 8px 16px; border-bottom: 1px solid var(--border2);
+}
+.aw-row:last-child { border-bottom: 0; }
+.aw-row::before { content: ''; position: absolute; left: 48px; top: 0; bottom: 0; width: 1.5px; background: color-mix(in srgb, var(--red) 32%, transparent); }
+.aw-row:hover { background: var(--surface2); }
+.aw-main { min-width: 0; padding-left: 12px; }
+.aw-row .card-title { font-size: 14.5px; font-weight: 500; line-height: 1.3; color: var(--text1); }
+.aw-row .card-title-link { cursor: pointer; }
+.aw-row .card-title-link:hover { color: var(--accent); }
+.aw-sub { margin-top: 2px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aw-tag {
+  padding: 3px 7px; border-radius: 6px; white-space: nowrap; background: transparent !important; border: 1px solid currentColor;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.aw-when { text-align: right; white-space: nowrap; font-family: var(--font-mono); font-size: 12px; color: var(--text2); }
+.aw-open { display: grid; place-items: center; width: 22px; height: 22px; color: var(--text2); opacity: 0.55; border-radius: 6px; }
+.aw-open:hover { opacity: 1; color: var(--accent); }
+.aw-open svg { width: 15px; height: 15px; }
+.aw-row.overdue { box-shadow: inset 3px 0 0 var(--red); }
+.aw-row.overdue .aw-when { color: var(--red); font-weight: 500; }
+.aw-row.late .aw-when { color: var(--amber); }
+.aw-row.exam .card-title, .aw-row.exam .aw-tag { color: var(--exam); }
+.aw-row.exam .done-check { border-style: dashed; border-color: var(--exam); }
+.aw-row.done .card-title { color: var(--text2); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.aw-row.done .aw-tag, .aw-row.done .aw-when { opacity: 0.55; }
+.awc-inner .aw-sheet { margin: 4px 0 12px; }
+
+@media (min-width: 1100px) {
+  .aw-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 26px; align-items: start; }
+  .aw-rail { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 18px; }
+  .aw-rail .aw-search { margin: 0; }
+  .aw-rail .aw-chips { flex-direction: column; gap: 2px; overflow: visible; padding: 0; margin: 0; }
+  .aw-rail .aw-chip {
+    justify-content: space-between; width: 100%; padding: 7px 10px 7px 12px; text-align: left;
+    background: none; border: 0; border-left: 3px solid transparent; border-radius: 0 10px 10px 0; color: var(--text2);
+  }
+  .aw-rail .aw-chip:hover { transform: none; background: var(--surface2); }
+  .aw-rail .aw-chip span { background: none; padding: 0; font-weight: 400; color: var(--text2); }
+  .aw-rail .aw-chip.active { border-left-color: var(--accent); background: var(--surface2); color: var(--text1); font-weight: 600; }
+  .aw-rail .aw-chip.active span { background: none; color: var(--text1); }
+  .aw-col .aw-toolbar { margin-top: 0; }
+}
+@media (max-width: 1099px) {
+  .aw-rail { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  .aw-idx-h { display: none; }
+}
+@media (max-width: 600px) {
+  .aw-row { grid-template-columns: 24px minmax(0, 1fr) 66px; padding-right: 12px; }
+  .aw-row .aw-tag, .aw-row .aw-open { display: none; }
+  .aw-day { padding-left: 52px; }
+}

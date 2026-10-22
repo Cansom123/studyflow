@@ -326,45 +326,87 @@ function assignmentDetailBodyHTML(a) {
   `;
 }
 
-// Body HTML for the All Work tab: buckets assignments into
-// overdue/due-soon(within 7 days)/upcoming (skipping anything done),
-// sorts each bucket undone-first then soonest-due-first, and renders each
-// with aCard. Falls back to an empty-state box when nothing's left to show.
-function allWorkBodyHTML(assignments, doneSet, today) {
-  const ref = today || (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
-  const weekFromNow = new Date(ref); weekFromNow.setDate(ref.getDate() + 7);
-  const overdue = [], soon = [], upcoming = [];
-  assignments.forEach(a => {
-    if (a.completed || doneSet.has(decodeURIComponent(doneKey(a)))) return;
-    if (!a.due_date) { upcoming.push(a); return; }
-    const due = new Date(a.due_date); due.setHours(0, 0, 0, 0);
-    if (due < ref) overdue.push(a);
-    else if (due <= weekFromNow) soon.push(a);
-    else upcoming.push(a);
-  });
-  const sortGroup = arr => [...arr].sort((a, b) => {
-    const aDone = doneSet.has(decodeURIComponent(doneKey(a))) ? 1 : 0;
-    const bDone = doneSet.has(decodeURIComponent(doneKey(b))) ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone;
-    const aD = a.due_date ? new Date(a.due_date) : new Date('9999');
-    const bD = b.due_date ? new Date(b.due_date) : new Date('9999');
-    return aD - bD;
-  });
+// Just the class code, for tight spots: "MATH 132 1007 - 2026 Fall" ->
+// "MATH 132". Names without a code ("FYE 2026-2027") come back whole.
+function courseCode(name) {
+  const full = String(name || '');
+  return (full.match(/^[A-Z]{2,5}[ -]?\d{3}[A-Z]?\b/) || [full])[0];
+}
 
-  let html = '';
-  if (overdue.length) {
-    html += `<div class="section-label" style="color:var(--error-color);">Overdue</div>`;
-    html += sortGroup(overdue).map(a => aCard(a, true, true, doneSet)).join('');
-  }
-  if (soon.length) {
-    html += `<div class="section-label">Due Soon</div>`;
-    html += sortGroup(soon).map(a => aCard(a, false, false, doneSet)).join('');
-  }
-  if (upcoming.length) {
-    html += `<div class="section-label">Upcoming</div>`;
-    html += sortGroup(upcoming).map(a => aCard(a, false, false, doneSet)).join('');
-  }
-  return html || '<div class="empty-box"><div class="empty-title">No assignments</div></div>';
+// One assignment as a ruled row on the Assignments page: checkbox, title
+// (opens the detail panel), class and time estimate, type tag, when it's
+// due. `when` is the right-hand text (a time on a day group, a day or date
+// further out). Same done / late / overdue / New / note rules as aCard, and
+// the same data-done-key, so toggleDone keeps every copy in step.
+function awRowHTML(a, doneSet, { when = '', overdue = false, estimate = null } = {}) {
+  const [bc, bl] = getBadge(a.assignment_type, a.title);
+  const key = doneKey(a);
+  const isDone = a.completed || doneSet.has(decodeURIComponent(key));
+  const late = !!a.feed_late && !isDone;
+  const exam = !isDone && typeof examSignal === 'function' && !!examSignal(a);
+  const cls = ['aw-row', isDone && 'done', late && 'late', overdue && !isDone && !late && 'overdue', exam && 'exam'].filter(Boolean).join(' ');
+  const newTag = !isDone && typeof isNewWork === 'function' && isNewWork(a) ? `<span class="new-tag">New</span>` : '';
+  const noteTag = (typeof assignmentHasNote === 'function' && assignmentHasNote(a)) ? noteIndicatorHTML() : '';
+  const title = escapeHtml(a.title || 'Untitled');
+  const course = cleanCourseName(a.course || a.course_name || '');
+  const sub = [`<span title="${escapeHtml(course)}">${escapeHtml(courseCode(course))}</span>`, estimate ? `~${estimate}` : '', a.is_locked ? '🔒 Locked in Canvas' : '']
+    .filter(Boolean).join(' · ');
+  return `<div class="${cls}" data-done-key="${key}">
+    <button class="done-check${isDone ? ' checked' : ''}" onclick="toggleDone('${key}',this)" title="Mark as done" aria-label="Mark as done: ${title}"><span class="done-check-icon">✓</span></button>
+    <div class="aw-main">
+      <div class="card-title">${a.id ? `<span class="card-title-link" onclick="openAssignmentDetail('${a.id}')">${title}</span>` : title}${newTag}${noteTag}</div>
+      <div class="aw-sub">${sub}</div>
+    </div>
+    <span class="aw-tag ${bc}">${bl}</span>
+    <span class="aw-when">${late ? 'Running late' : when}</span>
+    ${a.assignment_url ? `<a class="aw-open" href="${a.assignment_url}" target="_blank" rel="noopener noreferrer" title="Open in Canvas" aria-label="Open ${title} in Canvas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4.5H5a1 1 0 0 0-1 1V15a1 1 0 0 0 1 1h9.5a1 1 0 0 0 1-1v-3"/><path d="M11 4h5v5M16 4l-7 7"/></svg></a>` : '<span class="aw-open"></span>'}
+  </div>`;
+}
+
+// Body HTML for the Assignments page "By due date": one ruled sheet, with a
+// heading for Overdue, each of the next seven days (Today, Tomorrow, then
+// the weekday), Next week, Later and No due date. Finished work is left out
+// unless opts.showDone. opts.estimate(a) -> "45 min" or null.
+function allWorkBodyHTML(assignments, doneSet, today, opts = {}) {
+  const ref = today || (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
+  const isDone = a => a.completed || doneSet.has(decodeURIComponent(doneKey(a)));
+  const dayOf = a => { const d = new Date(a.due_date); d.setHours(0, 0, 0, 0); return Math.round((d - ref) / 864e5); };
+  const fmt = (d, o) => d.toLocaleDateString('en-US', o);
+  const time = a => new Date(a.due_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const plusDays = n => { const d = new Date(ref); d.setDate(ref.getDate() + n); return d; };
+
+  const groups = new Map(); // key -> { head, sub, items, when(a), overdue }
+  const add = (key, make, a) => { if (!groups.has(key)) groups.set(key, { ...make(), items: [] }); groups.get(key).items.push(a); };
+  assignments.forEach(a => {
+    const done = isDone(a);
+    if (done && !opts.showDone) return;
+    if (!a.due_date) { add('none', () => ({ order: 99, head: 'No due date', sub: '', when: () => '' }), a); return; }
+    const n = dayOf(a);
+    if (n < 0 && !done) {
+      add('over', () => ({ order: -1, head: 'Overdue', sub: '', overdue: true,
+        when: x => { const late = -dayOf(x); return `${late} day${late === 1 ? '' : 's'}`; } }), a);
+    } else if (n < 0) {
+      return; // finished and in the past: nothing to plan
+    } else if (n < 7) {
+      const d = plusDays(n);
+      add('d' + n, () => ({ order: n, head: n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : fmt(d, { weekday: 'long' }),
+        sub: n < 2 ? fmt(d, { weekday: 'short', month: 'short', day: 'numeric' }) : fmt(d, { month: 'short', day: 'numeric' }), when: time }), a);
+    } else if (n < 14) {
+      add('next', () => ({ order: 7, head: 'Next week', sub: `${fmt(plusDays(7), { month: 'short', day: 'numeric' })} to ${fmt(plusDays(13), { month: 'short', day: 'numeric' })}`,
+        when: x => fmt(new Date(x.due_date), { weekday: 'short' }) }), a);
+    } else {
+      add('later', () => ({ order: 8, head: 'Later', sub: '', when: x => fmt(new Date(x.due_date), { month: 'short', day: 'numeric' }) }), a);
+    }
+  });
+  if (!groups.size) return '<div class="empty-box"><div class="empty-title">Nothing left to do</div><div class="empty-sub">Everything here is finished. Nice.</div></div>';
+
+  const dueTime = a => (a.due_date ? new Date(a.due_date).getTime() : Infinity);
+  return `<div class="aw-sheet">${[...groups.values()].sort((x, y) => x.order - y.order).map(g => {
+    const items = g.items.sort((x, y) => (isDone(x) - isDone(y)) || dueTime(x) - dueTime(y));
+    const left = items.filter(x => !isDone(x)).length;
+    return `<div class="aw-day${g.overdue ? ' overdue' : ''}"><span><b>${g.head}</b>${g.sub ? ` ${g.sub}` : ''}</span><span>${left ? `${left} left` : 'all done'}</span></div>
+      ${items.map(a => awRowHTML(a, doneSet, { when: g.when(a), overdue: !!g.overdue, estimate: opts.estimate ? opts.estimate(a) : null })).join('')}`;
+  }).join('')}</div>`;
 }
 
 function cocoGradeTipsAnswerHTML(answer, confidence) {
@@ -461,7 +503,7 @@ function homeReportCardHTML(cachedGrades, limit = 6) {
     const hasScore = !isNaN(score);
     const barWidth = hasScore ? Math.min(Math.max(score, 0), 100) : 0;
     const full = cleanCourseName(g.course_name);
-    const code = (full.match(/^[A-Z]{2,5}[ -]?\d{3}[A-Z]?\b/) || [full])[0]; // "MATH 132 1007 - 2026 Fall" -> "MATH 132"
+    const code = courseCode(full);
     return `<li class="rc-row${counts ? '' : ' rc-off'}">
       <span class="rc-name" title="${escapeHtml(full)}">${escapeHtml(code)}</span>
       <span class="rc-bar"><i style="width:${barWidth}%"></i></span>
@@ -735,7 +777,7 @@ function adminReportsListHTML(reports) {
 // class's current grade (a button into the grade breakdown). `collapsed` is
 // a Set of class names the student has folded shut, passed in so a
 // re-render (typing in search, checking something off) keeps them folded.
-function allWorkByClassHTML(assignments, doneSet, grades, collapsed, today) {
+function allWorkByClassHTML(assignments, doneSet, grades, collapsed, today, estimate) {
   const ref = today || (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
   const dueTime = a => a.due_date ? new Date(a.due_date).getTime() : Infinity;
   const isOverdue = a => {
@@ -784,7 +826,13 @@ function allWorkByClassHTML(assignments, doneSet, grades, collapsed, today) {
         </div>
         ${gradeBtn}
       </div>
-      <div class="awc-body"><div class="awc-inner">${g.items.map(a => aCard(a, isOverdue(a), isOverdue(a), doneSet)).join('')}</div></div>
+      <div class="awc-body"><div class="awc-inner"><div class="aw-sheet">${g.items.map(a => {
+        const late = isOverdue(a) ? Math.round((ref - new Date(new Date(a.due_date).setHours(0, 0, 0, 0))) / 864e5) : 0;
+        const when = !a.due_date ? '' : late
+          ? `${late} day${late === 1 ? '' : 's'}`
+          : new Date(a.due_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        return awRowHTML(a, doneSet, { when, overdue: isOverdue(a), estimate: estimate ? estimate(a) : null });
+      }).join('')}</div></div></div>
     </div>`;
   }).join('');
 }

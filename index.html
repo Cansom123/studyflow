@@ -513,6 +513,7 @@
     <div id="ws-card">
       <!-- State 0: manual sync triggered from inside the app (no greeting, just progress) -->
       <div id="ws-syncing" style="display:none; text-align:center; padding:8px 0 4px;">
+        <div class="ws-k">Syncing with Canvas</div>
         <div class="ws-sync-logo-wrap">
           <svg class="ws-sync-progress-ring" viewBox="0 0 100 100">
             <circle class="ws-sync-progress-track" cx="50" cy="50" r="45"/>
@@ -527,6 +528,7 @@
           </div>
         </div>
         <div id="ws-sync-percent">0%</div>
+        <div class="ws-sync-bar" aria-hidden="true"><i id="ws-sync-bar-fill"></i></div>
         <div id="ws-syncing-msg">Checking your Canvas…</div>
       </div>
 
@@ -558,6 +560,7 @@
 
       <!-- State 2: after sync result -->
       <div id="ws-result" style="display:none;">
+        <div class="ws-k">Sync done</div>
         <div class="ws-check-badge" id="ws-check-badge">
           <svg viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="11" stroke="var(--green)" stroke-width="1.5" opacity="0.35"/>
@@ -572,11 +575,12 @@
 
       <!-- State 3: sync failed -->
       <div id="ws-error" style="display:none;">
+        <div class="ws-k ws-k-err">Sync didn't finish</div>
         <div class="ws-error-badge">
           <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5 22 20.5H2L12 3.5z" stroke="var(--disconnect-color)" stroke-width="1.6" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14.5" stroke="var(--disconnect-color)" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.1" fill="var(--disconnect-color)"/></svg>
         </div>
         <div id="ws-error-title">Couldn't reach Canvas</div>
-        <div id="ws-error-sub">Check your connection and try again - nothing was lost, your last sync is still here.</div>
+        <div id="ws-error-sub">Check your connection and try again. Nothing was lost, your last sync is still here.</div>
         <div id="ws-error-detail"></div>
         <div id="ws-error-actions">
           <button id="ws-error-retry-btn" onclick="wsSync()">Try again</button>
@@ -8769,12 +8773,14 @@ if (!checkForPasswordRecovery()) routeUser();
   const WS_PROGRESS_CIRCUMFERENCE = 283;
   function startSyncProgress() {
     const fillEl = document.getElementById('ws-sync-progress-fill');
+    const barEl = document.getElementById('ws-sync-bar-fill');
     const pctEl = document.getElementById('ws-sync-percent');
     let pct = 0;
     const cap = 92;
     const setPct = p => {
       pct = p;
       if (fillEl) fillEl.style.strokeDashoffset = String(WS_PROGRESS_CIRCUMFERENCE * (1 - p / 100));
+      if (barEl) barEl.style.width = `${p}%`;
       if (pctEl) pctEl.textContent = `${Math.round(p)}%`;
     };
     setPct(0);
@@ -8821,7 +8827,7 @@ if (!checkForPasswordRecovery()) routeUser();
     } else {
       resultEl.classList.add('ws-result-calm');
       countEl.textContent   = "You're all caught up";
-      subEl.textContent     = 'nothing new in the background';
+      subEl.textContent     = 'Nothing new since your last sync.';
       viewBtn.style.display = 'none';
     }
   }
@@ -8922,7 +8928,7 @@ if (!checkForPasswordRecovery()) routeUser();
       btn.disabled = false;
       btn.textContent = btn.dataset.label;
       document.getElementById('ws-error-report-status').innerHTML =
-        `<span style="color:var(--disconnect-color);">Couldn't send - try again.</span>`;
+        `<span style="color:var(--disconnect-color);">Couldn't send. Try again.</span>`;
     }
   };
 
@@ -8946,7 +8952,7 @@ if (!checkForPasswordRecovery()) routeUser();
       statusEl.textContent = '';
     } else {
       btn.textContent = 'Send report';
-      statusEl.innerHTML = `<span style="color:var(--disconnect-color);">Couldn't send - try again.</span>`;
+      statusEl.innerHTML = `<span style="color:var(--disconnect-color);">Couldn't send. Try again.</span>`;
     }
   };
 

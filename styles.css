@@ -6606,3 +6606,75 @@ button, input, select, textarea { font-family: inherit; }
   #page-settings .settings-tab.active { background: var(--surface2); box-shadow: none; border-left-color: var(--accent); font-weight: 600; }
   #page-settings .settings-tab .st-k { display: inline; font-family: var(--font-mono); font-size: 10.5px; font-weight: 400; color: var(--text2); white-space: nowrap; }
 }
+
+/* ===========================
+   SYNC SCREEN: A TICKET ON NOTEBOOK PAPER
+   The welcome / syncing / done / error screen sits on the same ruled paper
+   as setup, in a ticket like the Study timer: a mono label, the percent in
+   big type, a solid bar, the status line. No glow, ring or spinning tile.
+=========================== */
+#ws-overlay {
+  background:
+    linear-gradient(90deg, transparent 30px, color-mix(in srgb, var(--red) 35%, transparent) 30px 32px, transparent 32px),
+    repeating-linear-gradient(180deg, transparent 0 31px, var(--border2) 31px 32px),
+    var(--bg);
+}
+#ws-card {
+  max-width: 480px; padding: 34px 32px 30px; text-align: left; border: 0; border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--border);
+  background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none;
+  -webkit-mask: radial-gradient(circle at 9px 0, transparent 6px, #000 6.5px) top left / 18px 51% repeat-x,
+                radial-gradient(circle at 9px 100%, transparent 6px, #000 6.5px) bottom left / 18px 51% repeat-x;
+          mask: radial-gradient(circle at 9px 0, transparent 6px, #000 6.5px) top left / 18px 51% repeat-x,
+                radial-gradient(circle at 9px 100%, transparent 6px, #000 6.5px) bottom left / 18px 51% repeat-x;
+}
+@media (max-height: 780px) { #ws-card { padding: 26px 24px 22px; } }
+#ws-close { background: var(--surface); border: 1px solid var(--border); }
+.ws-k { margin-bottom: 14px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); }
+.ws-k-err { color: var(--red); }
+
+/* syncing */
+#ws-syncing { text-align: left !important; padding: 0 !important; }
+.ws-sync-logo-wrap { display: none; }
+#ws-sync-percent {
+  margin: 0; font-family: "Space Grotesk", var(--font-sans); font-weight: 700; font-size: 84px;
+  letter-spacing: -0.05em; line-height: 0.9; color: var(--text1);
+}
+.ws-sync-bar { height: 10px; margin: 22px 0 14px; border-radius: 5px; background: var(--surface); border: 1px solid var(--border2); overflow: hidden; }
+.ws-sync-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s ease-out; }
+#ws-syncing-msg { margin: 0; font-size: 14px; color: var(--text2); }
+
+/* welcome */
+#ws-badge { display: none; }
+#ws-welcome { min-height: 0; }
+#ws-greeting-block { justify-content: flex-start; padding-bottom: 26px; }
+#ws-heading { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; color: var(--text1); margin-bottom: 8px; }
+#ws-date { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+#ws-streak { margin: 0 0 16px; padding: 4px 9px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px; font-weight: 500; background: var(--mark); color: var(--mark-ink); }
+.ws-flame { animation: none; }
+#ws-subtitle { font-size: 15px; margin-bottom: 18px; }
+#ws-summary { gap: 0; margin: 0; border-top: 1px solid var(--border2); }
+.ws-summary-row { padding: 11px 2px; border-radius: 0; background: none; border-bottom: 1px solid var(--border2); font-size: 14px; font-weight: 500; animation: none; }
+.ws-summary-row .ws-summary-icon { width: 20px; height: 20px; background: none; color: var(--accent); animation: none; }
+.ws-summary-row.ws-summary-announce { background: none; box-shadow: none; color: var(--text1); }
+.ws-summary-row.ws-summary-announce .ws-summary-icon { background: none; color: var(--accent); }
+#ws-sync-btn { padding: 15px; border-radius: 12px; font-size: 15px; font-weight: 600; animation: none; }
+#ws-sync-btn::after { display: none; }
+.ws-skip { margin: 12px 0 0; padding: 0; font-family: var(--font-mono); font-size: 12px; animation: none; }
+
+/* done and error */
+#ws-result, #ws-error { text-align: left; }
+.ws-check-badge, .ws-error-badge { display: none; }
+#ws-result-count, #ws-error-title { text-align: left; font-family: "Space Grotesk", var(--font-sans); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 10px; }
+#ws-result.ws-result-calm #ws-result-count { font-size: 34px; letter-spacing: -0.03em; }
+#ws-result-sub, #ws-error-sub { text-align: left; font-size: 14px; margin-bottom: 20px; }
+#ws-result.ws-result-calm #ws-result-sub { font-size: 14px; font-style: normal; opacity: 1; }
+#ws-error-detail { text-align: left; font-family: var(--font-mono); }
+#ws-view-btn { padding: 13px; border: 0; border-radius: 12px; background: var(--btn-bg); color: var(--btn-fg); font-size: 15px; }
+#ws-error-retry-btn { padding: 13px; font-weight: 600; }
+#ws-error-report-panel { background: var(--surface); border: 1px solid var(--border); }
+@media (max-width: 420px) {
+  #ws-card { padding: 28px 22px 24px; }
+  #ws-sync-percent { font-size: 68px; }
+  #ws-heading { font-size: 27px; }
+}

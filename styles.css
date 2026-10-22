@@ -6378,3 +6378,61 @@ button, input, select, textarea { font-family: inherit; }
 .upd-pane-mute { margin-left: auto; padding: 6px 4px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 13px; color: var(--text2); }
 .upd-pane-mute:hover { color: var(--text1); }
 .upd-pane-empty { padding: 60px 26px; text-align: center; font-size: 14px; color: var(--text2); }
+
+/* ===========================
+   LINKS: INDEX CARDS
+   Each class is a ruled index card with a colored left edge and the class
+   code big; links not filed under a class are bookmark tabs with a colored
+   bottom edge. "Edit links" folds out the full list and the add form.
+   js/links-cards.js.
+=========================== */
+#class-links-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin-bottom: 30px; }
+.lk-card {
+  --edge: oklch(0.58 0.15 var(--h));
+  display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--border); border-left: 5px solid var(--edge);
+  border-radius: 6px 14px 14px 6px; overflow: hidden; background: var(--surface);
+}
+.lk-card-head { display: flex; flex-direction: column; gap: 6px; padding: 16px 20px 12px; border-bottom: 1px solid var(--border2); color: inherit; text-decoration: none; }
+.lk-card-head:hover .lk-code { color: var(--accent); }
+.lk-code { font-family: "Space Grotesk", var(--font-sans); font-weight: 700; font-size: 26px; letter-spacing: -0.03em; line-height: 1; color: var(--text1); overflow-wrap: anywhere; }
+.lk-code.long { font-size: 19px; line-height: 1.15; }
+.lk-name { font-size: 13px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-btns { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 10px 20px; border-bottom: 1px solid var(--border2); }
+.lk-btns .hm-btn { padding: 5px 8px; border-radius: 9px; font-size: 12px; text-decoration: none; background: var(--surface); }
+.lk-saved {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-top: auto; padding: 10px 20px 12px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text2);
+}
+.lk-saved span { font-family: var(--font-mono); }
+.lk-saved button { padding: 0; border: 0; background: none; cursor: pointer; font: inherit; font-family: var(--font-sans); font-size: 13px; color: var(--accent); }
+.lk-saved button:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+.lk-marks-h { margin-bottom: 12px; }
+.lk-marks { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 26px; }
+.lk-mark {
+  display: inline-flex; align-items: center; gap: 9px; max-width: 100%; min-width: 0; padding: 10px 14px 9px;
+  border: 1px solid var(--border); border-bottom: 3px solid oklch(0.58 0.15 var(--h)); border-radius: 12px 12px 3px 3px;
+  background: var(--surface); cursor: pointer; font: inherit; font-size: 14px; color: var(--text1);
+}
+.lk-mark:hover { background: var(--surface2); }
+.lk-fav { display: grid; place-items: center; width: 22px; height: 22px; flex-shrink: 0; border-radius: 6px; background: var(--surface2); font-size: 12px; color: var(--text2); }
+.lk-fav img { width: 14px; height: 14px; }
+.lk-mark-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-host { font-family: var(--font-mono); font-size: 11px; color: var(--text2); white-space: nowrap; }
+.lk-add { border-style: dashed; border-bottom-width: 1px; border-radius: 12px; color: var(--text2); background: none; }
+.lk-add:hover { color: var(--text1); }
+
+.lk-manage { border-top: 1px dashed var(--border); padding-top: 14px; }
+.lk-manage > summary {
+  display: flex; align-items: baseline; gap: 10px; cursor: pointer; list-style: none;
+  font-size: 15px; font-weight: 600; color: var(--text1);
+}
+.lk-manage > summary::-webkit-details-marker { display: none; }
+.lk-manage > summary .hm-k { font-weight: 400; }
+.lk-manage > summary::before { content: '▸'; font-size: 12px; color: var(--text2); transition: transform 0.15s; }
+.lk-manage[open] > summary::before { transform: rotate(90deg); }
+.lk-manage[open] > summary { margin-bottom: 14px; }
+@media (max-width: 600px) {
+  #class-links-list { grid-template-columns: minmax(0, 1fr); }
+  .lk-host { display: none; }
+}

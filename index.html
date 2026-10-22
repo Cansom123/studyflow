@@ -1320,10 +1320,16 @@
 
       <!-- LINKS -->
       <div class="page" id="page-links">
+        <!-- A card per class, then links not filed under a class as bookmark
+             tabs (js/links-cards.js). Pinning, filing and removing live in
+             "Edit links" below. -->
         <div id="class-links-section" style="display:none;">
-          <div class="section-label" style="margin-top:0;">Your classes</div>
           <div id="class-links-list"></div>
         </div>
+        <div class="hm-sec-h lk-marks-h"><h2>Your bookmarks</h2><span class="hm-k">Not tied to a class</span></div>
+        <div id="links-bookmarks" class="lk-marks"></div>
+        <details class="lk-manage" id="links-manage">
+        <summary>Edit links <span class="hm-k" id="links-manage-k"></span></summary>
         <div class="section-label" id="custom-links-label" style="margin-top:0;">Your links</div>
         <div id="links-list"></div>
         <div class="section-label" style="margin-top:20px;">Add a link</div>
@@ -1339,6 +1345,7 @@
           <button class="settings-btn" style="margin-top:10px;" onclick="addCustomLink()">+ Add link</button>
         </div>
         <button class="settings-btn" style="margin-top:14px;" onclick="replayLinksTutorial()">How to add a link</button>
+        </details>
       </div>
 
       <!-- SYLLABUS -->
@@ -9007,5 +9014,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/home-notebook.js"></script>
 <script src="js/study-desk.js"></script>
 <script src="js/updates-inbox.js"></script>
+<script src="js/links-cards.js"></script>
 </body>
 </html>

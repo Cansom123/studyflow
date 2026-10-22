@@ -530,6 +530,11 @@
         <div id="ws-sync-percent">0%</div>
         <div class="ws-sync-bar" aria-hidden="true"><i id="ws-sync-bar-fill"></i></div>
         <div id="ws-syncing-msg">Checking your Canvas…</div>
+        <!-- Shown after 15s: leave the sync screen and let it finish in the background -->
+        <div class="ws-slow" id="ws-slow" hidden>
+          <p>Canvas is taking longer than usual. You can keep using Duesday and the sync will finish in the background.</p>
+          <button type="button" class="hm-btn" onclick="wsKeepUsing()">Keep using Duesday</button>
+        </div>
       </div>
 
       <!-- State 1: initial prompt -->
@@ -8834,6 +8839,35 @@ if (!checkForPasswordRecovery()) routeUser();
     }
   }
 
+  // A slow sync shouldn't trap the student on this screen: after 15s a note
+  // offers "Keep using Duesday", which closes the screen and lets the sync
+  // finish in the background. runCanvasSync then shows what's new the same
+  // way it does after an auto-sync; a failure gets a short message instead.
+  const WS_SLOW_MS = 15000;
+  let wsBackgrounded = false;
+  function armSlowSyncNote() {
+    wsBackgrounded = false;
+    const note = document.getElementById('ws-slow');
+    if (note) note.hidden = true;
+    return setTimeout(() => { if (note && syncPromise) note.hidden = false; }, WS_SLOW_MS);
+  }
+  // True when the student left for the app: the caller skips its own result screen.
+  function settleSlowSyncNote(timer, outcome) {
+    clearTimeout(timer);
+    const note = document.getElementById('ws-slow');
+    if (note) note.hidden = true;
+    if (!wsBackgrounded) return false;
+    wsBackgrounded = false;
+    if (!outcome.ok) showReward("Sync didn't finish. Try again with the sync button.", 'error');
+    return true;
+  }
+  window.wsKeepUsing = function () {
+    wsBackgrounded = true;
+    trackEvent('sync_backgrounded');
+    wsClose();
+    showReward("Still syncing. Your assignments will update when it's done.", 'sync');
+  };
+
   // Hands off to the same dedicated syncing screen "Sync now" uses elsewhere
   // in the app (progress ring, spinning logo, cycling status line) instead of
   // just disabling this button in place -- a button that quietly relabels
@@ -8844,9 +8878,11 @@ if (!checkForPasswordRecovery()) routeUser();
     document.getElementById('ws-error').style.display    = 'none';
     document.getElementById('ws-syncing').style.display  = 'block';
     const progress = startSyncProgress();
+    const slowTimer = armSlowSyncNote();
     const msgEl = document.getElementById('ws-syncing-msg');
     const outcome = await runSyncWithMessages(msg => { msgEl.textContent = msg; bumpSyncLogo(); });
     await progress.finish();
+    if (settleSlowSyncNote(slowTimer, outcome)) return;
     if (outcome.ok) showSyncResult(); else showSyncError(outcome.error);
   };
 
@@ -8862,9 +8898,11 @@ if (!checkForPasswordRecovery()) routeUser();
     document.getElementById('ws-syncing').style.display  = 'block';
     document.getElementById('ws-logo-row').style.display = 'flex';
     const progress = startSyncProgress();
+    const slowTimer = armSlowSyncNote();
     const msgEl = document.getElementById('ws-syncing-msg');
     const outcome = await runSyncWithMessages(msg => { msgEl.textContent = msg; bumpSyncLogo(); });
     await progress.finish();
+    if (settleSlowSyncNote(slowTimer, outcome)) return;
     if (outcome.ok) showSyncResult(); else showSyncError(outcome.error);
   };
 

@@ -6313,3 +6313,68 @@ button, input, select, textarea { font-family: inherit; }
   #study-chain-grid .cal-day-chain-x::after { font-size: 16px; }
   [data-dwmark="bold"] #study-chain-grid .cal-day-chain-x::after { font-size: 22px; }
 }
+
+/* ===========================
+   UPDATES: AN INBOX WITH A READING PANE
+   On laptops the feed is a compact list (unread dot, a mono type label,
+   title, class code and sender, time) beside a sticky reading pane that
+   shows the picked update on ruled paper with a red margin line. Phones
+   and tablets keep the expanding cards. js/updates-inbox.js.
+=========================== */
+.upd-pane { display: none; }
+@media (min-width: 1100px) {
+  .upd-inbox.on { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 22px; align-items: start; margin-top: 12px; }
+  .upd-inbox.on #updates-list { border: 1px solid var(--border); border-radius: 18px; background: var(--surface); overflow: hidden; }
+  .upd-inbox.on .upd-day {
+    margin: 0; padding: 18px 18px 8px; border-bottom: 1px solid var(--border2);
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2);
+  }
+  .upd-inbox.on .upd-day::before, .upd-inbox.on .upd-day::after { display: none; }
+  .upd-inbox.on .upd-pane {
+    display: block; position: sticky; top: 80px; max-height: calc(100vh - 100px); overflow-y: auto;
+    border: 1px solid var(--border); border-radius: 18px; background: var(--surface);
+  }
+}
+.upd-row {
+  position: relative; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 12px; align-items: start;
+  padding: 13px 18px 13px 16px; border-bottom: 1px solid var(--border2); cursor: pointer;
+}
+.upd-row:last-child { border-bottom: 0; }
+.upd-row:hover { background: var(--surface2); }
+.upd-row.sel { background: var(--surface2); box-shadow: inset 3px 0 0 var(--accent); }
+.upd-row:focus-visible { outline: 2px solid var(--text1); outline-offset: -2px; }
+.upd-row-dot { width: 7px; height: 7px; margin-top: 6px; border-radius: 50%; }
+.upd-row.unread .upd-row-dot { background: var(--accent); }
+.upd-row-main { min-width: 0; }
+.upd-row-t { font-size: 14.5px; line-height: 1.35; color: var(--text2); }
+.upd-row.unread .upd-row-t { font-weight: 600; color: var(--text1); }
+.upd-row-k {
+  margin-right: 7px; font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent);
+}
+.upd-row-sub { margin-top: 3px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upd-row-when { padding-top: 2px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); white-space: nowrap; }
+
+.upd-pane-head { padding: 24px 26px 16px; border-bottom: 1px dashed var(--border); }
+.upd-pane-k { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.upd-pane-title { margin: 8px 0 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; color: var(--text1); }
+.upd-pane-meta { margin-top: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--text2); }
+.upd-pane-body {
+  padding: 8px 26px 26px 60px; white-space: pre-line; overflow-wrap: anywhere;
+  font-size: 15px; line-height: 28px; color: var(--text1);
+  background:
+    linear-gradient(90deg, transparent 36px, color-mix(in srgb, var(--red) 60%, transparent) 36px 37.5px, transparent 37.5px),
+    repeating-linear-gradient(180deg, transparent 0 27px, var(--border2) 27px 28px);
+}
+.upd-pane-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.upd-pane-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 26px 22px; border-top: 1px solid var(--border2); }
+.upd-pane-actions .hm-btn { padding: 8px 13px; font-size: 13.5px; text-decoration: none; }
+.upd-pane-actions .hm-btn.on { color: var(--amber); }
+.upd-ask {
+  padding: 8px 13px; border-radius: 12px; border: 0; cursor: pointer;
+  font: inherit; font-size: 13.5px; font-weight: 500; background: var(--mark); color: var(--mark-ink);
+}
+.upd-ask:hover { opacity: 0.9; }
+.upd-pane-mute { margin-left: auto; padding: 6px 4px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 13px; color: var(--text2); }
+.upd-pane-mute:hover { color: var(--text1); }
+.upd-pane-empty { padding: 60px 26px; text-align: center; font-size: 14px; color: var(--text2); }

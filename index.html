@@ -1229,7 +1229,11 @@
           <button class="upd-markall" id="updates-markall" onclick="markAllUpdatesRead()">Mark all as read</button>
         </div>
         <div id="updates-muted"></div>
-        <div id="updates-list"></div>
+        <!-- On laptops the list sits beside a reading pane (js/updates-inbox.js) -->
+        <div class="upd-inbox" id="updates-inbox">
+          <div id="updates-list"></div>
+          <aside class="upd-pane" id="updates-pane" aria-live="polite"></aside>
+        </div>
       </div>
 
       <!-- MESSAGES (Canvas Inbox/Conversations) -->
@@ -9002,5 +9006,6 @@ if (!checkForPasswordRecovery()) routeUser();
 <script src="js/exam-radar.js"></script>
 <script src="js/home-notebook.js"></script>
 <script src="js/study-desk.js"></script>
+<script src="js/updates-inbox.js"></script>
 </body>
 </html>

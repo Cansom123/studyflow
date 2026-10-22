@@ -419,19 +419,19 @@ function syllabusSearchResultsHTML(cachedSyllabi, syllabusCourses, query) {
 // is available. withGrades should already be filtered to courses that
 // have a published grade.
 function gradeCardsHTML(withGrades) {
-  const barColors = { 'grade-a': 'var(--green)', 'grade-b': 'var(--accent)', 'grade-c': 'var(--amber)', 'grade-df': 'var(--red)' };
-  return withGrades.map(g => {
+  // Classes that don't count toward the average (0% with no letter) go last, dimmed.
+  const counts = g => averageGrade([g]).count > 0;
+  return [...withGrades].sort((x, y) => counts(y) - counts(x)).map(g => {
     const score = g.current_score != null ? parseFloat(g.current_score) : parseFloat(g.final_score);
     const { letter, estimated } = displayLetter(g);
     const cleanName = cleanCourseName(g.course_name);
     const letterClass = letterGradeClass(letter);
     const scoreText = !isNaN(score) ? `${score.toFixed(1)}%` : '';
-    const barColor = barColors[letterClass] || 'var(--accent)';
     const barWidth = !isNaN(score) ? Math.min(Math.max(score, 0), 100) : 0;
-    return `<div class="card grade-card" data-course="${escapeHtml(g.course_name)}" onclick="openGradeDetail(this.dataset.course)">
+    return `<div class="card grade-card${counts(g) ? '' : ' grade-card-off'}" data-course="${escapeHtml(g.course_name)}" onclick="openGradeDetail(this.dataset.course)">
       <div class="grade-card-left">
         <div class="grade-card-name">${cleanName}</div>
-        ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="--w:${barWidth}%;background:${barColor}"></div></div>` : ''}
+        ${barWidth > 0 ? `<div class="grade-bar-wrap"><div class="grade-bar" style="--w:${barWidth}%"></div></div>` : ''}
         ${typeof gradeSparkHTML === 'function' ? gradeSparkHTML(g.course_name) : ''}
         <div class="grade-breakdown-hint">Tap to see what's affecting this grade</div>
       </div>
@@ -443,8 +443,6 @@ function gradeCardsHTML(withGrades) {
   }).join('');
 }
 
-// Home's compact grade list: just name + letter, capped at `limit` courses,
-// with the same empty-state message as the original.
 // Home's report card: one ruled row per class (name, a solid bar, the
 // percent, the letter). Classes that don't count (0% with no letter, like a
 // placement test) go last and dim, the same rule the average uses.

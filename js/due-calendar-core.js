@@ -45,6 +45,8 @@ function buildDueCalendarCells(year, month, dueCalAssignments, cachedStudySessio
       isSelected: key === selectedDate,
       count: (byDate[key] || []).length,
       hasStudy: !!(studyByDate[key] || []).length,
+      items: byDate[key] || [],
+      studies: studyByDate[key] || [],
     };
   });
 }

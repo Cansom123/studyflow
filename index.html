@@ -5843,7 +5843,7 @@ function schoolAIBannerHTML(idPrefix) {
     <div class="school-ai-banner" id="${idPrefix}-banner">
       <div class="school-ai-banner-text">
         <div class="school-ai-banner-title">Turn on coco.1</div>
-        <div class="school-ai-banner-sub">Real understanding, not just keyword matching. Runs on your device - one-time ~1.9GB download, free, no account needed. Still occasionally wrong on tricky questions, so always double-check anything important.</div>
+        <div class="school-ai-banner-sub">Real understanding, not just keyword matching. Runs on your device: a one-time ~1.9GB download, free, no account needed. Still occasionally wrong on tricky questions, so always double-check anything important.</div>
         <div class="school-ai-progress-wrap" id="${idPrefix}-progress-wrap" style="display:none;">
           <div class="school-ai-progress-bar"><div class="school-ai-progress-fill" id="${idPrefix}-progress-fill"></div></div>
           <div class="school-ai-progress-label" id="${idPrefix}-progress-label">Starting…</div>
@@ -7181,12 +7181,32 @@ function renderDueCalendar() {
   const todayStr = ymd(new Date());
   const cells = buildDueCalendarCells(year, month, dueCalAssignments, cachedStudySessions, todayStr, dueCalSelectedDate);
 
+  // Exams from the exam radar (Canvas and ones the student added), by day,
+  // so the month view can show them in red.
+  const examsByKey = {};
+  (typeof examRadarList === 'function' ? examRadarList() : []).forEach(e => { (examsByKey[ymd(e.date)] = examsByKey[ymd(e.date)] || []).push(e); });
+  const CHIP_LIMIT = 3;
+  const chipsHTML = c => {
+    const exams = examsByKey[c.key] || [];
+    const chips = c.items.map(a => ({
+      title: a.title,
+      cls: exams.some(e => e.title === a.title) ? 'exam' : isAssignmentChecked(a, doneSet) ? 'done' : '',
+    }));
+    exams.filter(e => e.source === 'manual').forEach(e => chips.unshift({ title: e.title, cls: 'exam' }));
+    c.studies.forEach(s => chips.push({ title: s.title || 'Study', cls: 'study' }));
+    chips.sort((x, y) => (y.cls === 'exam') - (x.cls === 'exam'));
+    const shown = chips.slice(0, CHIP_LIMIT);
+    const more = chips.length - shown.length;
+    return chips.length ? `<div class="cal-day-items">${shown.map(ch => `<span class="cal-it ${ch.cls}" title="${escapeHtml(ch.title)}">${escapeHtml(ch.title)}</span>`).join('')}${more > 0 ? `<span class="cal-it-more">+${more} more</span>` : ''}</div>` : '';
+  };
+
   gridEl.innerHTML = cells.map(c => `<div class="cal-day${c.otherMonth ? ' other-month' : ''}${c.isToday ? ' today' : ''}${c.isSelected ? ' selected' : ''}" data-key="${c.key}" onclick="selectDueCalDate('${c.key}')">
       <div class="cal-day-num">${c.dnum}</div>
       <div class="cal-day-dots">
         ${c.count ? `<div class="cal-day-count">${c.count}</div>` : ''}
         ${c.hasStudy ? `<div class="cal-day-study-dot" title="Study time scheduled"></div>` : ''}
       </div>
+      ${chipsHTML(c)}
     </div>`).join('');
 
   decorateSyllabusDates();

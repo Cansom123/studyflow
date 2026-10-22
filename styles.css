@@ -5720,3 +5720,169 @@ button, input, select, textarea { font-family: inherit; }
   .rc-row { grid-template-columns: minmax(0, 1fr) 54px 56px; }
   .rc-bar { display: none; }
 }
+
+/* ===========================
+   NOTEBOOK THEME: UPCOMING, PRIORITY, GRADES (step 4)
+   Page titles on every tab get the notebook heading (big title, one line
+   under it, a dashed rule). Upcoming's month view lists each day's work
+   (exams in red, study blocks dashed) next to the day panel; Priority puts
+   coco.1's suggestion on a sticky note beside the planner and ranks work
+   with big numbers; Grades are ruled cards with a solid bar.
+=========================== */
+.page-head { display: block; margin: 0 0 22px; padding-bottom: 20px; border-bottom: 1.5px dashed var(--border); }
+.page-head-icon { display: none; }
+.page-head-title { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; }
+.page-head-sub { margin-top: 6px; font-size: 15px; white-space: normal; }
+@media (max-width: 600px) {
+  .page-head { margin-bottom: 18px; padding-bottom: 16px; }
+  .page-head-title { font-size: 26px; }
+  .page-head-sub { font-size: 14px; }
+}
+
+/* -- Upcoming -- */
+#page-due .home-stats-strip {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px;
+  background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; animation: none;
+}
+#page-due .home-stat, #page-due .home-stat + .home-stat {
+  flex: none; display: flex; flex-direction: row-reverse; align-items: baseline; gap: 6px;
+  padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface2);
+}
+#page-due .home-stat .stat-label {
+  margin: 0; font-family: var(--font-sans); font-size: 13px; font-weight: 400; letter-spacing: 0; text-transform: lowercase; color: var(--text2);
+}
+#page-due .home-stat .stat-val { font-size: 14px; font-weight: 500; letter-spacing: 0; }
+#page-due .home-stat:has(#stat-overdue) { border-color: color-mix(in srgb, var(--red) 45%, transparent); }
+
+@media (min-width: 601px) { .due-cal-card { max-width: none; } }
+@media (min-width: 1100px) {
+  .due-cal-layout { grid-template-columns: minmax(0, 1.45fr) minmax(300px, 1fr); gap: 22px; }
+  .due-day-panel {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 18px; box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  #due-cal-selected-label { font-size: 18px; font-weight: 600; }
+}
+.due-cal-card { container-type: inline-size; }
+.due-cal-card .cal-title { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.cal-today-btn { background: var(--surface2); color: var(--text1); border: 1px solid var(--border); font-weight: 500; }
+#due-cal-grid { gap: 6px; }
+.due-cal-card .cal-dow-row { gap: 6px; }
+.due-cal-card .cal-dow {
+  font-family: var(--font-mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.1em;
+  background: none; color: var(--text2); border: 0; box-shadow: none; padding: 0 0 4px;
+}
+
+/* month cells: the day number in a circle, then the day's work as chips */
+#due-cal-grid .cal-day:not(.cal-wday) {
+  aspect-ratio: auto; min-height: 84px; padding: 6px; gap: 4px; min-width: 0;
+  align-items: stretch; justify-content: flex-start;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+}
+#due-cal-grid .cal-day:not(.cal-wday) .cal-day-num {
+  width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--text2);
+}
+#due-cal-grid .cal-day.today .cal-day-num { background: var(--mark); color: #1c2340; font-weight: 600; }
+#due-cal-grid .cal-day.today { border-color: var(--border); }
+#due-cal-grid .cal-day.selected { border: 2px solid var(--accent); padding: 5px; background: var(--surface); }
+#due-cal-grid .cal-day:hover { background: var(--surface2); }
+#due-cal-grid .cal-day:not(.cal-wday) .cal-day-dots { position: absolute; top: 9px; right: 7px; }
+.cal-day-items { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cal-it {
+  display: block; padding: 3px 5px; border-radius: 5px; min-width: 0;
+  font-size: 10.5px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: color-mix(in srgb, var(--accent) 13%, transparent); color: var(--text1);
+}
+.cal-it.exam { background: var(--red); color: #fff; font-weight: 600; }
+.cal-it.study { background: transparent; border: 1px dashed var(--accent); color: var(--accent); padding: 2px 4px; }
+.cal-it.done { background: transparent; color: var(--text2); text-decoration: line-through; }
+.cal-it-more { font-family: var(--font-mono); font-size: 10px; color: var(--text2); padding-left: 2px; }
+/* with room for chips, the count bubble and study dot are redundant */
+@container (min-width: 520px) {
+  #due-cal-grid .cal-day-count, #due-cal-grid .cal-day-study-dot { display: none; }
+}
+/* a narrow calendar: chips shrink to thin colored bars */
+@container (max-width: 519px) {
+  #due-cal-grid .cal-day:not(.cal-wday) { min-height: 56px; padding: 4px; border-radius: 9px; }
+  #due-cal-grid .cal-day.selected { padding: 3px; }
+  #due-cal-grid .cal-day:not(.cal-wday) .cal-day-num { width: 20px; height: 20px; font-size: 11px; }
+  #due-cal-grid .cal-day:not(.cal-wday) .cal-day-dots { top: 5px; right: 3px; }
+  #due-cal-grid .cal-day-count { min-width: 13px; height: 13px; font-size: 8.5px; padding: 0 2px; }
+  .cal-it { font-size: 0; padding: 0; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 45%, transparent); }
+  .cal-it.study { padding: 0; }
+  .cal-it-more { display: none; }
+}
+/* week view: exams and study in the same language */
+.cwd-item.key .cwd-dot { background: var(--red); }
+
+.cal-drag-chip { border: 1.5px dashed var(--accent); color: var(--accent); background: none; border-radius: 10px; }
+.cal-drag-hint { font-family: var(--font-mono); font-size: 11px; }
+
+/* -- Priority -- */
+@media (min-width: 901px) {
+  #page-priority.active { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 0 22px; align-items: start; }
+  #page-priority > * { grid-column: 1 / -1; }
+  #page-priority > .ai-box, #page-priority > #planning-ai-box { grid-column: auto; margin-top: 0 !important; }
+}
+#page-priority .ai-box {
+  position: relative; margin: 8px 0 24px; padding: 22px 18px 18px; border: 0;
+  background: color-mix(in srgb, var(--mark) 55%, #fffbe8); color: #1c2340;
+  border-radius: 2px 2px 16px 2px; transform: rotate(-1deg); box-shadow: 0 16px 24px -16px rgba(0, 0, 0, 0.4);
+}
+#page-priority .ai-box::before {
+  content: ''; position: absolute; top: -10px; left: 50%; width: 76px; height: 20px;
+  transform: translateX(-50%) rotate(-3deg); background: rgba(255, 255, 255, 0.55); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+#page-priority .ai-label { color: #1c2340; opacity: 0.75; font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.1em; }
+#page-priority .ai-dot { color: #2747d6; animation: none; }
+#page-priority .ai-text { color: #1c2340; font-size: 15px; line-height: 1.4; }
+#planning-ai-box { margin-bottom: 24px; padding: 20px !important; border-radius: 18px; }
+#planning-ai-box .section-label { margin-bottom: 10px; }
+
+#priority-list { display: block; }
+#priority-list .priority-card {
+  display: grid; grid-template-columns: auto 52px minmax(0, 1fr); gap: 14px; align-items: center;
+  padding: 16px 18px; margin-bottom: 10px; border-radius: 16px;
+  background: var(--surface2); border: 1px solid var(--border); box-shadow: none;
+}
+#priority-list .priority-card:hover { transform: none; box-shadow: none; border-color: color-mix(in srgb, var(--text1) 30%, transparent); }
+#priority-list .priority-num {
+  width: auto; height: auto; padding: 0; border-radius: 0; background: none; color: var(--text2); justify-self: start;
+  font-family: "Space Grotesk", var(--font-sans); font-weight: 700; font-size: 36px; letter-spacing: -0.05em; line-height: 1;
+}
+#priority-list > .priority-card:first-child { border: 2px solid var(--text1); background: var(--surface); padding: 15px 17px; }
+#priority-list > .priority-card:first-child .priority-num {
+  color: var(--text1); background: linear-gradient(transparent 55%, var(--mark) 55%, var(--mark) 90%, transparent 90%);
+  padding: 0 5px; margin-left: -5px;
+}
+[data-theme="dark"] #priority-list > .priority-card:first-child .priority-num {
+  background: linear-gradient(transparent 88%, var(--mark) 88%);
+}
+#priority-list .card-title { font-size: 15.5px; font-weight: 600; }
+#priority-list .card-sub { font-family: var(--font-mono); font-size: 11.5px; }
+.priority-completed-label { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.12em; }
+@media (max-width: 600px) {
+  #priority-list .priority-card { grid-template-columns: auto 36px minmax(0, 1fr); gap: 10px; padding: 14px; }
+  #priority-list > .priority-card:first-child { padding: 13px; }
+  #priority-list .priority-num { font-size: 28px; }
+}
+
+/* -- Grades -- */
+@media (min-width: 901px) {
+  #grades-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+#grades-cards .grade-card {
+  margin: 0 0 10px; padding: 16px 18px; border-radius: 16px;
+  background: var(--surface2); border: 1px solid var(--border); box-shadow: none;
+}
+@media (min-width: 901px) { #grades-cards .grade-card { margin: 0; } }
+#grades-cards .grade-card:hover { border-color: var(--accent); }
+#grades-cards .grade-card-off { opacity: 0.6; }
+.grade-card-name { font-size: 15px; font-weight: 600; }
+.grade-bar-wrap { height: 8px; margin-top: 10px; background: var(--surface); border: 1px solid var(--border2); }
+.grade-bar { background: var(--accent); }
+.grade-breakdown-hint { font-family: var(--font-mono); font-size: 10.5px; margin-top: 8px; }
+.grade-card-right { padding-left: 6px; }
+.grade-card-letter { font-family: "Space Grotesk", var(--font-sans); font-size: 28px; letter-spacing: -0.03em; }
+.grade-card-pct { font-family: var(--font-mono); font-size: 12.5px; font-weight: 400; margin-top: 4px; }

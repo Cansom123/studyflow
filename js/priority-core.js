@@ -21,6 +21,9 @@ function priorityGradeRiskBoost(course, cachedGrades) {
   if (!g) return 0;
   const pct = g.current_score != null ? g.current_score : g.final_score;
   if (pct == null || pct >= 70) return 0;
+  // 0% with no letter isn't a real grade (a placement test, an ungraded
+  // orientation class), the same rule as the average on Home and Grades.
+  if (Number(pct) === 0 && !g.current_grade && !g.final_grade) return 0;
   return Math.min(35, (70 - pct) * 1.2);
 }
 
@@ -74,10 +77,10 @@ function priorityAiText(top, userGoals, cachedGrades) {
   const matchingGoal = top.goal;
   const gradeAtRisk = priorityGradeRiskBoost(top.course, cachedGrades) > 0;
   if (matchingGoal && top.d < 0) return `"${top.title}" is overdue, and it's in the class tied to your goal "${matchingGoal}". Take care of it first.`;
-  if (matchingGoal) return `"${top.title}" is your top priority - it's in the class tied to your goal "${matchingGoal}". Start here.`;
+  if (matchingGoal) return `"${top.title}" is your top priority. It's in the class tied to your goal "${matchingGoal}", so start here.`;
   if (top.d < 0) return `"${top.title}" is overdue. Take care of that first.`;
-  if (top.d <= 1) return `"${top.title}" is due ${top.d === 0 ? 'today' : 'tomorrow'} - that's your top priority.`;
-  if (gradeAtRisk) return `"${top.title}" is your top priority - your grade in ${top.course} could use the attention.`;
+  if (top.d <= 1) return `"${top.title}" is due ${top.d === 0 ? 'today' : 'tomorrow'}, so it's your top priority.`;
+  if (gradeAtRisk) return `"${top.title}" is your top priority. Your grade in ${cleanCourseName(top.course)} could use the attention.`;
   return `Your most urgent assignment is "${top.title}", due in ${top.d} days. Start there.`;
 }
 

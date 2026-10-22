@@ -51,7 +51,7 @@ function buildReportHTML() {
     ? `<table><thead><tr>${head.map((h, i) => `<th${/pts|grade|%|now|target|letter/i.test(h) && i ? ' class="num"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`
     : `<p class="empty">${empty}</p>`;
 
-  return `<!doctype html><html><head><meta charset="utf-8"><title>StudyFlow Report - ${esc(today.toLocaleDateString('en-US'))}</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Duesday Report - ${esc(today.toLocaleDateString('en-US'))}</title>
 <style>
   @page { margin: 16mm 14mm; }
   * { box-sizing: border-box; }
@@ -82,7 +82,7 @@ function buildReportHTML() {
 <h2>At a glance</h2>
 <div class="stats">
   <div class="stat"><b>${open.length}</b><span>assignments still to do</span></div>
-  <div class="stat"><b>${typeof getCompletedCount === 'function' ? getCompletedCount() : done.length}</b><span>assignments done in StudyFlow</span></div>
+  <div class="stat"><b>${typeof getCompletedCount === 'function' ? getCompletedCount() : done.length}</b><span>assignments done in Duesday</span></div>
   <div class="stat"><b>${esc(st.weekFmt)}</b><span>studied in the last 7 days</span></div>
   <div class="stat"><b>${esc(st.totalFmt)}</b><span>studied in total</span></div>
 </div>
@@ -102,7 +102,7 @@ ${done.length > 60 ? `<p class="note">Showing the 60 most recent.</p>` : ''}
 <h2>Goals</h2>
 ${table(['Goal', 'Class', 'Now', 'Target', 'Status'], goalRows, 'No goals set yet.')}
 
-<footer>Made with StudyFlow. Grades and assignments come from Canvas as of the last sync.</footer>
+<footer>Made with Duesday. Grades and assignments come from Canvas as of the last sync.</footer>
 </body></html>`;
 }
 
@@ -165,7 +165,7 @@ function exportAssignmentsCsv() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'StudyFlow Assignments.csv';
+  a.href = url; a.download = 'Duesday Assignments.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   showReward('Saved. Open it with Excel, or import it into Google Sheets.', 'check');

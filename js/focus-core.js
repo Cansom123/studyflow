@@ -6,11 +6,11 @@
 // testable without a document.
 
 function computeFocusDocTitle(focusState, focusOriginalTitle) {
-  if (focusState.awaiting) return focusOriginalTitle || 'StudyFlow';
+  if (focusState.awaiting) return focusOriginalTitle || 'Duesday';
   const label = focusState.phase === 'study' ? 'Studying' : 'Break';
   return focusState.paused
-    ? `⏸ ${fmtClock(focusState.remainingSec)} - StudyFlow`
-    : `${fmtClock(focusState.remainingSec)} · ${label} - StudyFlow`;
+    ? `⏸ ${fmtClock(focusState.remainingSec)} - Duesday`
+    : `${fmtClock(focusState.remainingSec)} · ${label} - Duesday`;
 }
 
 function computeFocusMiniBarView(focusState) {

@@ -1,5 +1,5 @@
 /* ===========================
-   coco.1 CONTEXT BUILDERS (grade tips + planning mode)
+   Choom CONTEXT BUILDERS (grade tips + planning mode)
    Ninth/eleventh modules in the multi-file split, and the ones that
    required a real (small) refactor rather than a pure cut-and-paste: these
    used to read cachedGradedAssignments/cachedAssignments/cachedGrades/
@@ -15,7 +15,7 @@
    course-level current_score/final_score already in cachedGrades.
 
    cocoPlanningContext: a structured summary of what's actually due, so
-   coco.1 can't invent assignments, courses, or dates that aren't real.
+   Choom can't invent assignments, courses, or dates that aren't real.
 =========================== */
 
 
@@ -38,7 +38,7 @@ function gradeBreakdownForCourse(courseName, cachedGradedAssignments, cachedAssi
   return { graded, missing, lowPerformers, openWork, allClosed: openWork.length === 0 };
 }
 
-// The structured, real-data-only context coco.1's grade-tips feature reads
+// The structured, real-data-only context Choom's grade-tips feature reads
 // from and is verified against (see cocoVerifyGradeTips in coco-verify.js).
 // Same refactor as gradeBreakdownForCourse above: used to read cachedGrades
 // directly, now every dependency is a plain parameter.
@@ -125,10 +125,10 @@ function cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cac
   };
 }
 
-// Structured summary of what's actually due, so coco.1 can't invent assignments,
+// Structured summary of what's actually due, so Choom can't invent assignments,
 // courses, or dates that aren't real. Capped so a heavy course load doesn't
 // blow the small model's context window.
-// extras (all optional, from the rest of the app so coco.1 agrees with it):
+// extras (all optional, from the rest of the app so Choom agrees with it):
 //   exams         upcoming exams from the exam radar (exam-core.js collectExams)
 //   undatedExams  exams Canvas knows about with no date yet (undatedExams)
 //   today3        Today's 3 picks: [{ title, course, minutes }]
@@ -180,7 +180,7 @@ function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals
   let text = '';
   if (overdue.length) text += `OVERDUE — ALREADY LATE, the deadline has PASSED (handle these first):\n${overdue.map(fmtLine).join('\n')}\n\n`;
   if (upcoming.length) text += `Upcoming:\n${upcoming.map(fmtLine).join('\n')}`;
-  // Work Canvas has closed. Listed separately and labeled so coco.1 never
+  // Work Canvas has closed. Listed separately and labeled so Choom never
   // tells a student to finish or submit something that can't be turned in.
   if (closedWork.length) {
     const closedLine = a => `- ${a.title} (${a.course || 'unknown course'}${a.points_possible ? `, ${a.points_possible} pts` : ''})`;
@@ -245,7 +245,7 @@ function cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals
     text += `\n\nEXAMS WITH NO DATE IN CANVAS YET (real exams, usually given in class; the date is unknown, so never state one):\n${undated.slice(0, 6).map(undatedLine).join('\n')}`;
   }
 
-  // What the app's Home already shows as today's focus, so coco.1 and the
+  // What the app's Home already shows as today's focus, so Choom and the
   // app don't contradict each other.
   if ((extras.today3 || []).length) {
     text += `\n\nTODAY'S 3 (what the app already shows as today's focus, with time estimates):\n${extras.today3.map(t => `- ${t.title} (${t.course || 'unknown course'}) — about ${t.minutes} min${t.done ? ' — already done' : ''}`).join('\n')}`;

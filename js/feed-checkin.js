@@ -111,7 +111,7 @@ function renderFeedCheckinList() {
   const n = cachedFeedCheckins.length;
   const sub = document.getElementById('fci-sub');
   if (sub) sub.textContent = n
-    ? `${n} assignment${n === 1 ? '' : 's'} passed ${n === 1 ? 'its' : 'their'} due date. Your Canvas calendar can't tell StudyFlow what you turned in.`
+    ? `${n} assignment${n === 1 ? '' : 's'} passed ${n === 1 ? 'its' : 'their'} due date. Your Canvas calendar can't tell Duesday what you turned in.`
     : 'All caught up.';
   const all = document.getElementById('fci-all');
   if (all) all.style.display = n > 1 ? '' : 'none';

@@ -1,7 +1,7 @@
 /* ===========================
-   coco.1 VERIFICATION + DETERMINISTIC FALLBACKS (pure functions, no app state)
+   Choom VERIFICATION + DETERMINISTIC FALLBACKS (pure functions, no app state)
    Fifth module in the multi-file split, and the first one pulling from the
-   bigger, more entangled coco.1 feature set (planning mode and grade tips).
+   bigger, more entangled Choom feature set (planning mode and grade tips).
    Every function here takes its context (`ctx`) as a plain parameter rather
    than reaching into cachedAssignments/cachedGrades/schoolAIEngine directly
    -- that separation (build a context object from real app state, then
@@ -119,7 +119,7 @@ function cocoVerifyPlanning(answer, ctx) {
     }
   }
 
-  // 7. Claims about late penalties or whether submitting still counts. coco.1
+  // 7. Claims about late penalties or whether submitting still counts. Choom
   //    is never given the course's grading policy, so any such claim is
   //    invented — and the discouraging direction ("submitting now won't change
   //    the grade", seen in testing) could talk a student out of turning work in

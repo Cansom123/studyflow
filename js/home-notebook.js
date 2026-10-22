@@ -4,8 +4,8 @@
    - a tear-off calendar date next to the greeting
    - one plain sentence under the greeting (what's due, the busiest day, the
      next exam)
-   - coco.1's sticky note: a tip worked out from the same data Home shows
-     (no AI call), with buttons that ask coco.1 for a real plan
+   - Choom's sticky note: a tip worked out from the same data Home shows
+     (no AI call), with buttons that ask Choom for a real plan
    - "The next 14 days": a solid bar per day, as tall as the estimated hours
      of work due that day (the same estimates as Today's 3), exam days in red
    - the report card's average
@@ -88,7 +88,7 @@
     setHTML(document.getElementById('home-hero-sub'), parts.join(' '));
   }
 
-  // coco.1's sticky note: one concrete next step, from the same data as Home.
+  // Choom's sticky note: one concrete next step, from the same data as Home.
   function renderNote({ overdue, exams }) {
     const el = document.getElementById('home-note');
     if (!el) return;
@@ -120,11 +120,11 @@
       tip = 'Nothing due soon. A good day to get ahead or review.';
     }
     el.hidden = false;
-    setHTML(el, `<span class="hm-note-who"><i></i>coco.1</span>
+    setHTML(el, `<span class="hm-note-who"><i></i>Choom</span>
       <p class="hm-note-tip">${tip}</p>
       <div class="hm-note-ask">
         <button type="button" onclick="homeAskCoco('Plan my week')">Plan my week</button>
-        <button type="button" onclick="homeAskCoco('')">Ask coco.1</button>
+        <button type="button" onclick="homeAskCoco('')">Ask Choom</button>
       </div>`);
   }
 
@@ -176,8 +176,8 @@
     renderAverage();
   }
 
-  // From coco.1's note to the planner on Priority: "Plan my week" asks right
-  // away, "Ask coco.1" opens the box to type a question.
+  // From Choom's note to the planner on Priority: "Plan my week" asks right
+  // away, "Ask Choom" opens the box to type a question.
   window.homeAskCoco = function (q) {
     jumpTo('priority');
     const input = document.getElementById('planning-ai-input');

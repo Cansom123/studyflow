@@ -9,7 +9,7 @@
 
 const QUICK_REPORT_TYPES = [
   { id: 'bug', label: 'Bug', placeholder: 'What happened? What did you expect instead?' },
-  { id: 'idea', label: 'Idea', placeholder: 'What would make StudyFlow better for you?' },
+  { id: 'idea', label: 'Idea', placeholder: 'What would make Duesday better for you?' },
   { id: 'other', label: 'Other', placeholder: "Tell us what's on your mind." },
 ];
 
@@ -47,7 +47,7 @@ function openQuickReport() {
         <span class="qr-icon">${BUG_ICON_SVG}</span>
         <div>
           <div class="qr-title" id="qr-title">Report a problem</div>
-          <div class="qr-sub">Goes straight to the StudyFlow team${page ? `. We'll know you were on <strong>${escapeHtml(page)}</strong>.` : '.'}</div>
+          <div class="qr-sub">Goes straight to the Duesday team${page ? `. We'll know you were on <strong>${escapeHtml(page)}</strong>.` : '.'}</div>
         </div>
         <button type="button" class="qr-close" data-act="close" aria-label="Close">&times;</button>
       </div>

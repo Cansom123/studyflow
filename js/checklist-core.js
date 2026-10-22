@@ -39,7 +39,7 @@ function deterministicChecklist(a, today) {
 
   // No AI required for this -- naming the actual assignment and leaning on
   // its type (quiz/reading vs essay/project) turns "Do the work" into
-  // something a student can actually act on, without needing coco.1 enabled.
+  // something a student can actually act on, without needing Choom enabled.
   const rawTitle = (a.title || 'this assignment').trim();
   const shortTitle = rawTitle.length > 48 ? rawTitle.slice(0, 45).trim() + '…' : rawTitle;
 
@@ -105,7 +105,7 @@ function parseChecklistLines(raw) {
 
 // The date-safety net: a step scheduled after the due date, or before today,
 // or out of order, is worse than no plan at all -- it's the checklist
-// equivalent of coco.1 planning mode's grounding checks, just for dates
+// equivalent of Choom planning mode's grounding checks, just for dates
 // instead of facts.
 function verifyChecklistDates(steps, todayStr, dueStr) {
   if (!steps.length) return { ok: false, reason: 'no steps parsed' };
@@ -121,7 +121,7 @@ function verifyChecklistDates(steps, todayStr, dueStr) {
   return { ok: true, reason: '' };
 }
 
-// Catches the same failure classes seen elsewhere in coco.1: garbled/
+// Catches the same failure classes seen elsewhere in Choom: garbled/
 // incoherent generation, and -- specific to this feature -- a checklist so
 // generic it ignores a real description that was handed to it. If Canvas
 // gave us an actual structured list of requirements, the generated steps

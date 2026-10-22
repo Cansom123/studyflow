@@ -1,8 +1,8 @@
 /* ===========================
    PRIORITY SCORING (pure functions, no app state)
-   Twelfth module in the multi-file split, and outside coco.1 for the first
+   Twelfth module in the multi-file split, and outside Choom for the first
    time -- the Priority tab's actual ranking algorithm, split out of
-   renderPriority the same way the coco.1 context builders were: the
+   renderPriority the same way the Choom context builders were: the
    scoring/sorting/text-generation logic is pure given the right inputs,
    only the DOM rendering around it isn't.
 =========================== */
@@ -37,7 +37,7 @@ function computePriorityScores(assignments, today, userGoals, priorityGoalBoost,
     return d >= -7;
   });
   // Goals are resolved to real classes once (js/goals-core.js) -- the same
-  // resolution the Goals tab and coco.1 use, so all three agree.
+  // resolution the Goals tab and Choom use, so all three agree.
   const resolved = resolveGoals(userGoals, assignments, cachedGrades);
   return active.map(a => {
     const d = dayDiff(a.due_date, today);

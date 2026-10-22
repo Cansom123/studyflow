@@ -220,7 +220,7 @@ body.auth-mode .auth-form-col > .auth-screen {
 }
 
 /* ===== LOGO =====
-   A graduation cap perched over the "S" of "StudyFlow" -- one monochrome
+   A graduation cap perched over the "S" of "Duesday" -- one monochrome
    mark instead of the wordmark plus a separate colored icon tile. */
 .logo { display: flex; align-items: center; gap: 9px; position: relative; padding-left: 3px; }
 .logo-mark {
@@ -2562,7 +2562,7 @@ body.density-compact .home-stats-strip { margin-bottom: 12px; }
 .msg-error   { animation: msgIn 0.35s var(--ease-out) backwards, msgShake 0.45s 0.08s ease-in-out; }
 .msg-success { animation: msgIn 0.4s var(--ease-out) backwards; }
 
-/* -- coco.1 answers resolve into place rather than blinking in -- */
+/* -- Choom answers resolve into place rather than blinking in -- */
 #syllabus-ask-result > *, #syl-ai-answer > *, #planning-ai-result > * {
   animation: fadeUp 0.45s var(--ease-out) backwards;
 }
@@ -4250,7 +4250,7 @@ html.no-scroll-reveal .sr { opacity: 1; transform: none; filter: none; animation
 #tab-more:not(.admin-visible) { display: none; }
 
 /* ===========================
-   CLOSED WORK (coco.1 suggests)
+   CLOSED WORK (Choom suggests)
    Work Canvas has closed, shown as suggestions rather than to-dos.
 =========================== */
 .closed-suggest { margin-top: 18px; padding: 16px; }
@@ -5169,7 +5169,7 @@ body.auth-mode .auth-page .auth-form-col > .auth-screen {
 .nb-tk-foot { display: flex; justify-content: space-between; margin-top: 16px; padding-top: 12px; border-top: 1.5px dashed var(--nb-line-2); font-family: var(--nb-mono); font-size: 11.5px; letter-spacing: 0.08em; color: var(--nb-ink-2); }
 .nb-tk-foot b { color: var(--nb-ink); font-weight: 500; }
 
-/* -- coco.1 on a sticky note, tucked under the ticket's corner -- */
+/* -- Choom on a sticky note, tucked under the ticket's corner -- */
 .nb-sticky {
   position: absolute; right: -34px; bottom: -34px; z-index: 3; width: 210px; transform: rotate(-4deg);
   padding: 24px 18px 18px; border-radius: 2px 2px 16px 2px;
@@ -5229,6 +5229,12 @@ body.auth-mode .auth-page .auth-form-col > .auth-screen {
 .auth-page .story-cue { color: var(--nb-ink-3); }
 .auth-page .sc-mouse { border-color: var(--nb-ink-3); }
 .auth-page .sc-mouse i { background: var(--nb-ink-2); }
+
+/* the tagline, closing the How it works story */
+.auth-page .story-tag {
+  margin: 26px 0 0; font-family: "Space Grotesk", var(--nb-sans); font-weight: 700; font-size: 18px;
+  letter-spacing: -0.02em; color: var(--nb-ink-2);
+}
 
 /* -- Startup splash and connection screen, on the same paper -- */
 #boot-splash, #conn-problem {
@@ -5490,7 +5496,7 @@ button, input, select, textarea { font-family: inherit; }
 /* ===========================
    NOTEBOOK THEME: HOME (step 3)
    Home as one notebook page (js/home-notebook.js): a tear-off date, the
-   greeting with coco.1's sticky note, and Today's 3 across the top; the next
+   greeting with Choom's sticky note, and Today's 3 across the top; the next
    14 days as solid bars; then the exam ticket beside the report card, and
    this week beside study goals and links. Calm on purpose: no glow, no
    counting numbers.
@@ -5537,7 +5543,7 @@ button, input, select, textarea { font-family: inherit; }
 .hm-btn-p { background: var(--btn-bg); color: var(--btn-fg); border-color: transparent; }
 .hm-btn-p:hover { border-color: transparent; opacity: 0.92; }
 
-/* coco.1's sticky note (highlighter yellow in both themes, ink stays dark) */
+/* Choom's sticky note (highlighter yellow in both themes, ink stays dark) */
 .hm-note {
   position: relative; max-width: 440px; margin-top: 26px; padding: 22px 18px 16px;
   background: color-mix(in srgb, var(--mark) 55%, #fffbe8); color: var(--mark-ink);
@@ -5729,7 +5735,7 @@ button, input, select, textarea { font-family: inherit; }
    Page titles on every tab get the notebook heading (big title, one line
    under it, a dashed rule). Upcoming's month view lists each day's work
    (exams in red, study blocks dashed) next to the day panel; Priority puts
-   coco.1's suggestion on a sticky note beside the planner and ranks work
+   Choom's suggestion on a sticky note beside the planner and ranks work
    with big numbers; Grades are ruled cards with a solid bar.
 =========================== */
 .page-head { display: block; margin: 0 0 22px; padding-bottom: 20px; border-bottom: 1.5px dashed var(--border); }
@@ -6084,6 +6090,12 @@ button, input, select, textarea { font-family: inherit; }
 }
 [data-palette="bears"] body {
   background: repeating-linear-gradient(180deg, transparent 0 79px, rgba(244,241,234,0.05) 79px 81px) fixed, #0b162a;
+}
+
+/* Duesday logo: the cap is tipped onto the top of the "d" (it used to sit
+   over the "S" of StudyFlow, which hid the d) */
+@media (min-width: 601px) {
+  .sidebar-logo .logo-mark, .tabs.collapsed .logo-mark { width: 22px; height: 22px; top: -7px; left: 1px; }
 }
 
 /* themes with one look don't use the sun/moon switch */

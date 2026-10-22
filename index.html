@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>StudyFlow</title>
+<title>Duesday</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@300;400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
@@ -29,11 +29,11 @@
 <!-- Startup splash: covers the (visible-by-default) sign-in page while the saved
      session is checked. Dismissed by hideBootSplash() once we know which screen
      to show -- see hideAll() and showApp(). -->
-<div id="boot-splash" role="status" aria-label="Loading StudyFlow">
+<div id="boot-splash" role="status" aria-label="Loading Duesday">
   <div class="boot-card">
     <span class="nb-logo nb-logo-lg" aria-hidden="true">
       <svg class="nb-cap" viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg>
-      <span class="nb-word">studyflow</span>
+      <span class="nb-word">duesday</span>
     </span>
     <div class="boot-bar"></div>
     <div class="boot-slow">Taking longer than usual to connect.<button type="button" onclick="location.reload()">Retry</button></div>
@@ -45,9 +45,9 @@
   <div class="conn-card">
     <span class="nb-logo" aria-hidden="true">
       <svg class="nb-cap" viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg>
-      <span class="nb-word">studyflow</span>
+      <span class="nb-word">duesday</span>
     </span>
-    <div class="conn-title">Can't reach StudyFlow</div>
+    <div class="conn-title">Can't reach Duesday</div>
     <div class="conn-sub">Check your internet connection and try again. Nothing has been lost - your account and data are exactly where you left them.</div>
     <button class="auth-btn" id="conn-retry-btn" onclick="retryConnection()">Try again</button>
   </div>
@@ -86,9 +86,9 @@
        id and handler inside .auth-form-col is unchanged. -->
   <div class="nb-hero">
   <header class="nb-top">
-    <span class="nb-logo" aria-label="StudyFlow">
+    <span class="nb-logo" aria-label="Duesday">
       <svg class="nb-cap" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg>
-      <span class="nb-word" aria-hidden="true">studyflow</span>
+      <span class="nb-word" aria-hidden="true">duesday</span>
     </span>
     <nav class="nb-nav">
       <button type="button" class="nb-nav-how" onclick="scrollToHowItWorks()">How it works</button>
@@ -101,7 +101,7 @@
     <div class="auth-brand-inner">
       <span class="nb-kicker">For students on Canvas</span>
       <h1 class="nb-h">Every deadline.<br>One <span class="nb-hl">calm</span> week.</h1>
-      <p class="nb-sub">StudyFlow pulls your due dates, grades and exams from Canvas, then tells you the three things worth doing today.</p>
+      <p class="nb-sub">Duesday pulls your due dates, grades and exams from Canvas, then tells you the three things worth doing today.</p>
     </div>
   </div>
 
@@ -114,7 +114,7 @@
           <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
         </svg>
       </div>
-      <span class="logo-word">Study<em>Flow</em></span>
+      <span class="logo-word">duesday</span>
     </div>
     <div class="auth-heading">Welcome back</div>
     <div class="auth-sub">Sign in to pick up where you left off.</div>
@@ -138,7 +138,7 @@
           <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
         </svg>
       </div>
-      <span class="logo-word">Study<em>Flow</em></span>
+      <span class="logo-word">duesday</span>
     </div>
     <div class="auth-heading">Two-step verification</div>
     <div class="auth-sub">Enter the 6-digit code from your authenticator app.</div>
@@ -159,7 +159,7 @@
           <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
         </svg>
       </div>
-      <span class="logo-word">Study<em>Flow</em></span>
+      <span class="logo-word">duesday</span>
     </div>
     <div class="auth-heading">Use a backup code</div>
     <div class="auth-sub">Enter one of your unused backup codes.</div>
@@ -179,7 +179,7 @@
           <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
         </svg>
       </div>
-      <span class="logo-word">Study<em>Flow</em></span>
+      <span class="logo-word">duesday</span>
     </div>
     <div class="auth-heading">Check your email</div>
     <div class="auth-sub" id="mfa-email-sub">Sending a code to your email...</div>
@@ -199,10 +199,10 @@
           <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
         </svg>
       </div>
-      <span class="logo-word">Study<em>Flow</em></span>
+      <span class="logo-word">duesday</span>
     </div>
     <div class="auth-heading">Create your account</div>
-    <div class="auth-sub">It's free. Connect Canvas and StudyFlow does the rest.</div>
+    <div class="auth-sub">It's free. Connect Canvas and Duesday does the rest.</div>
     <div id="signup-msg"></div>
     <div class="auth-label">Email</div>
     <input class="auth-input" type="email" id="signup-email" placeholder="you@email.com" />
@@ -221,7 +221,7 @@
           <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
         </svg>
       </div>
-      <span class="logo-word">Study<em>Flow</em></span>
+      <span class="logo-word">duesday</span>
     </div>
     <div class="auth-heading">Reset your password</div>
     <div class="auth-sub">Enter your email and we'll send you a link to reset it.</div>
@@ -240,7 +240,7 @@
           <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
         </svg>
       </div>
-      <span class="logo-word">Study<em>Flow</em></span>
+      <span class="logo-word">duesday</span>
     </div>
     <div class="auth-heading">Choose a new password</div>
     <div class="auth-sub">Use at least 6 characters.</div>
@@ -272,14 +272,14 @@
       </div>
     </div>
     <div class="nb-sticky">
-      <span class="nb-who"><i></i>coco.1</span>
+      <span class="nb-who"><i></i>Choom</span>
       Exam 2 is Thursday. <b>Finish the lab tonight</b> so Tuesday and Wednesday are free to study.
     </div>
   </div>
 
   <!-- HOW IT WORKS: a pinned scroll story under the sign-in screen (scroll,
        or the arrow). Scroll position drives the scene; see js/auth-how.js. -->
-  <button type="button" class="how-scroll-hint" id="how-scroll-hint" onclick="scrollToHowItWorks()" aria-label="See how StudyFlow works">
+  <button type="button" class="how-scroll-hint" id="how-scroll-hint" onclick="scrollToHowItWorks()" aria-label="See how Duesday works">
     <span>See how it works</span>
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
   </button>
@@ -287,8 +287,8 @@
   <section class="story" id="how-it-works" aria-labelledby="story-title">
     <div class="story-stage">
       <div class="story-copy">
-        <div class="story-eyebrow">How StudyFlow works</div>
-        <h2 class="story-title" id="story-title">Connect once. StudyFlow keeps your whole semester in order.</h2>
+        <div class="story-eyebrow">How Duesday works</div>
+        <h2 class="story-title" id="story-title">Connect once. Duesday keeps your whole semester in order.</h2>
         <ol class="story-steps">
           <li class="story-step" data-phase="0"><button type="button" onclick="storyGoTo(0)"><span class="ss-dot"></span><span class="ss-text"><b>Every class, scattered</b><span>Assignments spread across Canvas pages, syllabi and announcements.</span></span></button></li>
           <li class="story-step" data-phase="1"><button type="button" onclick="storyGoTo(1)"><span class="ss-dot"></span><span class="ss-text"><b>Pulled into one list</b><span>Connect Canvas once. Every assignment, due date and grade syncs in.</span></span></button></li>
@@ -299,6 +299,7 @@
           <button type="button" class="auth-btn story-cta-btn" onclick="howStartSignup()">Create your free account</button>
           <button type="button" class="story-cta-link" onclick="howBackToSignIn()">I already have one, sign in</button>
         </div>
+        <p class="story-tag">Don't let Duesday turn into doomsday.</p>
       </div>
       <div class="story-scene" id="story-scene" aria-hidden="true">
         <div class="sc-canvas-ghost"><span></span><span></span><span></span></div>
@@ -324,9 +325,9 @@
        place instead of sliding with the content. -->
   <div id="onboard-flow" class="onboard-flow">
     <div class="onboard-flow-header">
-      <div class="logo onboard-logo" aria-label="StudyFlow">
+      <div class="logo onboard-logo" aria-label="Duesday">
         <div class="logo-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg></div>
-        <span class="logo-word">Study<em>Flow</em></span>
+        <span class="logo-word">duesday</span>
       </div>
       <div class="progress-dots onboard-progress" id="onboard-flow-dots">
         <div class="dot current"></div><div class="dot upcoming"></div><div class="dot upcoming"></div><div class="dot upcoming"></div>
@@ -349,7 +350,7 @@
                 </span>
                 <div class="onboard-title">Connect Canvas</div>
               </div>
-              <div class="onboard-sub">Pick how StudyFlow gets your assignments. You can switch anytime in Settings.</div>
+              <div class="onboard-sub">Pick how Duesday gets your assignments. You can switch anytime in Settings.</div>
               <div class="cplan-choices">
                 <button type="button" class="cplan-card cplan-card-feed" onclick="obChooseCanvasMode('feed')">
                   <span class="cplan-tag">Recommended</span>
@@ -374,7 +375,7 @@
                 </span>
                 <div class="onboard-title">Paste your calendar link</div>
               </div>
-              <div class="onboard-sub">StudyFlow reads your due dates from your Canvas calendar. It can't see your grades or messages.</div>
+              <div class="onboard-sub">Duesday reads your due dates from your Canvas calendar. It can't see your grades or messages.</div>
               <div id="onboard-feed-msg"></div>
               <div class="auth-label">Canvas calendar link</div>
               <input class="auth-input" type="url" id="ob-feed-url" placeholder="https://yourschool.instructure.com/feeds/calendars/user_…" autocomplete="off" spellcheck="false" />
@@ -387,7 +388,7 @@
                 </ol>
               </div>
               <div class="help-note" style="margin-top:-6px;">
-                This link only shows your calendar, so keep it private like a password. StudyFlow stores it encrypted, and Disconnect Canvas in Settings deletes it.
+                This link only shows your calendar, so keep it private like a password. Duesday stores it encrypted, and Disconnect Canvas in Settings deletes it.
               </div>
             </div>
 
@@ -399,14 +400,14 @@
               </span>
               <div class="onboard-title">Connect with a token</div>
             </div>
-            <div class="onboard-sub">Enter your school's Canvas URL and API token so StudyFlow can see your assignments.</div>
+            <div class="onboard-sub">Enter your school's Canvas URL and API token so Duesday can see your assignments.</div>
             <div id="onboard-canvas-msg"></div>
             <div class="auth-label">Canvas URL</div>
             <input class="auth-input" type="text" id="ob-canvas-url" placeholder="yourschool.instructure.com" />
             <div class="auth-label">Canvas API Token</div>
             <input class="auth-input" type="password" id="ob-canvas-token" placeholder="Paste your token here" />
             <div class="help-note" style="margin-top:-6px;">
-              Treat this token like a password - whoever has it can see and do anything your Canvas login can, not just assignments. StudyFlow only uses it to pull your assignments, syllabi, and grades; it's never shared. You're always in control: you can revoke it anytime from Canvas → Settings → Approved Integrations, independent of StudyFlow.
+              Treat this token like a password - whoever has it can see and do anything your Canvas login can, not just assignments. Duesday only uses it to pull your assignments, syllabi, and grades; it's never shared. You're always in control: you can revoke it anytime from Canvas → Settings → Approved Integrations, independent of Duesday.
             </div>
             <div class="card" style="margin-bottom:16px;">
               <div class="card-title" style="margin-bottom:6px;font-size:13px;">How to get your token</div>
@@ -416,7 +417,7 @@
                 <li><span>Go to <b>Settings</b></span></li>
                 <li><span>Scroll to <b>Approved Integrations</b></span></li>
                 <li><span>Click <b>+ New Access Token</b></span></li>
-                <li><span>Name it "StudyFlow" and paste it above</span></li>
+                <li><span>Name it "Duesday" and paste it above</span></li>
               </ol>
             </div>
             </div>
@@ -435,7 +436,7 @@
               </span>
               <div class="onboard-title">Your current classes</div>
             </div>
-            <div class="onboard-sub">Select only the classes you're taking right now. StudyFlow will only pull assignments from these.</div>
+            <div class="onboard-sub">Select only the classes you're taking right now. Duesday will only pull assignments from these.</div>
             <div id="course-list-loading" class="course-loading">Loading your courses from Canvas...</div>
             <div id="course-list"></div>
             <div id="onboard-courses-msg"></div>
@@ -457,7 +458,7 @@
               </span>
               <div class="onboard-title">Set your goals</div>
             </div>
-            <div class="onboard-sub">What do you want to achieve this semester? These help StudyFlow prioritize your work.</div>
+            <div class="onboard-sub">What do you want to achieve this semester? These help Duesday prioritize your work.</div>
             <div id="goals-list-onboard"></div>
             <div class="goal-input-row">
               <input class="goal-input" type="text" id="ob-goal-input" placeholder="e.g. Raise Biology above 70%" />
@@ -507,7 +508,7 @@
           <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
         </svg>
       </div>
-      <div id="ws-logo-name">Study<em>Flow</em></div>
+      <div id="ws-logo-name">duesday</div>
     </div>
     <div id="ws-card">
       <!-- State 0: manual sync triggered from inside the app (no greeting, just progress) -->
@@ -616,7 +617,7 @@
       <div id="signout-confirm-icon">
         <svg viewBox="0 0 20 20" fill="none"><path d="M8 3.5H4.5A1.5 1.5 0 0 0 3 5v10a1.5 1.5 0 0 0 1.5 1.5H8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 13.5l3.5-3.5-3.5-3.5M16.25 10H8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
-      <div id="signout-confirm-title">Sign out of StudyFlow?</div>
+      <div id="signout-confirm-title">Sign out of Duesday?</div>
       <div id="signout-confirm-text">You'll need your email and password to sign back in. Anything already synced stays saved to your account.</div>
       <div id="signout-confirm-actions">
         <button id="signout-cancel-btn" onclick="cancelSignOut()">Cancel</button>
@@ -708,7 +709,7 @@
     <div class="card links-tutorial-card" id="links-tutorial-card">
       <button class="detail-close" id="links-tutorial-dismiss" onclick="dismissLinksTutorial()" title="Dismiss">✕</button>
       <div class="links-tutorial-col">
-        <div class="tut-brand"><span class="tut-brand-cap"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg></span>StudyFlow tip</div>
+        <div class="tut-brand"><span class="tut-brand-cap"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg></span>Duesday tip</div>
         <div class="progress-dots" id="links-tutorial-dots" style="justify-content:flex-start;"></div>
         <div class="links-tutorial-slide-icon" id="links-tutorial-slide-icon"></div>
         <div class="links-tutorial-slide-title" id="links-tutorial-slide-title"></div>
@@ -760,7 +761,7 @@
   <!-- STUDY GOAL ONBOARDING (blocks the app like the sync welcome screen — answer or skip) -->
   <div id="study-goal-onboard-overlay" style="display:none;">
     <div id="study-goal-onboard-card">
-      <div class="tut-brand"><span class="tut-brand-cap"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg></span>StudyFlow</div>
+      <div class="tut-brand"><span class="tut-brand-cap"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/></svg></span>Duesday</div>
       <div class="focus-title" style="text-align:left;margin-bottom:4px;">What's a good study goal for you?</div>
       <div class="card-sub" style="margin-bottom:22px;">Pick something easy to hit - you can always change it later.</div>
       <div class="focus-phase-label">Daily goal</div>
@@ -786,7 +787,7 @@
             <path d="M12 3.2 22.5 8.4 12 13.6 1.5 8.4z" fill="currentColor"/><path d="M6.3 11.6l5.7 2.85 5.7-2.85v3.3c0 1.55-2.55 2.8-5.7 2.8s-5.7-1.25-5.7-2.8z" fill="currentColor"/><path d="M19.8 9.3v5.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.8" cy="15.9" r="1.2" fill="currentColor"/>
           </svg>
         </div>
-        <span class="logo-word">Study<em>Flow</em></span>
+        <span class="logo-word">duesday</span>
         <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebarCollapse()" title="Collapse sidebar">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.75" y="3.75" width="14.5" height="12.5" rx="2.5"/><line x1="7.5" y1="3.75" x2="7.5" y2="16.25"/></svg>
         </button>
@@ -868,7 +869,7 @@
           </svg>
         </div>
         <div>
-          <div class="logo-word">Study<em>Flow</em></div>
+          <div class="logo-word">duesday</div>
           <div class="topbar-sub" id="topbar-date"></div>
         </div>
       </div>
@@ -902,7 +903,7 @@
       <!-- HOME -->
       <div class="page active" id="page-home">
         <!-- Notebook Home (js/home-notebook.js): a tear-off date, the greeting
-             with coco.1's sticky note, and Today's 3; then the next 14 days,
+             with Choom's sticky note, and Today's 3; then the next 14 days,
              the exam ticket and report card, and this week / study / links. -->
         <section class="hm-today">
           <div class="hm-cal" id="home-cal" aria-hidden="true"></div>
@@ -1072,7 +1073,7 @@
           <div class="ai-text" id="priority-ai-text">Sync your assignments to get personalized priority suggestions.</div>
         </div>
         <div class="card" id="planning-ai-box" style="margin-top:10px;padding:14px;">
-          <div class="section-label" style="margin-top:0;">Ask coco.1 for a plan</div>
+          <div class="section-label" style="margin-top:0;">Ask Choom for a plan</div>
           <div id="planning-ai-banner-host"></div>
           <div class="study-form-row" style="margin-bottom:0;">
             <input class="settings-input" id="planning-ai-input" placeholder='e.g. "what should I focus on this weekend?"' style="margin-bottom:0;" onkeydown="if(event.key==='Enter'){askCocoPlanning();}" />
@@ -1351,7 +1352,7 @@
         <div id="syllabus-empty" class="empty-box" style="display:none;">
           <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M5 3.5h7l3.5 3.5v9.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 3.5V7h3.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><line x1="6.5" y1="11" x2="13.5" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="6.5" y1="14" x2="13.5" y2="14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
           <div class="empty-title">No classes selected yet</div>
-          <div class="empty-sub">Pick your classes in Settings first - StudyFlow will try to pull each syllabus from Canvas automatically.</div>
+          <div class="empty-sub">Pick your classes in Settings first - Duesday will try to pull each syllabus from Canvas automatically.</div>
         </div>
         <div id="syllabus-keydates"></div>
         <div id="syllabus-search-results" style="display:none;"></div>
@@ -1490,7 +1491,7 @@
           </div>
           <div class="display-sync-note">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 14.5a3.5 3.5 0 0 1-.4-7 5 5 0 0 1 9.7 1.2 3 3 0 0 1-.3 5.8z"/><path d="M8 11.5l1.6 1.6L12.5 10"/></svg>
-            <span>Saved to your account, so StudyFlow looks the same on every device you sign in on.</span>
+            <span>Saved to your account, so Duesday looks the same on every device you sign in on.</span>
           </div>
           <div class="toggle-row" style="border-top:1px solid var(--border);margin-top:14px;">
             <div><div class="toggle-row-label">Scroll animations</div><div class="toggle-row-sub">Cards rise into place as you scroll to them. Turn off for a calmer, instant layout.</div></div>
@@ -1539,10 +1540,10 @@
             <button class="change-courses-btn" style="margin-top:8px;" onclick="showCourseSelection()">Did we miss a class?</button>
             <button class="disconnect-btn" style="margin-top:8px;" onclick="disconnectCanvas()">Disconnect Canvas</button>
             <div class="help-note canvas-mode-token-only" style="margin-top:10px;margin-bottom:0;">
-              Your Canvas token works like a password - StudyFlow only uses it to read your assignments, syllabi, and grades, and never shares it. Note that <strong>Disconnect Canvas removes it from StudyFlow only</strong> - the token itself stays active in Canvas until you also remove it there, under Canvas → Settings → Approved Integrations.
+              Your Canvas token works like a password - Duesday only uses it to read your assignments, syllabi, and grades, and never shares it. Note that <strong>Disconnect Canvas removes it from Duesday only</strong> - the token itself stays active in Canvas until you also remove it there, under Canvas → Settings → Approved Integrations.
             </div>
             <div class="help-note canvas-mode-feed-only" style="margin-top:10px;margin-bottom:0;display:none;">
-              You're connected with your Canvas calendar link, which only shows due dates. Since it can't tell what you turned in, check work off in StudyFlow when you finish it. Disconnect Canvas deletes the link from StudyFlow.
+              You're connected with your Canvas calendar link, which only shows due dates. Since it can't tell what you turned in, check work off in Duesday when you finish it. Disconnect Canvas deletes the link from Duesday.
             </div>
           </div>
         </div>
@@ -1561,7 +1562,7 @@
             <div class="auth-label">Canvas API Token</div>
             <input class="settings-input" type="password" id="canvas-token" placeholder="Paste your token here" />
             <div class="help-note">
-              Treat this token like a password - StudyFlow only uses it to pull your assignments, syllabi, and grades, and never shares it. You can revoke it anytime from Canvas → Settings → Approved Integrations, independent of StudyFlow.
+              Treat this token like a password - Duesday only uses it to pull your assignments, syllabi, and grades, and never shares it. You can revoke it anytime from Canvas → Settings → Approved Integrations, independent of Duesday.
             </div>
             <div id="canvas-msg"></div>
             <button class="settings-btn" onclick="saveCanvasSettings()">Save & connect</button>
@@ -1588,7 +1589,7 @@
                 </div>
                 <div class="help-step">
                   <div class="help-step-num">4</div>
-                  <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything - "StudyFlow" works great.</div>
+                  <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything - "Duesday" works great.</div>
                 </div>
                 <div class="help-step">
                   <div class="help-step-num">5</div>
@@ -1656,7 +1657,7 @@
             <div><div class="toggle-row-label">Browser notifications</div><div class="toggle-row-sub">Focus timer alerts and due-soon reminders, right in your browser</div></div>
             <label class="switch"><input type="checkbox" id="pref-browser-notifications" onchange="onBrowserNotificationsToggle(this.checked)"><span class="switch-track"></span><span class="switch-thumb"></span></label>
           </div>
-          <div class="card-sub" style="line-height:1.5;">Only fires while StudyFlow is open in a tab (even in the background) - not when the browser itself is closed.</div>
+          <div class="card-sub" style="line-height:1.5;">Only fires while Duesday is open in a tab (even in the background) - not when the browser itself is closed.</div>
           <div class="toggle-row" style="flex-direction:column;align-items:stretch;gap:10px;margin-top:10px;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <div><div class="toggle-row-label">Quiet hours</div><div class="toggle-row-sub">No browser notifications overnight</div></div>
@@ -1761,7 +1762,7 @@
               </div>
               <div class="help-step">
                 <div class="help-step-num">4</div>
-                <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything you like - "StudyFlow" works great.</div>
+                <div class="help-step-text">Click <strong>+ New Access Token</strong>. For the purpose, type anything you like - "Duesday" works great.</div>
               </div>
               <div class="help-step">
                 <div class="help-step-num">5</div>
@@ -1863,7 +1864,7 @@ const THEMES = [
   { id: 'club', name: 'Club room', mode: 'light', desc: 'Sky blue and cherry blossom, ribbon red for exams.', preview: ['#fdfdfb', '#3f9ad6', '#ffd84a', '#d9455f'] },
   { id: 'lamp', name: 'Desk lamp', mode: 'dark', desc: 'Warm dark with lamp orange, for late nights.', preview: ['#17110e', '#ff7a2f', '#e4ff3a', '#ffc15c'] },
   { id: 'chalk', name: 'Chalkboard', mode: 'dark', desc: 'Classroom green, chalk white and chalk yellow.', preview: ['#0e1a15', '#3ddc97', '#ffe36e', '#effaf4'] },
-  { id: 'doom', name: 'Doomsday', mode: 'dark', desc: 'Neon cyan, doom red exams and a night city grid.', preview: ['#100b18', '#00e5ff', '#f5ef0a', '#ff2a55'] },
+  { id: 'doom', name: 'Doomsday', mode: 'dark', desc: "Neon cyan and doom red. Don't let Duesday turn into doomsday.", preview: ['#100b18', '#00e5ff', '#f5ef0a', '#ff2a55'] },
   { id: 'bears', name: 'Navy & Orange', mode: 'dark', desc: 'Deep navy and burnt orange.', preview: ['#11203a', '#e2571d', '#ff8a3d', '#f4f1ea'] },
 ];
 
@@ -2069,7 +2070,7 @@ async function onBrowserNotificationsToggle(checked) {
   onPrefToggle('browserNotificationsEnabled', checked);
 }
 
-// Single gate for every browser notification StudyFlow fires -- respects
+// Single gate for every browser notification Duesday fires -- respects
 // the user's saved preference and the browser's actual permission state,
 // so callers (the focus timer, due-soon checks) don't have to repeat those
 // checks themselves.
@@ -2505,28 +2506,28 @@ const LEGAL_DOCS = {
     title: 'Privacy Policy',
     updated: 'Last updated September 18, 2026',
     html: `
-      <p>StudyFlow is a small, independently-run app. This page explains what data StudyFlow collects, why, and what control you have over it -- in plain language, not legal filler.</p>
+      <p>Duesday is a small, independently-run app. This page explains what data Duesday collects, why, and what control you have over it -- in plain language, not legal filler.</p>
 
       <h2>What we collect</h2>
       <p><strong>Account info.</strong> Your email and password, handled by our authentication provider (Supabase). We never see or store your password in plain text.</p>
-      <p><strong>Canvas connection.</strong> If you connect Canvas, we store your Canvas URL and the API token you generate, along with the assignments, grades, announcements, syllabi, and course list Canvas gives back using that token. This is stored so StudyFlow can show your work without you re-entering it every visit.</p>
+      <p><strong>Canvas connection.</strong> If you connect Canvas, we store your Canvas URL and the API token you generate, along with the assignments, grades, announcements, syllabi, and course list Canvas gives back using that token. This is stored so Duesday can show your work without you re-entering it every visit.</p>
       <p><strong>Two-factor authentication (optional).</strong> If you turn on 2FA, your authenticator app's shared secret is managed by our auth provider, and any backup codes you generate are stored only as one-way hashes -- we can't read the original codes back out.</p>
       <p><strong>Problem reports.</strong> If you submit a report, we store your message, your account email, and basic technical context (browser type, the page you were on) so we can actually fix the issue.</p>
       <p><strong>Preferences.</strong> Theme, accent color, layout choices, and similar settings, stored against your account so they follow you across devices.</p>
-      <p><strong>Usage analytics.</strong> We record which features get used -- e.g. that a sync happened, a tab was opened, or coco.1 was asked a question. <strong>This exists for one reason: to tell us which parts of StudyFlow students actually rely on, so we know what to improve or build next.</strong> It's product research, not surveillance -- we're not watching individual students, we're looking at aggregate counts (like "how many people opened Priority this week") to guide development decisions. These events are tagged with your account so we can count unique users accurately, but never include the content of what you typed, your assignments, or your grades. This data stays inside our own database and is never sent to a third-party analytics service, sold, or used for advertising.</p>
+      <p><strong>Usage analytics.</strong> We record which features get used -- e.g. that a sync happened, a tab was opened, or Choom was asked a question. <strong>This exists for one reason: to tell us which parts of Duesday students actually rely on, so we know what to improve or build next.</strong> It's product research, not surveillance -- we're not watching individual students, we're looking at aggregate counts (like "how many people opened Priority this week") to guide development decisions. These events are tagged with your account so we can count unique users accurately, but never include the content of what you typed, your assignments, or your grades. This data stays inside our own database and is never sent to a third-party analytics service, sold, or used for advertising.</p>
 
       <h2>What we don't do</h2>
       <ul>
         <li>We don't run ads and don't sell or share your data with advertisers.</li>
         <li>We don't use third-party analytics or tracking scripts at this time.</li>
       </ul>
-      <p>To be direct: StudyFlow is built to help students, not to profit off your data. We will never sell your personal information or hand it over to anyone outside the service providers listed below, full stop.</p>
+      <p>To be direct: Duesday is built to help students, not to profit off your data. We will never sell your personal information or hand it over to anyone outside the service providers listed below, full stop.</p>
 
-      <h2>coco.1, the built-in AI</h2>
-      <p>StudyFlow's optional AI assistant runs entirely on your own device, in your browser (via WebGPU). Your syllabus and assignment text are never sent to an external AI service to answer your questions -- the model runs locally and never leaves your browser.</p>
+      <h2>Choom, the built-in AI</h2>
+      <p>Duesday's optional AI assistant runs entirely on your own device, in your browser (via WebGPU). Your syllabus and assignment text are never sent to an external AI service to answer your questions -- the model runs locally and never leaves your browser.</p>
 
       <h2>Who else sees your data</h2>
-      <p>We use a small number of service providers to run StudyFlow, and only give them what they need to do their job:</p>
+      <p>We use a small number of service providers to run Duesday, and only give them what they need to do their job:</p>
       <ul>
         <li><strong>Supabase</strong> -- hosts our database and handles authentication. Your data is scoped so only your account can read it.</li>
         <li><strong>Canvas LMS (your school's instance)</strong> -- we read data from Canvas on your behalf using the token you provide; we don't write anything back to Canvas.</li>
@@ -2535,14 +2536,14 @@ const LEGAL_DOCS = {
 
       <h2>Your choices</h2>
       <ul>
-        <li><strong>Disconnect Canvas</strong> anytime in Settings -- this removes your Canvas URL and token from StudyFlow. Note the token itself stays active in Canvas until you also revoke it there (Canvas Settings → Approved Integrations).</li>
+        <li><strong>Disconnect Canvas</strong> anytime in Settings -- this removes your Canvas URL and token from Duesday. Note the token itself stays active in Canvas until you also revoke it there (Canvas Settings → Approved Integrations).</li>
         <li><strong>Export all your data</strong> from Settings at any time.</li>
         <li><strong>Turn off 2FA</strong> to remove your authenticator factor and backup codes immediately.</li>
         <li><strong>Delete your account entirely</strong> by reaching out to us (see Contact below) -- this isn't yet a self-service button, but we'll act on it promptly.</li>
       </ul>
 
       <h2>A note for students</h2>
-      <p>Canvas data can include information your school considers an educational record. StudyFlow only ever accesses what your own Canvas API token is permitted to see, and we don't share it with anyone outside the providers listed above. If your school has its own policies on connecting third-party tools to Canvas, those still apply to you.</p>
+      <p>Canvas data can include information your school considers an educational record. Duesday only ever accesses what your own Canvas API token is permitted to see, and we don't share it with anyone outside the providers listed above. If your school has its own policies on connecting third-party tools to Canvas, those still apply to you.</p>
 
       <h2>Changes to this policy</h2>
       <p>If this policy changes in a meaningful way, we'll update the date at the top of this page.</p>
@@ -2555,17 +2556,17 @@ const LEGAL_DOCS = {
     title: 'Terms & Conditions',
     updated: 'Last updated September 18, 2026',
     html: `
-      <p>These terms cover your use of StudyFlow. By creating an account, you agree to them. If you don't agree, please don't use the app.</p>
+      <p>These terms cover your use of Duesday. By creating an account, you agree to them. If you don't agree, please don't use the app.</p>
 
-      <h2>What StudyFlow is</h2>
-      <p>StudyFlow is an independent student productivity tool that connects to Canvas LMS, using an API token you provide, to show your assignments, grades, announcements, and syllabi in one place. StudyFlow is <strong>not affiliated with, endorsed by, or operated by Instructure or Canvas</strong> in any way.</p>
+      <h2>What Duesday is</h2>
+      <p>Duesday is an independent student productivity tool that connects to Canvas LMS, using an API token you provide, to show your assignments, grades, announcements, and syllabi in one place. Duesday is <strong>not affiliated with, endorsed by, or operated by Instructure or Canvas</strong> in any way.</p>
 
       <h2>Your account</h2>
       <p>You're responsible for keeping your password and Canvas API token secure. You're responsible for anything that happens through your account, including if you choose to share your login with someone else (we'd recommend against it). If you enable two-factor authentication, you're responsible for keeping your authenticator app and backup codes safe -- see the Privacy Policy for what to do if you lose access.</p>
       <p>You must provide a valid Canvas URL and token that you're authorized to use -- your own school account, not someone else's.</p>
 
       <h2>Acceptable use</h2>
-      <p>Please don't use StudyFlow to:</p>
+      <p>Please don't use Duesday to:</p>
       <ul>
         <li>Access, or attempt to access, another student's account or data.</li>
         <li>Abuse the sync feature in a way that could overload Canvas or our systems (e.g. scripted, automated, or excessive syncing).</li>
@@ -2575,19 +2576,19 @@ const LEGAL_DOCS = {
       <p>We may suspend or terminate accounts that violate these terms.</p>
 
       <h2>Data and security</h2>
-      <p>We don't sell your personal information or give it to anyone outside the service providers described in the Privacy Policy -- that's a direct commitment, not just a legal formality. That said, StudyFlow is an independently-run app, and no service can guarantee it will never be breached. We take reasonable precautions (password hashing, row-level access control, optional two-factor authentication), but in the event of unauthorized access to our systems that's outside our control, we can't be held liable for it. If a breach ever happens, we'll let affected users know.</p>
+      <p>We don't sell your personal information or give it to anyone outside the service providers described in the Privacy Policy -- that's a direct commitment, not just a legal formality. That said, Duesday is an independently-run app, and no service can guarantee it will never be breached. We take reasonable precautions (password hashing, row-level access control, optional two-factor authentication), but in the event of unauthorized access to our systems that's outside our control, we can't be held liable for it. If a breach ever happens, we'll let affected users know.</p>
 
-      <h2>coco.1 and AI-generated answers</h2>
-      <p>StudyFlow's optional on-device AI assistant is built to be cautious -- it prefers quoting your syllabus directly over guessing, and refuses to answer when it isn't confident. Even so, <strong>it can be wrong</strong>. Never treat an AI-generated answer as the final word on a grading policy, deadline, or attendance rule -- always confirm anything that could affect your grade with your instructor or the syllabus itself. StudyFlow is not responsible for decisions made solely on the basis of an AI-generated answer.</p>
+      <h2>Choom and AI-generated answers</h2>
+      <p>Duesday's optional on-device AI assistant is built to be cautious -- it prefers quoting your syllabus directly over guessing, and refuses to answer when it isn't confident. Even so, <strong>it can be wrong</strong>. Never treat an AI-generated answer as the final word on a grading policy, deadline, or attendance rule -- always confirm anything that could affect your grade with your instructor or the syllabus itself. Duesday is not responsible for decisions made solely on the basis of an AI-generated answer.</p>
 
       <h2>No guarantee of availability or accuracy</h2>
-      <p>StudyFlow is provided on a best-effort basis. We don't guarantee the app will always be available, that Canvas sync will always succeed, or that data pulled from Canvas will always be complete or up to date -- Canvas's own availability and API responses are outside our control. <strong>Always double-check due dates and grades that matter against Canvas directly</strong>, especially close to a deadline.</p>
+      <p>Duesday is provided on a best-effort basis. We don't guarantee the app will always be available, that Canvas sync will always succeed, or that data pulled from Canvas will always be complete or up to date -- Canvas's own availability and API responses are outside our control. <strong>Always double-check due dates and grades that matter against Canvas directly</strong>, especially close to a deadline.</p>
 
       <h2>Disclaimer and limitation of liability</h2>
-      <p>StudyFlow is provided "as is," without warranties of any kind. To the fullest extent permitted by law, we are not liable for missed assignments, grade disputes, lost data, or any other damages arising from your use of, or inability to use, the app.</p>
+      <p>Duesday is provided "as is," without warranties of any kind. To the fullest extent permitted by law, we are not liable for missed assignments, grade disputes, lost data, or any other damages arising from your use of, or inability to use, the app.</p>
 
       <h2>Changes to the app or these terms</h2>
-      <p>We may update StudyFlow's features or these terms over time. If terms change in a meaningful way, we'll update the date at the top of this page.</p>
+      <p>We may update Duesday's features or these terms over time. If terms change in a meaningful way, we'll update the date at the top of this page.</p>
 
       <h2>Contact</h2>
       <p>Questions about these terms can be sent through the "Report a problem" option in Settings, or directly to <strong>iwillnever12312@gmail.com</strong>.</p>
@@ -2890,8 +2891,8 @@ function maybeShowAdminPreviewTour() {
 // product dashboard instead of a table of snake_case identifiers.
 const ANALYTICS_EVENT_LABELS = {
   page_view: 'Tab opened',
-  coco_ask: 'coco.1 question asked',
-  coco_enable_clicked: 'coco.1 "Enable" clicked',
+  coco_ask: 'Choom question asked',
+  coco_enable_clicked: 'Choom "Enable" clicked',
   sync_started: 'Canvas sync started',
   sync_completed: 'Canvas sync completed',
   assignment_marked_done: 'Assignment marked done',
@@ -3170,12 +3171,12 @@ function showBackupCodesReveal(codes) {
 }
 function downloadBackupCodes() {
   const blob = new Blob(
-    ['StudyFlow backup codes\nEach code signs you in once if you lose access to your authenticator app.\n\n' + lastGeneratedBackupCodes.join('\n') + '\n'],
+    ['Duesday backup codes\nEach code signs you in once if you lose access to your authenticator app.\n\n' + lastGeneratedBackupCodes.join('\n') + '\n'],
     { type: 'text/plain' }
   );
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'studyflow-backup-codes.txt';
+  a.download = 'duesday-backup-codes.txt';
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -3199,7 +3200,7 @@ async function startMfaEnroll() {
   const qrHost = document.getElementById('mfa-qr-host');
   const msgEl = document.getElementById('mfa-setup-msg');
   msgEl.innerHTML = ''; document.getElementById('mfa-setup-code').value = '';
-  const { ok, data } = await sbFetchWithRetry('/auth/v1/factors', 'POST', { factor_type: 'totp', friendly_name: 'StudyFlow' });
+  const { ok, data } = await sbFetchWithRetry('/auth/v1/factors', 'POST', { factor_type: 'totp', friendly_name: 'Duesday' });
   if (!ok) { msgEl.innerHTML = `<div class="msg-error">${data.error_description || data.msg || "Couldn't start setup -- try again."}</div>`; return; }
   mfaEnrollFactorId = data.id;
   qrHost.innerHTML = (data.totp?.qr_code || '') +
@@ -3342,7 +3343,7 @@ function canvasConnectErrorHTML(result) {
       title = 'Canvas blocked this token from reading your classes.';
       fixes = [
         `${NEW_TOKEN} and try a fresh one.`,
-        "Some schools limit access tokens. If a new one doesn't work either, your school's Canvas may not allow apps like StudyFlow.",
+        "Some schools limit access tokens. If a new one doesn't work either, your school's Canvas may not allow apps like Duesday.",
       ];
       break;
     case 'not_canvas':
@@ -3649,7 +3650,7 @@ const ONBOARD_TOUR_SLIDES = [
   },
   {
     icon: TOUR_ICON('<path d="M10 2l1.6 5.4L17 9l-5.4 1.6L10 16l-1.6-5.4L3 9l5.4-1.6L10 2z"/>'),
-    title: 'coco.1 answers from your syllabus',
+    title: 'Choom answers from your syllabus',
     body: 'An optional AI that runs on your device. Ask about grading or late work, or ask it to help you plan around your goals.',
     mock: `
       <div class="tour-mock-bubble tour-mock-bubble-q">Can I turn this in late?</div>
@@ -4298,7 +4299,7 @@ async function loadAssignments() {
     !(a.is_locked && a.due_date && new Date(a.due_date) < lockCutoff)
   );
   // Work Canvas has closed can't be done anymore, so it leaves the to-do
-  // lists (and Priority, and the counts) and becomes a coco.1 suggestion
+  // lists (and Priority, and the counts) and becomes a Choom suggestion
   // instead: ask the teacher about late credit, review it, or clear it.
   cachedClosedAssignments = recent.filter(a => isSubmissionClosed(a));
   let assignments = recent.filter(a => !isSubmissionClosed(a));
@@ -4555,7 +4556,7 @@ function closeCompletedAssignments() {
    "What's affecting this grade" -- built from per-assignment scores synced
    from Canvas (cachedGradedAssignments), separate from the course-level
    current_score/final_score already in cachedGrades. Also the data source
-   for the coco.1 grade-tips ask box below.
+   for the Choom grade-tips ask box below.
 =========================== */
 /* gradeBreakdownForCourse now lives in js/grade-core.js -- see the module
    bridge near the end of this file. It used to read cachedGradedAssignments
@@ -4717,7 +4718,7 @@ async function toggleMessage(id) {
   if (wasUnread) m.read = true;
   renderMessagesList();
   if (wasUnread) {
-    // Tracked as StudyFlow's own state (see the canvas_messages migration) --
+    // Tracked as Duesday's own state (see the canvas_messages migration) --
     // never sent back to Canvas, so this can't get overwritten by the next sync.
     sbFetchWithRetry(`/rest/v1/canvas_messages?id=eq.${id}`, 'PATCH', { read: true });
   }
@@ -5010,7 +5011,7 @@ function checkDueSoonNotifications(assignments) {
     if (d !== 0 && d !== 1) return;
     const key = doneKey(a);
     if (notified.has(key)) return;
-    if (notifyBrowser(`Due ${d === 0 ? 'today' : 'tomorrow'}: ${a.title}`, { body: a.course || 'StudyFlow', tag: 'sf-due-' + key }) === 'quiet') return; // try again after quiet hours
+    if (notifyBrowser(`Due ${d === 0 ? 'today' : 'tomorrow'}: ${a.title}`, { body: a.course || 'Duesday', tag: 'sf-due-' + key }) === 'quiet') return; // try again after quiet hours
     notified.add(key);
   });
 
@@ -5138,11 +5139,11 @@ function toggleDone(encodedKey, btn) {
    module bridge near the end of this file. */
 
 /* ===========================
-   coco.1 — StudyFlow's on-device AI
+   Choom — Duesday's on-device AI
    ---------------------------------
    Design notes (why it's built this way):
    Small on-device models fail in two predictable ways — they get lost in long
-   documents, and they invent specifics when unsure. So coco.1 doesn't just hand
+   documents, and they invent specifics when unsure. So Choom doesn't just hand
    the model a syllabus and hope. It:
      1. RETRIEVES only the handful of lines relevant to the question
         (with synonym expansion, so "miss class" finds "attendance/absences")
@@ -5153,7 +5154,7 @@ function toggleDone(encodedKey, btn) {
    answer degrades into "here's the relevant rule" instead of a confident lie.
 =========================== */
 const COCO_MODEL = 'Llama-3.2-3B-Instruct-q4f16_1-MLC';
-const COCO_NAME = 'coco.1';
+const COCO_NAME = 'Choom';
 let schoolAIEngine = null;
 let schoolAILoading = false;
 let schoolAISupported = typeof navigator !== 'undefined' && !!navigator.gpu;
@@ -5178,7 +5179,7 @@ async function enableSchoolAI(onProgress) {
   }
 }
 
-/* coco.1 retrieval/grounding core (COCO_TOPICS, cocoExpandTerms,
+/* Choom retrieval/grounding core (COCO_TOPICS, cocoExpandTerms,
    cocoSegments, cocoRetrieve, COCO_UNKNOWN, cocoIsCoherentText,
    cocoIsGrounded) now lives in js/coco-core.js and is re-attached to
    `window` by the module bridge near the end of this file. */
@@ -5204,7 +5205,7 @@ async function cocoVerify(answer, passages) {
 }
 
 async function cocoAsk(question, contextText, history) {
-  if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
+  if (!schoolAIEngine) throw new Error('Choom is not loaded yet.');
 
   if (!syllabusHasRealText(contextText)) {
     return { answer: COCO_LINK_ONLY_MSG, citation: '', confidence: 'none' };
@@ -5233,7 +5234,7 @@ async function cocoAsk(question, contextText, history) {
     {
       role: 'system',
       content:
-        'You are coco.1, a careful assistant that answers a student\'s question using ONLY the numbered syllabus excerpts provided. ' +
+        'You are Choom, a careful assistant that answers a student\'s question using ONLY the numbered syllabus excerpts provided. ' +
         'Rules, in priority order:\n' +
         '1. Use only what the excerpts literally say. Never add outside knowledge about how classes usually work.\n' +
         '2. Never state a number, percentage, date, or deadline unless that exact figure appears in the excerpts.\n' +
@@ -5320,7 +5321,7 @@ function cocoRate(rowId, feature, positive) {
 
 /* ---- Rendering ------------------------------------------------------- */
 
-// Renders an answer according to how much coco.1 actually trusts it. A 'quoted'
+// Renders an answer according to how much Choom actually trusts it. A 'quoted'
 // result is a verbatim line from the syllabus, so it's labelled as a direct
 // quote rather than dressed up as an AI answer — honest about what it is.
 /* cocoAnswerHTML now lives in js/render-utils.js -- see the module bridge
@@ -5329,7 +5330,7 @@ function cocoRate(rowId, feature, positive) {
 /* ---- Planning mode: advice over the whole assignment list, not one doc --- */
 
 /* cocoPlanningContext now lives in js/grade-core.js (alongside
-   cocoGradeContext -- both are "build the coco.1 context object from live
+   cocoGradeContext -- both are "build the Choom context object from live
    app state" functions) -- see the module bridge near the end of this
    file. Same refactor as before: it used to read cachedAssignments/
    doneSet/cachedGrades/userGoals/cachedStudySessions directly, now the
@@ -5345,7 +5346,7 @@ function cocoRate(rowId, feature, positive) {
 
    These checks are deliberately narrow. A verifier that fires on correct
    answers is worse than no verifier at all: it would push every response to
-   the fallback and make coco.1 feel broken. So they only catch things that
+   the fallback and make Choom feel broken. So they only catch things that
    are cheap to check and unambiguous when wrong. */
 
 /* COCO_NOT_COURSE_CODES, cocoExtractCourseCodes, and cocoNormalize now live
@@ -5355,18 +5356,18 @@ function cocoRate(rowId, feature, positive) {
    in js/coco-verify.js -- see the module bridge near the end of this file. */
 
 // What the rest of the app knows (exam radar, Today's 3, how the student is
-// connected), so coco.1's advice agrees with what's on screen.
+// connected), so Choom's advice agrees with what's on screen.
 function cocoAppExtras() {
   const x = { mode: canvasMode };
   try {
     if (typeof examRadarList === 'function') { x.exams = examRadarList(); x.undatedExams = examUndatedList(); }
-  } catch (e) { console.warn('[coco.1] exams', e); }
-  try { if (typeof today3Summary === 'function') x.today3 = today3Summary(); } catch (e) { console.warn('[coco.1] today3', e); }
+  } catch (e) { console.warn('[Choom] exams', e); }
+  try { if (typeof today3Summary === 'function') x.today3 = today3Summary(); } catch (e) { console.warn('[Choom] today3', e); }
   return x;
 }
 
 async function cocoAskPlanning(question) {
-  if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
+  if (!schoolAIEngine) throw new Error('Choom is not loaded yet.');
 
   const ctx = cocoPlanningContext(cachedAssignments, doneSet, cachedGrades, userGoals, cachedStudySessions, 20,
     typeof closedSuggestionList === 'function' ? closedSuggestionList() : [], cocoAppExtras());
@@ -5380,7 +5381,7 @@ async function cocoAskPlanning(question) {
     {
       role: 'system',
       content:
-        'You are coco.1, a supportive study-planning assistant for a student who might be stressed or overwhelmed. Below is their ACTUAL upcoming work, pulled from Canvas.\n' +
+        'You are Choom, a supportive study-planning assistant for a student who might be stressed or overwhelmed. Below is their ACTUAL upcoming work, pulled from Canvas.\n' +
         'Rules:\n' +
         '1. Only reference assignments, courses, and due dates that literally appear in the list. Never invent one.\n' +
         '2. If anything is overdue, treat it as the top priority and say so, unless the question clearly points elsewhere.\n' +
@@ -5410,7 +5411,7 @@ async function cocoAskPlanning(question) {
 
   const verdict = cocoVerifyPlanning(answer, ctx);
   if (!verdict.ok) {
-    console.warn('[coco.1 planning] rejected answer —', verdict.reason);
+    console.warn('[Choom planning] rejected answer —', verdict.reason);
     return { answer: cocoDeterministicPlan(ctx), confidence: 'computed', reason: verdict.reason };
   }
 
@@ -5427,21 +5428,21 @@ async function askCocoPlanning() {
   const q = input.value.trim();
   if (!q) return;
   if (!schoolAIReady()) {
-    resultEl.innerHTML = `<div class="card-sub">Enable coco.1 above first.</div>`;
+    resultEl.innerHTML = `<div class="card-sub">Enable Choom above first.</div>`;
     return;
   }
   trackEvent('coco_ask', { feature: 'planning' });
-  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Looking at what's due…</div>`;
+  resultEl.innerHTML = `<div class="school-ai-badge">✨ Choom</div><div class="card-sub">Looking at what's due…</div>`;
   try {
     const { answer, confidence } = await cocoAskPlanning(q);
     resultEl.innerHTML = cocoPlanningAnswerHTML(answer, confidence) + cocoFeedbackHTML('planning');
   } catch (err) {
-    resultEl.innerHTML = `<div class="card-sub">coco.1 error: ${escapeHtml(err.message)}</div>`;
+    resultEl.innerHTML = `<div class="card-sub">Choom error: ${escapeHtml(err.message)}</div>`;
   }
 }
 
 /* ===========================
-   GRADE TIPS (coco.1)
+   GRADE TIPS (Choom)
    Same shape as planning mode: a structured, real-data-only context, a
    narrow verifier, and a deterministic fallback -- reusing the course-code
    /quoted-title/percentage checks from cocoVerifyPlanning since the failure
@@ -5462,7 +5463,7 @@ async function askCocoPlanning() {
    file. */
 
 async function cocoAskGradeTips(courseName, question) {
-  if (!schoolAIEngine) throw new Error('coco.1 is not loaded yet.');
+  if (!schoolAIEngine) throw new Error('Choom is not loaded yet.');
 
   const ctx = cocoGradeContext(courseName, cachedGrades, cachedGradedAssignments, cachedAssignments, cocoAppExtras());
   if (!ctx.hasData) {
@@ -5473,7 +5474,7 @@ async function cocoAskGradeTips(courseName, question) {
     {
       role: 'system',
       content:
-        'You are coco.1, a supportive academic coach helping a student understand and improve ONE specific course grade. Below is their REAL grade data for this course.\n' +
+        'You are Choom, a supportive academic coach helping a student understand and improve ONE specific course grade. Below is their REAL grade data for this course.\n' +
         'Rules:\n' +
         '1. Only reference assignments, scores, and points that literally appear below. Never invent one.\n' +
         '2. If something already lost real points (graded work that cost points, or missing work), lead with that - it is the most certain, most useful thing you know. Treat it as the priority over anything not yet due.\n' +
@@ -5501,7 +5502,7 @@ async function cocoAskGradeTips(courseName, question) {
 
   const verdict = cocoVerifyGradeTips(answer, ctx);
   if (!verdict.ok) {
-    console.warn('[coco.1 grade tips] rejected answer —', verdict.reason);
+    console.warn('[Choom grade tips] rejected answer —', verdict.reason);
     return { answer: cocoDeterministicGradeTips(ctx), confidence: 'computed', reason: verdict.reason };
   }
 
@@ -5518,16 +5519,16 @@ async function askCocoGradeTips(presetQuestion) {
   const q = presetQuestion || (input ? input.value.trim() : '');
   if (!q) return;
   if (!schoolAIReady()) {
-    resultEl.innerHTML = `<div class="card-sub">Enable coco.1 above first.</div>`;
+    resultEl.innerHTML = `<div class="card-sub">Enable Choom above first.</div>`;
     return;
   }
   trackEvent('coco_ask', { feature: 'grade_tips' });
-  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Looking at your grade data…</div>`;
+  resultEl.innerHTML = `<div class="school-ai-badge">✨ Choom</div><div class="card-sub">Looking at your grade data…</div>`;
   try {
     const { answer, confidence } = await cocoAskGradeTips(currentGradeDetailCourse, q);
     resultEl.innerHTML = cocoGradeTipsAnswerHTML(answer, confidence) + cocoFeedbackHTML('grade_tips');
   } catch (err) {
-    resultEl.innerHTML = `<div class="card-sub">coco.1 error: ${escapeHtml(err.message)}</div>`;
+    resultEl.innerHTML = `<div class="card-sub">Choom error: ${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -5576,7 +5577,7 @@ async function generateChecklistViaAI(a, todayStr, dueStr) {
     {
       role: 'system',
       content:
-        'You are coco.1, breaking a school assignment into a real, detailed work plan the student can actually follow.\n' +
+        'You are Choom, breaking a school assignment into a real, detailed work plan the student can actually follow.\n' +
         'Rules:\n' +
         '1. If a description is given below, build the steps FROM its actual content -- name the real parts/requirements it lists, not generic filler like "Work on it" or "Complete and submit". Reading the description and copying its real structure into concrete steps is the entire point.\n' +
         '2. Never reduce this to just "do the assignment, then turn it in". Include how to actually approach it: what to read or research first, taking notes as you go, drafting or working through the real requirements, then a final review before submitting.\n' +
@@ -5634,7 +5635,7 @@ async function generateChecklist(assignmentId) {
 
   cachedChecklists = cachedChecklists.filter(s => String(s.assignment_id) !== String(assignmentId)).concat(created);
   renderChecklistSection(a);
-  showReward(source === 'ai' ? 'Study plan ready.' : 'Plan ready (basic version - coco.1 wasn\'t available).', 'calendar');
+  showReward(source === 'ai' ? 'Study plan ready.' : 'Plan ready (basic version - Choom wasn\'t available).', 'calendar');
 }
 
 async function toggleChecklistStep(stepId, btn) {
@@ -5762,14 +5763,14 @@ function schoolAIBannerHTML(idPrefix) {
   if (schoolAIReady()) return '';
   if (!schoolAISupported) {
     return `<div class="school-ai-banner"><div class="school-ai-banner-text">
-      <div class="school-ai-banner-title">coco.1 unavailable</div>
+      <div class="school-ai-banner-title">Choom unavailable</div>
       <div class="school-ai-banner-sub">This browser doesn't support the on-device AI (needs WebGPU - try a recent Chrome or Edge). Keyword search still works below.</div>
     </div></div>`;
   }
   return `
     <div class="school-ai-banner" id="${idPrefix}-banner">
       <div class="school-ai-banner-text">
-        <div class="school-ai-banner-title">Turn on coco.1</div>
+        <div class="school-ai-banner-title">Turn on Choom</div>
         <div class="school-ai-banner-sub">Real understanding, not just keyword matching. Runs on your device: a one-time ~1.9GB download, free, no account needed. Still occasionally wrong on tricky questions, so always double-check anything important.</div>
         <div class="school-ai-progress-wrap" id="${idPrefix}-progress-wrap" style="display:none;">
           <div class="school-ai-progress-bar"><div class="school-ai-progress-fill" id="${idPrefix}-progress-fill"></div></div>
@@ -5809,7 +5810,7 @@ function refreshAskPanelsAfterAIReady() {
     resultEl.style.display = 'block';
     resultEl.innerHTML = listInput && listInput.value.trim()
       ? ''
-      : `<div class="school-ai-badge">✨ coco.1 is ready - ask away.</div>`;
+      : `<div class="school-ai-badge">✨ Choom is ready - ask away.</div>`;
   }
   if (listInput && listInput.value.trim()) askSyllabi();
 
@@ -5883,7 +5884,7 @@ function renderHome() {
   if (!eyebrowEl) return;
   // One headline: the greeting with the student's name (the tear-off date
   // beside it shows the day). The summary sentence under it, the date and
-  // coco.1's note are filled in by js/home-notebook.js.
+  // Choom's note are filled in by js/home-notebook.js.
   const nameHTML = USER_NAME ? `, <span id="home-greeting-name">${escapeHtml(USER_NAME)}</span>` : '';
   eyebrowEl.innerHTML = `${escapeHtml(greetingWord())}${nameHTML}.`;
 
@@ -6107,7 +6108,7 @@ async function askSearchWithinSyllabus() {
 async function askSchoolAIWithinSyllabus(q, raw) {
   const myRequestId = ++sylAskRequestId;
   const answerEl = document.getElementById('syl-ai-answer');
-  if (answerEl) answerEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Reading this syllabus…</div>`;
+  if (answerEl) answerEl.innerHTML = `<div class="school-ai-badge">✨ Choom</div><div class="card-sub">Reading this syllabus…</div>`;
   try {
     const { answer, citation, confidence } = await cocoAsk(q, raw);
     if (myRequestId !== sylAskRequestId) return; // a newer request superseded this one — discard
@@ -6123,7 +6124,7 @@ async function askSchoolAIWithinSyllabus(q, raw) {
     if (myRequestId !== sylAskRequestId) return;
     const viewEl = document.getElementById('syl-view');
     const currentAnswerEl = document.getElementById('syl-ai-answer');
-    if (currentAnswerEl) currentAnswerEl.innerHTML = `<div class="card-sub">coco.1 error: ${escapeHtml(err.message)}</div>`;
+    if (currentAnswerEl) currentAnswerEl.innerHTML = `<div class="card-sub">Choom error: ${escapeHtml(err.message)}</div>`;
     if (viewEl) viewEl.innerHTML = escapeHtml(raw);
   }
 }
@@ -6386,7 +6387,7 @@ function cocoClearSyllabusChat() {
 async function askSyllabiWithAI(q) {
   const myRequestId = ++listAskRequestId;
   const resultEl = document.getElementById('syllabus-ask-result');
-  resultEl.innerHTML = `<div class="school-ai-badge">✨ coco.1</div><div class="card-sub">Reading your syllabus…</div>`;
+  resultEl.innerHTML = `<div class="school-ai-badge">✨ Choom</div><div class="card-sub">Reading your syllabus…</div>`;
 
   // Pick which course to answer from by scoring each syllabus with the same
   // synonym-aware retrieval used inside the answer step, so the course choice
@@ -6437,7 +6438,7 @@ async function askSyllabiWithAI(q) {
       : '');
   } catch (err) {
     if (myRequestId !== listAskRequestId) return;
-    resultEl.innerHTML = `<div class="card-sub">coco.1 hit an error (${escapeHtml(err.message)}) - falling back to keyword search.</div>`;
+    resultEl.innerHTML = `<div class="card-sub">Choom hit an error (${escapeHtml(err.message)}) - falling back to keyword search.</div>`;
     askSyllabiKeyword(q);
   }
 }
@@ -7844,10 +7845,10 @@ function expandDeepWorkTimer() {
 
 function updateDeepWorkTitle() {
   if (!deepWorkState) return;
-  if (deepWorkState.awaiting) { document.title = deepWorkOriginalTitle || 'StudyFlow'; return; }
+  if (deepWorkState.awaiting) { document.title = deepWorkOriginalTitle || 'Duesday'; return; }
   document.title = deepWorkState.paused
-    ? `⏸ ${fmtClock(deepWorkState.remainingSec)} - StudyFlow`
-    : `${fmtClock(deepWorkState.remainingSec)} · Deep work - StudyFlow`;
+    ? `⏸ ${fmtClock(deepWorkState.remainingSec)} - Duesday`
+    : `${fmtClock(deepWorkState.remainingSec)} · Deep work - Duesday`;
 }
 
 function renderDeepWorkMiniBar() {
@@ -8294,7 +8295,7 @@ var PAGE_HEADS = { // var: refreshPageHeads may run (via renderHome) before this
     return `Averaging ${avg.toFixed(1)}% across ${count} ${count === 1 ? 'class' : 'classes'}`;
   } },
   goals:    { title: 'Goals', sub: () => {
-    if (!userGoals.length) return 'Tell StudyFlow what you are aiming for';
+    if (!userGoals.length) return 'Tell Duesday what you are aiming for';
     const linked = resolveGoals(userGoals, cachedAssignments, cachedGrades).filter(r => r.courses.length).length;
     return `${userGoals.length} ${userGoals.length === 1 ? 'goal' : 'goals'}${linked ? ` · ${linked} steering Priority` : ''}`;
   } },
@@ -8303,7 +8304,7 @@ var PAGE_HEADS = { // var: refreshPageHeads may run (via renderHome) before this
     return n ? `${n} ${n === 1 ? 'syllabus' : 'syllabi'} you can search and ask about` : 'Your class syllabi, searchable';
   } },
   settings: { title: 'Settings', sub: () => 'Appearance, notifications and your Canvas connection' },
-  more:     { title: 'More', sub: () => 'Everything else in StudyFlow' },
+  more:     { title: 'More', sub: () => 'Everything else in Duesday' },
   messages: { title: 'Messages', icon: 'more', sub: () => { const n = (cachedMessages || []).filter(m => !m.read).length; return n ? `${n} unread` : 'Canvas inbox'; } },
   feedback: { title: 'Feedback', icon: 'more', sub: () => { const n = (cachedFeedback || []).filter(f => !f.read).length; return n ? `${n} new comments` : 'Comments on your work'; } },
   discarded:{ title: 'Discarded', icon: 'more', sub: () => 'Dismissed announcements and finished work' },

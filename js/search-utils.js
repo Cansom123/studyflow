@@ -1,6 +1,6 @@
 /* ===========================
    TEXT SEARCH / KEYWORD UTILITIES (pure functions, no app state)
-   Fourth module in the multi-file split. Used by coco.1's syllabus
+   Fourth module in the multi-file split. Used by Choom's syllabus
    retrieval (cocoRetrieve, in coco-core.js) and by the plain-text search
    features elsewhere in the app (syllabus search, notes search) that
    highlight matched terms.

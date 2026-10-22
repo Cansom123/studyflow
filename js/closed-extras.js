@@ -1,9 +1,9 @@
 /* ===========================
-   CLOSED WORK -> coco.1 SUGGESTIONS
+   CLOSED WORK -> Choom SUGGESTIONS
    Assignments Canvas has closed (locked after the deadline, not turned in)
    can't be submitted anymore, so they no longer sit in the to-do lists,
    Priority ranking or overdue counts (see loadAssignments). They show up
-   here instead, each with one thing coco.1 suggests doing about it:
+   here instead, each with one thing Choom suggests doing about it:
    - recent, worth a lot, or in a class that needs the points: ask the
      teacher about late credit (with a ready-to-paste message);
    - otherwise: review what it covered, then clear it.
@@ -37,7 +37,7 @@ function closedWorthAsking(a) {
 }
 
 // Closed work still waiting for the student to deal with, most worth
-// acting on first. Also passed to coco.1's planning context.
+// acting on first. Also passed to Choom's planning context.
 function closedSuggestionList() {
   const handled = closedHandledSet();
   return (cachedClosedAssignments || [])
@@ -94,7 +94,7 @@ function closedCardHTML(list, limit) {
   return `
     <div class="card glass closed-suggest">
       <div class="closed-suggest-head">
-        <span class="school-ai-badge">✨ coco.1 suggests</span>
+        <span class="school-ai-badge">✨ Choom suggests</span>
         <span class="closed-suggest-count">${list.length} can't be submitted anymore</span>
       </div>
       <div class="closed-suggest-sub">Canvas isn't accepting these, so they're off your to-do list. Here's what's still worth doing.</div>

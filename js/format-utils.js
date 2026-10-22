@@ -179,7 +179,7 @@ function letterGradeClass(letter) {
 // on the common US scale, marked `estimated` because a class's own cut-offs
 // can differ. A 0% with no letter means nothing counted yet (non-academic or
 // brand-new courses), so it shows no letter rather than an F. Display only:
-// coco.1's grade context keeps Canvas's real letter so it never states a
+// Choom's grade context keeps Canvas's real letter so it never states a
 // guess as fact.
 const ESTIMATED_LETTER_TIP = 'Estimated from the usual grading scale. Canvas has no letter grade for this class, and your teacher may use different cut-offs.';
 const US_LETTER_SCALE = [[93, 'A'], [90, 'A-'], [87, 'B+'], [83, 'B'], [80, 'B-'], [77, 'C+'], [73, 'C'], [70, 'C-'], [67, 'D+'], [63, 'D'], [60, 'D-'], [0, 'F']];

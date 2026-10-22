@@ -19,7 +19,7 @@ function studentIsBusy() {
   if (open) return true;
   if (typeof focusState !== 'undefined' && focusState && focusState.phase === 'study' && !focusState.paused) return true;
   if (typeof deepWorkState !== 'undefined' && deepWorkState && deepWorkState.phase === 'active' && !deepWorkState.paused) return true;
-  // Typing something (a note, a link, a coco.1 question).
+  // Typing something (a note, a link, a Choom question).
   const a = document.activeElement;
   return !!(a && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && /^(text|search|url|)$/.test(a.type))) && a.value && a.value.trim());
 }

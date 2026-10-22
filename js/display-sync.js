@@ -3,7 +3,7 @@
    Theme, light / dark, card corners, text size and density used to live only in this browser (localStorage), so every new
    device or browser started from the defaults. They are now also saved in
    the account's prefs (user_settings.prefs.display) and applied on sign-in,
-   so StudyFlow looks the same wherever the student signs in.
+   so Duesday looks the same wherever the student signs in.
 
    localStorage stays the first source on page load, so the look is right
    instantly (before sign-in finishes) and still works offline. Once prefs

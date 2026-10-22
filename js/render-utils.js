@@ -49,38 +49,38 @@ function announcementCardHTML(a) {
   </div>`;
 }
 
-// Renders an answer according to how much coco.1 actually trusts it. A 'quoted'
+// Renders an answer according to how much Choom actually trusts it. A 'quoted'
 // result is a verbatim line from the syllabus, so it's labelled as a direct
 // quote rather than dressed up as an AI answer — honest about what it is.
 function cocoAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
-    return `<div class="school-ai-badge">✨ coco.1</div>` +
+    return `<div class="school-ai-badge">✨ Choom</div>` +
            `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
   if (confidence === 'quoted') {
-    return `<div class="school-ai-badge">✨ coco.1</div>` +
+    return `<div class="school-ai-badge">✨ Choom</div>` +
            `<div class="school-ai-disclaimer" style="margin-top:0;">Quoting the syllabus directly:</div>` +
            `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
-  return `<div class="school-ai-badge">✨ coco.1</div>` +
+  return `<div class="school-ai-badge">✨ Choom</div>` +
          `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
          `<div class="school-ai-disclaimer">AI-generated - check it against the highlighted source.</div>`;
 }
 
 function cocoPlanningAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
-    return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
+    return `<div class="school-ai-badge">✨ Choom</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
   // 'computed' means the generated answer failed verification and this plan was
   // built straight from the assignment rows instead. Label it as what it is
   // rather than dressing it up as an AI answer — same honesty rule as the
   // syllabus 'quoted' state.
   if (confidence === 'computed') {
-    return `<div class="school-ai-badge">✨ coco.1</div>` +
+    return `<div class="school-ai-badge">✨ Choom</div>` +
       `<div class="school-ai-disclaimer" style="margin-top:0;">Straight from your assignment list:</div>` +
       `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
-  return `<div class="school-ai-badge">✨ coco.1</div>` +
+  return `<div class="school-ai-badge">✨ Choom</div>` +
     `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
     `<div class="school-ai-disclaimer">AI-generated planning advice based on your synced assignments - always double-check deadlines yourself.</div>`;
 }
@@ -156,7 +156,7 @@ function checklistStepCardHTML(s, editingChecklistStepId) {
 }
 
 // Body HTML for the grade-detail overlay: points lost, missing work, and
-// not-yet-graded work ranked soonest-due-first, plus the "ask coco.1"
+// not-yet-graded work ranked soonest-due-first, plus the "ask Choom"
 // panel. grade and breakdown (the gradeBreakdownForCourse() result) are
 // passed in already-computed rather than read from cached state here.
 function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
@@ -212,7 +212,7 @@ function gradeDetailBodyHTML(courseName, grade, breakdown, bannerHTML) {
     : `<button class="coco-suggest-chip" onclick="askCocoGradeTipsSuggested('What should I focus on to raise this grade?')">What should I focus on?</button>`;
 
   html += `<div class="card grade-tips-box">
-    <div class="section-label" style="margin-top:0;">Ask coco.1 for tips</div>
+    <div class="section-label" style="margin-top:0;">Ask Choom for tips</div>
     <div id="grade-tips-banner-host">${bannerHTML}</div>
     <div class="study-form-row" style="margin-bottom:0;">
       <input class="settings-input" id="grade-tips-input" placeholder='e.g. "how do I bring this grade up?"' style="margin-bottom:0;" onkeydown="if(event.key==='Enter'){askCocoGradeTips();}" />
@@ -265,12 +265,12 @@ function syllabusListHTML(syllabusCourses, cachedSyllabi) {
     let badge, badgeClass, sub;
     if (s && s.content && !syllabusHasRealText(s.content)) {
       // Canvas gave back a syllabus body, but it's just a posted link with
-      // little or no real text -- coco.1 can't follow it, so say so up front
+      // little or no real text -- Choom can't follow it, so say so up front
       // instead of looking "found" and only failing once someone asks it a
       // question (see COCO_NO_SYLLABUS_TEXT).
       badge = 'Link only';
       badgeClass = 'badge-test';
-      sub = 'Open the link, then paste the text in so coco.1 can read it';
+      sub = 'Open the link, then paste the text in so Choom can read it';
     } else if (s && s.content) {
       badge = s.source === 'canvas' ? 'Found on Canvas' : 'Added by you';
       badgeClass = s.source === 'canvas' ? 'badge-hw' : 'badge-essay';
@@ -369,14 +369,14 @@ function allWorkBodyHTML(assignments, doneSet, today) {
 
 function cocoGradeTipsAnswerHTML(answer, confidence) {
   if (confidence === 'none') {
-    return `<div class="school-ai-badge">✨ coco.1</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
+    return `<div class="school-ai-badge">✨ Choom</div><div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
   if (confidence === 'computed') {
-    return `<div class="school-ai-badge">✨ coco.1</div>` +
+    return `<div class="school-ai-badge">✨ Choom</div>` +
       `<div class="school-ai-disclaimer" style="margin-top:0;">Straight from your grade data:</div>` +
       `<div class="ask-answer-text">${escapeHtml(answer)}</div>`;
   }
-  return `<div class="school-ai-badge">✨ coco.1</div>` +
+  return `<div class="school-ai-badge">✨ Choom</div>` +
     `<div class="ask-answer-text">${escapeHtml(answer)}</div>` +
     `<div class="school-ai-disclaimer">AI-generated advice based on your synced grades - always confirm anything important with your teacher.</div>`;
 }
@@ -590,7 +590,7 @@ function checklistSectionHTML(a, steps, editingChecklistStepId, bannerHTML) {
 }
 
 // Body HTML for the syllabus detail overlay: source label, the ask/search
-// toggle + coco.1 banner + search box (when there's content to search),
+// toggle + Choom banner + search box (when there's content to search),
 // the syllabus text itself, and the edit/save/download/retry action row.
 // s is the syllabusFor()-style record (or undefined/null when nothing's
 // been found yet); bannerHTML is the caller's
@@ -601,9 +601,9 @@ function syllabusDetailBodyHTML(s, sylSearchMode, courseId, bannerHTML) {
   const hasRealText = hasContent && syllabusHasRealText(s.content);
   const sourceLabel = hasContent
     ? (s.source === 'canvas' ? 'Pulled automatically from Canvas' : 'Added manually')
-    : "StudyFlow couldn't find this on Canvas. Paste it in yourself below.";
+    : "Duesday couldn't find this on Canvas. Paste it in yourself below.";
   const linkOnlyNotice = (hasContent && !hasRealText)
-    ? `<div class="msg-error" style="margin-bottom:12px;">This looks like just a link, not the actual syllabus text - coco.1 can't open links, only read text. Open the link below, then paste the real text into the box at the bottom so it can answer questions about it.</div>`
+    ? `<div class="msg-error" style="margin-bottom:12px;">This looks like just a link, not the actual syllabus text - Choom can't open links, only read text. Open the link below, then paste the real text into the box at the bottom so it can answer questions about it.</div>`
     : '';
   return `
     <div class="card-sub" style="margin-bottom:14px;">${escapeHtml(sourceLabel)}</div>

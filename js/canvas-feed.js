@@ -20,10 +20,10 @@ const CANVAS_PLAN_ROWS = [
   ['Knows what you turned in', 'You check it off', true],
   ['Grades and "what I need on the final"', false, true],
   ['Announcements, messages and teacher feedback', false, true],
-  ['Syllabi, and coco.1 answers from them', false, true],
+  ['Syllabi, and Choom answers from them', false, true],
   ['Class names', 'Short codes, like BIO-101', 'Full names'],
   ['Setup', 'About 30 seconds', 'About 2 minutes'],
-  ['What StudyFlow can see', 'Your Canvas calendar', 'Your Canvas account (it only reads)'],
+  ['What Duesday can see', 'Your Canvas calendar', 'Your Canvas account (it only reads)'],
 ];
 
 function canvasPlanCompareHTML(current) {
@@ -160,7 +160,7 @@ async function carryOverFeedCheckOffs(links) {
   if (!matches.length) return;
   const now = new Date().toISOString();
   // doneSet too: a token sync re-reads "completed" from Canvas each time, and
-  // doneSet is what keeps a StudyFlow check-off for work Canvas doesn't
+  // doneSet is what keeps a Duesday check-off for work Canvas doesn't
   // count as submitted.
   matches.forEach(a => doneSet.add(decodeURIComponent(doneKey(a))));
   try { localStorage.setItem('sf_done_' + USER_ID, JSON.stringify([...doneSet])); } catch (e) {}
@@ -173,7 +173,7 @@ async function carryOverFeedCheckOffs(links) {
 const FEED_UPGRADE_SPOTS = [
   { page: 'grades', title: 'Grades come with Full sync', body: 'Your calendar link only has due dates. Add a Canvas token to see your grades and what you need on the final.' },
   { page: 'updates', title: 'Announcements come with Full sync', body: 'Teacher announcements, messages and feedback need a Canvas token. Your due dates keep working either way.' },
-  { page: 'syllabus', title: 'Syllabi come with Full sync', body: 'StudyFlow needs a Canvas token to read your class syllabi and let coco.1 answer questions about them.' },
+  { page: 'syllabus', title: 'Syllabi come with Full sync', body: 'Duesday needs a Canvas token to read your class syllabi and let Choom answer questions about them.' },
 ];
 
 function openFullSyncUpgrade() {

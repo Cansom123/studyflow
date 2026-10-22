@@ -1,5 +1,5 @@
 /* ===========================
-   coco.1 CORE LOGIC (pure functions, no app state)
+   Choom CORE LOGIC (pure functions, no app state)
    Extracted from index.html as the first real JS module in the multi-file
    split. Every function here is a pure input -> output transform with no
    dependency on cachedAssignments, USER_ID, the DOM, or any other app
@@ -121,14 +121,14 @@ const COCO_UNKNOWN = "The syllabus doesn't cover that - worth asking your instru
 
 // A lot of real Canvas "syllabi" are just a posted link to a PDF or Google
 // Doc hosted elsewhere, with little or no real text in the syllabus body
-// itself. coco.1 can only read what StudyFlow actually pulled from Canvas --
+// itself. Choom can only read what Duesday actually pulled from Canvas --
 // it can't follow a link and read what's on the other side of it. Without
 // this check, cocoRetrieve finds nothing in that near-empty text and
 // cocoAsk falls through to COCO_UNKNOWN, which *sounds* like "I read your
 // syllabus and it doesn't mention that" when the honest answer is "I never
-// had your real syllabus text to read in the first place" -- StudyFlow
+// had your real syllabus text to read in the first place" -- Duesday
 // advertising a syllabus Q&A ability it quietly can't deliver here.
-const COCO_LINK_ONLY_MSG = "This syllabus is just a link on Canvas, so there's no real text here yet for coco.1 to read - open the link, then paste the text in on this page so it can answer questions about it.";
+const COCO_LINK_ONLY_MSG = "This syllabus is just a link on Canvas, so there's no real text here yet for Choom to read - open the link, then paste the text in on this page so it can answer questions about it.";
 
 function syllabusHasRealText(contextText) {
   const withoutUrls = (contextText || '').replace(/https?:\/\/\S+/g, '').trim();
@@ -141,7 +141,7 @@ function syllabusHasRealText(contextText) {
 // verbatim because none of the grounding checks below catch it (garbage text
 // has no numbers/course-codes/quotes to be wrong about, so it sails through).
 // This is a cheap, local sanity gate that runs before any of those checks,
-// shared by every coco.1 answer path (syllabus Q&A, planning, grade tips).
+// shared by every Choom answer path (syllabus Q&A, planning, grade tips).
 function cocoIsCoherentText(text) {
   const s = (text || '').trim();
   if (!s) return false;

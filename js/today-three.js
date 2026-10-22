@@ -97,7 +97,7 @@ function renderToday3() {
     <div class="t3-note">Times are estimates. ${rows.some(r => r.est.source !== 'default') ? 'They come from your study timer.' : 'They get more accurate as you use the study timer.'}</div>`;
 }
 
-// Today's picks and estimates as plain data, for coco.1 (so its advice
+// Today's picks and estimates as plain data, for Choom (so its advice
 // matches what Home shows).
 function today3Summary() {
   const picks = pickToday3(today3Ranked(), cachedAssignments || [], today3ItemKey, today3Saved(), today3IsDone);

@@ -129,7 +129,7 @@ function renderExamRadar() {
       ${examFormOpen ? '' : `<button type="button" class="er-add" onclick="toggleExamForm(true)">+ Add exam</button>`}
     </div>
     ${form}
-    ${exams.length ? `<ol class="er-list">${rows}</ol>` : examFormOpen || undated.length ? '' : `<div class="er-empty">No exams found in Canvas. If a teacher announced one in class, add it so StudyFlow can plan around it.</div>`}
+    ${exams.length ? `<ol class="er-list">${rows}</ol>` : examFormOpen || undated.length ? '' : `<div class="er-empty">No exams found in Canvas. If a teacher announced one in class, add it so Duesday can plan around it.</div>`}
     ${undatedHTML}
     ${glimpse}`;
   remindExamsTomorrow(exams);
@@ -202,7 +202,7 @@ function remindExamsTomorrow(exams) {
   exams.filter(e => e.daysUntil === 1).forEach(e => {
     const k = `sf_exam_reminded_${USER_ID}_${e.key}`;
     try { if (localStorage.getItem(k)) return; } catch (err) { return; }
-    const sent = notifyBrowser(`Exam tomorrow: ${e.title}`, { body: cleanCourseName(e.course) || 'StudyFlow', tag: 'sf-exam-' + e.key });
+    const sent = notifyBrowser(`Exam tomorrow: ${e.title}`, { body: cleanCourseName(e.course) || 'Duesday', tag: 'sf-exam-' + e.key });
     if (sent !== 'quiet' && userPrefs.browserNotificationsEnabled) { try { localStorage.setItem(k, '1'); } catch (err) {} }
   });
 }

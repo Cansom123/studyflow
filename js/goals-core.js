@@ -4,7 +4,7 @@
    stated goal ("raise my math grade") against their real assignments and
    grades to build a short, concrete action plan -- no model involved, just
    keyword matching against real data. This is the rule-based foundation
-   the user's stated long-term vision (having coco.1 itself manage this)
+   the user's stated long-term vision (having Choom itself manage this)
    would build on top of, so it's worth having as real, testable code
    rather than logic buried in a render function.
 =========================== */
@@ -13,7 +13,7 @@
 /* ---- Goal → class resolution ----------------------------------------------
    One shared answer to "which of my classes is this goal about, and what am
    I aiming for?" -- used by the Goals tab's action plans, Priority's ranking
-   and coco.1's planning context, so all three agree. Before this, Priority
+   and Choom's planning context, so all three agree. Before this, Priority
    matched on a goal's FIRST WORD ("Raise Biology above 70%" -> "raise"),
    which matched nothing, so goals almost never moved the list. */
 const GOAL_STOPWORDS = new Set([
@@ -137,7 +137,7 @@ function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
   // Couldn't tie the goal to a class: say how to fix that rather than
   // falling back to advice that ignores it.
   if (!r.courses.length && (cachedGrades.length || cachedAssignments.length)) {
-    steps.push('Name a class in this goal (like "Biology" or "Calculus") so StudyFlow can link it to your work and Priority list');
+    steps.push('Name a class in this goal (like "Biology" or "Calculus") so Duesday can link it to your work and Priority list');
   }
 
   // Fallback generic advice

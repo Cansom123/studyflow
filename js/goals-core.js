@@ -92,6 +92,13 @@ function goalForAssignment(a, resolved) {
   return (resolved || []).find(r => r.courseKeys.has(key)) || null;
 }
 
+// A class as goals text names it: the code when the name has one
+// ("MATH 132 1007 - 2026 Fall" → "MATH 132"), else the cleaned name.
+function goalClassLabel(name) {
+  const clean = cleanCourseName(name || '');
+  return typeof courseCode === 'function' ? courseCode(clean) : clean;
+}
+
 function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
   const steps = [];
   const text = goalText.toLowerCase();
@@ -105,10 +112,10 @@ function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
   // Step 1: where the grade stands, and how far from the goal's target
   if (r.grade) {
     const { pct, letter } = r.grade;
-    const cn = cleanCourseName(r.grade.course);
+    const cn = goalClassLabel(r.grade.course);
     let line = `Currently at ${pct != null ? pct.toFixed(1) + '% ' : ''}${letter ? '(' + letter + ') ' : ''}in ${cn}`;
     if (r.target != null && pct != null) {
-      line += r.gap > 0 ? ` - ${r.gap} points below your ${r.target}% target` : ` - already at your ${r.target}% target, so keep it there`;
+      line += r.gap > 0 ? `, ${r.gap} points below your ${r.target}% target` : `, already at your ${r.target}% target, so keep it there`;
     }
     steps.push(line);
   }
@@ -116,7 +123,7 @@ function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
   // Step 2: overdue assignments
   const overdue = matchingAssignments.filter(a => new Date(a.due_date) < today);
   if (overdue.length) {
-    steps.push(`Complete ${overdue.length} overdue item${overdue.length > 1 ? 's' : ''} - start with "${overdue[0].title}"`);
+    steps.push(`Complete ${overdue.length} overdue item${overdue.length > 1 ? 's' : ''}. Start with "${overdue[0].title}"`);
   }
 
   // Step 3: next upcoming assignments (up to 3)
@@ -125,13 +132,13 @@ function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
     const d = dayDiff(a.due_date, today);
     const dueStr = d === 0 ? 'today' : d === 1 ? 'tomorrow'
       : new Date(a.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    steps.push(`Prepare "${a.title}" - due ${dueStr}`);
+    steps.push(`Prepare "${a.title}", due ${dueStr}`);
   }
 
   // Say plainly that this goal is steering Priority, so the two tabs read
   // as one system instead of separate lists.
   if (matchingAssignments.length) {
-    steps.push(`Ranked higher on your Priority list: ${matchingAssignments.length} ${cleanCourseName(r.courses[0])} assignment${matchingAssignments.length > 1 ? 's' : ''}`);
+    steps.push(`Ranked higher on your Priority list: ${matchingAssignments.length} ${goalClassLabel(r.courses[0])} assignment${matchingAssignments.length > 1 ? 's' : ''}`);
   }
 
   // Couldn't tie the goal to a class: say how to fix that rather than
@@ -163,39 +170,46 @@ function buildActionPlan(goalText, cachedAssignments, cachedGrades) {
 // Progress toward a goal's target grade: a bar filled to the current grade
 // with a marker at the target, and how many points are left. Only for goals
 // that name both a class with a posted grade and a target.
+// The target is a marker on the bar labelled "goal 90%"; under the bar, the
+// grade now on the left and the points still to go on the right.
 function goalProgressHTML(r) {
   if (!r || !r.grade || r.grade.pct == null || r.target == null) return '';
   const pct = Math.max(0, Math.min(100, r.grade.pct));
   const target = Math.max(0, Math.min(100, r.target));
   const met = r.gap === 0;
+  const edge = target > 88 ? ' end' : target < 12 ? ' start' : '';
   return `<div class="gp${met ? ' met' : ''}">
-    <div class="gp-top"><span class="gp-now">${r.grade.pct.toFixed(1)}%${r.grade.letter ? ` <small>${escapeHtml(r.grade.letter)}</small>` : ''}</span>
-      <span class="gp-state">${met ? 'Goal met' : `${r.gap} points to go`}</span><span class="gp-target">${target}%</span></div>
     <div class="gp-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Progress toward ${target}%">
       <div class="gp-fill" style="width:${pct}%"></div>
-      <div class="gp-mark" style="left:${target}%" title="Target ${target}%"></div>
+      <div class="gp-mark${edge}" style="left:${target}%"><span>goal ${target}%</span></div>
     </div>
+    <div class="gp-foot"><span class="gp-now">Now ${r.grade.pct.toFixed(1)}%${r.grade.letter ? ` · ${escapeHtml(r.grade.letter)}` : ''}</span>
+      <span class="gp-state">${met ? 'Goal met' : `${r.gap} points to go`}</span></div>
   </div>`;
 }
 
+// One card per goal: the goal, the classes it's linked to (a linked goal
+// steers Priority, so it gets the highlighter tag), progress toward its
+// target grade, and its action plan (from buildActionPlan).
 function goalsListHTML(userGoals, cachedAssignments, cachedGrades) {
-  const colors = ['#d85a30', '#007aff', '#3b6d11', '#854f0b', '#534ab7'];
   return userGoals.map((g, i) => {
-    const plan = buildActionPlan(g, cachedAssignments, cachedGrades);
+    const r = resolveGoals([g], cachedAssignments, cachedGrades)[0];
+    const bar = goalProgressHTML(r);
+    // The plan's first step ("Currently at 87.3%...") is what the bar shows.
+    const plan = buildActionPlan(g, cachedAssignments, cachedGrades).slice(bar ? 1 : 0);
     const stepsHtml = plan.map(s =>
       `<div class="goal-step"><span class="goal-step-arrow">→</span>${escapeHtml(s)}</div>`
     ).join('');
-    const r = resolveGoals([g], cachedAssignments, cachedGrades)[0];
     const linked = r.courses.length
-      ? `<div class="goal-linked">Linked to ${r.courses.map(c => `<span>${escapeHtml(cleanCourseName(c))}</span>`).join('')}</div>`
+      ? `<div class="goal-linked">Linked to ${r.courses.map(c => `<span>${escapeHtml(goalClassLabel(c))}</span>`).join('')}</div>`
       : '';
     return `<div class="goal-card">
       <div class="goal-row">
-        <div class="goal-dot" style="background:${colors[i % colors.length]};"></div>
         <div class="goal-text">${escapeHtml(g)}${linked}</div>
-        <button class="goal-remove" onclick="removeGoalMain(${i})">×</button>
+        ${r.courses.length ? '<span class="goal-steer">Steering Priority</span>' : ''}
+        <button class="goal-remove" onclick="removeGoalMain(${i})" title="Remove goal" aria-label="Remove goal">×</button>
       </div>
-      ${goalProgressHTML(r)}
+      ${bar}
       ${stepsHtml ? `<div class="goal-plan">${stepsHtml}</div>` : ''}
     </div>`;
   }).join('');

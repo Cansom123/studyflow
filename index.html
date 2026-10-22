@@ -1270,35 +1270,40 @@
       </div>
 
       <!-- GOALS -->
+      <!-- The goal sheet on the left, the final exam calculator as a ticket
+           on the right (one column on phones). -->
       <div class="page" id="page-goals">
-        <div class="section-label">Your goals</div>
+        <div class="gl-layout">
+        <div class="gl-col">
+        <div class="hm-sec-h"><h2>Your goals</h2><span class="hm-k">Priority leans toward linked classes</span></div>
         <div id="goals-display">
-          <div style="color:var(--text2);font-size:13px;padding:14px 0;">No goals set yet. Add one below!</div>
+          <div style="color:var(--text2);font-size:13px;padding:14px 0;">No goals set yet. Add one below.</div>
         </div>
         <div class="add-goal-row">
-          <input class="add-goal-input" type="text" id="main-goal-input" placeholder="Add a goal..." />
+          <input class="add-goal-input" type="text" id="main-goal-input" placeholder='Add a goal, like "Get a B in MATH 132"' onkeydown="if(event.key==='Enter'){addGoalMain();}" />
           <button class="add-goal-btn" onclick="addGoalMain()">Add</button>
         </div>
-        <div class="section-label" style="margin-top:20px;">Final exam calculator</div>
-        <div class="card">
-          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5;">What score do you need on your final to hit your target grade?</div>
+        </div>
+        <div class="gl-side">
+        <div class="gl-calc">
+          <div class="hm-sec-h"><h2>What do I need on the final?</h2><span class="hm-k">Calculator</span></div>
           <div class="calc-row">
             <div>
-              <div class="calc-label">Current grade</div>
+              <div class="calc-label">Grade now</div>
               <div class="calc-input-wrap">
                 <input class="calc-input" type="number" id="calc-current" min="0" max="100" placeholder="85" oninput="calculateFinal()" />
                 <span class="calc-unit">%</span>
               </div>
             </div>
             <div>
-              <div class="calc-label">Final weight</div>
+              <div class="calc-label">Final is worth</div>
               <div class="calc-input-wrap">
                 <input class="calc-input" type="number" id="calc-weight" min="1" max="100" placeholder="30" oninput="calculateFinal()" />
                 <span class="calc-unit">%</span>
               </div>
             </div>
             <div>
-              <div class="calc-label">Target grade</div>
+              <div class="calc-label">I want</div>
               <div class="calc-input-wrap">
                 <input class="calc-input" type="number" id="calc-target" min="0" max="100" placeholder="90" oninput="calculateFinal()" />
                 <span class="calc-unit">%</span>
@@ -1310,11 +1315,14 @@
             <div class="calc-result-score" id="calc-result-score"></div>
             <div class="calc-result-msg" id="calc-result-msg"></div>
           </div>
+          <div class="gl-calc-hint" id="calc-hint">Type your grade now, how much the final counts and the grade you want.</div>
         </div>
 
-        <div class="section-label" style="margin-top:20px;">Your selected classes</div>
+        <div class="hm-sec-h gl-classes-h"><h2>Your selected classes</h2></div>
         <div class="card" id="selected-courses-display">
           <div style="color:var(--text2);font-size:13px;">No classes selected yet.</div>
+        </div>
+        </div>
         </div>
       </div>
 
@@ -3895,7 +3903,7 @@ async function renderSelectedCoursesTab() {
   if (!ok || !data || !data[0]?.selected_courses?.length) {
     el.innerHTML = '<div style="color:var(--text2);font-size:13px;">No classes selected.</div>'; return;
   }
-  el.innerHTML = data[0].selected_courses.map(c => `<div class="grade-row"><span class="grade-name">${c.name}</span></div>`).join('');
+  el.innerHTML = data[0].selected_courses.map(c => `<div class="grade-row"><span class="grade-name">${escapeHtml(c.name)}</span></div>`).join('');
 }
 
 async function loadCanvasSettings() {
@@ -8441,16 +8449,18 @@ function calculateFinal() {
 
   // Pure needed-grade math + messaging lives in js/grade-calc-core.js.
   const r = calculateNeededGrade(current, weightPercent, target);
+  const hintEl = document.getElementById('calc-hint');
+  if (hintEl) hintEl.style.display = r.visible ? 'none' : '';
   if (!r.visible) { resultEl.style.display = 'none'; return; }
 
+  // Colors come from the ticket's CSS by category (secured / impossible /
+  // hard / normal), so every theme gets its own.
   resultEl.style.display = 'block';
-  resultEl.style.background = r.background;
-  labelEl.style.color = r.labelColor;
-  scoreEl.style.color = r.scoreColor;
-  msgEl.style.color = r.msgColor;
+  resultEl.dataset.cat = r.category;
   labelEl.textContent = r.label;
   scoreEl.textContent = r.score;
-  msgEl.textContent = r.msg;
+  msgEl.textContent = r.category === 'normal' || r.category === 'hard'
+    ? `on the final to finish with ${target}%. ${r.msg}` : r.msg;
 }
 
 function updateLastSyncedLabel() {

@@ -15,7 +15,7 @@ function calculateNeededGrade(current, weightPercent, target) {
       background: 'var(--connected-bg)',
       labelColor: 'var(--connected-color)', scoreColor: 'var(--connected-color)', msgColor: 'var(--connected-color)',
       label: 'Already secured', score: '🎉',
-      msg: "You've already hit your target - even a 0% on the final keeps you there.",
+      msg: "You've already hit your target. Even a 0% on the final keeps you there.",
     };
   }
   if (needed > 100) {
@@ -33,7 +33,7 @@ function calculateNeededGrade(current, weightPercent, target) {
       background: 'var(--ai-bg)',
       labelColor: 'var(--ai-label)', scoreColor: 'var(--ai-label)', msgColor: 'var(--ai-text)',
       label: 'You need', score: `${needed.toFixed(1)}%`,
-      msg: "Challenging - you'll need to bring your A-game.",
+      msg: "Challenging. You'll need to bring your A game.",
     };
   }
   return {

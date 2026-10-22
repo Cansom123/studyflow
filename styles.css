@@ -6436,3 +6436,71 @@ button, input, select, textarea { font-family: inherit; }
   #class-links-list { grid-template-columns: minmax(0, 1fr); }
   .lk-host { display: none; }
 }
+
+/* ===========================
+   GOALS: A GOAL SHEET AND A CALCULATOR TICKET
+   Goal cards on the left (a bar from the grade now with a marker at the
+   target, "Steering Priority" in highlighter when the goal is linked to a
+   class), the final exam calculator as a ticket on the right with the
+   answer big. js/goals-core.js, calculateFinal.
+=========================== */
+@media (min-width: 900px) {
+  .gl-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 26px; align-items: start; }
+  .gl-side { position: sticky; top: 80px; }
+}
+#page-goals .goal-card { padding: 18px 20px; margin-bottom: 12px; border-radius: 16px; background: var(--surface); box-shadow: none; }
+#page-goals .goal-row { align-items: flex-start; gap: 12px; }
+#page-goals .goal-text { font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
+#page-goals .goal-linked { gap: 6px; margin-top: 5px; font-family: var(--font-mono); font-size: 11px; font-weight: 400; }
+#page-goals .goal-linked span { padding: 0; background: none; font-weight: 500; color: var(--accent); }
+.goal-steer {
+  flex-shrink: 0; margin-top: 1px; padding: 3px 7px; border-radius: 4px; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--mark); color: var(--mark-ink);
+}
+#page-goals .gp { margin: 26px 0 2px; }
+#page-goals .gp-track { height: 9px; border-radius: 5px; background: var(--surface2); border: 1px solid var(--border2); }
+#page-goals .gp-mark { top: -6px; width: 2px; height: 21px; background: var(--text1); }
+#page-goals .gp-mark span {
+  position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%); white-space: nowrap;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--text1);
+}
+#page-goals .gp-mark.end span { left: auto; right: -1px; transform: none; }
+#page-goals .gp-mark.start span { left: -1px; transform: none; }
+.gp-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 7px; font-family: var(--font-mono); font-size: 11px; color: var(--text2); font-variant-numeric: tabular-nums; }
+#page-goals .gp-now { font-size: 11px; font-weight: 400; color: var(--text2); }
+#page-goals .gp-state { flex: 0 0 auto; font-size: 11px; font-weight: 400; }
+#page-goals .gp.met .gp-state { color: var(--green); font-weight: 500; }
+#page-goals .goal-plan { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+#page-goals .add-goal-row { margin-top: 4px; }
+#page-goals .add-goal-input { border-style: dashed; background: transparent; }
+
+.gl-calc {
+  display: flex; flex-direction: column; gap: 16px; padding: 28px 24px 26px; background: var(--surface2);
+  -webkit-mask: radial-gradient(circle at 9px 0, transparent 6px, #000 6.5px) top left / 18px 51% repeat-x,
+                radial-gradient(circle at 9px 100%, transparent 6px, #000 6.5px) bottom left / 18px 51% repeat-x;
+          mask: radial-gradient(circle at 9px 0, transparent 6px, #000 6.5px) top left / 18px 51% repeat-x,
+                radial-gradient(circle at 9px 100%, transparent 6px, #000 6.5px) bottom left / 18px 51% repeat-x;
+}
+.gl-calc .hm-sec-h { margin-bottom: 0; }
+.gl-calc .calc-row { gap: 8px; margin: 0; padding-bottom: 18px; border-bottom: 1px dashed var(--border); }
+.gl-calc .calc-label { font-family: var(--font-mono); font-size: 10.5px; font-weight: 400; letter-spacing: 0.1em; }
+.gl-calc .calc-input { background: var(--surface); font-family: var(--font-mono); text-align: left; padding-left: 12px; }
+.gl-calc .calc-result { margin: 0; padding: 0; border-radius: 0; text-align: left; background: none; }
+.gl-calc .calc-result-label { margin-bottom: 6px; font-family: var(--font-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.12em; color: var(--text2); }
+.gl-calc .calc-result-score { margin-bottom: 10px; font-family: "Space Grotesk", var(--font-sans); font-size: 68px; font-weight: 700; letter-spacing: -0.05em; color: var(--text1); }
+.gl-calc .calc-result-msg { font-size: 13.5px; line-height: 1.5; color: var(--text2); }
+.gl-calc .calc-result[data-cat="secured"] .calc-result-score,
+.gl-calc .calc-result[data-cat="secured"] .calc-result-label { color: var(--green); }
+.gl-calc .calc-result[data-cat="impossible"] .calc-result-score,
+.gl-calc .calc-result[data-cat="impossible"] .calc-result-label { color: var(--red); }
+.gl-calc-hint { font-size: 13px; line-height: 1.5; color: var(--text2); }
+.gl-classes-h { margin-top: 26px; }
+@media (max-width: 899px) {
+  .gl-side { margin-top: 26px; }
+}
+@media (max-width: 600px) {
+  .gl-calc { padding: 24px 18px 22px; }
+  .gl-calc .calc-result-score { font-size: 54px; }
+  #page-goals .goal-row { flex-wrap: wrap; }
+}

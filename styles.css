@@ -6657,6 +6657,49 @@ button, input, select, textarea { font-family: inherit; }
 .ws-slow p { margin: 0 0 12px; font-size: 13.5px; line-height: 1.5; color: var(--text2); }
 .ws-slow .hm-btn { padding: 9px 14px; font-size: 14px; }
 
+/* ===========================
+   DONE POPUP: A TICKET STUB
+   Checking work off (and finishing a study session) pops a small stub:
+   the count big on a stroke of highlighter, rolling to its new value,
+   a dashed tear line, then a mono label, the message and this week's bar
+   in the theme's pen color. showDoneToast in index.html.
+=========================== */
+.done-toast, [data-theme="dark"] .done-toast {
+  gap: 0; min-width: 320px; padding: 0; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.16);
+}
+.done-toast .dt-badge { display: none; }
+/* The number's box is exactly one line tall so the roll hides the old and
+   new values above and below it; the tear line is on the text side. */
+.done-toast .dt-odo {
+  display: grid; justify-items: center; flex-shrink: 0; overflow: hidden;
+  min-width: 58px; height: 40px; margin: 0 14px 0 18px; padding: 0 6px;
+  font-family: "Space Grotesk", var(--font-sans); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 40px;
+  color: var(--mark-ink); background: var(--mark); border-radius: 3px; /* a swipe of highlighter, ink always on it */
+}
+.done-toast .dt-old, .done-toast .dt-new { grid-area: 1 / 1; height: 40px; }
+.done-toast .dt-new { position: static; }
+.done-toast.show .dt-new { color: var(--mark-ink); }
+.done-toast .dt-main { align-self: stretch; padding: 13px 18px 13px 16px; border-left: 1.5px dashed var(--border); }
+.done-toast .dt-label {
+  display: block; margin-bottom: 4px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 400;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2);
+}
+.done-toast .dt-msg { margin: 0; font-size: 14px; font-weight: 500; color: var(--text1); }
+.done-toast .dt-week { margin-top: 9px; }
+.done-toast .dt-bar, [data-theme="dark"] .done-toast .dt-bar { height: 7px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border2); }
+.done-toast .dt-bar i { background: var(--accent); }
+.done-toast .dt-week-text { font-family: var(--font-mono); font-size: 10.5px; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; }
+/* Clearing the week or every 10th: the pen color frames the stub */
+.done-toast.dt-big { border-color: var(--accent); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.16), 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+/* Study time ("1h 30m"): text is wider, so a smaller number */
+.done-toast.dt-text-odo .dt-odo { font-size: 22px; min-width: 88px; }
+@media (max-width: 600px) {
+  .done-toast, [data-theme="dark"] .done-toast { min-width: 0; }
+  .done-toast .dt-odo { min-width: 48px; font-size: 30px; margin: 0 12px 0 14px; }
+}
+
 /* welcome */
 #ws-badge { display: none; }
 #ws-welcome { min-height: 0; }

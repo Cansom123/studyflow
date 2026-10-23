@@ -6957,8 +6957,9 @@ function showDoneToast(prevCount, count, week, message, big, opts = {}) {
     el.setAttribute('role', 'status');
     el.innerHTML = `
       <div class="dt-badge"><svg viewBox="0 0 20 20" fill="none"><path class="dt-tick" d="M5 10.5l3.3 3.3L15.2 6.6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <span class="dt-odo"><span class="dt-old"></span><span class="dt-new"></span></span>
       <div class="dt-main">
-        <div class="dt-line"><span class="dt-odo"><span class="dt-old"></span><span class="dt-new"></span></span><span class="dt-label"></span></div>
+        <div class="dt-line"><span class="dt-label"></span></div>
         <div class="dt-msg"></div>
         <div class="dt-week"><div class="dt-bar"><i></i></div><span class="dt-week-text"></span></div>
       </div>`;
@@ -6986,7 +6987,13 @@ function showDoneToast(prevCount, count, week, message, big, opts = {}) {
   el.classList.toggle('dt-study', !!opts.study);
   el.classList.toggle('dt-big', !!big);
   el.classList.remove('show');
-  void el.offsetWidth; // restart the entrance + number roll
+  // Restart the entrance + number roll. The roll has to be reset on the
+  // numbers themselves, or a second check-off right after the first keeps
+  // showing the old number.
+  const odo = el.querySelectorAll('.dt-old, .dt-new');
+  odo.forEach(x => { x.style.animation = 'none'; });
+  void el.offsetWidth;
+  odo.forEach(x => { x.style.animation = ''; });
   el.classList.add('show');
   clearTimeout(doneToastTimer);
   doneToastTimer = setTimeout(() => el.classList.remove('show'), big ? 4200 : 3200);

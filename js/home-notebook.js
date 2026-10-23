@@ -1,7 +1,8 @@
 /* ===========================
    NOTEBOOK HOME (redesign step 3)
    The parts of Home that are new in the notebook layout:
-   - a tear-off calendar date next to the greeting
+   - a tear-off calendar date next to the greeting (on a new day the old
+     sheet rips off and falls)
    - one plain sentence under the greeting (what's due, the busiest day, the
      next exam)
    - Choom's sticky note: a tip worked out from the same data Home shows
@@ -60,11 +61,65 @@
   const examName = e => escapeHtml(clip(e.title, 40));
   const fmtH = min => (min < 60 ? `${min}m` : `${Math.round(min / 6) / 10}h`);
 
+  const calHTML = d => `<span class="hm-cal-dow">${DOW[d.getDay()]}</span><span class="hm-cal-num">${d.getDate()}</span><span class="hm-cal-mon">${MON[d.getMonth()]}</span>`;
+
   function renderCal() {
-    const now = new Date();
-    setHTML(document.getElementById('home-cal'),
-      `<span class="hm-cal-dow">${DOW[now.getDay()]}</span><span class="hm-cal-num">${now.getDate()}</span><span class="hm-cal-mon">${MON[now.getMonth()]}</span>`);
+    setHTML(document.getElementById('home-cal'), calHTML(new Date()));
+    maybeTearOff();
   }
+
+  /* ---- A new day: yesterday's sheet tears off and falls ------------------
+     The first time Home is seen on a new day (on this device), the sheet for
+     the day last seen sits on top of today's, rips at the corner and drops
+     to the bottom of the screen. It waits for the sync screen to close, so
+     it plays where it can be seen. Reduced motion: no animation. */
+  const seenKey = () => `sf_cal_seen_${typeof USER_ID !== 'undefined' ? USER_ID : ''}`;
+  const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  let tearWait = null;
+
+  function maybeTearOff() {
+    clearTimeout(tearWait);
+    const cal = document.getElementById('home-cal');
+    const home = document.getElementById('page-home');
+    if (typeof USER_ID === 'undefined' || !USER_ID) return;
+    if (!cal || !home || !home.classList.contains('active') || document.hidden) return;
+    // The once-a-day sync screen covers Home: try again once it's gone.
+    const ws = document.getElementById('ws-overlay');
+    if (ws && ws.style.display === 'flex') { tearWait = setTimeout(maybeTearOff, 700); return; }
+    const today = dayKey(new Date());
+    let seen = null;
+    try { seen = localStorage.getItem(seenKey()); localStorage.setItem(seenKey(), today); } catch (e) {}
+    if (!seen || seen === today || !/^\d{4}-\d{2}-\d{2}$/.test(seen)) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const [y, m, d] = seen.split('-').map(Number);
+    tearOffCalendar(cal, new Date(y, m - 1, d));
+  }
+
+  // Lays a sheet for `oldDate` over the calendar and tears it off.
+  function tearOffCalendar(cal, oldDate) {
+    const r = cal.getBoundingClientRect();
+    if (!r.width) return;
+    const sheet = document.createElement('div');
+    sheet.className = 'hm-cal hm-cal-sheet';
+    sheet.setAttribute('aria-hidden', 'true');
+    sheet.innerHTML = calHTML(oldDate);
+    Object.assign(sheet.style, { position: 'fixed', left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, margin: '0' });
+    document.body.appendChild(sheet);
+    const fall = window.innerHeight - r.top + 40;
+    const drift = 30 + Math.random() * 50;
+    // Each step has its own pace: a quick tug, the rip, then a fall that
+    // speeds up like it's dropping, fading just before the bottom edge.
+    const anim = sheet.animate([
+      { transform: 'none', offset: 0, easing: 'ease-out' },
+      { transform: 'rotate(-3deg)', offset: 0.1, easing: 'ease-in-out' },                         // tug
+      { transform: 'rotate(10deg) translate(3px, 6px)', offset: 0.24, easing: 'cubic-bezier(.4,0,.9,.55)' }, // the rip
+      { transform: `translate(${drift}px, ${fall}px) rotate(40deg)`, opacity: 1, offset: 0.94, easing: 'linear' },
+      { transform: `translate(${drift + 4}px, ${fall + 24}px) rotate(42deg)`, opacity: 0, offset: 1 },
+    ], { duration: 1600, delay: 350, fill: 'both' });
+    anim.onfinish = () => sheet.remove();
+    anim.oncancel = () => sheet.remove();
+  }
+  window.tearOffCalendar = tearOffCalendar;
 
   // "9 things due in the next two weeks. Your busiest day is Thursday, and
   // Exam 2 is that day."
@@ -194,6 +249,15 @@
     window.renderHome = function () {
       const r = origHome.apply(this, arguments);
       try { renderNotebookHome(); } catch (e) { console.warn('[home]', e); }
+      return r;
+    };
+  }
+  // Coming back to Home from another tab can be the first look of the day.
+  const origShow = window.showPage;
+  if (typeof origShow === 'function') {
+    window.showPage = function (name) {
+      const r = origShow.apply(this, arguments);
+      if (name === 'home') { try { maybeTearOff(); } catch (e) { console.warn('[home]', e); } }
       return r;
     };
   }

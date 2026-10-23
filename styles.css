@@ -5527,6 +5527,18 @@ button, input, select, textarea { font-family: inherit; }
   font-family: "Space Grotesk", var(--font-sans); font-weight: 700; font-size: 56px; line-height: 1; letter-spacing: -0.04em;
 }
 .hm-cal-mon { display: block; padding-bottom: 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; color: var(--text2); }
+/* The sheet that tears off on a new day (js/home-notebook.js): no rings,
+   a ragged top edge where it ripped, lifted off the page */
+.hm-cal.hm-cal-sheet {
+  z-index: 3000; pointer-events: none; transform-origin: 12% 0;
+  border-radius: 0 0 14px 14px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  -webkit-mask: conic-gradient(from -45deg at 50% 100%, #000 90deg, #0000 0) 0 0 / 7px 5px repeat-x,
+                linear-gradient(#000 0 0) 0 5px / 100% calc(100% - 5px) no-repeat;
+          mask: conic-gradient(from -45deg at 50% 100%, #000 90deg, #0000 0) 0 0 / 7px 5px repeat-x,
+                linear-gradient(#000 0 0) 0 5px / 100% calc(100% - 5px) no-repeat;
+}
+.hm-cal.hm-cal-sheet::before, .hm-cal.hm-cal-sheet::after { display: none; }
+.hm-cal.hm-cal-sheet .hm-cal-dow { border-radius: 0; padding-top: 10px; }
 
 #home-greeting { margin: 0; min-width: 0; }
 .hm-hello { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; color: var(--text1); }
